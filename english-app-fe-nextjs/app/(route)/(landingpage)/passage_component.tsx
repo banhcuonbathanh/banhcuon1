@@ -16,6 +16,11 @@ const PassageComponent: React.FC<PassageComponentProps> = ({ passage }) => {
         <div class="mb-4 p-4 border border-gray-200 rounded-lg">
           <h3 class="text-lg font-bold mb-2">Paragraph ${key}</h3>
           <${key}>${content}</${key}>
+          <div class="mt-2">
+            <p><strong>Summary:</strong> ${paragraph.paragraphSummary}</p>
+            <p><strong>Key Words:</strong> ${paragraph.keyWords}</p>
+            <p><strong>Key Sentence:</strong> ${paragraph.keySentence}</p>
+          </div>
         </div>
       `;
     })
