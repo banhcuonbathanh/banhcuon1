@@ -16,7 +16,11 @@ export interface ReadingTest {
     questions: Question[];
   }
   export interface ParagraphContent {
-    [key: string]: string; // This allows for keys like 'A', 'B', 'C', etc.
+    [key: string]: string; 
+    paragraphSummary: string;
+    keyWords: string;
+    keySentence: string;
+
   }
   
   export interface Question {
