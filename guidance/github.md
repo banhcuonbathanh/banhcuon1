@@ -9,5 +9,12 @@ git branch -vv
 git push --set-upstream origin nextjs-fe-reading
 git push -u origin head: This command will create the branch on the remote if it doesn’t exist yet
 
-
 git checkout nextjs-fe-reading: jump to nextjs-fe
+
+git remote add origin https://github.com/banhcuonbathanh/english_ai.git
+git push --set-upstream origin master
+
+
+git checkout -b nextjs-fe-readiding-add-more-contend-to-ParagraphContent
+
+git checkout -b nextjs-fe-readiding-add-more-clean-architextture
