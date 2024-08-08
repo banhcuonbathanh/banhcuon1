@@ -1,6 +1,6 @@
 import { readingTest1 } from "@/data";
-import PassageComponent from "./passage_component";
-import SkimmingGuidance from "./SkimmingGuidance";
+import PassageComponent from "./presentation_component/passage_component";
+import SkimmingGuidance from "./presentation_component/SkimmingGuidance";
 
 const ReadingTestPage: React.FC = () => {
   return (

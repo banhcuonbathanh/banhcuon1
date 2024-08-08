@@ -99,7 +99,110 @@ export const readingTest1: ReadingTest = {
             }
           ],
           questions: [
-            // ... (questions remain unchanged)
+            {
+              questionNumber: 1,
+              type: QuestionType.Matching,
+              content: "Animals could use objects to locate food.",
+              options: [
+                "A Nigel Franks",
+                "B Marc Hauser",
+                "C Tim Caro",
+                "D Bennet Galef Jr"
+              ],
+              correctAnswer: "C"
+            },
+            {
+              questionNumber: 2,
+              type: QuestionType.Matching,
+              content: "Ants show two-way, interactive teaching behaviours.",
+              options: [
+                "A Nigel Franks",
+                "B Marc Hauser",
+                "C Tim Caro",
+                "D Bennet Galef Jr"
+              ],
+              correctAnswer: "A"
+            },
+            {
+              questionNumber: 3,
+              type: QuestionType.Matching,
+              content:
+                "It is risky to say ants can teach other ants like human beings do.",
+              options: [
+                "A Nigel Franks",
+                "B Marc Hauser",
+                "C Tim Caro",
+                "D Bennet Galef Jr"
+              ],
+              correctAnswer: "D"
+            },
+            {
+              questionNumber: 4,
+              type: QuestionType.Matching,
+              content: "Ant leadership makes finding food faster.",
+              options: [
+                "A Nigel Franks",
+                "B Marc Hauser",
+                "C Tim Caro",
+                "D Bennet Galef Jr"
+              ],
+              correctAnswer: "A"
+            },
+            {
+              questionNumber: 5,
+              type: QuestionType.Matching,
+              content: "Communication between ants is not entirely teaching.",
+              options: [
+                "A Nigel Franks",
+                "B Marc Hauser",
+                "C Tim Caro",
+                "D Bennet Galef Jr"
+              ],
+              correctAnswer: "B"
+            },
+            {
+              questionNumber: 6,
+              type: QuestionType.MultipleChoice,
+              content:
+                "Which FOUR of the following behaviours of animals are mentioned in the passage?",
+              options: [
+                "A touch each other with antenna",
+                "B alert others when there is danger",
+                "C escape from predators",
+                "D protect the young",
+                "E hunt food for the young",
+                "F fight with each other",
+                "G use tools like twigs",
+                "H feed on a variety of foods"
+              ],
+              correctAnswer: ["A", "B", "C", "G"]
+            },
+            {
+              questionNumber: 10,
+              type: QuestionType.TrueFalseNotGiven,
+              content:
+                "Ants' tandem running involves only one-way communication.",
+              correctAnswer: "FALSE"
+            },
+            {
+              questionNumber: 11,
+              type: QuestionType.TrueFalseNotGiven,
+              content:
+                "Franks's theory got many supporters immediately after publicity.",
+              correctAnswer: "FALSE"
+            },
+            {
+              questionNumber: 12,
+              type: QuestionType.TrueFalseNotGiven,
+              content: "Ants' teaching behaviour is the same as that of human.",
+              correctAnswer: "FALSE"
+            },
+            {
+              questionNumber: 13,
+              type: QuestionType.TrueFalseNotGiven,
+              content: "Cheetah share hunting gains to younger ones",
+              correctAnswer: "TRUE"
+            }
           ]
         }
       ]
