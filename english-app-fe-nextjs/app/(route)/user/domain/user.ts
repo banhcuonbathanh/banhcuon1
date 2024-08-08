@@ -4,6 +4,10 @@ import { IUserFactory } from "./interface_User_Factory";
 
 export class User implements IUser {
   constructor(public id: string, public name: string, public email: string) {}
+
+  static fromJSON(json: any): IUser {
+    return new User(json.id, json.name, json.email);
+  }
 }
 
 export class UserFactory implements IUserFactory {
