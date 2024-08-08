@@ -7,3 +7,6 @@
 -------------------------------------------- lib --------------------------
 reactjs-editor https://www.npmjs.com/package/reactjs-editor
 npm i reactjs-editor
+
+
+npm install axios-mock-adapter

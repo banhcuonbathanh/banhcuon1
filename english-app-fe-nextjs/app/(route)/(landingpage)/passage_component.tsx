@@ -16,6 +16,7 @@ const PassageComponent: React.FC<PassageComponentProps> = ({ passage }) => {
         <div class="mb-4 p-4 border border-gray-200 rounded-lg">
           <h3 class="text-lg font-bold mb-2">Paragraph ${key}</h3>
           <${key}>${content}</${key}>
+
         </div>
       `;
     })
