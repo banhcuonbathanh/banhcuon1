@@ -18,3 +18,8 @@ git push --set-upstream origin master
 git checkout -b nextjs-fe-readiding-add-more-contend-to-ParagraphContent
 
 git checkout -b nextjs-fe-readiding-add-more-clean-architextture
+
+
+git checkout nextjs-fe-readiding-add-more-contend-to-ParagraphContent
+
+git checkout nextjs-fe-readiding-add-more-clean-architextture
