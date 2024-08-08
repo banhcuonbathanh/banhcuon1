@@ -8,7 +8,7 @@ interface PassageComponentProps {
   passage: Passage;
 }
 
-const PassageComponent: React.FC<PassageComponentProps> = ({ passage }) => {
+const PassageContend: React.FC<PassageComponentProps> = ({ passage }) => {
   const contentHtml = passage.content
     .map((paragraph: ParagraphContent, index: number) => {
       const [key, content] = Object.entries(paragraph)[0];
@@ -36,26 +36,8 @@ const PassageComponent: React.FC<PassageComponentProps> = ({ passage }) => {
           `}
         />
       </div>
-      <h3 className="text-2xl font-bold text-center mb-4">Questions</h3>
-      <div className="space-y-4">
-        {passage.questions.map((question) => (
-          <div key={question.questionNumber} className="border p-4 rounded-lg">
-            <p className="font-semibold mb-2">
-              Question {question.questionNumber}
-            </p>
-            <p>{question.content}</p>
-            {question.options && (
-              <ul className="list-disc list-inside mt-2">
-                {question.options.map((option, index) => (
-                  <li key={index}>{option}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
 
-export default PassageComponent;
+export default PassageContend;
