@@ -1,6 +1,6 @@
 import { readingTest1 } from "@/data";
 import PassageComponent from "./presentation_component/passage_component";
-import SkimmingGuidance from "./presentation_component/SkimmingGuidance";
+import PassageSummary from "./presentation_component/passage_summary";
 
 const ReadingTestPage: React.FC = () => {
   return (
@@ -17,10 +17,13 @@ const ReadingTestPage: React.FC = () => {
           {section.passages.map((passage) => (
             <PassageComponent key={passage.passageNumber} passage={passage} />
           ))}
+
+          {section.passages.map((passage) => (
+            <PassageSummary key={passage.passageNumber} passage={passage} />
+          ))}
         </div>
       ))}
-
-      <SkimmingGuidance />
+      <div></div>
     </div>
   );
 };
