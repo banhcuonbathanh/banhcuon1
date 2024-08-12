@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "english-ai-full/pkg/proto/user.proto";
+
+service UserService {
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  // Add other RPCs (UpdateUser, DeleteUser, etc.)
+}
+
+
+message User {
+  int64 id = 1;
+  string username = 2;
+  string email = 3;
+}
+
+message CreateUserRequest {
+  string username = 1;
+  string email = 2;
+}
+
+message CreateUserResponse {
+  User user = 1;
+}
+message GetUserRequest {
+  int64 id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+// Define other messages for additional RPCs

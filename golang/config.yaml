@@ -1,0 +1,2 @@
+databaseURL: "postgres://myuser:mypassword@localhost:5432/mydatabase?sslmode=disable"
+grpcAddress: ":50051"

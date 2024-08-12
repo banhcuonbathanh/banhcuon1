@@ -1,27 +1,23 @@
-// components/UserList.tsx
-"use client";
-import React, { useEffect } from "react";
-import { useUserStore } from "./controller/controller_user";
+// src/pages/index.tsx (SSG example)
+import { GetStaticProps } from 'next';
+import { User } from './domain/entities/user';
+import { fetchUser } from '@/app/lib/api';
 
-const UserList: React.FC = () => {
-  const { users, loading, error, fetchUsers } = useUserStore();
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+interface HomeProps {
+  user: User;
+}
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
-
+export default function Home({ user }: HomeProps) {
   return (
-    <ul>
-      {users.map((user) => (
-        <li key={user.id}>
-          {user.name} ({user.email})
-        </li>
-      ))}
-    </ul>
+    <div>
+      <h1>Welcome, {user.name}!</h1>
+      <p>Email: {user.email}</p>
+    </div>
   );
-};
+}
 
-export default UserList;
+export const getStaticProps: GetStaticProps<HomeProps> = async () => {
+  const user = await fetchUser(1); // Fetch a default user
+  return { props: { user }, revalidate: 60 };
+};
