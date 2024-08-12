@@ -7,6 +7,7 @@ import (
 type Config struct {
 	DatabaseURL  string
 	GRPCAddress  string
+	HTTPAddress string
 }
 
 func Load() (*Config, error) {

@@ -1,11 +1,7 @@
-# version: "3.8"
+
 
 services:
-  # services:
-  #   mypostgres_ai:
-  #     image: mypostgres_ai:0.0.1
-  #     container_name: mypostgres_ai_container
-  # -------------------------------  postgress -----------------------
+ 
   mypostgres_ai:
     build:
       context: ./postgres
@@ -22,25 +18,25 @@ services:
     networks:
       - app-network
         # -------------------------------  golang -------------------------------
-  # go_app:
-  #   build:
-  #     context: ./2.2.golang
-  #     dockerfile: Dockerfile
-  #     args:
-  #       HOST: host-in-docker-compose
+  go_app:
+    build:
+      context: ./golang
+      dockerfile: Dockerfile
+      args:
+        HOST: host-in-docker-compose
 
-  #   container_name: english-golang
-  #   volumes:
-  #     - ./2.2.golang:/go/src/2.2.golang
-  #   ports:
-  #     - "8888:8888"
-  #   networks:
-  #     - app-network
-  #   depends_on:
-  #     - postgres
+    container_name: english-golang
+    volumes:
+      - ./2.2.golang:/go/src/2.2.golang
+    ports:
+      - "8888:8888"
+    networks:
+      - app-network
+    depends_on:
+      - postgres
 
-  #   environment:
-  #     DB_HOST: postgres
+    environment:
+      DB_HOST: postgres
   # -------------------------------  nextjs -------------------------------
   # next-app:
   #   container_name: next-app1
