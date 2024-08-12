@@ -1,6 +1,6 @@
 // stores/useUserStore.ts
-import {create} from "zustand";
-import { UserService } from "../application/userService";
+import { create } from "zustand";
+import { UserService } from "../application/service/userService";
 import { IUser } from "../domain/interface_User";
 
 const userService = new UserService();

@@ -1,8 +1,8 @@
 // application/userService.ts
-import { IUser } from "../domain/interface_User";
+import { IUser } from "../../domain/interface_User";
 import { User } from "../domain/user";
-import { userApi } from "../fetching_layer/fetch_user";
-import { IUserService } from "./interface_Application";
+import { userApi } from "../../data/fetch_user";
+import { IUserService } from "../interface_Application";
 
 export class UserService implements IUserService {
   async getUsers(): Promise<IUser[]> {

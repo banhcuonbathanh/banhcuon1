@@ -1,5 +1,7 @@
 // interfaces/IUserService.ts
-import { IUser } from "../domain/interface_User";
+
+import { IUser } from "../../domain/interface_User";
+
 
 export interface IUserService {
   getUsers(): Promise<IUser[]>;
