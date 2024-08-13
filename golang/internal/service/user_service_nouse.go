@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"english-ai-full/internal/models"
+	"english-ai-full/ecomm-grpc/models"
 	"english-ai-full/internal/repository"
-	pb "english-ai-full/pkg/proto"
+	pb "english-ai-full/ecomm-grpc/proto"
 )
 
 type UserService struct {

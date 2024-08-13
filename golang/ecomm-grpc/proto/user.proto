@@ -1,8 +1,10 @@
 syntax = "proto3";
 
-package user;
+package pb;
 
-option go_package = "english-ai-full/pkg/proto/user.proto";
+option go_package = "english-ai-full/ecomm-grpc/proto";
+
+import "google/protobuf/timestamp.proto";
 
 service UserService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
@@ -10,11 +12,12 @@ service UserService {
   // Add other RPCs (UpdateUser, DeleteUser, etc.)
 }
 
-
 message User {
   int64 id = 1;
   string username = 2;
   string email = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
 }
 
 message CreateUserRequest {
@@ -25,6 +28,7 @@ message CreateUserRequest {
 message CreateUserResponse {
   User user = 1;
 }
+
 message GetUserRequest {
   int64 id = 1;
 }
@@ -32,4 +36,5 @@ message GetUserRequest {
 message GetUserResponse {
   User user = 1;
 }
-// Define other messages for additional RPCs
+
+// Add other messages (UpdateUserRequest, DeleteUserRequest, etc.) as needed

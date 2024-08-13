@@ -32,3 +32,6 @@ To clean build artifacts: make clean
 To see available commands: make help
 
 make stop-server
+
+git branch golang-new-server-for-grpc
+git checkout golang-new-server-for-grpc

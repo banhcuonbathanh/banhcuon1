@@ -1,15 +1,15 @@
 package main
 
 import (
-    "context"
-    "log"
-    "testing"
-    "time"
+	"context"
+	"log"
+	"testing"
+	"time"
 
-    pb "english-ai-full/pkg/proto"
+	pb "english-ai-full/ecomm-grpc/proto"
 
-    "google.golang.org/grpc"
-    "google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var client pb.UserServiceClient

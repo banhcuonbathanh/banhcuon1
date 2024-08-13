@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"english-ai-full/internal/models"
+	"english-ai-full/ecomm-grpc/models"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )

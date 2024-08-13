@@ -1,14 +1,14 @@
 package main
 
 import (
-    "context"
-    "log"
-    "time"
+	"context"
+	"log"
+	"time"
 
-    pb "english-ai-full/pkg/proto"
+	pb "english-ai-full/ecomm-grpc/proto"
 
-    "google.golang.org/grpc"
-    "google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {

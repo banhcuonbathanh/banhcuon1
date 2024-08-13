@@ -3,24 +3,29 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"english-ai-full/internal/config"
-	"english-ai-full/internal/db"
-	"english-ai-full/internal/repository"
-	"english-ai-full/internal/service"
-	pb "english-ai-full/pkg/proto"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
+
+	// "strconv"
 	"syscall"
 	"time"
 
+	// pb "english-ai-full/ecomm-grpc/proto"
+	"english-ai-full/internal/config"
+
 	"github.com/go-chi/chi/v5"
+	// "github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ianschenck/envflag"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	// "english-ai-full/internal/handler"
 )
+
+const minSecretKeySize = 32
 
 func main() {
 	cfg, err := config.Load()
@@ -28,48 +33,30 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	dbConn, err := db.Connect(cfg.DatabaseURL)
+	var (
+		secretKey = envflag.String("SECRET_KEY", "01234567890123456789012345678901", "secret key for JWT signing")
+		svcAddr   = envflag.String("GRPC_SVC_ADDR", cfg.GRPCAddress, "address where the ecomm-grpc service is listening on")
+	)
+	envflag.Parse()
+
+	if len(*secretKey) < minSecretKeySize {
+		log.Fatalf("SECRET_KEY must be at least %d characters", minSecretKeySize)
+	}
+
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	conn, err := grpc.Dial(*svcAddr, opts...)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("failed to connect to gRPC server: %v", err)
 	}
-	defer dbConn.Close()
+	defer conn.Close()
 
-	if err := db.Migrate(cfg.DatabaseURL); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
+	// client := pb.NewUserServiceClient(conn)
 
-	userRepo := repository.NewUserRepository(dbConn)
-	userService := service.NewUserService(userRepo)
-
-	// Start gRPC server
-	go startGRPCServer(cfg.GRPCAddress, userService)
-
-	// Start HTTP server with Chi
-	go startChiServer(cfg.HTTPAddress, userService)
-
-	// Graceful shutdown
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
-	log.Println("Shutting down servers...")
-}
-
-func startGRPCServer(address string, userService pb.UserServiceServer) {
-	lis, err := net.Listen("tcp", address)
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
-	}
-
-	grpcServer := grpc.NewServer()
-	pb.RegisterUserServiceServer(grpcServer, userService)
-
-	log.Printf("Starting gRPC server on %s", address)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve gRPC: %v", err)
-	}
-}
-
-func startChiServer(address string, userService *service.UserService) {
+	// hdl := handler.NewHandler(client, *secretKey)
+	// r := handler.RegisterRoutes(hdl)
 	r := chi.NewRouter()
 
 	// Middleware
@@ -81,41 +68,39 @@ func startChiServer(address string, userService *service.UserService) {
 		json.NewEncoder(w).Encode(map[string]string{"message": "Hello from Chi HTTP server!"})
 	})
 
-	// Example of how to use the userService in a Chi handler
 	r.Get("/api/user/{id}", func(w http.ResponseWriter, r *http.Request) {
-		idStr := chi.URLParam(r, "id")
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
-			http.Error(w, "Invalid user ID", http.StatusBadRequest)
-			return
-		}
-	
-		req := &pb.GetUserRequest{Id: id}
-		user, err := userService.GetUser(r.Context(), req)
-		if err != nil {
-			http.Error(w, "User not found", http.StatusNotFound)
-			return
-		}
-	
-		json.NewEncoder(w).Encode(user)
+		// idStr := chi.URLParam(r, "id")
+		// id, err := strconv.ParseInt(idStr, 10, 64)
+		// if err != nil {
+		// 	http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		// 	return
+		// }
+
+		// // user, err := hdl.GetUser(r.Context(), id)
+		// // if err != nil {
+		// // 	http.Error(w, "User not found", http.StatusNotFound)
+		// // 	return
+		// // }
+
+		// json.NewEncoder(w).Encode(user)
 	})
-	
 
 	// Add more routes as needed
+	// handler.RegisterRoutes(r, hdl)
 
 	server := &http.Server{
-		Addr:    address,
+		Addr:    cfg.HTTPAddress,
 		Handler: r,
 	}
 
 	go func() {
-		log.Printf("Starting HTTP server on %s", address)
+		log.Printf("Starting HTTP server on %s", cfg.HTTPAddress)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start Chi server: %v", err)
 		}
 	}()
 
-	// Graceful shutdown for Chi server
+	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
