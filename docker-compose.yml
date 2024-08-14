@@ -1,7 +1,4 @@
-
-
 services:
- 
   mypostgres_ai:
     build:
       context: ./postgres
@@ -18,23 +15,23 @@ services:
     networks:
       - app-network
         # -------------------------------  golang -------------------------------
-  # go_app:
+  # go_app_ai:
   #   build:
   #     context: ./golang
   #     dockerfile: Dockerfile
   #     args:
   #       HOST: host-in-docker-compose
-
-  #   container_name: english-golang
+  #   container_name: english-golang-ai
   #   volumes:
-  #     - ./2.2.golang:/go/src/2.2.golang
+  #      # - ./golang:/go/src/golang
+  #     - ./golang:/app # Mount to /app instead of /go/src/golang
+  #   working_dir: /app
   #   ports:
   #     - "8888:8888"
   #   networks:
   #     - app-network
   #   depends_on:
-  #     - postgres
-
+  #     - mypostgres_ai
   #   environment:
   #     DB_HOST: postgres
   # -------------------------------  nextjs -------------------------------

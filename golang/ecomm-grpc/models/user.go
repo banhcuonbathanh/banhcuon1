@@ -24,7 +24,7 @@ type Order struct {
 	TotalPrice    float32    `db:"total_price"`
 	UserID        int64      `db:"user_id"`
 	CreatedAt     time.Time  `db:"created_at"`
-	UpdatedAt     *time.Time `db:"updated_at"`
+	UpdatedAt     time.Time `db:"updated_at"`
 	Items         []OrderItem
 }
 
@@ -45,7 +45,7 @@ type User struct {
 	Password  string     `db:"password"`
 	IsAdmin   bool       `db:"is_admin"`
 	CreatedAt time.Time  `db:"created_at"`
-	UpdatedAt *time.Time `db:"updated_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 type Session struct {

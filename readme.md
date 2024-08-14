@@ -7,7 +7,7 @@ go get -u github.com/go-chi/chi/v5
 go run cmd/server/main.go
 
 go run cmd/client/main.go
-
+======================================= postgres ======================
 psql -U myuser -d mydatabase
 
 # psql -U myuser -d mydatabase
@@ -15,12 +15,20 @@ psql -U myuser -d mydatabase
 \dt : list all table
 \d users
 \d order_items
-
-docker-compose up -d
 mydatabase=# \d users
 SELECT \* FROM users;
-
+=================================================== docker =======================
+docker-compose up -d
+docker-compose up
+docker compose build go_app_ai
+docker compose down
+docker-compose up go_app_ai
 //
+========================================= golang ==============================
+
+go run cmd/server/main.go
+
+
 Run the desired commands using make <target>. For example:
 
 To run the server: make run-server
@@ -32,6 +40,6 @@ To clean build artifacts: make clean
 To see available commands: make help
 
 make stop-server
-
+============================================== git hub ================================
 git branch golang-new-server-for-grpc
 git checkout golang-new-server-for-grpc

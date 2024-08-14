@@ -1,40 +1,68 @@
 syntax = "proto3";
 
-package pb;
+package proto;
 
 option go_package = "english-ai-full/ecomm-grpc/proto";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
-service UserService {
-  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  // Add other RPCs (UpdateUser, DeleteUser, etc.)
+service EcommUser {
+  rpc CreateUser(CreateUserRequest) returns (User);
+  rpc SaveUser(User) returns (google.protobuf.Empty);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
+  rpc FindAllUsers(google.protobuf.Empty) returns (UserList);
+  rpc FindByEmail(FindByEmailRequest) returns (User);
+  rpc FindUsersByPage(PageRequest) returns (UserList);
+  rpc Login(LoginRequest) returns (User);
+  rpc Register(CreateUserRequest) returns (RegisterResponse);
 }
 
 message User {
   int64 id = 1;
   string username = 2;
   string email = 3;
-  google.protobuf.Timestamp created_at = 4;
-  google.protobuf.Timestamp updated_at = 5;
+  string password = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
 }
 
 message CreateUserRequest {
   string username = 1;
   string email = 2;
+  string password = 3;
 }
 
-message CreateUserResponse {
-  User user = 1;
+message UpdateUserRequest {
+  int64 id = 1;
+  string username = 2;
+  string email = 3;
 }
 
-message GetUserRequest {
+message DeleteUserRequest {
   int64 id = 1;
 }
 
-message GetUserResponse {
-  User user = 1;
+message FindByEmailRequest {
+  string email = 1;
 }
 
-// Add other messages (UpdateUserRequest, DeleteUserRequest, etc.) as needed
+message PageRequest {
+  int32 page_number = 1;
+  int32 page_size = 2;
+}
+
+message UserList {
+  repeated User users = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message RegisterResponse {
+  bool success = 1;
+  User user = 2;
+}

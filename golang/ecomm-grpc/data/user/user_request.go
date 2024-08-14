@@ -4,9 +4,9 @@ package user
 
 import "english-ai-full/ecomm-grpc/models"
 type CreateUserRequest struct {
-    Name            string `validate:"omitempty,min=2,max=100" json:"name"`
+    Username            string `validate:"omitempty,min=2,max=100" json:"name"`
     Email    string `validate:"required,min=2,max=100" json:"email"`
-    HashedPassword string `validate:"required,min=2,max=100" json:"password"`
+    Password string `validate:"required,min=2,max=100" json:"password"`
     Image           string
 
    
@@ -17,8 +17,8 @@ type CreateUserRequest struct {
 }
 
 type UpdateUserRequest struct {
-    ID       int    `validate:"required"`
-    Name     string `validate:"required,max=200,min=2" json:"name"`
+    ID       int64    `validate:"required"`
+    Username     string `validate:"required,max=200,min=2" json:"name"`
     Email    string `validate:"required,min=2,max=100" json:"email"`
     HashedPassword string `validate:"required,min=2,max=100" json:"password"`
     Image           string

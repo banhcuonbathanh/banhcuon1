@@ -17,9 +17,9 @@ type UserRepository struct {
 }
 
 func NewUserRepository(db *pgxpool.Pool) UserRepositoryInterface {
-	return &UserRepository{
-		db: db,
-	}
+    return &UserRepository{
+        db: db,
+    }
 }
 
 func (us *UserRepository) CreateUser(ctx context.Context, u *models.User) error {
@@ -59,17 +59,21 @@ func (us *UserRepository) Save(user models.User) error {
 
 
 
-func (us *UserRepository) Update(user models.User) error {
+func (us *UserRepository) Update(user models.User) (models.User, error) {
 	query := `
 		UPDATE users 
 		SET username = $1, email = $2 
-		WHERE id = $3`
-	_, err := us.db.Exec(context.Background(), query, user.Username, user.Email, user.ID)
+		WHERE id = $3
+		RETURNING id, username, email`
+	
+	var updatedUser models.User
+	err := us.db.QueryRow(context.Background(), query, user.Username, user.Email, user.ID).Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email)
 	if err != nil {
-		return fmt.Errorf("error updating user: %w", err)
+		return models.User{}, fmt.Errorf("error updating user: %w", err)
 	}
-	return nil
+	return updatedUser, nil
 }
+
 
 func (us *UserRepository) Delete(userID int) error {
 	query := `DELETE FROM users WHERE id = $1`
@@ -162,14 +166,14 @@ func (us *UserRepository) Login(ctx context.Context, email, password string) (*m
 }
 
 
-func (us *UserRepository) Register(user models.User) error {
+func (us *UserRepository) Register(user models.User) (models.User, error) {
 	query := `
 		INSERT INTO users (username, email, password) 
 		VALUES ($1, $2, $3) 
 		RETURNING id`
 	err := us.db.QueryRow(context.Background(), query, user.Username, user.Email, user.Password).Scan(&user.ID)
 	if err != nil {
-		return fmt.Errorf("error registering user: %w", err)
+		return models.User{}, fmt.Errorf("error registering user: %w", err)
 	}
-	return nil
+	return user, nil
 }

@@ -3,11 +3,12 @@ package main
 import (
 	"log"
 	"net"
-	"english-ai-full/internal/config"
-	"english-ai-full/internal/db"
-	"english-ai-full/internal/repository"
-	"english-ai-full/internal/service"
+"english-ai-full/ecomm-grpc/config"
+"english-ai-full/ecomm-grpc/db"
+	"english-ai-full/ecomm-grpc/repository/user_repository"
+	"english-ai-full/ecomm-grpc/service/user_service"
 	pb "english-ai-full/ecomm-grpc/proto"
+
 	"google.golang.org/grpc"
 )
 
@@ -28,7 +29,7 @@ func main() {
 	}
 
 	userRepo := repository.NewUserRepository(dbConn)
-	userService := service.NewUserService(userRepo)
+	userService := service.NewUserServer(userRepo)
 
 	lis, err := net.Listen("tcp", cfg.GRPCAddress)
 	if err != nil {
@@ -36,7 +37,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	pb.RegisterUserServiceServer(grpcServer, userService)
+	pb.RegisterEcommUserServer(grpcServer, userService)
 
 	log.Printf("Starting gRPC server on %s", cfg.GRPCAddress)
 	if err := grpcServer.Serve(lis); err != nil {
