@@ -35,15 +35,15 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EcommUserClient interface {
-	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*User, error)
-	SaveUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*User, error)
-	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateUser(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserReq, error)
+	SaveUser(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateUser(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserReq, error)
+	DeleteUser(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	FindAllUsers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserList, error)
-	FindByEmail(ctx context.Context, in *FindByEmailRequest, opts ...grpc.CallOption) (*User, error)
+	FindByEmail(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserReq, error)
 	FindUsersByPage(ctx context.Context, in *PageRequest, opts ...grpc.CallOption) (*UserList, error)
-	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*User, error)
-	Register(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*UserReq, error)
+	Register(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*RegisterResponse, error)
 }
 
 type ecommUserClient struct {
@@ -54,9 +54,9 @@ func NewEcommUserClient(cc grpc.ClientConnInterface) EcommUserClient {
 	return &ecommUserClient{cc}
 }
 
-func (c *ecommUserClient) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*User, error) {
+func (c *ecommUserClient) CreateUser(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserReq, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(User)
+	out := new(UserReq)
 	err := c.cc.Invoke(ctx, EcommUser_CreateUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (c *ecommUserClient) CreateUser(ctx context.Context, in *CreateUserRequest,
 	return out, nil
 }
 
-func (c *ecommUserClient) SaveUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *ecommUserClient) SaveUser(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, EcommUser_SaveUser_FullMethodName, in, out, cOpts...)
@@ -74,9 +74,9 @@ func (c *ecommUserClient) SaveUser(ctx context.Context, in *User, opts ...grpc.C
 	return out, nil
 }
 
-func (c *ecommUserClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*User, error) {
+func (c *ecommUserClient) UpdateUser(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserReq, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(User)
+	out := new(UserReq)
 	err := c.cc.Invoke(ctx, EcommUser_UpdateUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (c *ecommUserClient) UpdateUser(ctx context.Context, in *UpdateUserRequest,
 	return out, nil
 }
 
-func (c *ecommUserClient) DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *ecommUserClient) DeleteUser(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, EcommUser_DeleteUser_FullMethodName, in, out, cOpts...)
@@ -104,9 +104,9 @@ func (c *ecommUserClient) FindAllUsers(ctx context.Context, in *emptypb.Empty, o
 	return out, nil
 }
 
-func (c *ecommUserClient) FindByEmail(ctx context.Context, in *FindByEmailRequest, opts ...grpc.CallOption) (*User, error) {
+func (c *ecommUserClient) FindByEmail(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserReq, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(User)
+	out := new(UserReq)
 	err := c.cc.Invoke(ctx, EcommUser_FindByEmail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -124,9 +124,9 @@ func (c *ecommUserClient) FindUsersByPage(ctx context.Context, in *PageRequest, 
 	return out, nil
 }
 
-func (c *ecommUserClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*User, error) {
+func (c *ecommUserClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*UserReq, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(User)
+	out := new(UserReq)
 	err := c.cc.Invoke(ctx, EcommUser_Login_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (c *ecommUserClient) Login(ctx context.Context, in *LoginRequest, opts ...g
 	return out, nil
 }
 
-func (c *ecommUserClient) Register(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+func (c *ecommUserClient) Register(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*RegisterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RegisterResponse)
 	err := c.cc.Invoke(ctx, EcommUser_Register_FullMethodName, in, out, cOpts...)
@@ -148,15 +148,15 @@ func (c *ecommUserClient) Register(ctx context.Context, in *CreateUserRequest, o
 // All implementations must embed UnimplementedEcommUserServer
 // for forward compatibility.
 type EcommUserServer interface {
-	CreateUser(context.Context, *CreateUserRequest) (*User, error)
-	SaveUser(context.Context, *User) (*emptypb.Empty, error)
-	UpdateUser(context.Context, *UpdateUserRequest) (*User, error)
-	DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error)
+	CreateUser(context.Context, *UserReq) (*UserReq, error)
+	SaveUser(context.Context, *UserReq) (*emptypb.Empty, error)
+	UpdateUser(context.Context, *UserReq) (*UserReq, error)
+	DeleteUser(context.Context, *UserReq) (*emptypb.Empty, error)
 	FindAllUsers(context.Context, *emptypb.Empty) (*UserList, error)
-	FindByEmail(context.Context, *FindByEmailRequest) (*User, error)
+	FindByEmail(context.Context, *UserReq) (*UserReq, error)
 	FindUsersByPage(context.Context, *PageRequest) (*UserList, error)
-	Login(context.Context, *LoginRequest) (*User, error)
-	Register(context.Context, *CreateUserRequest) (*RegisterResponse, error)
+	Login(context.Context, *LoginRequest) (*UserReq, error)
+	Register(context.Context, *UserReq) (*RegisterResponse, error)
 	mustEmbedUnimplementedEcommUserServer()
 }
 
@@ -167,31 +167,31 @@ type EcommUserServer interface {
 // pointer dereference when methods are called.
 type UnimplementedEcommUserServer struct{}
 
-func (UnimplementedEcommUserServer) CreateUser(context.Context, *CreateUserRequest) (*User, error) {
+func (UnimplementedEcommUserServer) CreateUser(context.Context, *UserReq) (*UserReq, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
 }
-func (UnimplementedEcommUserServer) SaveUser(context.Context, *User) (*emptypb.Empty, error) {
+func (UnimplementedEcommUserServer) SaveUser(context.Context, *UserReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveUser not implemented")
 }
-func (UnimplementedEcommUserServer) UpdateUser(context.Context, *UpdateUserRequest) (*User, error) {
+func (UnimplementedEcommUserServer) UpdateUser(context.Context, *UserReq) (*UserReq, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
 }
-func (UnimplementedEcommUserServer) DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error) {
+func (UnimplementedEcommUserServer) DeleteUser(context.Context, *UserReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
 }
 func (UnimplementedEcommUserServer) FindAllUsers(context.Context, *emptypb.Empty) (*UserList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindAllUsers not implemented")
 }
-func (UnimplementedEcommUserServer) FindByEmail(context.Context, *FindByEmailRequest) (*User, error) {
+func (UnimplementedEcommUserServer) FindByEmail(context.Context, *UserReq) (*UserReq, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindByEmail not implemented")
 }
 func (UnimplementedEcommUserServer) FindUsersByPage(context.Context, *PageRequest) (*UserList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindUsersByPage not implemented")
 }
-func (UnimplementedEcommUserServer) Login(context.Context, *LoginRequest) (*User, error) {
+func (UnimplementedEcommUserServer) Login(context.Context, *LoginRequest) (*UserReq, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedEcommUserServer) Register(context.Context, *CreateUserRequest) (*RegisterResponse, error) {
+func (UnimplementedEcommUserServer) Register(context.Context, *UserReq) (*RegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
 func (UnimplementedEcommUserServer) mustEmbedUnimplementedEcommUserServer() {}
@@ -216,7 +216,7 @@ func RegisterEcommUserServer(s grpc.ServiceRegistrar, srv EcommUserServer) {
 }
 
 func _EcommUser_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateUserRequest)
+	in := new(UserReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -228,13 +228,13 @@ func _EcommUser_CreateUser_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: EcommUser_CreateUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EcommUserServer).CreateUser(ctx, req.(*CreateUserRequest))
+		return srv.(EcommUserServer).CreateUser(ctx, req.(*UserReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _EcommUser_SaveUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(User)
+	in := new(UserReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -246,13 +246,13 @@ func _EcommUser_SaveUser_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: EcommUser_SaveUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EcommUserServer).SaveUser(ctx, req.(*User))
+		return srv.(EcommUserServer).SaveUser(ctx, req.(*UserReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _EcommUser_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateUserRequest)
+	in := new(UserReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -264,13 +264,13 @@ func _EcommUser_UpdateUser_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: EcommUser_UpdateUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EcommUserServer).UpdateUser(ctx, req.(*UpdateUserRequest))
+		return srv.(EcommUserServer).UpdateUser(ctx, req.(*UserReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _EcommUser_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteUserRequest)
+	in := new(UserReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -282,7 +282,7 @@ func _EcommUser_DeleteUser_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: EcommUser_DeleteUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EcommUserServer).DeleteUser(ctx, req.(*DeleteUserRequest))
+		return srv.(EcommUserServer).DeleteUser(ctx, req.(*UserReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -306,7 +306,7 @@ func _EcommUser_FindAllUsers_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _EcommUser_FindByEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindByEmailRequest)
+	in := new(UserReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -318,7 +318,7 @@ func _EcommUser_FindByEmail_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: EcommUser_FindByEmail_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EcommUserServer).FindByEmail(ctx, req.(*FindByEmailRequest))
+		return srv.(EcommUserServer).FindByEmail(ctx, req.(*UserReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -360,7 +360,7 @@ func _EcommUser_Login_Handler(srv interface{}, ctx context.Context, dec func(int
 }
 
 func _EcommUser_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateUserRequest)
+	in := new(UserReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -372,7 +372,7 @@ func _EcommUser_Register_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: EcommUser_Register_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EcommUserServer).Register(ctx, req.(*CreateUserRequest))
+		return srv.(EcommUserServer).Register(ctx, req.(*UserReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }

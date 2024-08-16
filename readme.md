@@ -5,7 +5,7 @@ cd golang
 go get -u github.com/go-chi/chi/v5
 
 go run cmd/server/main.go
-
+go run cmd/grcp-server/main.go
 go run cmd/client/main.go
 ======================================= postgres ======================
 psql -U myuser -d mydatabase
@@ -40,6 +40,9 @@ To clean build artifacts: make clean
 To see available commands: make help
 
 make stop-server
+
+go test -v test/test-api/test-api.go
+golang/
 ============================================== git hub ================================
 git branch golang-new-server-for-grpc
 git checkout golang-new-server-for-grpc

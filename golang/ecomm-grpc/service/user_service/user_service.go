@@ -1,60 +1,79 @@
 package service
+
 import (
-    "context"
-    "english-ai-full/ecomm-grpc/proto"
-    "english-ai-full/ecomm-grpc/models"
-    "english-ai-full/ecomm-grpc/repository/user_repository"
-    "google.golang.org/protobuf/types/known/emptypb"
-    "google.golang.org/protobuf/types/known/timestamppb"
+	"context"
+	"english-ai-full/ecomm-grpc/proto"
+	"time"
+
+	"english-ai-full/ecomm-grpc/repository/user_repository"
+
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"english-ai-full/ecomm-api/types"
 )
 
 type UserServericeStruct struct {
-    userRepo repository.UserRepositoryInterface
+    userRepo *repository.UserRepository
     proto.UnimplementedEcommUserServer
 }
 
-func NewUserServer(userRepo repository.UserRepositoryInterface) proto.EcommUserServer {
+func NewUserServer(userRepo *repository.UserRepository) *UserServericeStruct {
     return &UserServericeStruct{
         userRepo: userRepo,
     }
 }
 
-func (us *UserServericeStruct) CreateUser(ctx context.Context, req *proto.CreateUserRequest) (*proto.User, error) {
-    newUser := &models.User{
-        Username: req.Username,
-        Email:    req.Email,
-        Password: req.Password,
+func (us *UserServericeStruct) CreateUser(ctx context.Context, req *proto.UserReq) (*proto.UserReq, error) {
+    newUser := &types.UserReqModel{
+        ID:        req.Id,
+        Name:      req.Name,
+        Email:     req.Email,
+        Password:  req.Password,
+        IsAdmin:   req.IsAdmin,
+        Phone:     req.Phone,
+        Image:     req.Image,
+        Address:   req.Address,
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
     }
     err := us.userRepo.CreateUser(ctx, newUser)
     if err != nil {
         return nil, err
     }
 
-    return convertModelUserToProtoUser(*newUser), nil
-
+    return req, nil // Return the input UserReq instead of UserRes
 }
 
-func (us *UserServericeStruct) SaveUser(ctx context.Context, req *proto.User) (*emptypb.Empty, error) {
-    user := convertProtoUserToModelUser(req)
+
+func (us *UserServericeStruct) SaveUser(ctx context.Context, req *proto.UserReq) (*emptypb.Empty, error) {
+    user := convertProtoUserReqToModelUser(req)
     err := us.userRepo.Save(user)
     return &emptypb.Empty{}, err
 }
 
-func (us *UserServericeStruct) UpdateUser(ctx context.Context, req *proto.UpdateUserRequest) (*proto.User, error) {
-    updatedUser := models.User{
-        ID:       req.Id,
-        Username: req.Username,
-        Email:    req.Email,
+func (us *UserServericeStruct) UpdateUser(ctx context.Context, req *proto.UserReq) (*proto.UserReq, error) {
+    updatedUser := types.UserReqModel{
+        ID:        req.Id,
+        Name:      req.Name,
+        Email:     req.Email,
+        Password:  req.Password,
+        IsAdmin:   req.IsAdmin,
+        Phone:     req.Phone,
+        Image:     req.Image,
+        Address:   req.Address,
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
     }
-    user, err := us.userRepo.Update(updatedUser)
+    _, err := us.userRepo.Update(updatedUser)
     if err != nil {
         return nil, err
     }
-    return convertModelUserToProtoUser(user), nil
-
+    return req, nil // Return the input UserReq
 }
 
-func (us *UserServericeStruct) DeleteUser(ctx context.Context, req *proto.DeleteUserRequest) (*emptypb.Empty, error) {
+
+func (us *UserServericeStruct) DeleteUser(ctx context.Context, req *proto.UserReq) (*emptypb.Empty, error) {
     err := us.userRepo.Delete(int(req.Id))
     return &emptypb.Empty{}, err
 }
@@ -67,13 +86,12 @@ func (us *UserServericeStruct) FindAllUsers(ctx context.Context, _ *emptypb.Empt
     return &proto.UserList{Users: convertModelUsersToProtoUsers(users)}, nil
 }
 
-func (us *UserServericeStruct) FindByEmail(ctx context.Context, req *proto.FindByEmailRequest) (*proto.User, error) {
+func (us *UserServericeStruct) FindByEmail(ctx context.Context, req *proto.UserReq) (*proto.UserReq, error) {
     user, err := us.userRepo.FindByEmail(req.Email)
     if err != nil {
         return nil, err
     }
-    return convertModelUserToProtoUser(*user), nil
-
+    return convertModelUserToProtoUserReq(*user), nil
 }
 
 func (us *UserServericeStruct) FindUsersByPage(ctx context.Context, req *proto.PageRequest) (*proto.UserList, error) {
@@ -84,62 +102,77 @@ func (us *UserServericeStruct) FindUsersByPage(ctx context.Context, req *proto.P
     return &proto.UserList{Users: convertModelUsersToProtoUsers(users)}, nil
 }
 
-func (us *UserServericeStruct) Login(ctx context.Context, req *proto.LoginRequest) (*proto.User, error) {
+func (us *UserServericeStruct) Login(ctx context.Context, req *proto.LoginRequest) (*proto.UserReq, error) {
     user, err := us.userRepo.Login(ctx, req.Email, req.Password)
     if err != nil {
         return nil, err
     }
-    return convertModelUserToProtoUser(*user), nil
-
+    return convertModelUserToProtoUserReq(*user), nil
 }
 
-func (us *UserServericeStruct) Register(ctx context.Context, req *proto.CreateUserRequest) (*proto.RegisterResponse, error) {
-    newUser := models.User{
-        Username: req.Username,
-        Email:    req.Email,
-        Password: req.Password,
-    }
-    registeredUser, err := us.userRepo.Register(newUser)
-    if err != nil {
-        return &proto.RegisterResponse{Success: false}, err
-    }
-    
-    // Convert the registered user to a proto User
-    protoUser := convertModelUserToProtoUser(registeredUser)
-    
-    // Return a successful response with the registered user
-    return &proto.RegisterResponse{
-        Success: true,
-        User: protoUser,
-    }, nil
-}
-
+// func (us *UserServericeStruct) Register(ctx context.Context, req *proto.UserReq) (*proto.RegisterResponse, error) {
+//     // Implement registration logic here
+//     // For example:
+//     newUser := convertProtoUserReqToModelUser(req)
+//     err := us.userRepo.CreateUser(ctx, &newUser)
+//     if err != nil {
+//         return nil, err
+//     }
+//     return &proto.RegisterResponse{Success: true, Message: "User registered successfully"}, nil
+// }
 // Helper functions to convert between model and proto user types
-func convertModelUserToProtoUser(user models.User) *proto.User {
-    return &proto.User{
+func convertModelUserToProtoUser(user types.UserReqModel) *proto.UserRes {
+    return &proto.UserRes{
         Id:        user.ID,
-        Username:  user.Username,
+        Name:      user.Name, // Assuming you meant to map Username to Name
         Email:     user.Email,
         Password:  user.Password,
         CreatedAt: timestamppb.New(user.CreatedAt),
         UpdatedAt: timestamppb.New(user.UpdatedAt),
     }
 }
-func convertProtoUserToModelUser(user *proto.User) models.User {
-    return models.User{
-        ID:        user.Id,
-        Username:  user.Username,
-        Email:     user.Email,
-        Password:  user.Password,
-        CreatedAt: user.CreatedAt.AsTime(),
-        UpdatedAt: user.UpdatedAt.AsTime(),
-    }
-}
 
-func convertModelUsersToProtoUsers(users []models.User) []*proto.User {
-    protoUsers := make([]*proto.User, len(users))
+// func convertProtoUserToModelUser(user *proto.UserRes) types.UserReqModel {
+//     return types.UserReqModel{
+//         ID:        user.Id,
+//         Name:  user.Name,
+//         Email:     user.Email,
+//         Password:  user.Password,
+//         CreatedAt: user.CreatedAt.AsTime(),
+//         UpdatedAt: user.UpdatedAt.AsTime(),
+//     }
+// }
+
+func convertModelUsersToProtoUsers(users []types.UserReqModel) []*proto.UserRes {
+    protoUsers := make([]*proto.UserRes, len(users))
     for i, user := range users {
         protoUsers[i] = convertModelUserToProtoUser(user)
     }
     return protoUsers
+}
+
+func convertModelUserToProtoUserReq(user types.UserReqModel) *proto.UserReq {
+    return &proto.UserReq{
+        Id:        user.ID,
+        Name:      user.Name,
+        Email:     user.Email,
+        Password:  user.Password,
+        IsAdmin:   user.IsAdmin,
+        Phone:     user.Phone,
+        Image:     user.Image,
+        Address:   user.Address,
+    }
+}
+
+func convertProtoUserReqToModelUser(user *proto.UserReq) types.UserReqModel {
+    return types.UserReqModel{
+        ID:        user.Id,
+        Name:      user.Name,
+        Email:     user.Email,
+        Password:  user.Password,
+        IsAdmin:   user.IsAdmin,
+        Phone:     user.Phone,
+        Image:     user.Image,
+        Address:   user.Address,
+    }
 }

@@ -8,45 +8,49 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
 service EcommUser {
-  rpc CreateUser(CreateUserRequest) returns (User);
-  rpc SaveUser(User) returns (google.protobuf.Empty);
-  rpc UpdateUser(UpdateUserRequest) returns (User);
-  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
+  rpc CreateUser(UserReq) returns (UserReq);
+  rpc SaveUser(UserReq) returns (google.protobuf.Empty);
+  rpc UpdateUser(UserReq) returns (UserReq);
+  rpc DeleteUser(UserReq) returns (google.protobuf.Empty);
   rpc FindAllUsers(google.protobuf.Empty) returns (UserList);
-  rpc FindByEmail(FindByEmailRequest) returns (User);
+  rpc FindByEmail(UserReq) returns (UserReq);
   rpc FindUsersByPage(PageRequest) returns (UserList);
-  rpc Login(LoginRequest) returns (User);
-  rpc Register(CreateUserRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (UserReq);
+  rpc Register(UserReq) returns (RegisterResponse);
 }
 
-message User {
+// rpc GetUserById(UserReq) returns (UserReq);
+message UserReq {
   int64 id = 1;
-  string username = 2;
+  string name = 2;
   string email = 3;
   string password = 4;
-  google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp updated_at = 6;
+  bool is_admin = 5;
+  int64 phone = 6;
+  string image = 7;
+  string address = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
 }
 
-message CreateUserRequest {
-  string username = 1;
-  string email = 2;
-  string password = 3;
-}
-
-message UpdateUserRequest {
+message UserRes {
   int64 id = 1;
-  string username = 2;
+  string name = 2;
   string email = 3;
+  string password = 4;
+  bool is_admin = 5;
+  google.protobuf.Timestamp created_at = 6;
+  int64 phone = 7;
+  string image = 8;
+  string address = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+message ListUserRes {
+  repeated UserRes users = 1;
 }
 
-message DeleteUserRequest {
-  int64 id = 1;
-}
 
-message FindByEmailRequest {
-  string email = 1;
-}
+
 
 message PageRequest {
   int32 page_number = 1;
@@ -54,7 +58,7 @@ message PageRequest {
 }
 
 message UserList {
-  repeated User users = 1;
+  repeated UserRes users = 1;
 }
 
 message LoginRequest {
@@ -64,5 +68,5 @@ message LoginRequest {
 
 message RegisterResponse {
   bool success = 1;
-  User user = 2;
+  UserRes user = 2;
 }

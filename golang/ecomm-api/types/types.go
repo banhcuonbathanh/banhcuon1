@@ -1,4 +1,4 @@
-package handler
+package types
 
 import "time"
 
@@ -55,35 +55,57 @@ type OrderRes struct {
 	UpdatedAt     *time.Time   `json:"updated_at"`
 }
 
-type UserReq struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
+type UserReqModel struct {
 	Password string `json:"password"`
-	IsAdmin  bool   `json:"is_admin"`
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	IsAdmin   bool      `json:"is_admin"`
+	Phone     int64     `json:"phone"`
+	Image     string    `json:"image"`
+	Address   string    `json:"address"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type UserRes struct {
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	IsAdmin bool   `json:"is_admin"`
+type UserResModel struct {
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	IsAdmin   bool      `json:"is_admin"`
+	Phone     int64     `json:"phone"`
+	Image     string    `json:"image"`
+	Address   string    `json:"address"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type ListUserRes struct {
-	Users []UserRes `json:"users"`
+	Users []UserReqModel `json:"users"`
 }
 
 type LoginUserReq struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
-
+type RegisterUserReq struct {
+	Password string `json:"password"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	IsAdmin   bool      `json:"is_admin"`
+	Phone     int64     `json:"phone"`
+	Image     string    `json:"image"`
+	Address   string    `json:"address"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
 type LoginUserRes struct {
 	SessionID             string    `json:"session_id"`
 	AccessToken           string    `json:"access_token"`
 	RefreshToken          string    `json:"refresh_token"`
 	AccessTokenExpiresAt  time.Time `json:"access_token_expires_at"`
 	RefreshTokenExpiresAt time.Time `json:"refresh_token_expires_at"`
-	User                  UserRes   `json:"user"`
+	User                  UserReqModel   `json:"user"`
 }
 
 type RenewAccessTokenReq struct {

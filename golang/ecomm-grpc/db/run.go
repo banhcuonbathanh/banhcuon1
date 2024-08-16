@@ -24,15 +24,19 @@ func Connect(databaseURL string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func Migrate(databaseURL string) error {
-	m, err := migrate.New("file://internal/db/migrations", databaseURL)
-	if err != nil {
-		return fmt.Errorf("failed to create migrate instance: %v", err)
-	}
+func RunMigrations(databaseURL string) error {
+    migrationsPath := "file://ecomm-grpc/db/migrations" // Relative path from the project root
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("failed to run migrations: %v", err)
-	}
+	// migrationsPath1 := fmt.Sprintf("file://%s/db/migrations", os.Getwd())
+    m, err := migrate.New(migrationsPath, databaseURL)
+    if err != nil {
+        return fmt.Errorf("failed to create migrate instance: %w", err)
+    }
+    defer m.Close()
 
-	return nil
+    if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+        return fmt.Errorf("failed to run migrations: %w", err)
+    }
+
+    return nil
 }
