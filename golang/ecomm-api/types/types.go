@@ -54,19 +54,19 @@ type OrderRes struct {
 	CreatedAt     time.Time    `json:"created_at"`
 	UpdatedAt     *time.Time   `json:"updated_at"`
 }
-
 type UserReqModel struct {
-	Password string `json:"password"`
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	IsAdmin   bool      `json:"is_admin"`
-	Phone     int64     `json:"phone"`
-	Image     string    `json:"image"`
-	Address   string    `json:"address"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+    Password string     `json:"password"`
+    ID       int64      `json:"id"`
+    Name     string     `json:"name"`
+    Email    string     `json:"email"`
+    IsAdmin  bool       `json:"is_admin"`
+    Phone    *int64     `json:"phone"`  // Changed to pointer to handle NULL
+    Image    string     `json:"image"`
+    Address  string     `json:"address"`
+    CreatedAt time.Time `json:"created_at"`
+    UpdatedAt time.Time `json:"updated_at"`
 }
+
 
 type UserResModel struct {
 	ID        int64     `json:"id"`

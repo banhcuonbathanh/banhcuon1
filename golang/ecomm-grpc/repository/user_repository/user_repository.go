@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"log"
 
 	"fmt"
 
@@ -23,14 +25,32 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
         db: db,
     }
 }
+// err := us.userRepo.CreateUser(ctx, newUser)
+func (us *UserRepository) CreateUser(ctx context.Context, u *types.UserReqModel) (*types.UserReqModel, error) {
+	log.Println("Inserting new user into database:", u.Name, u.Email)
 
-func (us *UserRepository) CreateUser(ctx context.Context, u *types.UserReqModel) error {
-	query := `INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id`
-	err := us.db.QueryRow(ctx, query, u.Name, u.Email).Scan(&u.ID)
+	query := `INSERT INTO users (name, email, password, is_admin, phone, image, address, created_at, updated_at) 
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+			  RETURNING id`
+
+	err := us.db.QueryRow(ctx, query, u.Name, u.Email, u.Password, u.IsAdmin, u.Phone, u.Image, u.Address, u.CreatedAt, u.UpdatedAt).Scan(&u.ID)
 	if err != nil {
-		return fmt.Errorf("error inserting user: %w", err)
+		log.Println("Error inserting user:", err)
+		return nil, fmt.Errorf("error inserting user: %w", err)
 	}
-	return nil
+
+	
+	log.Println("User inserted successfully. ID:", u.ID, 
+		"Name:", u.Name, 
+		"Email:", u.Email, 
+		"Password:", u.Password, 
+		"IsAdmin:", u.IsAdmin, 
+		"Phone:", u.Phone, 
+		"Image:", u.Image, 
+		"Address:", u.Address, 
+		"CreatedAt:", u.CreatedAt, 
+		"UpdatedAt:", u.UpdatedAt)
+	return u, nil
 }
 
 func (us *UserRepository) GetUserByID(ctx context.Context, id int64) (*types.UserReqModel, error) {
@@ -97,26 +117,67 @@ func (us *UserRepository) FindByID(userID int) (types.UserReqModel, error) {
 }
 
 func (us *UserRepository) FindAll() ([]types.UserReqModel, error) {
-	query := `SELECT id, name, email FROM users`
-	rows, err := us.db.Query(context.Background(), query)
-	if err != nil {
-		return nil, fmt.Errorf("error finding all users: %w", err)
-	}
-	defer rows.Close()
+    query := `
+        SELECT id, name, email, password, is_admin, phone, image, address, created_at, updated_at 
+        FROM users
+    `
+    rows, err := us.db.Query(context.Background(), query)
+    if err != nil {
+        return nil, fmt.Errorf("error finding all users: %w", err)
+    }
+    defer rows.Close()
 
-	var users []types.UserReqModel
-	for rows.Next() {
-		var user types.UserReqModel
-		if err := rows.Scan(&user.ID, &user.Name, &user.Email); err != nil {
-			return nil, fmt.Errorf("error scanning user: %w", err)
-		}
-		users = append(users, user)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating over users: %w", err)
-	}
-	return users, nil
+    var users []types.UserReqModel
+    for rows.Next() {
+        var user types.UserReqModel
+        var phoneNull sql.NullInt64  // Use sql.NullInt64 to handle NULL values
+        err := rows.Scan(
+            &user.ID,
+            &user.Name,
+            &user.Email,
+            &user.Password,
+            &user.IsAdmin,
+            &phoneNull,  // Scan into phoneNull
+            &user.Image,
+            &user.Address,
+            &user.CreatedAt,
+            &user.UpdatedAt,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning user: %w", err)
+        }
+        
+        // Handle the NULL case for phone
+        if phoneNull.Valid {
+            user.Phone = &phoneNull.Int64
+        } else {
+            user.Phone = nil
+        }
+        
+        users = append(users, user)
+    }
+    if err := rows.Err(); err != nil {
+        return nil, fmt.Errorf("error iterating over users: %w", err)
+    }
+
+    // Log the details of the last user
+    // if len(users) > 0 {
+    //     lastUser := users[len(users)-1]
+    //     log.Println("User find all repository", lastUser.ID, 
+    //         "Name:", lastUser.Name, 
+    //         "Email:", lastUser.Email, 
+    //         "Password:", lastUser.Password, 
+    //         "IsAdmin:", lastUser.IsAdmin, 
+    //         "Phone:", lastUser.Phone, 
+    //         "Image:", lastUser.Image, 
+    //         "Address:", lastUser.Address, 
+    //         "CreatedAt:", lastUser.CreatedAt, 
+    //         "UpdatedAt:", lastUser.UpdatedAt)
+    // }
+
+    return users, nil
 }
+
 
 func (us *UserRepository) FindByEmail(email string) (*types.UserReqModel, error) {
 	var user types.UserReqModel

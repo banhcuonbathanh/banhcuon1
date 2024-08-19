@@ -1,8 +1,6 @@
 package mapping
 
 import (
-
-
 	"english-ai-full/ecomm-api/types"
 	pb "english-ai-full/ecomm-grpc/proto"
 )
@@ -11,17 +9,22 @@ import (
 
 // ToPBUserReq converts a UserReqModel to a pb.UserReq
 func ToPBUserReq(u types.UserReqModel) *pb.UserReq {
+	var phone int64
+	if u.Phone != nil {
+		phone = *u.Phone
+	}
 	return &pb.UserReq{
 		Id:       u.ID,
 		Name:     u.Name,
 		Email:    u.Email,
 		Password: u.Password,
 		IsAdmin:  u.IsAdmin,
-		Phone:    u.Phone,
+		Phone:    phone,
 		Image:    u.Image,
 		Address:  u.Address,
 	}
 }
+
 
 // UserRes is the local user response struct
 

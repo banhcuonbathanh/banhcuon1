@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 	"english-ai-full/ecomm-grpc/proto"
+	"log"
 	"time"
 
-	"english-ai-full/ecomm-grpc/repository/user_repository"
+	repository "english-ai-full/ecomm-grpc/repository/user_repository"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -25,26 +26,44 @@ func NewUserServer(userRepo *repository.UserRepository) *UserServericeStruct {
 }
 
 func (us *UserServericeStruct) CreateUser(ctx context.Context, req *proto.UserReq) (*proto.UserReq, error) {
-    newUser := &types.UserReqModel{
-        ID:        req.Id,
-        Name:      req.Name,
-        Email:     req.Email,
-        Password:  req.Password,
-        IsAdmin:   req.IsAdmin,
-        Phone:     req.Phone,
-        Image:     req.Image,
-        Address:   req.Address,
-        CreatedAt: time.Now(),
-        UpdatedAt: time.Now(),
-    }
-    err := us.userRepo.CreateUser(ctx, newUser)
-    if err != nil {
-        return nil, err
-    }
+    log.Println("Creating new user:",
+    "Name:", req.Name,
+    "Email:", req.Email,
+    "Password:", req.Password,
+    "IsAdmin:", req.IsAdmin,
+    "Phone:", req.Phone,
+    "Image:", req.Image,
+    "Address:", req.Address,
+    "CreatedAt:", time.Now(),
+    "UpdatedAt:", time.Now(),
+)
 
-    return req, nil // Return the input UserReq instead of UserRes
+newUser := &types.UserReqModel{
+    Name:      req.Name,
+    Email:     req.Email,
+    Password:  req.Password,
+    IsAdmin:   req.IsAdmin,
+    Phone:     &req.Phone,  // Use the address of req.Phone
+    Image:     req.Image,
+    Address:   req.Address,
+    CreatedAt: time.Now(),
+    UpdatedAt: time.Now(),
 }
 
+
+
+	createdUser, err := us.userRepo.CreateUser(ctx, newUser)
+	if err != nil {
+		log.Println("Error creating user:", err)
+		return nil, err
+	}
+
+	// Update the request with the new ID
+	req.Id = createdUser.ID
+
+	log.Println("User created successfully. ID:", req.Id)
+	return req, nil
+}
 
 func (us *UserServericeStruct) SaveUser(ctx context.Context, req *proto.UserReq) (*emptypb.Empty, error) {
     user := convertProtoUserReqToModelUser(req)
@@ -59,7 +78,7 @@ func (us *UserServericeStruct) UpdateUser(ctx context.Context, req *proto.UserRe
         Email:     req.Email,
         Password:  req.Password,
         IsAdmin:   req.IsAdmin,
-        Phone:     req.Phone,
+        Phone:     &req.Phone,  // Use the address of req.Phone
         Image:     req.Image,
         Address:   req.Address,
         CreatedAt: time.Now(),
@@ -83,6 +102,19 @@ func (us *UserServericeStruct) FindAllUsers(ctx context.Context, _ *emptypb.Empt
     if err != nil {
         return nil, err
     }
+    if len(users) > 0 {
+        lastUser := users[len(users)-1]
+        log.Println("User find all service", lastUser.ID, 
+            "Name:", lastUser.Name, 
+            "Email:", lastUser.Email, 
+            "Password:", lastUser.Password, 
+            "IsAdmin:", lastUser.IsAdmin, 
+            "Phone:", lastUser.Phone, 
+            "Image:", lastUser.Image, 
+            "Address:", lastUser.Address, 
+            "CreatedAt:", lastUser.CreatedAt, 
+            "UpdatedAt:", lastUser.UpdatedAt)
+    }
     return &proto.UserList{Users: convertModelUsersToProtoUsers(users)}, nil
 }
 
@@ -91,7 +123,7 @@ func (us *UserServericeStruct) FindByEmail(ctx context.Context, req *proto.UserR
     if err != nil {
         return nil, err
     }
-    return convertModelUserToProtoUserReq(*user), nil
+    return convertModelUserToProtoUserReq(user), nil
 }
 
 func (us *UserServericeStruct) FindUsersByPage(ctx context.Context, req *proto.PageRequest) (*proto.UserList, error) {
@@ -107,26 +139,33 @@ func (us *UserServericeStruct) Login(ctx context.Context, req *proto.LoginReques
     if err != nil {
         return nil, err
     }
-    return convertModelUserToProtoUserReq(*user), nil
+    return convertModelUserToProtoUserReq(user), nil
+}
+func convertModelUserToProtoUserReq(user *types.UserReqModel) *proto.UserReq {
+    return &proto.UserReq{
+        Id:        user.ID,
+        Name:      user.Name,
+        Email:     user.Email,
+        Password:  user.Password,
+        IsAdmin:   user.IsAdmin,
+        Phone:     getPhoneValue(user.Phone),
+        Image:     user.Image,
+        Address:   user.Address,
+        CreatedAt: timestamppb.New(user.CreatedAt),
+        UpdatedAt: timestamppb.New(user.UpdatedAt),
+    }
 }
 
-// func (us *UserServericeStruct) Register(ctx context.Context, req *proto.UserReq) (*proto.RegisterResponse, error) {
-//     // Implement registration logic here
-//     // For example:
-//     newUser := convertProtoUserReqToModelUser(req)
-//     err := us.userRepo.CreateUser(ctx, &newUser)
-//     if err != nil {
-//         return nil, err
-//     }
-//     return &proto.RegisterResponse{Success: true, Message: "User registered successfully"}, nil
-// }
-// Helper functions to convert between model and proto user types
 func convertModelUserToProtoUser(user types.UserReqModel) *proto.UserRes {
     return &proto.UserRes{
         Id:        user.ID,
-        Name:      user.Name, // Assuming you meant to map Username to Name
+        Name:      user.Name,
         Email:     user.Email,
         Password:  user.Password,
+        IsAdmin:   user.IsAdmin,
+        Phone:     getPhoneValue(user.Phone),
+        Image:     user.Image,
+        Address:   user.Address,
         CreatedAt: timestamppb.New(user.CreatedAt),
         UpdatedAt: timestamppb.New(user.UpdatedAt),
     }
@@ -142,7 +181,6 @@ func convertModelUserToProtoUser(user types.UserReqModel) *proto.UserRes {
 //         UpdatedAt: user.UpdatedAt.AsTime(),
 //     }
 // }
-
 func convertModelUsersToProtoUsers(users []types.UserReqModel) []*proto.UserRes {
     protoUsers := make([]*proto.UserRes, len(users))
     for i, user := range users {
@@ -151,16 +189,19 @@ func convertModelUsersToProtoUsers(users []types.UserReqModel) []*proto.UserRes 
     return protoUsers
 }
 
-func convertModelUserToProtoUserReq(user types.UserReqModel) *proto.UserReq {
-    return &proto.UserReq{
-        Id:        user.ID,
-        Name:      user.Name,
-        Email:     user.Email,
-        Password:  user.Password,
-        IsAdmin:   user.IsAdmin,
-        Phone:     user.Phone,
-        Image:     user.Image,
-        Address:   user.Address,
+
+func ConvertProtoToUserReqModel(req *proto.UserReq) *types.UserReqModel {
+    return &types.UserReqModel{
+        ID:       req.Id,
+        Name:     req.Name,
+        Email:    req.Email,
+        Password: req.Password,
+        IsAdmin:  req.IsAdmin,
+        Phone:    &req.Phone,  // Use the address of req.Phone
+        Image:    req.Image,
+        Address:  req.Address,
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
     }
 }
 
@@ -171,8 +212,15 @@ func convertProtoUserReqToModelUser(user *proto.UserReq) types.UserReqModel {
         Email:     user.Email,
         Password:  user.Password,
         IsAdmin:   user.IsAdmin,
-        Phone:     user.Phone,
+        Phone:    &user.Phone,  // Use the address of req.Phone
         Image:     user.Image,
         Address:   user.Address,
     }
+}
+
+func getPhoneValue(phone *int64) int64 {
+    if phone != nil {
+        return *phone
+    }
+    return 0
 }

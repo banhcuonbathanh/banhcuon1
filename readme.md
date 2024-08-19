@@ -12,11 +12,15 @@ psql -U myuser -d mydatabase
 
 # psql -U myuser -d mydatabase
 
+DROP DATABASE mydatabase;
+TRUNCATE TABLE schema_migrations, users; delete all data
 \dt : list all table
 \d users
+SELECT * FROM users;
+
 \d order_items
 mydatabase=# \d users
-SELECT \* FROM users;
+SELECT * FROM users;
 =================================================== docker =======================
 docker-compose up -d
 docker-compose up
@@ -27,7 +31,6 @@ docker-compose up go_app_ai
 ========================================= golang ==============================
 
 go run cmd/server/main.go
-
 
 Run the desired commands using make <target>. For example:
 
