@@ -13,11 +13,14 @@ import (
 	// "time"
 
 	// pb "english-ai-full/ecomm-grpc/proto"
+
+	user_api "english-ai-full/ecomm-api/user-api"
 	"english-ai-full/ecomm-grpc/config"
 	pb "english-ai-full/ecomm-grpc/proto"
 
 	// "github.com/go-chi/chi"
 
+	"github.com/go-chi/chi"
 	"github.com/ianschenck/envflag"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -55,16 +58,19 @@ func main() {
 
 
 	client := pb.NewEcommUserClient(conn)
-	
+	r := chi.NewRouter()
 	// log.Printf("GRPC on main %s", client)
 	hdl := handler.NewHandler(client, *secretKey)
-	handler.RegisterRoutes(hdl)
+	
+	handler.RegisterRoutes(r, hdl)
 
+// new user handler
+hdl_NewUser := user_api.NewHandlerUser(client, *secretKey)
 
-	// Add more routes as needed
-	handler.RegisterRoutes(hdl)
+user_api.RegisterRoutesUser(r, hdl_NewUser)
+// start user
 
-	handler.Start(":8888")
+	handler.Start(":8888", r)
 
 	// go func() {
 	// 	log.Printf("Starting HTTP server on %s", cfg.HTTPAddress)

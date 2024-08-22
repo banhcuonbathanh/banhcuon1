@@ -8,10 +8,10 @@ import (
 	"github.com/go-chi/chi"
 )
 
-var r *chi.Mux
 
-func RegisterRoutes(handler *handlercontroller) *chi.Mux {
-	r = chi.NewRouter()
+
+func RegisterRoutes(r *chi.Mux,handler *handlercontroller) *chi.Mux {
+
 	tokenMaker := handler.TokenMaker
 	
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +46,7 @@ func RegisterRoutes(handler *handlercontroller) *chi.Mux {
 	return r
 }
 
-func Start(addr string) error {
+func Start(addr string, r *chi.Mux) error {
 	log.Printf("Starting HTTP server on %s", addr)
 	return http.ListenAndServe(addr, r)
 }
