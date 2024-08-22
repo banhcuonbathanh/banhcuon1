@@ -18,7 +18,7 @@ TRUNCATE TABLE schema*migrations, users; delete all data
 \d users
 \d sessions
 SELECT * FROM users;
-SELECT * FROM sessions;
+SELECT \* FROM sessions;
 DELETE FROM sessions;
 \d order_items
 mydatabase=# \d users
@@ -51,7 +51,12 @@ make stop-server
 go test -v test/test-api/test-api.go
 golang/
 ============================================== git hub ================================
-git branch golang-new-server-for-grpc
+git branch dev
 git checkout golang-new-server-for-grpc
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/user.proto
+
+git checkout dev
+git merge golang-new-server-for-grpc
+git commit
+git push origin dev
