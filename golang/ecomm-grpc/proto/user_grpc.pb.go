@@ -29,6 +29,10 @@ const (
 	EcommUser_FindUsersByPage_FullMethodName = "/proto.EcommUser/FindUsersByPage"
 	EcommUser_Login_FullMethodName           = "/proto.EcommUser/Login"
 	EcommUser_Register_FullMethodName        = "/proto.EcommUser/Register"
+	EcommUser_CreateSession_FullMethodName   = "/proto.EcommUser/CreateSession"
+	EcommUser_GetSession_FullMethodName      = "/proto.EcommUser/GetSession"
+	EcommUser_RevokeSession_FullMethodName   = "/proto.EcommUser/RevokeSession"
+	EcommUser_DeleteSession_FullMethodName   = "/proto.EcommUser/DeleteSession"
 )
 
 // EcommUserClient is the client API for EcommUser service.
@@ -40,10 +44,14 @@ type EcommUserClient interface {
 	UpdateUser(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserReq, error)
 	DeleteUser(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	FindAllUsers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserList, error)
-	FindByEmail(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserReq, error)
+	FindByEmail(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserRes, error)
 	FindUsersByPage(ctx context.Context, in *PageRequest, opts ...grpc.CallOption) (*UserList, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*UserReq, error)
 	Register(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*RegisterResponse, error)
+	CreateSession(ctx context.Context, in *SessionReq, opts ...grpc.CallOption) (*SessionRes, error)
+	GetSession(ctx context.Context, in *SessionReq, opts ...grpc.CallOption) (*SessionRes, error)
+	RevokeSession(ctx context.Context, in *SessionReq, opts ...grpc.CallOption) (*SessionRes, error)
+	DeleteSession(ctx context.Context, in *SessionReq, opts ...grpc.CallOption) (*SessionRes, error)
 }
 
 type ecommUserClient struct {
@@ -104,9 +112,9 @@ func (c *ecommUserClient) FindAllUsers(ctx context.Context, in *emptypb.Empty, o
 	return out, nil
 }
 
-func (c *ecommUserClient) FindByEmail(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserReq, error) {
+func (c *ecommUserClient) FindByEmail(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserRes, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UserReq)
+	out := new(UserRes)
 	err := c.cc.Invoke(ctx, EcommUser_FindByEmail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -144,6 +152,46 @@ func (c *ecommUserClient) Register(ctx context.Context, in *UserReq, opts ...grp
 	return out, nil
 }
 
+func (c *ecommUserClient) CreateSession(ctx context.Context, in *SessionReq, opts ...grpc.CallOption) (*SessionRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SessionRes)
+	err := c.cc.Invoke(ctx, EcommUser_CreateSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ecommUserClient) GetSession(ctx context.Context, in *SessionReq, opts ...grpc.CallOption) (*SessionRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SessionRes)
+	err := c.cc.Invoke(ctx, EcommUser_GetSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ecommUserClient) RevokeSession(ctx context.Context, in *SessionReq, opts ...grpc.CallOption) (*SessionRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SessionRes)
+	err := c.cc.Invoke(ctx, EcommUser_RevokeSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ecommUserClient) DeleteSession(ctx context.Context, in *SessionReq, opts ...grpc.CallOption) (*SessionRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SessionRes)
+	err := c.cc.Invoke(ctx, EcommUser_DeleteSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EcommUserServer is the server API for EcommUser service.
 // All implementations must embed UnimplementedEcommUserServer
 // for forward compatibility.
@@ -153,10 +201,14 @@ type EcommUserServer interface {
 	UpdateUser(context.Context, *UserReq) (*UserReq, error)
 	DeleteUser(context.Context, *UserReq) (*emptypb.Empty, error)
 	FindAllUsers(context.Context, *emptypb.Empty) (*UserList, error)
-	FindByEmail(context.Context, *UserReq) (*UserReq, error)
+	FindByEmail(context.Context, *UserReq) (*UserRes, error)
 	FindUsersByPage(context.Context, *PageRequest) (*UserList, error)
 	Login(context.Context, *LoginRequest) (*UserReq, error)
 	Register(context.Context, *UserReq) (*RegisterResponse, error)
+	CreateSession(context.Context, *SessionReq) (*SessionRes, error)
+	GetSession(context.Context, *SessionReq) (*SessionRes, error)
+	RevokeSession(context.Context, *SessionReq) (*SessionRes, error)
+	DeleteSession(context.Context, *SessionReq) (*SessionRes, error)
 	mustEmbedUnimplementedEcommUserServer()
 }
 
@@ -182,7 +234,7 @@ func (UnimplementedEcommUserServer) DeleteUser(context.Context, *UserReq) (*empt
 func (UnimplementedEcommUserServer) FindAllUsers(context.Context, *emptypb.Empty) (*UserList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindAllUsers not implemented")
 }
-func (UnimplementedEcommUserServer) FindByEmail(context.Context, *UserReq) (*UserReq, error) {
+func (UnimplementedEcommUserServer) FindByEmail(context.Context, *UserReq) (*UserRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindByEmail not implemented")
 }
 func (UnimplementedEcommUserServer) FindUsersByPage(context.Context, *PageRequest) (*UserList, error) {
@@ -193,6 +245,18 @@ func (UnimplementedEcommUserServer) Login(context.Context, *LoginRequest) (*User
 }
 func (UnimplementedEcommUserServer) Register(context.Context, *UserReq) (*RegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedEcommUserServer) CreateSession(context.Context, *SessionReq) (*SessionRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateSession not implemented")
+}
+func (UnimplementedEcommUserServer) GetSession(context.Context, *SessionReq) (*SessionRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSession not implemented")
+}
+func (UnimplementedEcommUserServer) RevokeSession(context.Context, *SessionReq) (*SessionRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeSession not implemented")
+}
+func (UnimplementedEcommUserServer) DeleteSession(context.Context, *SessionReq) (*SessionRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSession not implemented")
 }
 func (UnimplementedEcommUserServer) mustEmbedUnimplementedEcommUserServer() {}
 func (UnimplementedEcommUserServer) testEmbeddedByValue()                   {}
@@ -377,6 +441,78 @@ func _EcommUser_Register_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EcommUser_CreateSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SessionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EcommUserServer).CreateSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EcommUser_CreateSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EcommUserServer).CreateSession(ctx, req.(*SessionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EcommUser_GetSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SessionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EcommUserServer).GetSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EcommUser_GetSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EcommUserServer).GetSession(ctx, req.(*SessionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EcommUser_RevokeSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SessionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EcommUserServer).RevokeSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EcommUser_RevokeSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EcommUserServer).RevokeSession(ctx, req.(*SessionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EcommUser_DeleteSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SessionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EcommUserServer).DeleteSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EcommUser_DeleteSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EcommUserServer).DeleteSession(ctx, req.(*SessionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EcommUser_ServiceDesc is the grpc.ServiceDesc for EcommUser service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -419,6 +555,22 @@ var EcommUser_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Register",
 			Handler:    _EcommUser_Register_Handler,
+		},
+		{
+			MethodName: "CreateSession",
+			Handler:    _EcommUser_CreateSession_Handler,
+		},
+		{
+			MethodName: "GetSession",
+			Handler:    _EcommUser_GetSession_Handler,
+		},
+		{
+			MethodName: "RevokeSession",
+			Handler:    _EcommUser_RevokeSession_Handler,
+		},
+		{
+			MethodName: "DeleteSession",
+			Handler:    _EcommUser_DeleteSession_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

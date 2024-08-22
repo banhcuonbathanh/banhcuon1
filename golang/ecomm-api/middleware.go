@@ -1,4 +1,4 @@
-package handler
+package middleware
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type authKey struct{}
+type AuthKey struct{}
 
 func GetAuthMiddlewareFunc(tokenMaker *token.JWTMaker) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -22,7 +22,7 @@ func GetAuthMiddlewareFunc(tokenMaker *token.JWTMaker) func(http.Handler) http.H
 			}
 
 			// pass the payload/claims down the context
-			ctx := context.WithValue(r.Context(), authKey{}, claims)
+			ctx := context.WithValue(r.Context(), AuthKey{}, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -45,7 +45,7 @@ func GetAdminMiddlewareFunc(tokenMaker *token.JWTMaker) func(http.Handler) http.
 			}
 
 			// pass the payload/claims down the context
-			ctx := context.WithValue(r.Context(), authKey{}, claims)
+			ctx := context.WithValue(r.Context(), AuthKey{}, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

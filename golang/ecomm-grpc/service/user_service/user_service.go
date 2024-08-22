@@ -118,12 +118,12 @@ func (us *UserServericeStruct) FindAllUsers(ctx context.Context, _ *emptypb.Empt
     return &proto.UserList{Users: convertModelUsersToProtoUsers(users)}, nil
 }
 
-func (us *UserServericeStruct) FindByEmail(ctx context.Context, req *proto.UserReq) (*proto.UserReq, error) {
+func (us *UserServericeStruct) FindByEmail(ctx context.Context, req *proto.UserReq) (*proto.UserRes, error) {
     user, err := us.userRepo.FindByEmail(req.Email)
     if err != nil {
         return nil, err
     }
-    return convertModelUserToProtoUserReq(user), nil
+    return convertModelUserToProtoUserRes(user), nil
 }
 
 func (us *UserServericeStruct) FindUsersByPage(ctx context.Context, req *proto.PageRequest) (*proto.UserList, error) {
@@ -156,7 +156,7 @@ func convertModelUserToProtoUserReq(user *types.UserReqModel) *proto.UserReq {
     }
 }
 
-func convertModelUserToProtoUser(user types.UserReqModel) *proto.UserRes {
+func convertModelUserToProtoUserRes(user *types.UserReqModel) *proto.UserRes {
     return &proto.UserRes{
         Id:        user.ID,
         Name:      user.Name,
@@ -184,7 +184,7 @@ func convertModelUserToProtoUser(user types.UserReqModel) *proto.UserRes {
 func convertModelUsersToProtoUsers(users []types.UserReqModel) []*proto.UserRes {
     protoUsers := make([]*proto.UserRes, len(users))
     for i, user := range users {
-        protoUsers[i] = convertModelUserToProtoUser(user)
+        protoUsers[i] = convertModelUserToProtoUserRes(&user) // Pass the pointer to the user variable
     }
     return protoUsers
 }
@@ -223,4 +223,60 @@ func getPhoneValue(phone *int64) int64 {
         return *phone
     }
     return 0
+}
+
+
+
+func (us *UserServericeStruct) CreateSession(ctx context.Context, sr *proto.SessionReq) (*proto.SessionRes, error) {
+	sess, err := us.userRepo.CreateSession(ctx, &types.Session{
+		ID:           sr.GetId(),
+		UserEmail:    sr.GetUserEmail(),
+		RefreshToken: sr.GetRefreshToken(),
+		IsRevoked:    sr.GetIsRevoked(),
+		ExpiresAt:    sr.GetExpiresAt().AsTime(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.SessionRes{
+		Id:           sess.ID,
+		UserEmail:    sess.UserEmail,
+		RefreshToken: sess.RefreshToken,
+		IsRevoked:    sess.IsRevoked,
+		ExpiresAt:    timestamppb.New(sess.ExpiresAt),
+	}, nil
+}
+
+func (us *UserServericeStruct) GetSession(ctx context.Context, sr *proto.SessionReq) (*proto.SessionRes, error) {
+	sess, err := us.userRepo.GetSession(ctx, sr.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.SessionRes{
+		Id:           sess.ID,
+		UserEmail:    sess.UserEmail,
+		RefreshToken: sess.RefreshToken,
+		IsRevoked:    sess.IsRevoked,
+		ExpiresAt:    timestamppb.New(sess.ExpiresAt),
+	}, nil
+}
+
+func (us *UserServericeStruct) RevokeSession(ctx context.Context, sr *proto.SessionReq) (*proto.SessionRes, error) {
+	err := us.userRepo.RevokeSession(ctx, sr.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.SessionRes{}, nil
+}
+
+func (us *UserServericeStruct) DeleteSession(ctx context.Context, sr *proto.SessionReq) (*proto.SessionRes, error) {
+	err := us.userRepo.DeleteSession(ctx, sr.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.SessionRes{}, nil
 }

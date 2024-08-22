@@ -13,10 +13,15 @@ service EcommUser {
   rpc UpdateUser(UserReq) returns (UserReq);
   rpc DeleteUser(UserReq) returns (google.protobuf.Empty);
   rpc FindAllUsers(google.protobuf.Empty) returns (UserList);
-  rpc FindByEmail(UserReq) returns (UserReq);
+  rpc FindByEmail(UserReq) returns (UserRes);
   rpc FindUsersByPage(PageRequest) returns (UserList);
   rpc Login(LoginRequest) returns (UserReq);
   rpc Register(UserReq) returns (RegisterResponse);
+
+  rpc CreateSession(SessionReq) returns (SessionRes) {}
+  rpc GetSession(SessionReq) returns (SessionRes) {}
+  rpc RevokeSession(SessionReq) returns (SessionRes) {}
+  rpc DeleteSession(SessionReq) returns (SessionRes) {}
 }
 
 // rpc GetUserById(UserReq) returns (UserReq);
@@ -39,10 +44,10 @@ message UserRes {
   string email = 3;
   string password = 4;
   bool is_admin = 5;
-  google.protobuf.Timestamp created_at = 6;
-  int64 phone = 7;
-  string image = 8;
-  string address = 9;
+  int64 phone = 6;
+  string image = 7;
+  string address = 8;
+  google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp updated_at = 10;
 }
 message ListUserRes {
@@ -69,4 +74,21 @@ message LoginRequest {
 message RegisterResponse {
   bool success = 1;
   UserRes user = 2;
+}
+
+
+message SessionReq {
+  string id = 1;
+  string user_email = 2;
+  string refresh_token = 3;
+  bool is_revoked = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message SessionRes {
+  string id = 1;
+  string user_email = 2;
+  string refresh_token = 3;
+  bool is_revoked = 4;
+  google.protobuf.Timestamp expires_at = 5;
 }

@@ -13,14 +13,18 @@ psql -U myuser -d mydatabase
 # psql -U myuser -d mydatabase
 
 DROP DATABASE mydatabase;
-TRUNCATE TABLE schema_migrations, users; delete all data
+TRUNCATE TABLE schema*migrations, users; delete all data
 \dt : list all table
 \d users
+\d sessions
 SELECT * FROM users;
-
+SELECT * FROM sessions;
+DELETE FROM sessions;
 \d order_items
 mydatabase=# \d users
-SELECT * FROM users;
+SELECT \* FROM sessions;
+DROP TABLE sessions;
+DELETE FROM schema_migrations;
 =================================================== docker =======================
 docker-compose up -d
 docker-compose up
@@ -38,7 +42,7 @@ To run the server: make run-server
 To run the client: make run-client
 To run all tests: make test
 To run only the CreateUser test: make test-create
-To run only the GetUser test: make test-get
+To run only the GetUser test: make test-getf
 To clean build artifacts: make clean
 To see available commands: make help
 
@@ -49,3 +53,5 @@ golang/
 ============================================== git hub ================================
 git branch golang-new-server-for-grpc
 git checkout golang-new-server-for-grpc
+
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/user.proto

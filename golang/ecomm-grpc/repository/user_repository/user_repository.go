@@ -106,12 +106,12 @@ func (us *UserRepository) Delete(userID int) error {
 	return nil
 }
 
-func (us *UserRepository) FindByID(userID int) (types.UserReqModel, error) {
-	var user types.UserReqModel
+func (us *UserRepository) FindByID(userID int) (types.UserResModel, error) {
+	var user types.UserResModel
 	query := `SELECT id, name, email FROM users WHERE id = $1`
 	err := us.db.QueryRow(context.Background(), query, userID).Scan(&user.ID, &user.Name, &user.Email)
 	if err != nil {
-		return types.UserReqModel{}, fmt.Errorf("error finding user by ID: %w", err)
+		return types.UserResModel{}, fmt.Errorf("error finding user by ID: %w", err)
 	}
 	return user, nil
 }
@@ -181,13 +181,19 @@ func (us *UserRepository) FindAll() ([]types.UserReqModel, error) {
 
 func (us *UserRepository) FindByEmail(email string) (*types.UserReqModel, error) {
 	var user types.UserReqModel
-	query := `SELECT id, name, email FROM users WHERE email = $1`
-	err := us.db.QueryRow(context.Background(), query, email).Scan(&user.ID, &user.Name, &user.Email)
+	query := `SELECT id, name, email, password, is_admin, phone, image, address, created_at, updated_at FROM users WHERE email = $1`
+	err := us.db.QueryRow(context.Background(), query, email).Scan(
+		&user.ID, &user.Name, &user.Email, &user.Password, &user.IsAdmin, &user.Phone, &user.Image, &user.Address, &user.CreatedAt, &user.UpdatedAt,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error finding user by email: %w", err)
 	}
+
+	log.Println("User FindByEmail UserRepository", user)
+	log.Println("User FindByEmail UserRepository", &user)
 	return &user, nil
 }
+
 
 func (us *UserRepository) FindUsersByPage(pageNumber, pageSize int) ([]types.UserReqModel, error) {
 	offset := (pageNumber - 1) * pageSize
@@ -242,4 +248,46 @@ func (us *UserRepository) Login(ctx context.Context, email, password string) (*t
 	return &userModel, nil
 }
 
+
+func (us *UserRepository) CreateSession(ctx context.Context, s *types.Session) (*types.Session, error) {
+
+    query := `INSERT INTO sessions (id, user_email, refresh_token, is_revoked, expires_at) 
+              VALUES ($1, $2, $3, $4, $5) 
+              RETURNING id`
+
+    err := us.db.QueryRow(ctx, query, s.ID, s.UserEmail, s.RefreshToken, s.IsRevoked, s.ExpiresAt).Scan(&s.ID)
+    if err != nil {
+        return nil, fmt.Errorf("error inserting session: %w", err)
+    }
+    return s, nil
+}
+
+
+func (us *UserRepository) GetSession(ctx context.Context, id string) (*types.Session, error) {
+	var s types.Session
+	query := "SELECT * FROM sessions WHERE id=$1"
+	err := us.db.QueryRow(ctx, query, id).Scan(&s.ID, &s.UserEmail, &s.RefreshToken, &s.IsRevoked, &s.ExpiresAt)
+	if err != nil {
+		return nil, fmt.Errorf("error getting session: %w", err)
+	}
+	return &s, nil
+}
+
+func (us *UserRepository) RevokeSession(ctx context.Context, id string) error {
+	query := "UPDATE sessions SET is_revoked=true WHERE id=$1"
+	_, err := us.db.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("error revoking session: %w", err)
+	}
+	return nil
+}
+
+func (us *UserRepository) DeleteSession(ctx context.Context, id string) error {
+	query := "DELETE FROM sessions WHERE id=$1"
+	_, err := us.db.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("error deleting session: %w", err)
+	}
+	return nil
+}
 

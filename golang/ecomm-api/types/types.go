@@ -105,7 +105,7 @@ type LoginUserRes struct {
 	RefreshToken          string    `json:"refresh_token"`
 	AccessTokenExpiresAt  time.Time `json:"access_token_expires_at"`
 	RefreshTokenExpiresAt time.Time `json:"refresh_token_expires_at"`
-	User                  UserReqModel   `json:"user"`
+	User                  UserResModel   `json:"user"`
 }
 
 type RenewAccessTokenReq struct {
@@ -115,4 +115,12 @@ type RenewAccessTokenReq struct {
 type RenewAccessTokenRes struct {
 	AccessToken          string    `json:"access_token"`
 	AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
+}
+
+type Session struct {
+    ID           string
+    UserEmail    string
+    RefreshToken string
+    IsRevoked    bool
+    ExpiresAt    time.Time
 }
