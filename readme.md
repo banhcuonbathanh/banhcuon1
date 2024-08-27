@@ -17,6 +17,7 @@ TRUNCATE TABLE schema*migrations, users; delete all data
 \dt : list all table
 \d users
 \d sessions
+\d reading_tests
 SELECT * FROM users;
 SELECT \* FROM sessions;
 DELETE FROM sessions;
@@ -25,6 +26,11 @@ mydatabase=# \d users
 SELECT \* FROM sessions;
 DROP TABLE sessions;
 DELETE FROM schema_migrations;
+
+\l
+\c testdb
+testdb=# \dT+ paragraph_content
+
 =================================================== docker =======================
 docker-compose up -d
 docker-compose up
@@ -56,7 +62,13 @@ git checkout golang-new-server-for-grpc
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/user.proto
 
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/reading/reading.proto
 git checkout dev
 git merge golang-new-server-for-grpc
 git commit
 git push origin dev
+
+
+golang/ecomm-grpc/proto/reading/reading.proto
+
+

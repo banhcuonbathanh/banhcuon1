@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "english-ai-full/ecomm-grpc/proto/reading";
+
+import "google/protobuf/timestamp.proto";
+
+import "google/protobuf/empty.proto";
+
+service EcommReading {
+    rpc CreateReading(ReadingReq) returns (ReadingRes);
+    rpc SaveReading(ReadingReq) returns (google.protobuf.Empty);
+    rpc UpdateReading(ReadingReq) returns (ReadingRes);
+    rpc DeleteReading(ReadingReq) returns (google.protobuf.Empty);
+    rpc FindAllReading(google.protobuf.Empty) returns (ReadingResList);
+    rpc FindByID(ReadingReq) returns (ReadingRes);
+    rpc FindReadingByPage(PageRequest) returns (ReadingResList);
+
+  }
+
+message ReadingTestProto {
+    int32 test_number = 1;
+    repeated SectionProto sections = 2;
+}
+
+message SectionProto {
+    int32 section_number = 1;
+    int32 time_allowed = 2;
+    repeated PassageProto passages = 3;
+}
+
+message PassageProto {
+    int32 passage_number = 1;
+    string title = 2;
+    repeated ParagraphContentProto content = 3;
+    repeated QuestionProto questions = 4;
+}
+
+message ParagraphContentProto {
+    string paragraph_summary = 1;
+    string key_words = 2;
+    string key_sentence = 3;
+}
+
+message QuestionProto {
+    int32 question_number = 1;
+    QuestionTypeProto type = 2;
+    string content = 3;
+    repeated string options = 4;
+    oneof correct_answer {
+        string string_answer = 5;
+        StringArrayProto string_array_answer = 6;
+    }
+}
+
+message StringArrayProto {
+    repeated string values = 1;
+}
+
+enum QuestionTypeProto {
+    MULTIPLE_CHOICE = 0;
+    TRUE_FALSE_NOT_GIVEN = 1;
+    MATCHING = 2;
+    SHORT_ANSWER = 3;
+}
+
+
+
+message PageRequest {
+    int32 page_number = 1;
+    int32 page_size = 2;
+  }
+
+  message ReadingReq {
+    int64 id = 1;  // Assuming an ID field for CRUD operations
+    ReadingTestProto reading_test = 2;
+}
+
+message ReadingRes {
+    int64 id = 1;
+    ReadingTestProto reading_test = 2;
+    google.protobuf.Timestamp created_at = 3;
+    google.protobuf.Timestamp updated_at = 4;
+}
+
+message ReadingResList {
+    repeated ReadingRes readings = 1;
+    int32 total_count = 2;  // Optional: for pagination info
+}
+
