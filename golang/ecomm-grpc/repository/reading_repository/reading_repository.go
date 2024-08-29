@@ -9,6 +9,7 @@ import (
 
 	"english-ai-full/ecomm-api/types"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -35,7 +36,8 @@ func (r *ReadingRepository) CreateReading(ctx context.Context, req *types.Readin
     }
 
     now := time.Now()
-    var id int64
+	var id uuid.UUID
+ 
     var createdAt, updatedAt time.Time
     
     err = r.db.QueryRow(ctx, query, readingResTypeJSON, now, now).Scan(&id, &createdAt, &updatedAt)
@@ -127,28 +129,28 @@ func (r *ReadingRepository) FindAllReading(ctx context.Context) (*types.ReadingR
 
     rows, err := r.db.Query(ctx, query)
     if err != nil {
-        log.Println("Error fetching reading tests:", err)
+        log.Println("Error fetching reading tests: FindAllReading ReadingRepository", err)
         return nil, fmt.Errorf("error fetching reading tests: %w", err)
     }
     defer rows.Close()
 
     var readings []*types.ReadingResModel
     for rows.Next() {
-        var id int64
+        var id uuid.UUID
         var testNumber int
         var sectionsJSON []byte
         var createdAt, updatedAt time.Time
 
         err := rows.Scan(&id, &testNumber, &sectionsJSON, &createdAt, &updatedAt)
         if err != nil {
-            log.Println("Error scanning reading test row:", err)
+            log.Println("Error scanning reading test row: FindAllReading ReadingRepository", err)
             return nil, fmt.Errorf("error scanning reading test row: %w", err)
         }
 
         var sections []types.SectionModel
         err = json.Unmarshal(sectionsJSON, &sections)
         if err != nil {
-            log.Println("Error unmarshaling sections:", err)
+            log.Println("Error unmarshaling sections: FindAllReading ReadingRepository", err)
             return nil, fmt.Errorf("error unmarshaling sections: %w", err)
         }
 
@@ -169,7 +171,7 @@ func (r *ReadingRepository) FindAllReading(ctx context.Context) (*types.ReadingR
     }, nil
 }
 
-func (r *ReadingRepository) FindByID(ctx context.Context, ID int64) (*types.ReadingResModel, error) {
+func (r *ReadingRepository) FindByID(ctx context.Context, ID uuid.UUID) (*types.ReadingResModel, error) {
 	log.Println("Fetching reading test by ID from database")
 
 	query := `SELECT test_number, sections, created_at, updated_at FROM reading_tests WHERE id = $1`
@@ -222,7 +224,7 @@ func (r *ReadingRepository) FindReadingByPage(ctx context.Context, req *types.Pa
 
 	var readings []*types.ReadingResModel
 	for rows.Next() {
-        var id int64
+        var id uuid.UUID
         var testNumber int
         var sectionsJSON []byte
         var createdAt, updatedAt time.Time

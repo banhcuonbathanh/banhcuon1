@@ -73,12 +73,12 @@ message PageRequestReading {
   }
 
   message ReadingReq {
-    int64 id = 1;  // Assuming an ID field for CRUD operations
+    string id = 1;  // Assuming an ID field for CRUD operations
     ReadingTestProto reading_test = 2;
 }
 
 message ReadingRes {
-    int64 id = 1;
+    string id = 1;
     ReadingTestProto reading_test = 2;
     google.protobuf.Timestamp created_at = 3;
     google.protobuf.Timestamp updated_at = 4;

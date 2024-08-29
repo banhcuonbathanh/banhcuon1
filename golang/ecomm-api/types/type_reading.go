@@ -1,6 +1,10 @@
 package types
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // ReadingRequest represents the structure for requesting a reading test
 type ReadingReqModel struct {
@@ -11,7 +15,7 @@ type ReadingReqModel struct {
 
 // ReadingResponse represents the structure for responding with a reading test
 type ReadingResModel struct {
-    ID       int64      `json:"id"`
+    ID             uuid.UUID       `json:"id"`
     ReadingResType ReadingTestModel `json:"reading_res_type"`
     CreatedAt time.Time `json:"created_at"`
 UpdatedAt time.Time `json:"updated_at"`

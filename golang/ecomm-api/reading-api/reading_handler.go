@@ -59,7 +59,9 @@ func (h *ReadingHandlerController) FindByID(w http.ResponseWriter, r *http.Reque
         return
     }
 
-    reading, err := h.client.FindByID(h.ctx, &pb.ReadingRes{Id: i})
+    // Convert i to a string
+    idString := strconv.FormatInt(i, 10)
+    reading, err := h.client.FindByID(h.ctx, &pb.ReadingRes{Id: idString})
     if err != nil {
         http.Error(w, "error getting reading", http.StatusInternalServerError)
         return
@@ -70,6 +72,7 @@ func (h *ReadingHandlerController) FindByID(w http.ResponseWriter, r *http.Reque
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(res)
 }
+
 
 func (h *ReadingHandlerController) ListReadings(w http.ResponseWriter, r *http.Request) {
 	lrr, err := h.client.FindAllReading(h.ctx, &emptypb.Empty{})
@@ -112,21 +115,25 @@ func (h *ReadingHandlerController) UpdateReading(w http.ResponseWriter, r *http.
 }
 
 func (h *ReadingHandlerController) DeleteReading(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	i, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		http.Error(w, "error parsing ID", http.StatusBadRequest)
-		return
-	}
+    id := chi.URLParam(r, "id")
+    i, err := strconv.ParseInt(id, 10, 64)
+    if err != nil {
+        http.Error(w, "error parsing ID", http.StatusBadRequest)
+        return
+    }
 
-	_, err = h.client.DeleteReading(h.ctx, &pb.ReadingRes{Id: i})
-	if err != nil {
-		http.Error(w, "error deleting reading", http.StatusInternalServerError)
-		return
-	}
+    // Convert i to a string
+    idString := strconv.FormatInt(i, 10)
 
-	w.WriteHeader(http.StatusNoContent)
+    _, err = h.client.DeleteReading(h.ctx, &pb.ReadingRes{Id: idString})
+    if err != nil {
+        http.Error(w, "error deleting reading", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusNoContent)
 }
+
 
 func (h *ReadingHandlerController) FindReadingByPage(w http.ResponseWriter, r *http.Request) {
 	pageNumber, _ := strconv.Atoi(r.URL.Query().Get("page"))

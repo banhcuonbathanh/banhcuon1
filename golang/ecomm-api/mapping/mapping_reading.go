@@ -1,10 +1,9 @@
 package mapping_user
 
-
 import (
- 	"english-ai-full/ecomm-api/types"
+	"english-ai-full/ecomm-api/types"
 	pb "english-ai-full/ecomm-grpc/proto/reading"
-
+	"english-ai-full/util"
 )
 
 func ToPBReadingReq(reading types.ReadingReqModel) *pb.ReadingReq {
@@ -14,8 +13,13 @@ func ToPBReadingReq(reading types.ReadingReqModel) *pb.ReadingReq {
 }
 
 func ToReadingResFromPbReadingRes(createdReading *pb.ReadingRes) types.ReadingResModel {
+    id, err := util.StringToUUID(createdReading.Id)
+    if err != nil {
+        return types.ReadingResModel{}
+    }
+
     return types.ReadingResModel{
-        ID:             createdReading.Id,
+        ID:             id,
         ReadingResType: fromProtoReadingTest(createdReading.ReadingTest),
         CreatedAt:      createdReading.CreatedAt.AsTime(),
         UpdatedAt:      createdReading.UpdatedAt.AsTime(),
