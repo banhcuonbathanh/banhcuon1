@@ -1,4 +1,4 @@
-package handler
+package route
 
 import (
 	middleware "english-ai-full/ecomm-api"
@@ -6,11 +6,13 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+
+	 "english-ai-full/ecomm-api/handler"
 )
 
 
 
-func RegisterRoutes(r *chi.Mux,handler *handlercontroller) *chi.Mux {
+func RegisterRoutes(r *chi.Mux,handler *handler.Handlercontroller) *chi.Mux {
 
 	tokenMaker := handler.TokenMaker
 	
@@ -18,29 +20,29 @@ func RegisterRoutes(r *chi.Mux,handler *handlercontroller) *chi.Mux {
 		w.Write([]byte("Server is running"))
 	})
 	r.Route("/users", func(r chi.Router) {
-		r.Post("/", handler.createUser)
-		r.Post("/login", handler.login)
+		r.Post("/", handler.CreateUser)
+		r.Post("/login", handler.Login)
 
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.GetAdminMiddlewareFunc(tokenMaker))
-			r.Get("/", handler.listUsers)
+			r.Get("/", handler.ListUsers)
 			r.Route("/{id}", func(r chi.Router) {
-				r.Delete("/", handler.deleteUser)
+				r.Delete("/", handler.DeleteUser)
 			})
 		})
 
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
-			r.Patch("/", handler.login)
-			r.Post("/logout", handler.logoutUser)
+			r.Patch("/", handler.Login)
+			r.Post("/logout", handler.LogoutUser)
 			r.Get("/email/{email}", handler.FindByEmail)
 		})
 	})
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
 		r.Route("/tokens", func(r chi.Router) {
-			r.Post("/renew", handler.renewAccessToken)
-			r.Post("/revoke", handler.revokeSession)
+			r.Post("/renew", handler.RenewAccessToken)
+			r.Post("/revoke", handler.RevokeSession)
 		})
 	})
 	return r

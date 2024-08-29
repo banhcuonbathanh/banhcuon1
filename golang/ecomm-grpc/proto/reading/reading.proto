@@ -10,12 +10,12 @@ import "google/protobuf/empty.proto";
 
 service EcommReading {
     rpc CreateReading(ReadingReq) returns (ReadingRes);
-    rpc SaveReading(ReadingReq) returns (google.protobuf.Empty);
+    rpc SaveReading(ReadingRes) returns (google.protobuf.Empty);
     rpc UpdateReading(ReadingReq) returns (ReadingRes);
-    rpc DeleteReading(ReadingReq) returns (google.protobuf.Empty);
+    rpc DeleteReading(ReadingRes) returns (google.protobuf.Empty);
     rpc FindAllReading(google.protobuf.Empty) returns (ReadingResList);
-    rpc FindByID(ReadingReq) returns (ReadingRes);
-    rpc FindReadingByPage(PageRequest) returns (ReadingResList);
+    rpc FindByID(ReadingRes) returns (ReadingRes);
+    rpc FindReadingByPage(PageRequestReading) returns (ReadingResList);
 
   }
 
@@ -67,7 +67,7 @@ enum QuestionTypeProto {
 
 
 
-message PageRequest {
+message PageRequestReading {
     int32 page_number = 1;
     int32 page_size = 2;
   }

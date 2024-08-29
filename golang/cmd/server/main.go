@@ -14,9 +14,11 @@ import (
 
 	// pb "english-ai-full/ecomm-grpc/proto"
 
+	reading_api "english-ai-full/ecomm-api/reading-api"
 	user_api "english-ai-full/ecomm-api/user-api"
 	"english-ai-full/ecomm-grpc/config"
 	pb "english-ai-full/ecomm-grpc/proto"
+	pb_reading "english-ai-full/ecomm-grpc/proto/reading"
 
 	// "github.com/go-chi/chi"
 
@@ -26,11 +28,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"english-ai-full/ecomm-api/handler"
+	"english-ai-full/ecomm-api/route"
 )
 
 const minSecretKeySize = 32
 
 func main() {
+
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -57,20 +61,35 @@ func main() {
 	defer conn.Close()
 
 
-	client := pb.NewEcommUserClient(conn)
+
 	r := chi.NewRouter()
-	// log.Printf("GRPC on main %s", client)
+
+
+// new reading handler
+// conn_reading, err := grpc.NewClient(*svcAddr, opts...)
+// if err != nil {
+// 	log.Fatalf("failed to connect to server: %v", err)
+// }
+// defer conn.Close()
+
+// reading 
+client_reading := pb_reading.NewEcommReadingClient(conn)
+
+hdl_reading := reading_api.NewReadingHandler(client_reading, *secretKey)
+reading_api.RegisterReadingRoutes(r, hdl_reading)
+//  user handler
+client := pb.NewEcommUserClient(conn)
 	hdl := handler.NewHandler(client, *secretKey)
 	
-	handler.RegisterRoutes(r, hdl)
+	route.RegisterRoutes(r, hdl)
 
-// new user handler
+// new user  handler
 hdl_NewUser := user_api.NewHandlerUser(client, *secretKey)
 
 user_api.RegisterRoutesUser(r, hdl_NewUser)
 // start user
 
-	handler.Start(":8888", r)
+route.Start(":8888", r)
 
 	// go func() {
 	// 	log.Printf("Starting HTTP server on %s", cfg.HTTPAddress)

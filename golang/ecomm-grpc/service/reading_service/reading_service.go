@@ -26,11 +26,11 @@ func NewReadingServer(readingRepo *repository.ReadingRepository) *ReadingServeri
 
 
 func (rs *ReadingServericeStruct) CreateReading(ctx context.Context, req *proto.ReadingReq) (*proto.ReadingRes, error) {
-    log.Println("Creating Reading:",
-        "ID:", req.Id,
-        "Reading Test:", req.ReadingTest,
-    )
-
+    // log.Println("Creating Reading:",
+    //     "ID:", req.Id,
+    //     "Reading Test:", req.ReadingTest,
+    // )
+    log.Println("CreateReading", )
     newReading := &types.ReadingReqModel{
         ReadingReqTestType: convertProtoReadingReqTestTypeToModel(req),
         CreatedAt:      time.Now(),
@@ -39,7 +39,7 @@ func (rs *ReadingServericeStruct) CreateReading(ctx context.Context, req *proto.
 
     createdReading, err := rs.readingRepo.CreateReading(ctx, newReading)
     if err != nil {
-        log.Println("Error creating reading:", err)
+        log.Println("Error creating reading: proto service", err)
         return nil, err
     }
 
@@ -60,15 +60,15 @@ func (rs *ReadingServericeStruct) CreateReading(ctx context.Context, req *proto.
     
 //     return convertModelToProtoReadingRes(savedReading), nil
 // }
-func (rs *ReadingServericeStruct) SaveReading(ctx context.Context, res *proto.ReadingRes) (*proto.ReadingRes, error) {
+func (rs *ReadingServericeStruct) SaveReading(ctx context.Context, res *proto.ReadingRes) (*emptypb.Empty, error) {
     reading := convertProtoReadingResToModel(res)
 
-    savedReading, err := rs.readingRepo.SaveReading(ctx, reading)
+    _, err := rs.readingRepo.SaveReading(ctx, reading)
     if err != nil {
         return nil, fmt.Errorf("error saving reading: %w", err)
     }
     
-    return convertModelToProtoReadingRes(savedReading), nil
+    return &emptypb.Empty{}, err
 }
 
 func (rs *ReadingServericeStruct) UpdateReading(ctx context.Context, req *proto.ReadingReq) (*proto.ReadingRes, error) {
@@ -115,7 +115,7 @@ func (rs *ReadingServericeStruct) FindByID(ctx context.Context, req *proto.Readi
     return convertModelReadingToProtoReadingRes(reading), nil
 }
 
-func (rs *ReadingServericeStruct) FindReadingByPage(ctx context.Context, req *proto.PageRequest) (*proto.ReadingResList, error) {
+func (rs *ReadingServericeStruct) FindReadingByPage(ctx context.Context, req *proto.PageRequestReading) (*proto.ReadingResList, error) {
     result, err := rs.readingRepo.FindReadingByPage(ctx, &types.PageRequestModel{
         PageNumber: int(req.PageNumber),
         PageSize:   int(req.PageSize),
@@ -374,14 +374,14 @@ func convertProtoReadingResToModel(res *proto.ReadingRes) *types.ReadingResModel
     }
 }
 
-func convertModelToProtoReadingRes(model *types.ReadingResModel) *proto.ReadingRes {
-    return &proto.ReadingRes{
-        Id:          model.ID,
-        ReadingTest: convertModelToProtoReadingTest(model.ReadingResType),
-        CreatedAt:   timestamppb.New(model.CreatedAt),
-        UpdatedAt:   timestamppb.New(model.UpdatedAt),
-    }
-}
+// func convertModelToProtoReadingRes(model *types.ReadingResModel) *proto.ReadingRes {
+//     return &proto.ReadingRes{
+//         Id:          model.ID,
+//         ReadingTest: convertModelToProtoReadingTest(model.ReadingResType),
+//         CreatedAt:   timestamppb.New(model.CreatedAt),
+//         UpdatedAt:   timestamppb.New(model.UpdatedAt),
+//     }
+// }
 
 func convertProtoReadingTestToModel(protoTest *proto.ReadingTestProto) types.ReadingTestModel {
     sections := make([]types.SectionModel, len(protoTest.Sections))
@@ -395,17 +395,17 @@ func convertProtoReadingTestToModel(protoTest *proto.ReadingTestProto) types.Rea
     }
 }
 
-func convertModelToProtoReadingTest(model types.ReadingTestModel) *proto.ReadingTestProto {
-    sections := make([]*proto.SectionProto, len(model.Sections))
-    for i, section := range model.Sections {
-        sections[i] = convertModelToProtoSection(section)
-    }
+// func convertModelToProtoReadingTest(model types.ReadingTestModel) *proto.ReadingTestProto {
+//     sections := make([]*proto.SectionProto, len(model.Sections))
+//     for i, section := range model.Sections {
+//         sections[i] = convertModelToProtoSection(section)
+//     }
 
-    return &proto.ReadingTestProto{
-        TestNumber: int32(model.TestNumber),
-        Sections:   sections,
-    }
-}
+//     return &proto.ReadingTestProto{
+//         TestNumber: int32(model.TestNumber),
+//         Sections:   sections,
+//     }
+// }
 
 func convertProtoSectionToModel(protoSection *proto.SectionProto) types.SectionModel {
     passages := make([]types.PassageModel, len(protoSection.Passages))
@@ -420,18 +420,18 @@ func convertProtoSectionToModel(protoSection *proto.SectionProto) types.SectionM
     }
 }
 
-func convertModelToProtoSection(model types.SectionModel) *proto.SectionProto {
-    passages := make([]*proto.PassageProto, len(model.Passages))
-    for i, passage := range model.Passages {
-        passages[i] = convertModelToProtoPassage(passage)
-    }
+// func convertModelToProtoSection(model types.SectionModel) *proto.SectionProto {
+//     passages := make([]*proto.PassageProto, len(model.Passages))
+//     for i, passage := range model.Passages {
+//         passages[i] = convertModelToProtoPassage(passage)
+//     }
 
-    return &proto.SectionProto{
-        SectionNumber: int32(model.SectionNumber),
-        TimeAllowed:   int32(model.TimeAllowed),
-        Passages:      passages,
-    }
-}
+//     return &proto.SectionProto{
+//         SectionNumber: int32(model.SectionNumber),
+//         TimeAllowed:   int32(model.TimeAllowed),
+//         Passages:      passages,
+//     }
+// }
 
 func convertProtoPassageToModel(protoPassage *proto.PassageProto) types.PassageModel {
     content := make([]types.ParagraphContentModel, len(protoPassage.Content))
@@ -452,24 +452,24 @@ func convertProtoPassageToModel(protoPassage *proto.PassageProto) types.PassageM
     }
 }
 
-func convertModelToProtoPassage(model types.PassageModel) *proto.PassageProto {
-    content := make([]*proto.ParagraphContentProto, len(model.Content))
-    for i, paragraphContent := range model.Content {
-        content[i] = convertModelToProtoParagraphContent(paragraphContent)
-    }
+// func convertModelToProtoPassage(model types.PassageModel) *proto.PassageProto {
+//     content := make([]*proto.ParagraphContentProto, len(model.Content))
+//     for i, paragraphContent := range model.Content {
+//         content[i] = convertModelToProtoParagraphContent(paragraphContent)
+//     }
 
-    questions := make([]*proto.QuestionProto, len(model.Questions))
-    for i, question := range model.Questions {
-        questions[i] = convertModelToProtoQuestion(question)
-    }
+//     questions := make([]*proto.QuestionProto, len(model.Questions))
+//     for i, question := range model.Questions {
+//         questions[i] = convertModelToProtoQuestion(question)
+//     }
 
-    return &proto.PassageProto{
-        PassageNumber: int32(model.PassageNumber),
-        Title:         model.Title,
-        Content:       content,
-        Questions:     questions,
-    }
-}
+//     return &proto.PassageProto{
+//         PassageNumber: int32(model.PassageNumber),
+//         Title:         model.Title,
+//         Content:       content,
+//         Questions:     questions,
+//     }
+// }
 
 func convertProtoParagraphContentToModel(protoContent *proto.ParagraphContentProto) types.ParagraphContentModel {
     return types.ParagraphContentModel{
@@ -479,13 +479,13 @@ func convertProtoParagraphContentToModel(protoContent *proto.ParagraphContentPro
     }
 }
 
-func convertModelToProtoParagraphContent(model types.ParagraphContentModel) *proto.ParagraphContentProto {
-    return &proto.ParagraphContentProto{
-        ParagraphSummary: model.ParagraphSummary,
-        KeyWords:         model.KeyWords,
-        KeySentence:      model.KeySentence,
-    }
-}
+// func convertModelToProtoParagraphContent(model types.ParagraphContentModel) *proto.ParagraphContentProto {
+//     return &proto.ParagraphContentProto{
+//         ParagraphSummary: model.ParagraphSummary,
+//         KeyWords:         model.KeyWords,
+//         KeySentence:      model.KeySentence,
+//     }
+// }
 
 func convertProtoQuestionToModel(protoQuestion *proto.QuestionProto) types.QuestionModel {
     questionModel := types.QuestionModel{
@@ -505,25 +505,25 @@ func convertProtoQuestionToModel(protoQuestion *proto.QuestionProto) types.Quest
     return questionModel
 }
 
-func convertModelToProtoQuestion(model types.QuestionModel) *proto.QuestionProto {
-    protoQuestion := &proto.QuestionProto{
-        QuestionNumber: int32(model.QuestionNumber),
-        Type:           convertModelQuestionTypeToProto(model.Type),
-        Content:        model.Content,
-        Options:        model.Options,
-    }
+// func convertModelToProtoQuestion(model types.QuestionModel) *proto.QuestionProto {
+//     protoQuestion := &proto.QuestionProto{
+//         QuestionNumber: int32(model.QuestionNumber),
+//         Type:           convertModelQuestionTypeToProto(model.Type),
+//         Content:        model.Content,
+//         Options:        model.Options,
+//     }
 
-    switch answer := model.CorrectAnswer.(type) {
-    case string:
-        protoQuestion.CorrectAnswer = &proto.QuestionProto_StringAnswer{StringAnswer: answer}
-    case []string:
-        protoQuestion.CorrectAnswer = &proto.QuestionProto_StringArrayAnswer{
-            StringArrayAnswer: &proto.StringArrayProto{Values: answer},
-        }
-    }
+//     switch answer := model.CorrectAnswer.(type) {
+//     case string:
+//         protoQuestion.CorrectAnswer = &proto.QuestionProto_StringAnswer{StringAnswer: answer}
+//     case []string:
+//         protoQuestion.CorrectAnswer = &proto.QuestionProto_StringArrayAnswer{
+//             StringArrayAnswer: &proto.StringArrayProto{Values: answer},
+//         }
+//     }
 
-    return protoQuestion
-}
+//     return protoQuestion
+// }
 
 func convertProtoQuestionTypeToModel(protoType proto.QuestionTypeProto) types.QuestionTypeModel {
     switch protoType {
@@ -540,20 +540,20 @@ func convertProtoQuestionTypeToModel(protoType proto.QuestionTypeProto) types.Qu
     }
 }
 
-func convertModelQuestionTypeToProto(modelType types.QuestionTypeModel) proto.QuestionTypeProto {
-    switch modelType {
-    case types.MultipleChoice:
-        return proto.QuestionTypeProto_MULTIPLE_CHOICE
-    case types.TrueFalseNotGiven:
-        return proto.QuestionTypeProto_TRUE_FALSE_NOT_GIVEN
-    case types.Matching:
-        return proto.QuestionTypeProto_MATCHING
-    case types.ShortAnswer:
-        return proto.QuestionTypeProto_SHORT_ANSWER
-    default:
-        return proto.QuestionTypeProto_MULTIPLE_CHOICE // Default to MULTIPLE_CHOICE
-    }
-}
+// func convertModelQuestionTypeToProto(modelType types.QuestionTypeModel) proto.QuestionTypeProto {
+//     switch modelType {
+//     case types.MultipleChoice:
+//         return proto.QuestionTypeProto_MULTIPLE_CHOICE
+//     case types.TrueFalseNotGiven:
+//         return proto.QuestionTypeProto_TRUE_FALSE_NOT_GIVEN
+//     case types.Matching:
+//         return proto.QuestionTypeProto_MATCHING
+//     case types.ShortAnswer:
+//         return proto.QuestionTypeProto_SHORT_ANSWER
+//     default:
+//         return proto.QuestionTypeProto_MULTIPLE_CHOICE // Default to MULTIPLE_CHOICE
+//     }
+// }
 
 func convertProtoReadingReqToModel(protoReading *proto.ReadingReq) types.ReadingReqModel {
     if protoReading == nil || protoReading.ReadingTest == nil {

@@ -30,6 +30,9 @@ DELETE FROM schema_migrations;
 \l
 \c testdb
 testdb=# \dT+ paragraph_content
+UPDATE users
+SET is_admin = true
+WHERE id = 1;
 
 =================================================== docker =======================
 docker-compose up -d

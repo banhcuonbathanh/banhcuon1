@@ -23,21 +23,21 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type handlercontroller struct {
+type Handlercontroller struct {
 	ctx        context.Context
 	client     pb.EcommUserClient 
 	TokenMaker *token.JWTMaker
 }
 
-func NewHandler(client pb.EcommUserClient, secretKey string) *handlercontroller {
-	return &handlercontroller{
+func NewHandler(client pb.EcommUserClient, secretKey string) *Handlercontroller {
+	return &Handlercontroller{
 		ctx:        context.Background(),
 		client:     client,
 		TokenMaker: token.NewJWTMaker(secretKey),
 	}
 }
 
-func (h *handlercontroller) createUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handlercontroller) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var u types.UserReqModel
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		http.Error(w, "error decoding request body", http.StatusBadRequest)
@@ -54,7 +54,7 @@ func (h *handlercontroller) createUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-func (h *handlercontroller) FindByEmail(w http.ResponseWriter, r *http.Request) {
+func (h *Handlercontroller) FindByEmail(w http.ResponseWriter, r *http.Request) {
 	log.Println("User FindByEmail handlercontroller")
 	email := chi.URLParam(r, "email")
 	user, err := h.client.FindByEmail(h.ctx, &pb.UserReq{Email: email})
@@ -71,7 +71,7 @@ func (h *handlercontroller) FindByEmail(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(res)
 }
 
-func (h *handlercontroller) listUsers(w http.ResponseWriter, r *http.Request) {
+func (h *Handlercontroller) ListUsers(w http.ResponseWriter, r *http.Request) {
 	lur, err := h.client.FindAllUsers(h.ctx, &emptypb.Empty{})
 	if err != nil {
 		http.Error(w, "failed to fetch users: "+err.Error(), http.StatusInternalServerError)
@@ -94,7 +94,7 @@ func (h *handlercontroller) listUsers(w http.ResponseWriter, r *http.Request) {
 
 
 
-func (h *handlercontroller) deleteUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handlercontroller) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -110,7 +110,7 @@ func (h *handlercontroller) deleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // Add these functions to handle login and register
-func (h *handlercontroller) login(w http.ResponseWriter, r *http.Request) {
+func (h *Handlercontroller) Login(w http.ResponseWriter, r *http.Request) {
 	log.Println("User login handlercontroller")
 	var u types.LoginUserReq
 
@@ -187,7 +187,7 @@ func (h *handlercontroller) login(w http.ResponseWriter, r *http.Request) {
 }
 
 
-func (h *handlercontroller) logoutUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handlercontroller) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	claims := r.Context().Value(middleware.AuthKey{}).(*token.UserClaims)
 
 	_, err := h.client.DeleteSession(h.ctx, &pb.SessionReq{
@@ -201,7 +201,7 @@ func (h *handlercontroller) logoutUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *handlercontroller) renewAccessToken(w http.ResponseWriter, r *http.Request) {
+func (h *Handlercontroller) RenewAccessToken(w http.ResponseWriter, r *http.Request) {
 	var req types.RenewAccessTokenReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "error decoding request body", http.StatusBadRequest)
@@ -248,7 +248,7 @@ func (h *handlercontroller) renewAccessToken(w http.ResponseWriter, r *http.Requ
 	json.NewEncoder(w).Encode(res)
 }
 
-func (h *handlercontroller) revokeSession(w http.ResponseWriter, r *http.Request) {
+func (h *Handlercontroller) RevokeSession(w http.ResponseWriter, r *http.Request) {
 	claims := r.Context().Value(middleware.AuthKey{}).(*token.UserClaims)
 	
 	_, err := h.client.RevokeSession(h.ctx, &pb.SessionReq{

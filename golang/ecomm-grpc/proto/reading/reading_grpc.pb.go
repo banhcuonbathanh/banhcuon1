@@ -34,12 +34,12 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EcommReadingClient interface {
 	CreateReading(ctx context.Context, in *ReadingReq, opts ...grpc.CallOption) (*ReadingRes, error)
-	SaveReading(ctx context.Context, in *ReadingReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SaveReading(ctx context.Context, in *ReadingRes, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateReading(ctx context.Context, in *ReadingReq, opts ...grpc.CallOption) (*ReadingRes, error)
-	DeleteReading(ctx context.Context, in *ReadingReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteReading(ctx context.Context, in *ReadingRes, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	FindAllReading(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadingResList, error)
-	FindByID(ctx context.Context, in *ReadingReq, opts ...grpc.CallOption) (*ReadingRes, error)
-	FindReadingByPage(ctx context.Context, in *PageRequest, opts ...grpc.CallOption) (*ReadingResList, error)
+	FindByID(ctx context.Context, in *ReadingRes, opts ...grpc.CallOption) (*ReadingRes, error)
+	FindReadingByPage(ctx context.Context, in *PageRequestReading, opts ...grpc.CallOption) (*ReadingResList, error)
 }
 
 type ecommReadingClient struct {
@@ -60,7 +60,7 @@ func (c *ecommReadingClient) CreateReading(ctx context.Context, in *ReadingReq, 
 	return out, nil
 }
 
-func (c *ecommReadingClient) SaveReading(ctx context.Context, in *ReadingReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *ecommReadingClient) SaveReading(ctx context.Context, in *ReadingRes, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, EcommReading_SaveReading_FullMethodName, in, out, cOpts...)
@@ -80,7 +80,7 @@ func (c *ecommReadingClient) UpdateReading(ctx context.Context, in *ReadingReq, 
 	return out, nil
 }
 
-func (c *ecommReadingClient) DeleteReading(ctx context.Context, in *ReadingReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *ecommReadingClient) DeleteReading(ctx context.Context, in *ReadingRes, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, EcommReading_DeleteReading_FullMethodName, in, out, cOpts...)
@@ -100,7 +100,7 @@ func (c *ecommReadingClient) FindAllReading(ctx context.Context, in *emptypb.Emp
 	return out, nil
 }
 
-func (c *ecommReadingClient) FindByID(ctx context.Context, in *ReadingReq, opts ...grpc.CallOption) (*ReadingRes, error) {
+func (c *ecommReadingClient) FindByID(ctx context.Context, in *ReadingRes, opts ...grpc.CallOption) (*ReadingRes, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ReadingRes)
 	err := c.cc.Invoke(ctx, EcommReading_FindByID_FullMethodName, in, out, cOpts...)
@@ -110,7 +110,7 @@ func (c *ecommReadingClient) FindByID(ctx context.Context, in *ReadingReq, opts 
 	return out, nil
 }
 
-func (c *ecommReadingClient) FindReadingByPage(ctx context.Context, in *PageRequest, opts ...grpc.CallOption) (*ReadingResList, error) {
+func (c *ecommReadingClient) FindReadingByPage(ctx context.Context, in *PageRequestReading, opts ...grpc.CallOption) (*ReadingResList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ReadingResList)
 	err := c.cc.Invoke(ctx, EcommReading_FindReadingByPage_FullMethodName, in, out, cOpts...)
@@ -125,12 +125,12 @@ func (c *ecommReadingClient) FindReadingByPage(ctx context.Context, in *PageRequ
 // for forward compatibility.
 type EcommReadingServer interface {
 	CreateReading(context.Context, *ReadingReq) (*ReadingRes, error)
-	SaveReading(context.Context, *ReadingReq) (*emptypb.Empty, error)
+	SaveReading(context.Context, *ReadingRes) (*emptypb.Empty, error)
 	UpdateReading(context.Context, *ReadingReq) (*ReadingRes, error)
-	DeleteReading(context.Context, *ReadingReq) (*emptypb.Empty, error)
+	DeleteReading(context.Context, *ReadingRes) (*emptypb.Empty, error)
 	FindAllReading(context.Context, *emptypb.Empty) (*ReadingResList, error)
-	FindByID(context.Context, *ReadingReq) (*ReadingRes, error)
-	FindReadingByPage(context.Context, *PageRequest) (*ReadingResList, error)
+	FindByID(context.Context, *ReadingRes) (*ReadingRes, error)
+	FindReadingByPage(context.Context, *PageRequestReading) (*ReadingResList, error)
 	mustEmbedUnimplementedEcommReadingServer()
 }
 
@@ -144,22 +144,22 @@ type UnimplementedEcommReadingServer struct{}
 func (UnimplementedEcommReadingServer) CreateReading(context.Context, *ReadingReq) (*ReadingRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateReading not implemented")
 }
-func (UnimplementedEcommReadingServer) SaveReading(context.Context, *ReadingReq) (*emptypb.Empty, error) {
+func (UnimplementedEcommReadingServer) SaveReading(context.Context, *ReadingRes) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveReading not implemented")
 }
 func (UnimplementedEcommReadingServer) UpdateReading(context.Context, *ReadingReq) (*ReadingRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateReading not implemented")
 }
-func (UnimplementedEcommReadingServer) DeleteReading(context.Context, *ReadingReq) (*emptypb.Empty, error) {
+func (UnimplementedEcommReadingServer) DeleteReading(context.Context, *ReadingRes) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteReading not implemented")
 }
 func (UnimplementedEcommReadingServer) FindAllReading(context.Context, *emptypb.Empty) (*ReadingResList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindAllReading not implemented")
 }
-func (UnimplementedEcommReadingServer) FindByID(context.Context, *ReadingReq) (*ReadingRes, error) {
+func (UnimplementedEcommReadingServer) FindByID(context.Context, *ReadingRes) (*ReadingRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindByID not implemented")
 }
-func (UnimplementedEcommReadingServer) FindReadingByPage(context.Context, *PageRequest) (*ReadingResList, error) {
+func (UnimplementedEcommReadingServer) FindReadingByPage(context.Context, *PageRequestReading) (*ReadingResList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindReadingByPage not implemented")
 }
 func (UnimplementedEcommReadingServer) mustEmbedUnimplementedEcommReadingServer() {}
@@ -202,7 +202,7 @@ func _EcommReading_CreateReading_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _EcommReading_SaveReading_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReadingReq)
+	in := new(ReadingRes)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func _EcommReading_SaveReading_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: EcommReading_SaveReading_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EcommReadingServer).SaveReading(ctx, req.(*ReadingReq))
+		return srv.(EcommReadingServer).SaveReading(ctx, req.(*ReadingRes))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -238,7 +238,7 @@ func _EcommReading_UpdateReading_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _EcommReading_DeleteReading_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReadingReq)
+	in := new(ReadingRes)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func _EcommReading_DeleteReading_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: EcommReading_DeleteReading_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EcommReadingServer).DeleteReading(ctx, req.(*ReadingReq))
+		return srv.(EcommReadingServer).DeleteReading(ctx, req.(*ReadingRes))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -274,7 +274,7 @@ func _EcommReading_FindAllReading_Handler(srv interface{}, ctx context.Context, 
 }
 
 func _EcommReading_FindByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReadingReq)
+	in := new(ReadingRes)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -286,13 +286,13 @@ func _EcommReading_FindByID_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: EcommReading_FindByID_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EcommReadingServer).FindByID(ctx, req.(*ReadingReq))
+		return srv.(EcommReadingServer).FindByID(ctx, req.(*ReadingRes))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _EcommReading_FindReadingByPage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PageRequest)
+	in := new(PageRequestReading)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func _EcommReading_FindReadingByPage_Handler(srv interface{}, ctx context.Contex
 		FullMethod: EcommReading_FindReadingByPage_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EcommReadingServer).FindReadingByPage(ctx, req.(*PageRequest))
+		return srv.(EcommReadingServer).FindReadingByPage(ctx, req.(*PageRequestReading))
 	}
 	return interceptor(ctx, in, info, handler)
 }

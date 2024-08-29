@@ -38,7 +38,7 @@ func (r *ReadingRepository) CreateReading(ctx context.Context, req *types.Readin
     var id int64
     err = r.db.QueryRow(ctx, query, req.ReadingReqTestType.TestNumber, sectionsJSON, now, now).Scan(&id)
     if err != nil {
-        log.Println("Error inserting reading test:", err)
+        log.Println("Error inserting reading test repository:", err)
         return nil, fmt.Errorf("error inserting reading test: %w", err)
     }
 
