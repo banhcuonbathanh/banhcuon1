@@ -25,28 +25,30 @@ func NewReadingRepository(db *pgxpool.Pool) *ReadingRepository {
 func (r *ReadingRepository) CreateReading(ctx context.Context, req *types.ReadingReqModel) (*types.ReadingResModel, error) {
     log.Println("Inserting new reading test into database")
 
-    query := `INSERT INTO reading_tests (test_number, sections, created_at, updated_at)
-              VALUES ($1, $2, $3, $4)
-              RETURNING id`
+    query := `INSERT INTO reading_res_models (reading_res_type, created_at, updated_at)
+              VALUES ($1, $2, $3)
+              RETURNING id, created_at, updated_at`
 
-    sectionsJSON, err := json.Marshal(req.ReadingReqTestType.Sections)
+    readingResTypeJSON, err := json.Marshal(req.ReadingReqTestType)
     if err != nil {
-        return nil, fmt.Errorf("error marshaling sections: %w", err)
+        return nil, fmt.Errorf("error marshaling reading_res_type: %w", err)
     }
 
     now := time.Now()
     var id int64
-    err = r.db.QueryRow(ctx, query, req.ReadingReqTestType.TestNumber, sectionsJSON, now, now).Scan(&id)
+    var createdAt, updatedAt time.Time
+    
+    err = r.db.QueryRow(ctx, query, readingResTypeJSON, now, now).Scan(&id, &createdAt, &updatedAt)
     if err != nil {
-        log.Println("Error inserting reading test repository:", err)
+        log.Println("Error inserting reading test:", err)
         return nil, fmt.Errorf("error inserting reading test: %w", err)
     }
 
     return &types.ReadingResModel{
-        ID:             id, // Note: You might need to convert this to int64 if that's what your struct expects
+        ID:             id,
         ReadingResType: req.ReadingReqTestType,
-        CreatedAt:      now,
-        UpdatedAt:      now,
+        CreatedAt:      createdAt,
+        UpdatedAt:      updatedAt,
     }, nil
 }
 
