@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	"github.com/google/uuid"
+
 )
 
 // ReadingRequest represents the structure for requesting a reading test
@@ -15,21 +15,21 @@ type ReadingReqModel struct {
 
 // ReadingResponse represents the structure for responding with a reading test
 type ReadingResModel struct {
-    ID             uuid.UUID       `json:"id"`
+    ID             int       `json:"id"`
     ReadingResType ReadingTestModel `json:"reading_res_type"`
     CreatedAt time.Time `json:"created_at"`
 UpdatedAt time.Time `json:"updated_at"`
-}
-
-// ReadingTest structure (as provided)
-type ReadingTestModel struct {
-    TestNumber int       `json:"testNumber"`
-    Sections   []SectionModel `json:"sections"`
 }
 type ReadingResList struct {
     Readings   []*ReadingResModel `json:"readings"`
     TotalCount int         `json:"total_count"`
 }
+// ReadingTest structure (as provided)
+type ReadingTestModel struct {
+    TestNumber int       `json:"testNumber"`
+    Sections   []SectionModel `json:"sections"`
+}
+
 // Section structure (as provided)
 type SectionModel struct {
     SectionNumber int       `json:"sectionNumber"`

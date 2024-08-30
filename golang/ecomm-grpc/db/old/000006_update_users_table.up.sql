@@ -19,14 +19,14 @@ CREATE TABLE reading_res_models (
 
 -- Create reading_test_models table
 CREATE TABLE reading_test_models (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     test_number INTEGER NOT NULL,
     sections JSONB NOT NULL
 );
 
 -- Create section_models table
 CREATE TABLE section_models (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     section_number INTEGER NOT NULL,
     time_allowed INTEGER NOT NULL,
     passages JSONB NOT NULL
@@ -34,7 +34,7 @@ CREATE TABLE section_models (
 
 -- Create passage_models table
 CREATE TABLE passage_models (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     passage_number INTEGER NOT NULL,
     title TEXT NOT NULL,
     content JSONB NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE passage_models (
 
 -- Create paragraph_content_models table
 CREATE TABLE paragraph_content_models (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     paragraph_summary TEXT NOT NULL,
     key_words TEXT NOT NULL,
     key_sentence TEXT NOT NULL
@@ -51,7 +51,7 @@ CREATE TABLE paragraph_content_models (
 
 -- Create question_models table
 CREATE TABLE question_models (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     question_number INTEGER NOT NULL,
     type question_type NOT NULL,
     content TEXT NOT NULL,

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,7 +10,6 @@ import (
 
 	"english-ai-full/ecomm-api/types"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -24,36 +24,47 @@ func NewReadingRepository(db *pgxpool.Pool) *ReadingRepository {
 }
 
 func (r *ReadingRepository) CreateReading(ctx context.Context, req *types.ReadingReqModel) (*types.ReadingResModel, error) {
-    log.Println("Inserting new reading test into database")
+    log.Println("Inserting new reading test into database", req)
 
-    query := `INSERT INTO reading_res_models (reading_res_type, created_at, updated_at)
-              VALUES ($1, $2, $3)
-              RETURNING id, created_at, updated_at`
+    query := `
+        INSERT INTO reading_test_models (test_number, sections)
+        VALUES ($1, $2)
+        RETURNING id, test_number, sections
+    `
 
-    readingResTypeJSON, err := json.Marshal(req.ReadingReqTestType)
+    sectionsJSON, err := json.Marshal(req.ReadingReqTestType.Sections)
     if err != nil {
-        return nil, fmt.Errorf("error marshaling reading_res_type: %w", err)
+        return nil, fmt.Errorf("error marshaling sections: %w", err)
     }
 
-    now := time.Now()
-	var id uuid.UUID
- 
-    var createdAt, updatedAt time.Time
-    
-    err = r.db.QueryRow(ctx, query, readingResTypeJSON, now, now).Scan(&id, &createdAt, &updatedAt)
+    var returnedID int
+    var testNumber int
+    var sectionsJSONReturn []byte
+
+    err = r.db.QueryRow(ctx, query, req.ReadingReqTestType.TestNumber, sectionsJSON).Scan(&returnedID, &testNumber, &sectionsJSONReturn)
     if err != nil {
         log.Println("Error inserting reading test:", err)
         return nil, fmt.Errorf("error inserting reading test: %w", err)
     }
 
+    var sections []types.SectionModel
+    err = json.Unmarshal(sectionsJSONReturn, &sections)
+    if err != nil {
+        return nil, fmt.Errorf("error unmarshaling sections: %w", err)
+    }
+
+    now := time.Now()
+
     return &types.ReadingResModel{
-        ID:             id,
-        ReadingResType: req.ReadingReqTestType,
-        CreatedAt:      createdAt,
-        UpdatedAt:      updatedAt,
+        ID: returnedID,
+        ReadingResType: types.ReadingTestModel{
+            TestNumber: testNumber,
+            Sections:   sections,
+        },
+        CreatedAt: now,
+        UpdatedAt: now,
     }, nil
 }
-
 func (r *ReadingRepository) SaveReading(ctx context.Context, req *types.ReadingResModel) (*types.ReadingResModel, error) {
 	log.Println("Saving reading test in database")
 
@@ -125,7 +136,7 @@ func (r *ReadingRepository) DeleteReading(ctx context.Context, req *types.Readin
 func (r *ReadingRepository) FindAllReading(ctx context.Context) (*types.ReadingResList, error) {
     log.Println("Fetching all reading tests from database")
 
-    query := `SELECT id, test_number, sections, created_at, updated_at FROM reading_tests`
+    query := `SELECT id, test_number, sections, created_at, updated_at FROM reading_res_models`
 
     rows, err := r.db.Query(ctx, query)
     if err != nil {
@@ -136,7 +147,7 @@ func (r *ReadingRepository) FindAllReading(ctx context.Context) (*types.ReadingR
 
     var readings []*types.ReadingResModel
     for rows.Next() {
-        var id uuid.UUID
+        var id int
         var testNumber int
         var sectionsJSON []byte
         var createdAt, updatedAt time.Time
@@ -171,7 +182,7 @@ func (r *ReadingRepository) FindAllReading(ctx context.Context) (*types.ReadingR
     }, nil
 }
 
-func (r *ReadingRepository) FindByID(ctx context.Context, ID uuid.UUID) (*types.ReadingResModel, error) {
+func (r *ReadingRepository) FindByID(ctx context.Context, ID int) (*types.ReadingResModel, error) {
 	log.Println("Fetching reading test by ID from database")
 
 	query := `SELECT test_number, sections, created_at, updated_at FROM reading_tests WHERE id = $1`
@@ -224,7 +235,7 @@ func (r *ReadingRepository) FindReadingByPage(ctx context.Context, req *types.Pa
 
 	var readings []*types.ReadingResModel
 	for rows.Next() {
-        var id uuid.UUID
+        var id int
         var testNumber int
         var sectionsJSON []byte
         var createdAt, updatedAt time.Time

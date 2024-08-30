@@ -53,15 +53,15 @@ func (h *ReadingHandlerController) CreateReading(w http.ResponseWriter, r *http.
 
 func (h *ReadingHandlerController) FindByID(w http.ResponseWriter, r *http.Request) {
     id := chi.URLParam(r, "id")
-    i, err := strconv.ParseInt(id, 10, 64)
+    i, err := strconv.ParseInt(id, 10, 32)
     if err != nil {
         http.Error(w, "error parsing ID", http.StatusBadRequest)
         return
     }
 
     // Convert i to a string
-    idString := strconv.FormatInt(i, 10)
-    reading, err := h.client.FindByID(h.ctx, &pb.ReadingRes{Id: idString})
+
+    reading, err := h.client.FindByID(h.ctx, &pb.ReadingRes{Id: int32(i)})
     if err != nil {
         http.Error(w, "error getting reading", http.StatusInternalServerError)
         return
@@ -123,9 +123,9 @@ func (h *ReadingHandlerController) DeleteReading(w http.ResponseWriter, r *http.
     }
 
     // Convert i to a string
-    idString := strconv.FormatInt(i, 10)
 
-    _, err = h.client.DeleteReading(h.ctx, &pb.ReadingRes{Id: idString})
+
+    _, err = h.client.DeleteReading(h.ctx, &pb.ReadingRes{Id: int32(i)})
     if err != nil {
         http.Error(w, "error deleting reading", http.StatusInternalServerError)
         return

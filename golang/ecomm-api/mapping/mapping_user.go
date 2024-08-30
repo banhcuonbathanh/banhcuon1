@@ -4,7 +4,7 @@ import (
 	"english-ai-full/ecomm-api/types"
 	pb "english-ai-full/ecomm-grpc/proto"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
+	// "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // UserReqModel represents the user request model
@@ -91,26 +91,26 @@ func ToUserResFromUserReq(u *pb.UserReq) types.UserResModel {
 	}
 }
 
-func sessionToSessionRes(s *types.Session) *pb.SessionRes {
-    return &pb.SessionRes{
-        Id:           s.ID,
-        UserEmail:    s.UserEmail,
-        RefreshToken: s.RefreshToken,
-        IsRevoked:    s.IsRevoked,
-        ExpiresAt:    timestamppb.New(s.ExpiresAt),
-    }
-}
+// func sessionToSessionRes(s *types.Session) *pb.SessionRes {
+//     return &pb.SessionRes{
+//         Id:           s.ID,
+//         UserEmail:    s.UserEmail,
+//         RefreshToken: s.RefreshToken,
+//         IsRevoked:    s.IsRevoked,
+//         ExpiresAt:    timestamppb.New(s.ExpiresAt),
+//     }
+// }
 
 // Helper function to convert SessionReq to Session
-func sessionReqToSession(req *pb.SessionReq) *types.Session {
-    return &types.Session{
-        ID:           req.Id,
-        UserEmail:    req.UserEmail,
-        RefreshToken: req.RefreshToken,
-        IsRevoked:    req.IsRevoked,
-        ExpiresAt:    req.ExpiresAt.AsTime(),
-    }
-}
+// func sessionReqToSession(req *pb.SessionReq) *types.Session {
+//     return &types.Session{
+//         ID:           req.Id,
+//         UserEmail:    req.UserEmail,
+//         RefreshToken: req.RefreshToken,
+//         IsRevoked:    req.IsRevoked,
+//         ExpiresAt:    req.ExpiresAt.AsTime(),
+//     }
+// }
 
 // func ToUserRes(u *pb.UserRes) types.UserResModel {
 // 	return types.UserResModel{

@@ -23,17 +23,59 @@ SELECT \* FROM sessions;
 DELETE FROM sessions;
 \d order_items
 mydatabase=# \d users
-SELECT \* FROM sessions;
-DROP TABLE sessions;
+SELECT * FROM reading_tests;
+DROP TABLE schema_migrations;
 DELETE FROM schema_migrations;
-
+DELETE FROM reading_tests;
 \l
 \c testdb
 testdb=# \dT+ paragraph_content
 UPDATE users
 SET is_admin = true
 WHERE id = 1;
+migrate -database postgres://myuser:mypassword@localhost:5432/mydatabase?sslmode=disable force 7
 
+
+-- List all tables in the public schema
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_type = 'BASE TABLE';
+
+-- List all custom types (including ENUMs)
+SELECT t.typname AS enum_name,
+       e.enumlabel AS enum_value
+FROM pg_type t
+JOIN pg_enum e ON t.oid = e.enumtypid
+JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+WHERE n.nspname = 'public';
+
+-- Drop all tables in the public schema
+DO $$ 
+DECLARE 
+    r RECORD;
+BEGIN
+    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+    END LOOP;
+END $$;
+
+-- Drop the question_type ENUM
+DROP TYPE IF EXISTS question_type CASCADE;
+
+-- Verify that all tables are dropped
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_type = 'BASE TABLE';
+
+-- Verify that the question_type ENUM is dropped
+SELECT t.typname AS enum_name,
+       e.enumlabel AS enum_value
+FROM pg_type t
+JOIN pg_enum e ON t.oid = e.enumtypid
+JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+WHERE n.nspname = 'public';
 =================================================== docker =======================
 docker-compose up -d
 docker-compose up
@@ -71,7 +113,16 @@ git merge golang-new-server-for-grpc
 git commit
 git push origin dev
 
-
 golang/ecomm-grpc/proto/reading/reading.proto
 
 
+
+
+ reading_test_models
+ section_models
+ passage_models
+ schema_migrations
+ paragraph_content_models
+ question_models
+ users
+ sessions

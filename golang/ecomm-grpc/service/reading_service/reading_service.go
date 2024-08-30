@@ -12,7 +12,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"english-ai-full/ecomm-api/types"
-    "english-ai-full/util"
 )
 type ReadingServericeStruct struct {
     readingRepo *repository.ReadingRepository
@@ -73,13 +72,10 @@ func (rs *ReadingServericeStruct) SaveReading(ctx context.Context, res *proto.Re
 }
 
 func (rs *ReadingServericeStruct) UpdateReading(ctx context.Context, req *proto.ReadingReq) (*proto.ReadingRes, error) {
-    id, err := util.StringToUUID(req.Id)
-    if err != nil {
-        return nil, fmt.Errorf("invalid UUID: %w", err)
-    }
-
+ 
+ 
     updatedReading := &types.ReadingResModel{
-        ID: id, // Assuming req.Id exists in proto.ReadingReq
+        ID:    int(req.Id), // Assuming req.Id exists in proto.ReadingReq
         ReadingResType: convertProtoReadingReqToModel(req).ReadingReqTestType,
         UpdatedAt: time.Now(),
     }
@@ -114,11 +110,8 @@ func (rs *ReadingServericeStruct) FindAllReading(ctx context.Context, _ *emptypb
 
 func (rs *ReadingServericeStruct) FindByID(ctx context.Context, req *proto.ReadingRes) (*proto.ReadingRes, error) {
     
-    id, err := util.StringToUUID(req.Id)
-    if err != nil {
-        return nil, fmt.Errorf("invalid UUID: %w", err)
-    }
-    reading, err := rs.readingRepo.FindByID(ctx,id)
+
+    reading, err := rs.readingRepo.FindByID(ctx,int(req.Id))
     if err != nil {
         return nil, err
     }
@@ -145,9 +138,9 @@ func (rs *ReadingServericeStruct) FindReadingByPage(ctx context.Context, req *pr
 
 func convertModelReadingToProtoReadingRes(modelReading *types.ReadingResModel) *proto.ReadingRes {
 
-    
+
     return &proto.ReadingRes{
-        Id:          modelReading.ID.String(),
+        Id:         int32(modelReading.ID) ,
         ReadingTest: convertModelReadingTestToProto(modelReading.ReadingResType),
         CreatedAt:   timestamppb.New(modelReading.CreatedAt),
         UpdatedAt:   timestamppb.New(modelReading.UpdatedAt),
@@ -378,14 +371,9 @@ func convertProtoReadingReqTestTypeToModel(protoReading *proto.ReadingReq) types
 
 
 func convertProtoReadingResToModel(res *proto.ReadingRes) (*types.ReadingResModel) {
-    id, err := util.StringToUUID(res.Id)
-    if err != nil {
-        // Return an empty ReadingResModel and the error
-        return &types.ReadingResModel{}
-    }
 
     return &types.ReadingResModel{
-        ID:             id,
+        ID:             int(res.Id),
         ReadingResType: convertProtoReadingTestToModel(res.ReadingTest),
         CreatedAt:      res.CreatedAt.AsTime(),
         UpdatedAt:      res.UpdatedAt.AsTime(),
