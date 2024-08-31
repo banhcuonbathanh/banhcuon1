@@ -108,7 +108,7 @@ git checkout golang-new-server-for-grpc
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/user.proto
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/reading/reading.proto
-git checkout dev
+git checkout nextjs-fe-readiding-add-more-clean-architextture
 git merge golang-new-server-for-grpc
 git commit
 git push origin dev
