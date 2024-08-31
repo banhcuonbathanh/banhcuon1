@@ -8,6 +8,8 @@ import PassageContend from "./presentation_component/passage_component";
 
 import { useState } from "react";
 import Timer from "./presentation_component/timer";
+import ExampleDialog from "./landingpage_dialog/landdingpage_dialog";
+import { useDialogStorePersist } from "./landing_page_zustand/landding_page_zustand";
 
 const ReadingTestPage: React.FC = () => {
   const [timerMinutes, setTimerMinutes] = useState(0);
@@ -17,9 +19,21 @@ const ReadingTestPage: React.FC = () => {
     // Add any logic to handle the timer ending here
     console.log("Timer ended");
   };
+  const openDialog = useDialogStorePersist((state) => state.openDialog);
 
+  const handleOpenDialog = () => {
+    openDialog({
+      title: "Example Dialog",
+      description: "This is an example dialog using our custom store",
+      body: (
+        <p>This is the body of the dialog. You can put any React node here.</p>
+      )
+    });
+  };
   return (
     <div className="container mx-auto py-8">
+      <button onClick={handleOpenDialog}>Open Dialog</button>
+      {/* <ExampleDialog /> */}
       <h1 className="text-4xl font-bold text-center mb-8">
         Reading Test {readingTest1.testNumber}
       </h1>

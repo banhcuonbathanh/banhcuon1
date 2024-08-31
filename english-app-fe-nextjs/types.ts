@@ -37,4 +37,9 @@ export interface ReadingTest {
     Matching = 'Matching',
     ShortAnswer = 'ShortAnswer'
   }
+  export interface DialogContentModel {
+    title: string;
+    description: string;
+    body: React.ReactNode;
+  }
   
