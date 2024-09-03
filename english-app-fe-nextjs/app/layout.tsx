@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import ExampleDialog from "./(route)/(landingpage)/landingpage_dialog/landdingpage_dialog";
+import { ThemeProvider } from "@/provider/theme-provider";
+import { MainNav } from "@/components/navbar/navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,10 +18,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ExampleDialog />
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <MainNav />
+
+          <ExampleDialog />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
