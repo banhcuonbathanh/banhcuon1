@@ -22,7 +22,52 @@ func NewReadingRepository(db *pgxpool.Pool) *ReadingRepository {
 		db: db,
 	}
 }
+func (r *ReadingRepository) FindAllReading(ctx context.Context) (*types.ReadingResList, error) {
+    log.Println("Fetching all reading tests from database")
 
+    query := `SELECT id, test_number, sections FROM reading_test_models`
+
+    rows, err := r.db.Query(ctx, query)
+    if err != nil {
+        log.Println("Error fetching reading tests: FindAllReading ReadingRepository", err)
+        return nil, fmt.Errorf("error fetching reading tests: %w", err)
+    }
+    defer rows.Close()
+
+    var readings []*types.ReadingResModel
+    for rows.Next() {
+        var id int
+        var testNumber int
+        var sectionsJSON []byte
+
+        err := rows.Scan(&id, &testNumber, &sectionsJSON)
+        if err != nil {
+            log.Println("Error scanning reading test row: FindAllReading ReadingRepository", err)
+            return nil, fmt.Errorf("error scanning reading test row: %w", err)
+        }
+
+        var sections []types.SectionModel
+        err = json.Unmarshal(sectionsJSON, &sections)
+        if err != nil {
+            log.Println("Error unmarshaling sections: FindAllReading ReadingRepository", err)
+            return nil, fmt.Errorf("error unmarshaling sections: %w", err)
+        }
+
+        readings = append(readings, &types.ReadingResModel{
+            ID: id,
+            ReadingResType: types.ReadingTestModel{
+                TestNumber: testNumber,
+                Sections:   sections,
+            },
+            // Note: CreatedAt and UpdatedAt are not available in the query result
+        })
+    }
+
+    return &types.ReadingResList{
+        Readings:   readings,
+        TotalCount: len(readings),
+    }, nil
+}
 func (r *ReadingRepository) CreateReading(ctx context.Context, req *types.ReadingReqModel) (*types.ReadingResModel, error) {
     log.Println("Inserting new reading test into database", req)
 
@@ -133,65 +178,18 @@ func (r *ReadingRepository) DeleteReading(ctx context.Context, req *types.Readin
 }
 
 
-func (r *ReadingRepository) FindAllReading(ctx context.Context) (*types.ReadingResList, error) {
-    log.Println("Fetching all reading tests from database")
 
-    query := `SELECT id, test_number, sections, created_at, updated_at FROM reading_res_models`
-
-    rows, err := r.db.Query(ctx, query)
-    if err != nil {
-        log.Println("Error fetching reading tests: FindAllReading ReadingRepository", err)
-        return nil, fmt.Errorf("error fetching reading tests: %w", err)
-    }
-    defer rows.Close()
-
-    var readings []*types.ReadingResModel
-    for rows.Next() {
-        var id int
-        var testNumber int
-        var sectionsJSON []byte
-        var createdAt, updatedAt time.Time
-
-        err := rows.Scan(&id, &testNumber, &sectionsJSON, &createdAt, &updatedAt)
-        if err != nil {
-            log.Println("Error scanning reading test row: FindAllReading ReadingRepository", err)
-            return nil, fmt.Errorf("error scanning reading test row: %w", err)
-        }
-
-        var sections []types.SectionModel
-        err = json.Unmarshal(sectionsJSON, &sections)
-        if err != nil {
-            log.Println("Error unmarshaling sections: FindAllReading ReadingRepository", err)
-            return nil, fmt.Errorf("error unmarshaling sections: %w", err)
-        }
-
-        readings = append(readings, &types.ReadingResModel{
-            ID: id,
-            ReadingResType: types.ReadingTestModel{
-                TestNumber: testNumber,
-                Sections:   sections,
-            },
-            CreatedAt: createdAt,
-            UpdatedAt: updatedAt,
-        })
-    }
-
-    return &types.ReadingResList{
-        Readings:   readings,
-        TotalCount: int(len(readings)),
-    }, nil
-}
 
 func (r *ReadingRepository) FindByID(ctx context.Context, ID int) (*types.ReadingResModel, error) {
 	log.Println("Fetching reading test by ID from database")
 
-	query := `SELECT test_number, sections, created_at, updated_at FROM reading_tests WHERE id = $1`
+	query := `SELECT test_number, sections FROM reading_test_models WHERE id = $1`
 
 	var testNumber int
 	var sectionsJSON []byte
-	var createdAt, updatedAt time.Time
 
-	err := r.db.QueryRow(ctx, query, ID).Scan(&testNumber, &sectionsJSON, &createdAt, &updatedAt)
+
+	err := r.db.QueryRow(ctx, query, ID).Scan(&testNumber, &sectionsJSON)
 	if err != nil {
 		log.Println("Error fetching reading test:", err)
 		return nil, fmt.Errorf("error fetching reading test: %w", err)
@@ -210,8 +208,7 @@ func (r *ReadingRepository) FindByID(ctx context.Context, ID int) (*types.Readin
 			TestNumber: testNumber,
 			Sections:   sections,
 		},
-		CreatedAt: createdAt,
-		UpdatedAt: updatedAt,
+	
 	}, nil
 }
 

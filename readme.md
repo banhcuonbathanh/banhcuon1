@@ -17,8 +17,8 @@ TRUNCATE TABLE schema*migrations, users; delete all data
 \dt : list all table
 \d users
 \d sessions
-\d reading_tests
-SELECT * FROM users;
+\d reading_test_models;
+SELECT * FROM reading_test_models;
 SELECT \* FROM sessions;
 DELETE FROM sessions;
 \d order_items
