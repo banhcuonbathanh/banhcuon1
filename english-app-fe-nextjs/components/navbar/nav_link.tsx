@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -24,6 +24,22 @@ const NavLinks = () => {
       href: `/blog`,
       label: "Blog",
       active: `/blog`
+    },
+    {
+      href: `/dashboard`,
+      label: "Dashboard",
+      active: `/dashboard`
+    },
+
+    {
+      href: `/dashboard/dashboard_admin`,
+      label: "Admin",
+      active: `/dashboard_admin`
+    },
+    {
+      href: `/dashboard/dashboard_list`,
+      label: "List",
+      active: `/dashboard_list`
     }
   ];
 

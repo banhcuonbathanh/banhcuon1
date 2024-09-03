@@ -21,9 +21,11 @@
     "next": "14.2.5",
     "next-themes": "^0.3.0",
     "react": "^18",
+    "react-calendar": "^5.0.0",
     "react-dom": "^18",
     "react-toastify": "^10.0.5",
     "reactjs-editor": "^10.0.1",
+    "recharts": "^2.12.7",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "zustand": "^4.5.4"
