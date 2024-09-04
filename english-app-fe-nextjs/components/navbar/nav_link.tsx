@@ -16,7 +16,7 @@ const NavLinks = () => {
       active: `/`
     },
     {
-      href: `/readings`,
+      href: `/reading`,
       label: "Readings",
       active: `/readings`
     },
