@@ -1,5 +1,4 @@
-import Announcements from "@/components/Announcements";
-import BigCalendar from "@/components/BigCalender";
+import Announcements from "../dashboard_component/dashboard_Announcements";
 
 const ParentPage = () => {
   return (
@@ -8,7 +7,6 @@ const ParentPage = () => {
       <div className="w-full xl:w-2/3">
         <div className="h-full bg-white p-4 rounded-md">
           <h1 className="text-xl font-semibold">Schedule (John Doe)</h1>
-          <BigCalendar />
         </div>
       </div>
       {/* RIGHT */}

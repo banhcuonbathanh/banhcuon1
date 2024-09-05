@@ -4,44 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { existingRoutes } from "@/lib/navbar/nav_link_data";
 
 const NavLinks = () => {
   const pathname = usePathname();
   const router = useRouter();
-
-  const existingRoutes = [
-    {
-      href: `/`,
-      label: "Home",
-      active: `/`
-    },
-    {
-      href: `/reading`,
-      label: "Readings",
-      active: `/readings`
-    },
-    {
-      href: `/blog`,
-      label: "Blog",
-      active: `/blog`
-    },
-    {
-      href: `/dashboard`,
-      label: "Dashboard",
-      active: `/dashboard`
-    },
-
-    {
-      href: `/dashboard/dashboard_admin`,
-      label: "Admin",
-      active: `/dashboard_admin`
-    },
-    {
-      href: `/dashboard/dashboard_list`,
-      label: "List",
-      active: `/dashboard_list`
-    }
-  ];
 
   const handleLinkClick = (href: string, label: string) => {
     router.push(`${href}`);

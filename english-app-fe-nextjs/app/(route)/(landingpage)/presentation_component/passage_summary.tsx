@@ -25,7 +25,7 @@ const PassageSummary: React.FC<PassageComponentProps> = ({ passage }) => {
       {showContent && (
         <div className="space-y-4">
           {passage.content.map((paragraph, index) => (
-            <div key={index} className="border p-4 rounded-lg">
+            <div key={index} className=" p-4 rounded-lg">
               <p className="font-semibold mb-2">
                 Paragraph Summary {String.fromCharCode(65 + index)}
               </p>

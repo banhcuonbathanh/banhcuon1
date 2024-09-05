@@ -25,7 +25,7 @@ const PassageQuestion: React.FC<PassageComponentProps> = ({ passage }) => {
       <h3 className="text-2xl font-bold text-center mb-4">Questions</h3>
       <div className="space-y-4">
         {passage.questions.map((question) => (
-          <div key={question.questionNumber} className="border p-4 rounded-lg">
+          <div key={question.questionNumber} className=" p-4 rounded-lg">
             <p className="font-semibold mb-2">
               Question {question.questionNumber}
             </p>

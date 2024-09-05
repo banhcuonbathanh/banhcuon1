@@ -1,9 +1,10 @@
-import FormModal from "@/components/FormModal";
-import Pagination from "@/components/Pagination";
-import Table from "@/components/Table";
-import TableSearch from "@/components/TableSearch";
-import { examsData, role } from "@/lib/data";
+
+import { examsData, role } from "@/lib/dashboard/data";
 import Image from "next/image";
+import FormModal from "../../dashboard_component/dashboard_FormModal";
+import TableSearch from "../../dashboard_component/dashboard_TableSearch";
+import Table from "../../dashboard_component/dashboard_Table";
+import Pagination from "../../dashboard_component/dashboard_Pagination";
 
 type Exam = {
   id: number;

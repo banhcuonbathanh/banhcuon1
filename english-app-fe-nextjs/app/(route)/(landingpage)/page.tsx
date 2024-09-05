@@ -31,8 +31,8 @@ const ReadingTestPage: React.FC = () => {
     });
   };
   return (
-    <div className="container mx-auto py-8">
-      <button onClick={handleOpenDialog}>Open Dialog</button>
+    <div className="container mx-auto pt-10 border-l border-gray-300">
+      {/* <button onClick={handleOpenDialog}>Open Dialog</button> */}
       {/* <ExampleDialog /> */}
       <h1 className="text-4xl font-bold text-center mb-8">
         Reading Test {readingTest1.testNumber}
