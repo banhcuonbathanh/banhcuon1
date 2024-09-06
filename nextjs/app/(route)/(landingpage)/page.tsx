@@ -19,7 +19,7 @@ const ReadingTestPage: React.FC = () => {
     // Add any logic to handle the timer ending here
     console.log("Timer ended");
   };
-  const openDialog = useDialogStorePersist((state) => state.openDialog);
+  const openDialog = useDialogStorePersist((state: { openDialog: any; }) => state.openDialog);
 
   const handleOpenDialog = () => {
     openDialog({
