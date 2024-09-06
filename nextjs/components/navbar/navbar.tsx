@@ -8,7 +8,7 @@ export function MainNav({
   ...props
 }: React.HTMLAttributes<HTMLElement>) {
   return (
-    <div className="flex items-center gap-x-6 fixed top-0 left-1/2 transform -translate-x-1/2  max-w-screen-xl bg-background rounded-lg p-4">
+    <div className=" flex  fixed  w-full justify-center gap-6 top-0 bg-background items-center py-6">
       {/* <ImageContainer /> */}
       <NavLinks />
       <ModeToggle />

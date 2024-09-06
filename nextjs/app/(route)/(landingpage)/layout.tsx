@@ -5,6 +5,7 @@ import LandingPageMenu from "./landding_page_component/landding_page_menu";
 import LandingPageNavbar from "./landding_page_component/landding_page_navbar";
 import Header from "./landding_page_component/header";
 import ActiveSectionContextProvider from "@/app/context/active-section-context";
+import DashboardMail from "../dashboard/dashboard_component/dashboard_mail/dashboard_mail";
 
 export default function DashboardLayout({
   children
@@ -24,12 +25,15 @@ export default function DashboardLayout({
           <span className="hidden lg:block font-bold">SchooLama</span>
         </Link> */}
           {/* <Header /> */}
+
           <LandingPageMenu />
         </div>
         {/* RIGHT */}
         <div className="w-[86%] md:w-[92%] lg:w-[84%] xl:w-[86%] flex flex-col">
           {children}
         </div>
+
+     
       </div>
     </ActiveSectionContextProvider>
   );

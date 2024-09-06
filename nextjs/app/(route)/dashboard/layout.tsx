@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import DashBoardMenu from "./dashboard_component/dashboard_menu";
+import DashboardMail from "./dashboard_component/dashboard_mail/dashboard_mail";
 import DashBoardNavbar from "./dashboard_component/dashboard_navbar";
 
 export default function DashboardLayout({
@@ -19,6 +20,7 @@ export default function DashboardLayout({
           <Image src="/logo.png" alt="logo" width={32} height={32} />
           <span className="hidden lg:block font-bold">SchooLama</span>
         </Link>
+
         <DashBoardMenu />
       </div>
       {/* RIGHT */}

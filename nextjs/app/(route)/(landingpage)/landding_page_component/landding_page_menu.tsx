@@ -1,6 +1,8 @@
 import { role } from "@/lib/dashboard/data";
 import Image from "next/image";
 import Link from "next/link";
+import DashboardMail from "../../dashboard/dashboard_component/dashboard_mail/dashboard_mail";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const menuItems = [
   {
@@ -120,25 +122,27 @@ const menuItems = [
 const LandingPageMenu = () => {
   return (
     <div className="mt-4 text-sm z-[998] fixed top-4">
-      {menuItems.map((i) => (
-        <div className="flex flex-col gap-2" key={i.title}>
-          <span className="hidden lg:block  font-light my-4">{i.title}</span>
-          {i.items.map((item) => {
-            if (item.visible.includes(role)) {
-              return (
-                <Link
-                  href={item.href}
-                  key={item.label}
-                  className="flex items-center justify-center lg:justify-start gap-4 text-gray-500 py-2 md:px-2 rounded-md hover:bg-lamaSkyLight"
-                >
-                  <Image src={item.icon} alt="" width={20} height={20} />
-                  <span className="hidden lg:block">{item.label}</span>
-                </Link>
-              );
-            }
-          })}
-        </div>
-      ))}
+      <ScrollArea className="h-[1000px] w-[250px]  p-4">
+        {menuItems.map((i) => (
+          <div className="flex flex-col gap-2" key={i.title}>
+            <span className="hidden lg:block  font-light my-4">{i.title}</span>
+            {i.items.map((item) => {
+              if (item.visible.includes(role)) {
+                return (
+                  <Link
+                    href={item.href}
+                    key={item.label}
+                    className="flex items-center justify-center lg:justify-start gap-4 text-gray-500 py-2 md:px-2 rounded-md hover:bg-lamaSkyLight"
+                  >
+                    <Image src={item.icon} alt="" width={20} height={20} />
+                    <span className="hidden lg:block">{item.label}</span>
+                  </Link>
+                );
+              }
+            })}
+          </div>
+        ))}
+      </ScrollArea>
     </div>
   );
 };

@@ -23,7 +23,7 @@ const NavLinks = () => {
             className={cn(
               "text-sm font-medium transition-colors hover:text-primary",
               pathname === route.href
-                ? "border-b-2 border-orange-500 transition-all ease-in-out duration-300 dark:text-white light:text-black"
+                ? "border-b-2 border-orange-500 transition-all ease-in-out duration-300 "
                 : "transition-all ease-in-out duration-300 text-muted-foreground"
             )}
             onClick={() => handleLinkClick(route.href, route.label)}
