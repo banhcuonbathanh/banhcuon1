@@ -63,3 +63,11 @@ CREATE TABLE IF NOT EXISTS question_models (
     correct_answer JSONB NULL
 );
 
+CREATE TABLE IF NOT EXISTS comments (
+    id SERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    author_id TEXT NOT NULL,
+    parent_id UUID,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+);

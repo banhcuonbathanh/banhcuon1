@@ -48,18 +48,6 @@ func (rs *ReadingServericeStruct) CreateReading(ctx context.Context, req *proto.
 }
 
 
-// func (rs *ReadingServericeStruct) SaveReading(ctx context.Context, res *proto.ReadingRes) (*proto.ReadingRes, error) {
-//     reading := convertProtoReadingResToModel(res)
-    
-  
-
-//     savedReading, err := rs.readingRepo.SaveReading(ctx, reading)
-//     if err != nil {
-//         return nil, fmt.Errorf("error saving reading: %w", err)
-//     }
-    
-//     return convertModelToProtoReadingRes(savedReading), nil
-// }
 func (rs *ReadingServericeStruct) SaveReading(ctx context.Context, res *proto.ReadingRes) (*emptypb.Empty, error) {
     reading := convertProtoReadingResToModel(res)
 
