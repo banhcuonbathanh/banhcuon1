@@ -1,16 +1,16 @@
 package comment_api
 
 import (
-	middleware "english-ai-full/ecomm-api"
+	// middleware "english-ai-full/ecomm-api"
 	"net/http"
 
 	"github.com/go-chi/chi"
 )
 
 func RegisterCommentRoutes(r *chi.Mux, handler *CommentHandlerController) *chi.Mux {
-	tokenMaker := handler.TokenMaker
+	// tokenMaker := handler.TokenMaker
 
-	r.Route("/comments", func(r chi.Router) {
+	r.Route("/comment", func(r chi.Router) {
 		r.Get("/test", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Comment server is running"))
 		})
@@ -21,7 +21,7 @@ func RegisterCommentRoutes(r *chi.Mux, handler *CommentHandlerController) *chi.M
 
 		// Authenticated routes
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
+			// r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
 			
 			r.Post("/", handler.CreateComment)
 			r.Put("/", handler.UpdateComment)

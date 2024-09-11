@@ -15,7 +15,7 @@ psql -U myuser -d mydatabase
 DROP DATABASE mydatabase;
 TRUNCATE TABLE schema*migrations, users; delete all data
 \dt : list all table
-\d users
+\d comments
 \d sessions
 \d reading_test_models;
 SELECT * FROM reading_test_models;
