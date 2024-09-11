@@ -5,7 +5,8 @@ import (
 	"english-ai-full/ecomm-grpc/db"
 
 	// "os"
-
+comment_repository "english-ai-full/ecomm-grpc/repository/comment_repository"
+	comment_service "english-ai-full/ecomm-grpc/service/comment_service"
 	reading_repository "english-ai-full/ecomm-grpc/repository/reading_repository"
 	repository "english-ai-full/ecomm-grpc/repository/user_repository"
 	reading_service "english-ai-full/ecomm-grpc/service/reading_service"
@@ -19,6 +20,7 @@ import (
 
 	pb "english-ai-full/ecomm-grpc/proto"
 	reading_pb "english-ai-full/ecomm-grpc/proto/reading"
+		comment_pb "english-ai-full/ecomm-grpc/proto/comment"
 )
 
 func main() {
@@ -56,6 +58,14 @@ func main() {
 // intiate userRepo userService
 readingRepo := reading_repository.NewReadingRepository(dbConn)
 readingService := reading_service.NewReadingServer(readingRepo)
+
+// intiate commentRepo commentService
+commentRepo := comment_repository.NewCommentRepository(dbConn)
+commentService := comment_service.NewCommentServer(commentRepo)
+
+
+
+
 	lis, err := net.Listen("tcp", cfg.GRPCAddress)
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
@@ -63,10 +73,11 @@ readingService := reading_service.NewReadingServer(readingRepo)
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterEcommUserServer(grpcServer, userService)
-	log.Printf("Registering EcommReading service")
+
 	reading_pb.RegisterEcommReadingServer(grpcServer, readingService)
-	log.Printf("EcommReading service registered")
-	log.Printf("Starting gRPC server on %s", cfg.GRPCAddress)
+
+	comment_pb.RegisterCommentServiceServer(grpcServer, commentService)
+
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve gRPC: %v", err)
 	}

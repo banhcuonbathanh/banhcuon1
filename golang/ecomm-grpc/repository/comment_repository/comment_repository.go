@@ -24,7 +24,7 @@ func NewCommentRepository(db *pgxpool.Pool) *CommentRepository {
 	}
 }
 
-func (r *CommentRepository) CreateComment(ctx context.Context, content string, authorID int64, parentID int64) (*pb.Comment, error) {
+func (r *CommentRepository) CreateComment(ctx context.Context, content string, authorID int64, parentID int64) (*pb.CommentRes, error) {
 	log.Println("Creating new comment in database")
 
 	query := `
@@ -48,7 +48,7 @@ func (r *CommentRepository) CreateComment(ctx context.Context, content string, a
 		return nil, fmt.Errorf("error creating comment: %w", err)
 	}
 
-	return &pb.Comment{
+	return &pb.CommentRes{
 		Id:        id,
 		Content:   returnedContent,
 		AuthorId:  returnedAuthorID,
@@ -58,51 +58,8 @@ func (r *CommentRepository) CreateComment(ctx context.Context, content string, a
 	}, nil
 }
 
-func (r *CommentRepository) GetComments(ctx context.Context, parentID int64) ([]*pb.Comment, error) {
-	log.Println("Fetching comments from database")
 
-	query := `
-		SELECT id, content, author_id, parent_id, created_at, updated_at
-		FROM comments
-		WHERE parent_id = $1
-		ORDER BY created_at DESC
-	`
-
-	rows, err := r.db.Query(ctx, query, parentID)
-	if err != nil {
-		log.Println("Error fetching comments:", err)
-		return nil, fmt.Errorf("error fetching comments: %w", err)
-	}
-	defer rows.Close()
-
-	var comments []*pb.Comment
-	for rows.Next() {
-		var id int64
-		var authorID int64
-		var content string
-		var parentID sql.NullInt64
-		var createdAt, updatedAt time.Time
-
-		err := rows.Scan(&id, &content, &authorID, &parentID, &createdAt, &updatedAt)
-		if err != nil {
-			log.Println("Error scanning comment row:", err)
-			return nil, fmt.Errorf("error scanning comment row: %w", err)
-		}
-
-		comments = append(comments, &pb.Comment{
-			Id:        id,
-			Content:   content,
-			AuthorId:  authorID,
-			ParentId:  parentID.Int64,
-			CreatedAt: timestamppb.New(createdAt),
-			UpdatedAt: timestamppb.New(updatedAt),
-		})
-	}
-
-	return comments, nil
-}
-
-func (r *CommentRepository) UpdateComment(ctx context.Context, id int64, content string) (*pb.Comment, error) {
+func (r *CommentRepository) UpdateComment(ctx context.Context, id int64, content string) (*pb.CommentRes, error) {
 	log.Println("Updating comment in database")
 
 	query := `
@@ -127,7 +84,7 @@ func (r *CommentRepository) UpdateComment(ctx context.Context, id int64, content
 		return nil, fmt.Errorf("error updating comment: %w", err)
 	}
 
-	return &pb.Comment{
+	return &pb.CommentRes{
 		Id:        returnedID,
 		Content:   returnedContent,
 		AuthorId:  returnedAuthorID,
@@ -151,7 +108,7 @@ func (r *CommentRepository) DeleteComment(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *CommentRepository) GetCommentByID(ctx context.Context, id int64) (*pb.Comment, error) {
+func (r *CommentRepository) GetCommentByID(ctx context.Context, id int64) (*pb.CommentRes, error) {
 	log.Println("Fetching comment by ID from database")
 
 	query := `
@@ -173,7 +130,7 @@ func (r *CommentRepository) GetCommentByID(ctx context.Context, id int64) (*pb.C
 		return nil, fmt.Errorf("error fetching comment: %w", err)
 	}
 
-	return &pb.Comment{
+	return &pb.CommentRes{
 		Id:        returnedID,
 		Content:   content,
 		AuthorId:  authorID,

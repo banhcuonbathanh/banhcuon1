@@ -1,13 +1,15 @@
 package types
 
-
 import (
 	"time"
+
+	proto "english-ai-full/ecomm-grpc/proto/comment"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // CommentModel represents the structure for a comment
+
 type CommentModel struct {
 	ID        int64          `json:"id"`
 	Content   string         `json:"content"`
@@ -17,7 +19,6 @@ type CommentModel struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 }
-
 // CreateCommentRequest represents the structure for creating a new comment
 type CreateCommentRequest struct {
 	Content  string `json:"content"`
@@ -64,8 +65,8 @@ type DeleteCommentResponse struct {
 }
 
 // ConvertToProtoComment converts a CommentModel to a proto Comment
-func (c *CommentModel) ConvertToProtoComment() *Comment {
-	return &Comment{
+func (c *CommentModel) ConvertToProtoComment() *proto.Comment {
+	return &proto.Comment{
 		Id:        c.ID,
 		Content:   c.Content,
 		AuthorId:  c.AuthorID,
@@ -77,7 +78,7 @@ func (c *CommentModel) ConvertToProtoComment() *Comment {
 }
 
 // ConvertFromProtoComment converts a proto Comment to a CommentModel
-func ConvertFromProtoComment(pc *Comment) *CommentModel {
+func ConvertFromProtoComment(pc *proto.Comment) *CommentModel {
 	return &CommentModel{
 		ID:        pc.Id,
 		Content:   pc.Content,
@@ -89,16 +90,17 @@ func ConvertFromProtoComment(pc *Comment) *CommentModel {
 	}
 }
 
+
 // Helper functions for converting slices of comments
-func convertToProtoComments(comments []*CommentModel) []*Comment {
-	protoComments := make([]*Comment, len(comments))
+func convertToProtoComments(comments []*CommentModel) []*proto.Comment {
+	protoComments := make([]*proto.Comment, len(comments))
 	for i, comment := range comments {
 		protoComments[i] = comment.ConvertToProtoComment()
 	}
 	return protoComments
 }
 
-func convertFromProtoComments(protoComments []*Comment) []*CommentModel {
+func convertFromProtoComments(protoComments []*proto.Comment) []*CommentModel {
 	comments := make([]*CommentModel, len(protoComments))
 	for i, pc := range protoComments {
 		comments[i] = ConvertFromProtoComment(pc)

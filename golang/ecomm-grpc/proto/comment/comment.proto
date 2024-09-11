@@ -3,16 +3,16 @@ syntax = "proto3";
 package comment;
 
 import "google/protobuf/timestamp.proto";
-
+import "google/protobuf/empty.proto";
 option go_package = "your_project/proto";
 
 service CommentService {
-  rpc CreateComment(CreateCommentRequest) returns (Comment);
-  rpc GetComments(GetCommentsRequest) returns (GetCommentsResponse);
-  rpc CreateReply(CreateReplyRequest) returns (Comment);
-  rpc UpdateComment(UpdateCommentRequest) returns (Comment);
-  rpc GetCommentByID(GetCommentByIDRequest) returns (Comment);
-  rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse);
+  rpc CreateComment(CreateCommentRequest) returns (CommentRes);
+  rpc GetComments(GetCommentsRequest) returns (CommentRes);
+  rpc CreateReply(CreateReplyRequest) returns (CommentRes);
+  rpc UpdateComment(UpdateCommentRequest) returns (CommentRes);
+  rpc GetCommentByID(GetCommentByIDRequest) returns (CommentRes);
+  rpc DeleteComment(DeleteCommentRequest) returns (google.protobuf.Empty);
 }
 
 message Comment {
@@ -21,6 +21,24 @@ message Comment {
   int64 author_id = 3;
   int64 parent_id = 4;
   repeated Comment replies = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+message CommentReq {
+
+  string content = 2;
+  int64 author_id = 3;
+  int64 parent_id = 4;
+
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+message CommentRes {
+  int64 id = 1;
+  string content = 2;
+  int64 author_id = 3;
+  int64 parent_id = 4;
+  repeated CommentRes replies = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
 }

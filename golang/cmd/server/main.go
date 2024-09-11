@@ -14,10 +14,12 @@ import (
 
 	// pb "english-ai-full/ecomm-grpc/proto"
 
+	comment_api "english-ai-full/ecomm-api/comment-api"
 	reading_api "english-ai-full/ecomm-api/reading-api"
 	user_api "english-ai-full/ecomm-api/user-api"
 	"english-ai-full/ecomm-grpc/config"
 	pb "english-ai-full/ecomm-grpc/proto"
+	pb_comment "english-ai-full/ecomm-grpc/proto/comment"
 	pb_reading "english-ai-full/ecomm-grpc/proto/reading"
 
 	// "github.com/go-chi/chi"
@@ -82,6 +84,14 @@ client := pb.NewEcommUserClient(conn)
 	hdl := handler.NewHandler(client, *secretKey)
 	
 	route.RegisterRoutes(r, hdl)
+
+
+	// comment 
+	client_comment := pb_comment.NewCommentServiceClient(conn)
+
+	hdl_comment := comment_api.NewCommentHandler(client_comment, *secretKey)
+	comment_api.RegisterCommentRoutes(r, hdl_comment)
+
 
 // new user  handler
 hdl_NewUser := user_api.NewHandlerUser(client, *secretKey)
