@@ -17,6 +17,7 @@ import (
 	comment_api "english-ai-full/ecomm-api/comment-api"
 	reading_api "english-ai-full/ecomm-api/reading-api"
 	user_api "english-ai-full/ecomm-api/user-api"
+	"english-ai-full/ecomm-api/websocket"
 	"english-ai-full/ecomm-grpc/config"
 	pb "english-ai-full/ecomm-grpc/proto"
 	pb_comment "english-ai-full/ecomm-grpc/proto/comment"
@@ -99,7 +100,19 @@ hdl_NewUser := user_api.NewHandlerUser(client, *secretKey)
 user_api.RegisterRoutesUser(r, hdl_NewUser)
 // start user
 
+
+wsHandler := websocket.NewHandler()
+r.Get("/ws", wsHandler.HandleWebSocket)
+
+
+
+
+
 route.Start(":8888", r)
+
+
+}
+
 
 	// go func() {
 	// 	log.Printf("Starting HTTP server on %s", cfg.HTTPAddress)
@@ -121,4 +134,3 @@ route.Start(":8888", r)
 	// }
 
 	// log.Println("HTTP server stopped")
-}
