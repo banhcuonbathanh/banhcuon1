@@ -13,11 +13,12 @@ import (
 	// "time"
 
 	// pb "english-ai-full/ecomm-grpc/proto"
-
+"english-ai-full/ecomm-api/websocket/websocket_repository"
+"english-ai-full/ecomm-api/websocket/websocket_service"
 	comment_api "english-ai-full/ecomm-api/comment-api"
 	reading_api "english-ai-full/ecomm-api/reading-api"
 	user_api "english-ai-full/ecomm-api/user-api"
-	"english-ai-full/ecomm-api/websocket"
+	websocket_handler "english-ai-full/ecomm-api/websocket/websocket_handler"
 	"english-ai-full/ecomm-grpc/config"
 	pb "english-ai-full/ecomm-grpc/proto"
 	pb_comment "english-ai-full/ecomm-grpc/proto/comment"
@@ -99,10 +100,16 @@ hdl_NewUser := user_api.NewHandlerUser(client, *secretKey)
 
 user_api.RegisterRoutesUser(r, hdl_NewUser)
 // start user
+websockrepo := websocket_repository.NewInMemoryMessageRepository()
+websocketService := websocket_service.NewWebSocketService(websockrepo)
+go websocketService.Run()
 
+websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
 
-wsHandler := websocket.NewHandler()
-r.Get("/ws", wsHandler.HandleWebSocket)
+// http.HandleFunc("/ws", websocketHandler.HandleWebSocket)
+
+// wsHandler := websocket.NewHandler()
+r.Get("/ws", websocketHandler.HandleWebSocket)
 
 
 
