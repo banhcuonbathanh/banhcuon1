@@ -5,9 +5,11 @@ import (
 )
 
 type Config struct {
-	DatabaseURL  string
-	GRPCAddress  string
-	HTTPAddress string
+	DatabaseURL  string `mapstructure:"databaseURL"`
+	GRPCAddress  string `mapstructure:"grpcAddress"`
+	HTTPAddress  string `mapstructure:"HTTPAddress"`
+	AnthropicAPIKey string `mapstructure:"anthropicAPIKey"`
+	AnthropicAPIURL string `mapstructure:"anthropicAPIURL"`
 }
 
 func Load() (*Config, error) {

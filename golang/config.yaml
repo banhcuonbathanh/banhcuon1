@@ -1,3 +1,5 @@
 databaseURL: "postgres://myuser:mypassword@localhost:5432/mydatabase?sslmode=disable"
 grpcAddress: ":50051"
 HTTPAddress: ":8888"
+anthropicAPIKey: "your-api-key-here"
+anthropicAPIURL: "https://api.anthropic.com/v1/completions"
