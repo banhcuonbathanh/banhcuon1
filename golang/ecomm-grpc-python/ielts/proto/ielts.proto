@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "ecomm-grpc-python/ielts/proto";
+
+
+
+service PythonService {
+  rpc ProcessData (DataRequest) returns (DataResponse) {}
+}
+
+message DataRequest {
+  string input_data = 1;
+}
+
+message DataResponse {
+  string processed_data = 2;
+}
