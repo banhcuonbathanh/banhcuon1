@@ -136,6 +136,18 @@ question_models
 users
 sessions
 
+
+Jump back to the golang branch:
+git checkout golang
+
+Merge the golang branch with the python branch:
+git merge python
+
+Update the changes to the remote repository:
+git push origin golang
+
+Jump back to the python branch:
+git checkout python
 ========================================= golang ==============================
 
 
@@ -155,3 +167,4 @@ python server/greeter_server.py
 
 
 python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. proto/helloworld.proto
+
