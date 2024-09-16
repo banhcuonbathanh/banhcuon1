@@ -3,8 +3,9 @@ cd english-app-fe-nextjs
 cd golang
 
 go get -u github.com/go-chi/chi/v5
-
+cd golang
 go run cmd/server/main.go
+cd golang
 go run cmd/grcp-server/main.go
 go run cmd/client/main.go
 ======================================= postgres ======================
@@ -104,6 +105,10 @@ golang/
 git branch dev
 git checkout golang-new-server-for-grpc
 
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/python_proto/helloworld.proto
+
+
+
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc-python/ielts/proto/ielts.proto
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/claude/claude.proto
@@ -132,3 +137,21 @@ users
 sessions
 
 ========================================= golang ==============================
+
+
+====================================== project proto ============================
+
+cd project_protos
+
+go mod init project_proto
+
+
+source env/bin/activate
+
+
+cd python
+python server/greeter_server.py
+
+
+
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. proto/helloworld.proto

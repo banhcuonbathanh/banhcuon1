@@ -13,14 +13,19 @@ import (
 	// "time"
 
 	// pb "english-ai-full/ecomm-grpc/proto"
-"english-ai-full/ecomm-api/websocket/websocket_repository"
-"english-ai-full/ecomm-api/websocket/websocket_service"
+
 	comment_api "english-ai-full/ecomm-api/comment-api"
 	reading_api "english-ai-full/ecomm-api/reading-api"
 	user_api "english-ai-full/ecomm-api/user-api"
 	websocket_handler "english-ai-full/ecomm-api/websocket/websocket_handler"
+
+	python_handler "english-ai-full/ecomm-api/python-api"
+	"english-ai-full/ecomm-api/websocket/websocket_repository"
+	"english-ai-full/ecomm-api/websocket/websocket_service"
 	"english-ai-full/ecomm-grpc/config"
 	pb "english-ai-full/ecomm-grpc/proto"
+	pb_python "english-ai-full/ecomm-grpc/proto/python_proto"
+
 	pb_comment "english-ai-full/ecomm-grpc/proto/comment"
 	pb_reading "english-ai-full/ecomm-grpc/proto/reading"
 
@@ -57,7 +62,36 @@ func main() {
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
+// python server ---------------------
 
+r := chi.NewRouter()
+
+python_conn, err := grpc.NewClient(":50052", opts...)
+if err != nil {
+	log.Fatalf("failed to connect to Python gRPC server: %v", err)
+}
+defer python_conn.Close()
+
+
+python_client := pb_python.NewGreeterClient(python_conn)
+
+// Create a new handler for the Python service
+python_hdl := python_handler.NewPythonHandler(python_client)
+
+
+
+log.Println("Server started and listening on port 8080 python_client", python_client)
+// Register the Python service routes
+r.Get("/test-python-grpc", python_hdl.TestPythonGRPC)
+
+
+
+log.Println("Server started and listening on port 8080 python_client", python_client)
+// Register the Python service routes
+r.Get("/test-python-grpc", python_hdl.TestPythonGRPC)
+
+
+//  ---------------------------
 	conn, err := grpc.NewClient(*svcAddr, opts...)
 	if err != nil {
 		log.Fatalf("failed to connect to server: %v", err)
@@ -66,7 +100,7 @@ func main() {
 
 
 
-	r := chi.NewRouter()
+
 
 
 // new reading handler
