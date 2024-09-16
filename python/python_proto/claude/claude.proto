@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package claude;
 
-option go_package = "english-ai-full/ecomm-grpc/proto";
+
 
 service IELTSService {
   rpc EvaluateIELTS (EvaluationResponseFromToDataBase) returns (EvaluationResponseFromToDataBase) {}

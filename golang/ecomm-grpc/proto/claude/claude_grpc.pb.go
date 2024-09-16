@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	IELTSService_EvaluateIELTS_FullMethodName = "/proto.IELTSService/EvaluateIELTS"
+	IELTSService_EvaluateIELTS_FullMethodName = "/claude.IELTSService/EvaluateIELTS"
 )
 
 // IELTSServiceClient is the client API for IELTSService service.
@@ -108,7 +108,7 @@ func _IELTSService_EvaluateIELTS_Handler(srv interface{}, ctx context.Context, d
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var IELTSService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.IELTSService",
+	ServiceName: "claude.IELTSService",
 	HandlerType: (*IELTSServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
