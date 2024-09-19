@@ -9,16 +9,16 @@ import (
 	pb_python "english-ai-full/ecomm-grpc/proto/python_proto"
 )
 
-type PythonHandler struct {
+type PythonHandlerController struct {
 	ctx    context.Context
 	client pb_python.GreeterClient
 }
 
-func NewPythonHandler(client pb_python.GreeterClient) *PythonHandler {
-	return &PythonHandler{ctx: context.Background(), client: client}
+func NewPythonHandler(client pb_python.GreeterClient) *PythonHandlerController {
+	return &PythonHandlerController{ctx: context.Background(), client: client}
 }
 
-func (h *PythonHandler) TestPythonGRPC(w http.ResponseWriter, r *http.Request) {
+func (h *PythonHandlerController) TestPythonGRPC(w http.ResponseWriter, r *http.Request) {
 
 
 	name := r.URL.Query().Get("name")

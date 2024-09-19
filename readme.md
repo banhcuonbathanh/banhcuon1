@@ -7,6 +7,10 @@ cd golang
 go run cmd/server/main.go
 cd golang
 go run cmd/grcp-server/main.go
+
+cd golang && cd cmd && cd python && source env/bin/activate
+python server/python_server.py
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. python_proto/claude/claude.proto
 go run cmd/client/main.go
 ======================================= postgres ======================
 psql -U myuser -d mydatabase
@@ -105,9 +109,9 @@ golang/
 git branch dev
 git checkout golang-new-server-for-grpc
 
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/python_proto/claude/claude.proto
+
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/python_proto/helloworld.proto
-
-
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc-python/ielts/proto/ielts.proto
 
@@ -136,7 +140,6 @@ question_models
 users
 sessions
 
-
 Jump back to the golang branch:
 git checkout golang
 
@@ -150,22 +153,17 @@ Jump back to the python branch:
 git checkout python
 ========================================= golang ==============================
 
-
 ====================================== project proto ============================
 
 cd project_protos
 
 go mod init project_proto
 
-
 source env/bin/activate
-
 
 cd python
 python server/greeter_server.py
 
-
-
-python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. proto/helloworld.proto
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. python_proto/helloworld.proto
 
 python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. python_proto/claude/claude.proto
