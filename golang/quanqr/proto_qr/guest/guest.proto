@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "english-ai-full/quanqr/proto_qr/guest";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+message Guest {
+  int64 id = 1;
+  string name = 2;
+  int32 table_number = 3;
+  string refresh_token = 4;
+  google.protobuf.Timestamp refresh_token_expires_at = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message GuestLoginRequest {
+  string name = 1;
+  int32 table_number = 2;
+  string token = 3;
+}
+
+message GuestLoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  GuestInfo guest = 3;
+  string message = 4;
+}
+
+message GuestInfo {
+  int64 id = 1;
+  string name = 2;
+  string role = 3;
+  int32 table_number = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string message = 3;
+}
+
+message CreateOrderItem {
+  int64 dish_id = 1;
+  int32 quantity = 2;
+}
+
+message CreateOrdersRequest {
+  repeated CreateOrderItem items = 1;
+}
+
+message Order {
+  // Define the Order message based on your OrderSchema
+  // This is a placeholder, adjust according to your actual schema
+  int64 id = 1;
+  int64 guest_id = 2;
+  int32 table_number = 3;
+  int64 dish_id = 4;
+  int32 quantity = 5;
+  string status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message OrdersResponse {
+  repeated Order data = 1;
+  string message = 2;
+}
+
+service GuestService {
+  rpc Login(GuestLoginRequest) returns (GuestLoginResponse);
+  rpc Logout(LogoutRequest) returns (google.protobuf.Empty);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc CreateOrders(CreateOrdersRequest) returns (OrdersResponse);
+  rpc GetOrders(google.protobuf.Empty) returns (OrdersResponse);
+}

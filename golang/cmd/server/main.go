@@ -90,23 +90,13 @@ python_ielts.RegisterPythonIeltsRoutes(r,python_hdl_ielts)
 	}
 	defer conn.Close()
 
+// reading service
 
+setupReadingService(r, conn, secretKey)
+// client_reading := pb_reading.NewEcommReadingClient(conn)
 
-
-
-
-// new reading handler
-// conn_reading, err := grpc.NewClient(*svcAddr, opts...)
-// if err != nil {
-// 	log.Fatalf("failed to connect to server: %v", err)
-// }
-// defer conn.Close()
-
-// reading 
-client_reading := pb_reading.NewEcommReadingClient(conn)
-
-hdl_reading := reading_api.NewReadingHandler(client_reading, *secretKey)
-reading_api.RegisterReadingRoutes(r, hdl_reading)
+// hdl_reading := reading_api.NewReadingHandler(client_reading, *secretKey)
+// reading_api.RegisterReadingRoutes(r, hdl_reading)
 //  user handler
 client := pb.NewEcommUserClient(conn)
 	hdl := handler.NewHandler(client, *secretKey)
@@ -125,20 +115,20 @@ client := pb.NewEcommUserClient(conn)
 hdl_NewUser := user_api.NewHandlerUser(client, *secretKey)
 
 user_api.RegisterRoutesUser(r, hdl_NewUser)
-// start user
-websockrepo := websocket_repository.NewInMemoryMessageRepository()
-websocketService := websocket_service.NewWebSocketService(websockrepo)
-go websocketService.Run()
+// web socket
 
-websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
+setupWebSocketService(r, )
 
-// http.HandleFunc("/ws", websocketHandler.HandleWebSocket)
+// websockrepo := websocket_repository.NewInMemoryMessageRepository()
+// websocketService := websocket_service.NewWebSocketService(websockrepo)
+// go websocketService.Run()
 
-// wsHandler := websocket.NewHandler()
-r.Get("/ws", websocketHandler.HandleWebSocket)
+// websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
+
+// r.Get("/ws", websocketHandler.HandleWebSocket)
 
 
-
+// dish
 
 
 route.Start(":8888", r)
@@ -146,6 +136,24 @@ route.Start(":8888", r)
 
 }
 
+
+func setupReadingService(r *chi.Mux, conn *grpc.ClientConn, secretKey *string) {
+	client_reading := pb_reading.NewEcommReadingClient(conn)
+
+	hdl_reading := reading_api.NewReadingHandler(client_reading, *secretKey)
+	reading_api.RegisterReadingRoutes(r, hdl_reading)
+}
+
+
+
+func setupWebSocketService(r *chi.Mux) {
+    websockrepo := websocket_repository.NewInMemoryMessageRepository()
+    websocketService := websocket_service.NewWebSocketService(websockrepo)
+    go websocketService.Run()
+
+    websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
+    r.Get("/ws", websocketHandler.HandleWebSocket)
+}
 
 	// go func() {
 	// 	log.Printf("Starting HTTP server on %s", cfg.HTTPAddress)

@@ -173,4 +173,20 @@ python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. python_proto/
 python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. python_proto/claude/claude.proto
 
 
-====================
+------------------------------------- quan an qr ------------
+
+
+
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/account/account.proto
+
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/dish/dish.proto
+
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/dishsnapshot/dishsnapshot.proto
+
+
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/guest/guest.proto
+
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/order/order.proto
+
+
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/table/table.proto
