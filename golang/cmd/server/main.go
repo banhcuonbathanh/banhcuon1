@@ -19,6 +19,8 @@ import (
 
 	pb_comment "english-ai-full/ecomm-grpc/proto/comment"
 	pb_reading "english-ai-full/ecomm-grpc/proto/reading"
+	dish "english-ai-full/quanqr/dish"
+	pb_dish "english-ai-full/quanqr/proto_qr/dish"
 
 	// "github.com/go-chi/chi"
 
@@ -130,7 +132,12 @@ setupWebSocketService(r, )
 
 // dish
 
+dish_client := pb_dish.NewDishServiceClient(conn)
+	dish_hdl := dish.NewDishHandler(dish_client, *secretKey)
+	
+	dish.RegisterDishRoutes(r, dish_hdl)
 
+	//
 route.Start(":8888", r)
 
 
