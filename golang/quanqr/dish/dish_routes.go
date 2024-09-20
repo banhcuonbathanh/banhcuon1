@@ -1,7 +1,7 @@
 package dish_grpc
 
 import (
-	middleware "english-ai-full/ecomm-api"
+	// middleware "english-ai-full/ecomm-api"
 	"net/http"
 
 	// "english-ai-full/quanqr/dish_grpc"
@@ -11,7 +11,7 @@ import (
 )
 
 func RegisterDishRoutes(r *chi.Mux, handler *DishHandlerController) *chi.Mux {
-	tokenMaker := handler.TokenMaker
+	// tokenMaker := handler.TokenMaker
 	r.Get("/dishes-test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Server dish is running"))
 	})
@@ -20,7 +20,7 @@ func RegisterDishRoutes(r *chi.Mux, handler *DishHandlerController) *chi.Mux {
 
 
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
+			// r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
 
 			r.Get("/", handler.GetDishList)
 			r.Post("/", handler.CreateDish)
