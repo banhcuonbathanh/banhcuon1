@@ -40,6 +40,11 @@ export const existingRoutes = [
     active: `/dashboard2`
   },
   {
+    href: `/dashboard3`,
+    label: "Dashboard3",
+    active: `/dashboard3`
+  },
+  {
     href: `/mail`,
     label: "Mail",
     active: `/mail`

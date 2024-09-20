@@ -4,6 +4,8 @@ import "./globals.css";
 import ExampleDialog from "./(route)/(landingpage)/landingpage_dialog/landdingpage_dialog";
 import { ThemeProvider } from "@/provider/theme-provider";
 import { MainNav } from "@/components/navbar/navbar";
+import IeltsNavBar from "@/components/ieltsNavbar/ieltsNavbar";
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +28,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <MainNav />
+          <IeltsNavBar />
 
           <ExampleDialog />
           {children}
