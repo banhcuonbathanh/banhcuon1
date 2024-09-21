@@ -5,10 +5,13 @@ import (
 	"english-ai-full/ecomm-grpc/db"
 
 	// "os"
-comment_repository "english-ai-full/ecomm-grpc/repository/comment_repository"
-	comment_service "english-ai-full/ecomm-grpc/service/comment_service"
+	dish "english-ai-full/quanqr/dish"
+	dishPb "english-ai-full/quanqr/proto_qr/dish"
+
+	comment_repository "english-ai-full/ecomm-grpc/repository/comment_repository"
 	reading_repository "english-ai-full/ecomm-grpc/repository/reading_repository"
 	repository "english-ai-full/ecomm-grpc/repository/user_repository"
+	comment_service "english-ai-full/ecomm-grpc/service/comment_service"
 	reading_service "english-ai-full/ecomm-grpc/service/reading_service"
 	service "english-ai-full/ecomm-grpc/service/user_service"
 	"log"
@@ -19,8 +22,8 @@ comment_repository "english-ai-full/ecomm-grpc/repository/comment_repository"
 	"google.golang.org/grpc"
 
 	pb "english-ai-full/ecomm-grpc/proto"
+	comment_pb "english-ai-full/ecomm-grpc/proto/comment"
 	reading_pb "english-ai-full/ecomm-grpc/proto/reading"
-		comment_pb "english-ai-full/ecomm-grpc/proto/comment"
 )
 
 func main() {
@@ -62,6 +65,11 @@ readingService := reading_service.NewReadingServer(readingRepo)
 // intiate commentRepo commentService
 commentRepo := comment_repository.NewCommentRepository(dbConn)
 commentService := comment_service.NewCommentServer(commentRepo)
+dishrepo := dish.NewDishRepository(dbConn)
+dishService := dish.NewDishService(dishrepo)
+
+
+// intiate commentRepo commentService
 
 
 
@@ -72,6 +80,7 @@ commentService := comment_service.NewCommentServer(commentRepo)
 	}
 
 	grpcServer := grpc.NewServer()
+	dishPb.RegisterDishServiceServer(grpcServer,dishService)
 	pb.RegisterEcommUserServer(grpcServer, userService)
 
 	reading_pb.RegisterEcommReadingServer(grpcServer, readingService)
