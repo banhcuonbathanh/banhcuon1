@@ -1,7 +1,11 @@
 package main
 
 import (
+	"image"
+	"image/jpeg"
 	"log"
+	"net/http"
+	"os"
 
 	comment_api "english-ai-full/ecomm-api/comment-api"
 	python_api "english-ai-full/ecomm-api/python-api"
@@ -9,6 +13,9 @@ import (
 	reading_api "english-ai-full/ecomm-api/reading-api"
 	user_api "english-ai-full/ecomm-api/user-api"
 	websocket_handler "english-ai-full/ecomm-api/websocket/websocket_handler"
+	image_upload "english-ai-full/upload/image"
+
+	"github.com/go-chi/cors"
 
 	"english-ai-full/ecomm-api/websocket/websocket_repository"
 	"english-ai-full/ecomm-api/websocket/websocket_service"
@@ -58,6 +65,15 @@ func main() {
 
 
 r := chi.NewRouter()
+
+r.Use(cors.Handler(cors.Options{
+	AllowedOrigins:   []string{"http://localhost:3001", "http://localhost:3000", "http://shop-golang:8888", "http://next-app1:3000", "http://next-app-admin:3001", "http://next-app-admin:3000"},
+	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+	ExposedHeaders:   []string{"Link"},
+	AllowCredentials: true,
+	MaxAge:           300, // Maximum value not ignored by any of major browsers
+}))
 // python server ---------------------
 python_conn, err := grpc.NewClient(":50052", opts...)
 if err != nil {
@@ -138,6 +154,33 @@ dish_client := pb_dish.NewDishServiceClient(conn)
 	dish.RegisterDishRoutes(r, dish_hdl)
 
 	//
+    r.Get("/image", func(w http.ResponseWriter, r *http.Request) {
+
+
+        file, err := os.Open("upload/quananqr/public/pexels-ella-olsson-572949-1640777.jpg")
+        if err != nil {
+            http.Error(w, "Image not found.", http.StatusNotFound)
+            return
+        }
+        defer file.Close()
+
+        img, _, err := image.Decode(file)
+        if err != nil {
+            http.Error(w, "Error decoding image.", http.StatusInternalServerError)
+            return
+        }
+
+        w.Header().Set("Content-Type", "image/jpeg")
+        jpeg.Encode(w, img, nil)
+    })
+
+
+	// 
+
+	hdl_image := image_upload.NewImageHandler( *secretKey)
+
+	image_upload.RegisterImageRoutes(r, hdl_image)
+
 route.Start(":8888", r)
 
 
@@ -162,23 +205,3 @@ func setupWebSocketService(r *chi.Mux) {
     r.Get("/ws", websocketHandler.HandleWebSocket)
 }
 
-	// go func() {
-	// 	log.Printf("Starting HTTP server on %s", cfg.HTTPAddress)
-	// 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-	// 		log.Fatalf("Failed to start Chi server: %v", err)
-	// 	}
-	// }()
-
-	// //  Graceful shutdown
-	// quit := make(chan os.Signal, 1)
-	// signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	// <-quit
-
-	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	// defer cancel()
-
-	// if err := server.Shutdown(ctx); err != nil {
-	// 	log.Fatalf("Server forced to shutdown: %v", err)
-	// }
-
-	// log.Println("HTTP server stopped")
