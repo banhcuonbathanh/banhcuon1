@@ -18,7 +18,8 @@ export const LoginRes = z.object({
       id: z.number(),
       name: z.string(),
       email: z.string(),
-      role: z.enum(RoleValues)
+      role: z.enum(RoleValues),
+      avatar: z.string().nullable()
     })
   }),
   message: z.string()

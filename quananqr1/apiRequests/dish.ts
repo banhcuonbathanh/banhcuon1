@@ -1,10 +1,6 @@
+import { DishListResType, CreateDishBodyType, DishResType, UpdateDishBodyType } from '@/app/(public)/data-public/dish.schema'
 import http from '@/lib/http'
-import {
-  CreateDishBodyType,
-  DishListResType,
-  DishResType,
-  UpdateDishBodyType
-} from '@/schemaValidations/dish.schema'
+
 
 const dishApiRequest = {
   // Note: Next.js 15 thì mặc định fetch sẽ là { cache: 'no-store' } (dynamic rendering page)

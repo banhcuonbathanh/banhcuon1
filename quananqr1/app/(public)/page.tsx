@@ -1,6 +1,6 @@
 import dishApiRequest from "@/apiRequests/dish";
 import { formatCurrency } from "@/lib/utils";
-import { DishListResType } from "@/schemaValidations/dish.schema";
+
 import { StaticImport } from "next/dist/shared/lib/get-img-props";
 import Image from "next/image";
 import {
@@ -11,18 +11,19 @@ import {
   AwaitedReactNode,
   ReactPortal
 } from "react";
+import { DishListResType } from "./data-public/dish.schema";
+import dishController from "./data-public/dish-controller"; 
 
 export default async function Home() {
-  // let dishList: DishListResType["data"] = [];
-  // try {
-  //   const result = await dishApiRequest.list();
-  //   const {
-  //     payload: { data }
-  //   } = result;
-  //   dishList = data;
-  // } catch (error) {
-  //   return <div>Something went wrong</div>;
-  // }
+  let dishList: DishListResType["data"] = [];
+  
+  try {
+    dishList = await dishController.listDishes();  // Use the imported instance
+  } catch (error) {
+    console.error('Error fetching dishes:', error);
+    return <div>Something went wrong</div>;
+  }
+  
   return (
     <div className="w-full space-y-4">
       <section className="relative z-10">
