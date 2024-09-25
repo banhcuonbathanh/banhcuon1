@@ -1,4 +1,5 @@
-cd quananqr
+cd quananqr1
+npm run dev
 
 cd english-app-fe-nextjs
 

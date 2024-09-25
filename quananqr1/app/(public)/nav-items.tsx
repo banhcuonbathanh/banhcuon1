@@ -14,10 +14,11 @@ import {
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { cn, handleErrorApi } from "@/lib/utils";
-import { useAuthStore } from "./zustand-public";
+
 import { Role } from "@/constants/type";
 import { RoleType } from "@/types/jwt.types";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/zusstand/auth/useauth";
 
 const menuItems: {
   title: string;
@@ -57,7 +58,7 @@ function isValidRole(role: string): role is RoleType {
 }
 
 export default function NavItems({ className }: { className?: string }) {
-  const { account, logout: logoutAction } = useAuthStore();
+  const { user, logout: logoutAction } = useAuth();
   const router = useRouter();
 
   const logout = async () => {
@@ -77,13 +78,13 @@ export default function NavItems({ className }: { className?: string }) {
         // Check if the user is authenticated and has the required role
         const isAuth =
           item.role &&
-          account &&
-          isValidRole(account.role) &&
-          item.role.includes(account.role);
+          user &&
+          isValidRole(user.role) &&
+          item.role.includes(user.role);
         // Check if the item should be shown based on login status
         const canShow =
           (item.role === undefined && !item.hideWhenLogin) ||
-          (!account && item.hideWhenLogin);
+          (!user && item.hideWhenLogin);
 
         if (isAuth || canShow) {
           return (
@@ -94,7 +95,7 @@ export default function NavItems({ className }: { className?: string }) {
         }
         return null;
       })}
-      {account && (
+      {user && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <div className={cn(className, "cursor-pointer")}>Đăng xuất</div>

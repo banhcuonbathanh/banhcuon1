@@ -12,18 +12,18 @@ import {
   ReactPortal
 } from "react";
 import { DishListResType } from "./data-public/dish.schema";
-import dishController from "./data-public/dish-controller"; 
+import dishController from "./data-public/dish-controller";
 
 export default async function Home() {
-  let dishList: DishListResType["data"] = [];
-  
-  try {
-    dishList = await dishController.listDishes();  // Use the imported instance
-  } catch (error) {
-    console.error('Error fetching dishes:', error);
-    return <div>Something went wrong</div>;
-  }
-  
+  // let dishList: DishListResType["data"] = [];
+
+  // try {
+  //   dishList = await dishController.listDishes();  // Use the imported instance
+  // } catch (error) {
+  //   console.error('Error fetching dishes:', error);
+  //   return <div>Something went wrong</div>;
+  // }
+
   return (
     <div className="w-full space-y-4">
       <section className="relative z-10">
