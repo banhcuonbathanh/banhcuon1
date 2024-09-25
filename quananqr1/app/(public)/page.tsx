@@ -13,6 +13,7 @@ import {
 } from "react";
 import { DishListResType } from "./data-public/dish.schema";
 import dishController from "./data-public/dish-controller";
+import LoginDialog from "./public-component/public-dialog";
 
 export default async function Home() {
   // let dishList: DishListResType["data"] = [];
@@ -23,9 +24,10 @@ export default async function Home() {
   //   console.error('Error fetching dishes:', error);
   //   return <div>Something went wrong</div>;
   // }
-
+  // PublicDialog
   return (
     <div className="w-full space-y-4">
+      <LoginDialog />
       <section className="relative z-10">
         <span className="absolute top-0 left-0 w-full h-full bg-black opacity-50 z-10"></span>
         <Image

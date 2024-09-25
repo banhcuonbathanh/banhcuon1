@@ -75,25 +75,13 @@ export default function NavItems({ className }: { className?: string }) {
   return (
     <>
       {menuItems.map((item) => {
-        // Check if the user is authenticated and has the required role
-        const isAuth =
-          item.role &&
-          user &&
-          isValidRole(user.role) &&
-          item.role.includes(user.role);
-        // Check if the item should be shown based on login status
-        const canShow =
-          (item.role === undefined && !item.hideWhenLogin) ||
-          (!user && item.hideWhenLogin);
 
-        if (isAuth || canShow) {
-          return (
-            <Link href={item.href} key={item.href} className={className}>
-              {item.title}
-            </Link>
-          );
-        }
-        return null;
+
+        return (
+          <Link href={item.href} key={item.href} className={className}>
+            {item.title}
+          </Link>
+        );
       })}
       {user && (
         <AlertDialog>
