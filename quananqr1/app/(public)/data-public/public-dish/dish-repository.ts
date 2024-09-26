@@ -1,11 +1,6 @@
 import envConfig from "@/config";
 import { normalizePath } from "@/lib/utils";
-import {
-  DishListResType,
-  CreateDishBodyType,
-  DishResType,
-  UpdateDishBodyType
-} from "./dish.schema";
+import { DishListResType, CreateDishBodyType, DishResType, UpdateDishBodyType } from "./dish.schema";
 
 export class DishRepository {
   private baseUrl: string;

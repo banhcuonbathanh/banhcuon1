@@ -3,7 +3,8 @@ import {
   LoginResType,
   LogoutBodyType,
   RefreshTokenBodyType,
-  RefreshTokenResType
+  RefreshTokenResType,
+  RegisterBodyType
 } from "../domain/auth.schema";
 import { AxiosError } from "axios";
 import { authApi } from "../repository/auth-repository";
@@ -18,9 +19,7 @@ class AuthApplication implements IAuthApplication {
     this.authRepository = authRepository;
   }
 
-  async sLogin(
-    body: LoginBodyType
-  ): Promise<{
+  async sLogin(body: LoginBodyType): Promise<{
     success: boolean;
     data?: LoginResType["data"];
     error?: string;
@@ -36,9 +35,7 @@ class AuthApplication implements IAuthApplication {
     }
   }
 
-  async login(
-    body: LoginBodyType
-  ): Promise<{
+  async login(body: LoginBodyType): Promise<{
     success: boolean;
     data?: LoginResType["data"];
     error?: string;
@@ -74,9 +71,7 @@ class AuthApplication implements IAuthApplication {
     }
   }
 
-  async sRefreshToken(
-    body: RefreshTokenBodyType
-  ): Promise<{
+  async sRefreshToken(body: RefreshTokenBodyType): Promise<{
     success: boolean;
     data?: RefreshTokenResType["data"];
     error?: string;
@@ -126,6 +121,22 @@ class AuthApplication implements IAuthApplication {
   }
 
   // Additional helper methods can be added here if needed
+
+  async register(body: RegisterBodyType): Promise<{
+    success: boolean;
+    data?: RegisterBodyType;
+    error?: string;
+  }> {
+    try {
+      const response = await this.authRepository.register(body);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      return this.handleError(error, "register failed");
+    }
+  }
 }
 
 // Export an instance of the application layer

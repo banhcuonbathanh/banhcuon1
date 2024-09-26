@@ -1,4 +1,4 @@
-import { LoginBodyType, LoginResType, LogoutBodyType, RefreshTokenBodyType, RefreshTokenResType } from "../domain/auth.schema";
+import { LoginBodyType, LoginResType, LogoutBodyType, RefreshTokenBodyType, RefreshTokenResType, RegisterBodyType } from "../domain/auth.schema";
 
 
 export interface IAuthRepository {
@@ -8,4 +8,6 @@ export interface IAuthRepository {
   logout(): Promise<void>;
   sRefreshToken(body: RefreshTokenBodyType): Promise<RefreshTokenResType>;
   refreshToken(): Promise<{ status: number; payload: RefreshTokenResType }>;
+
+  register(body: RegisterBodyType): Promise<RegisterBodyType>;
 }

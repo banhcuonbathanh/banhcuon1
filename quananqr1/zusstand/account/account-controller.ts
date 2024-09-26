@@ -5,7 +5,7 @@ import authApiRequest from '@/apiRequests/auth';
 import { AccountType } from "@/schemaValidations/account.schema";
 
 
-type AuthStore = {
+type AccountStore = {
   account: AccountType | null;
   isAuthenticated: boolean;
   accessToken: string | null;
@@ -16,7 +16,7 @@ type AuthStore = {
   clearUser: () => void;
 };
 
-export const useAuthStore = create<AuthStore>()(
+export const useAccountStore = create<AccountStore>()(
   persist(
     (set, get) => ({
       account: null,

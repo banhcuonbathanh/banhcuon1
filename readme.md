@@ -1,3 +1,5 @@
+docker compose up
+
 cd quananqr1
 npm run dev
 
@@ -23,10 +25,11 @@ psql -U myuser -d mydatabase
 DROP DATABASE mydatabase;
 TRUNCATE TABLE schema*migrations, users; delete all data
 \dt : list all table
+\d users
 \d comments
 \d sessions
 \d reading_test_models;
-SELECT * FROM reading_test_models;
+SELECT * FROM users;
 SELECT \* FROM sessions;
 DELETE FROM sessions;
 \d order_items

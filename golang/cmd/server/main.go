@@ -67,12 +67,12 @@ func main() {
 r := chi.NewRouter()
 
 r.Use(cors.Handler(cors.Options{
-	AllowedOrigins:   []string{"http://localhost:3001", "http://localhost:3000", "http://shop-golang:8888", "http://next-app1:3000", "http://next-app-admin:3001", "http://next-app-admin:3000"},
-	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-	ExposedHeaders:   []string{"Link"},
-	AllowCredentials: true,
-	MaxAge:           300, // Maximum value not ignored by any of major browsers
+    AllowedOrigins:   []string{"*"},  // Allow all origins for development
+    AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+    AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+    ExposedHeaders:   []string{"Link"},
+    AllowCredentials: true,
+    MaxAge:           300,
 }))
 // python server ---------------------
 python_conn, err := grpc.NewClient(":50052", opts...)

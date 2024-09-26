@@ -19,6 +19,8 @@ import { Role } from "@/constants/type";
 import { RoleType } from "@/types/jwt.types";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/zusstand/auth/useauth";
+import LoginDialog from "./public-component/login-dialog";
+import RegisterDialog from "./public-component/register-dialog";
 
 const menuItems: {
   title: string;
@@ -40,11 +42,7 @@ const menuItems: {
     href: "/guest/orders",
     role: ["Guest"]
   },
-  {
-    title: "Đăng nhập",
-    href: "/login",
-    hideWhenLogin: true
-  },
+
   {
     title: "Quản lý",
     href: "/manage/dashboard",
@@ -58,7 +56,7 @@ function isValidRole(role: string): role is RoleType {
 }
 
 export default function NavItems({ className }: { className?: string }) {
-  const { user, logout: logoutAction } = useAuth();
+  const { user, logout: logoutAction, login } = useAuth();
   const router = useRouter();
 
   const logout = async () => {
@@ -75,15 +73,38 @@ export default function NavItems({ className }: { className?: string }) {
   return (
     <>
       {menuItems.map((item) => {
-
-
         return (
           <Link href={item.href} key={item.href} className={className}>
             {item.title}
           </Link>
         );
       })}
-      {user && (
+      <LoginDialog />
+      <RegisterDialog />
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <div className={cn(className, "cursor-pointer")}>Đăng xuất</div>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có muốn đăng xuất không?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Việc đăng xuất có thể làm mất đi hóa đơn của bạn
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Thoát</AlertDialogCancel>
+            <AlertDialogAction onClick={logout}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+{
+  /* {user && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <div className={cn(className, "cursor-pointer")}>Đăng xuất</div>
@@ -101,7 +122,5 @@ export default function NavItems({ className }: { className?: string }) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      )}
-    </>
-  );
+      )} */
 }

@@ -1,5 +1,5 @@
 import { authApplication } from "../application/auth-application";
-import { LoginBodyType } from "../domain/auth.schema";
+import { LoginBodyType, RegisterBodyType } from "../domain/auth.schema";
 import { IAuthStore } from "./auth-controller-interface";
 import { create } from "zustand";
 
@@ -7,11 +7,41 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
   // Initial state
   user: null,
   accessToken: null,
-  refreshToken: null,  // State property for the refresh token
+  refreshToken: null,
   loading: false,
   error: null,
+  isLoginDialogOpen: false, // New state to control dialog visibility
 
   // Actions
+
+
+
+   register : async (body: RegisterBodyType) => {
+    set({ loading: true, error: null });
+    try {
+      const result = await authApplication.register(body);
+      if (result.success && result.data) {
+        set({
+          user: {
+            id: 0, // Assuming the API returns an id
+            name: result.data.name,
+            email: result.data.email,
+            role: "Guest", // Default role for new registrations
+            avatar: null, // No avatar set during registration
+          },
+          error: null,
+          isLoginDialogOpen: false // Close the dialog on successful registration
+        });
+      } else {
+        throw new Error(result.error || "Registration failed");
+      }
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+    } finally {
+      set({ loading: false });
+    }
+  },
+  //------
   login: async (body: LoginBodyType) => {
     set({ loading: true, error: null });
     try {
@@ -21,7 +51,8 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
           user: result.data.account,
           accessToken: result.data.accessToken,
           refreshToken: result.data.refreshToken,
-          error: null
+          error: null,
+          isLoginDialogOpen: false // Close the dialog on successful login
         });
       } else {
         throw new Error(result.error || "Login failed");
@@ -49,7 +80,6 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
     }
   },
 
-  // Renamed action to avoid conflict with state
   refreshAccessTokenAction: async () => {
     set({ loading: true, error: null });
     try {
@@ -70,5 +100,9 @@ export const useAuthStore = create<IAuthStore>((set, get) => ({
     }
   },
 
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
+
+  // New actions to control dialog visibility
+  openLoginDialog: () => set({ isLoginDialogOpen: true }),
+  closeLoginDialog: () => set({ isLoginDialogOpen: false })
 }));

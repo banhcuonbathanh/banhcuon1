@@ -1,4 +1,4 @@
-import { LoginBodyType, LoginResType, LogoutBodyType, RefreshTokenBodyType, RefreshTokenResType } from "../domain/auth.schema";
+import { LoginBodyType, LoginResType, LogoutBodyType, RefreshTokenBodyType, RefreshTokenResType, RegisterBodyType } from "../domain/auth.schema";
 
 
 export interface IAuthApplication {
@@ -8,5 +8,7 @@ export interface IAuthApplication {
     logout(): Promise<{ success: boolean; error?: string }>;
     sRefreshToken(body: RefreshTokenBodyType): Promise<{ success: boolean; data?: RefreshTokenResType['data']; error?: string }>;
     refreshToken(): Promise<{ success: boolean; data?: RefreshTokenResType['data']; error?: string }>;
+
+    register(body: RegisterBodyType): Promise<{ success: boolean; data?: RegisterBodyType['data']; error?: string }>;
   }
   

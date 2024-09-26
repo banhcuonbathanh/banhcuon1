@@ -1,16 +1,22 @@
 "use client";
-
-import React from "react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormMessage
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { LoginBody, LoginBodyType } from "@/schemaValidations/auth.schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { handleErrorApi } from "@/lib/utils";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -18,11 +24,14 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
-import { useAuth } from "@/zusstand/auth/useauth";
-import { Info } from "lucide-react";
+import { Info } from 'lucide-react';
 
-const LoginDialog = () => {
-  const { login, user } = useAuth();
+import { handleErrorApi } from '@/lib/utils';
+import { LoginBody, LoginBodyType } from '@/zusstand/auth/domain/auth.schema';
+import { useAuthStore } from '@/zusstand/auth/controller/auth-controller';
+
+const LoginDialog: React.FC = () => {
+  const { login, isLoginDialogOpen, openLoginDialog, closeLoginDialog } = useAuthStore();
   const searchParams = useSearchParams();
   const clearTokens = searchParams.get("clearTokens");
 
@@ -38,7 +47,7 @@ const LoginDialog = () => {
 
   const onSubmit = async (data: LoginBodyType) => {
     try {
-      const result = await login(data);
+      await login(data);
       router.push("/manage/dashboard");
     } catch (error: any) {
       handleErrorApi({
@@ -49,9 +58,9 @@ const LoginDialog = () => {
   };
 
   return (
-    <Dialog>
+    <Dialog open={isLoginDialogOpen} onOpenChange={(open) => open ? openLoginDialog() : closeLoginDialog()}>
       <DialogTrigger asChild>
-        <Button>Log In</Button>
+        <Button onClick={openLoginDialog}>Đăng nhập</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800 shadow-lg">
         <CardHeader>
