@@ -36,7 +36,7 @@ const RegisterDialog = () => {
     );
     const userData = {
       name: "Alice ",
-      email: "alice.johnson@example.com1111111111111",
+      email: "alice.johnson@example.com11111",
       password: "password1231234",
       is_admin: false,
       phone: 1234567890,
@@ -59,25 +59,25 @@ const RegisterDialog = () => {
 
   const [serverStatus, setServerStatus] = useState("");
 
-  const checkServerConnection = async () => {
-    console.log("checkServerConnection");
-    try {
-      const response = await axios.get("http://localhost:8888/test");
-      console.log("checkServerConnectio n  done", response);
-      if (response.status === 200) {
-        setServerStatus("Connected to server successfully");
-      } else {
-        setServerStatus("Failed to connect to server");
-      }
-    } catch (error) {
-      setServerStatus("Error connecting to server");
-      console.error("Server connection error:", error);
-    }
-  };
-  console.log("checkServerConnectio n  done");
-  useEffect(() => {
-    checkServerConnection();
-  }, []);
+  // const checkServerConnection = async () => {
+  //   console.log("checkServerConnection");
+  //   try {
+  //     const response = await axios.get("http://localhost:8888/test");
+  //     console.log("checkServerConnectio n  done", response);
+  //     if (response.status === 200) {
+  //       setServerStatus("Connected to server successfully");
+  //     } else {
+  //       setServerStatus("Failed to connect to server");
+  //     }
+  //   } catch (error) {
+  //     setServerStatus("Error connecting to server");
+  //     console.error("Server connection error:", error);
+  //   }
+  // };
+  // console.log("checkServerConnectio n  done");
+  // useEffect(() => {
+  //   checkServerConnection();
+  // }, []);
 
   const { register, openLoginDialog } = useAuthStore();
   const form = useForm<RegisterBodyType>({
@@ -87,7 +87,7 @@ const RegisterDialog = () => {
       email: "",
       password: "",
       is_admin: false,
-      phone: "2134",
+      phone: 1234,
       image: "",
       address: "",
       created_at: new Date().toISOString(),
@@ -114,18 +114,18 @@ const RegisterDialog = () => {
       );
 
       await register({
-        name: "Alice Johnson12341234xccvdfgdsaf",
-        email: "alice.johnson@example.com12341234asdfasdfasdf",
+        name: "Alice Jo1234f",
+        email: "alice.johnson@example.vvvvvvv",
         password: "password123@%$@1234",
         is_admin: false,
-        phone: "1234567890",
+        phone: 1234567890,
         image: "alice.jpg",
         address: "123 Main St, Anytown, USA",
         created_at: "2024-08-19T16:17:16+07:00",
         updated_at: "2024-08-19T16:17:16+07:00"
       });
-      setOpen(false);
-      openLoginDialog();
+      // setOpen(false);
+      // openLoginDialog();
     } catch (error: any) {
       console.log("Error during registration: ", error);
       handleErrorApi({

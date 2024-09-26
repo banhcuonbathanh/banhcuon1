@@ -27,19 +27,34 @@ class AuthRepository implements IAuthRepository {
 
   async register(body: RegisterBodyType): Promise<RegisterBodyType> {
     console.log(
-      "quananqr1/app/(public)/public-component/register-dialog.tsx hander use 2222"
+      "quananqr1/app/(public)/public-component/register-dialog.tsx hander use RegisterBodyType",
+      body
     );
+
+    const response = await axios.get("http://localhost:8888/test");
+    console.log("checkServerConnectio n  register auth repository", response);
     const userData = {
-      name: "Alice ",
-      email: "alice.johnson@example.com22222",
-      password: "password1231234",
-      is_admin: false,
-      phone: 1234567890,
-      image: "alice.jpg",
-      address: "123 Main St, Anytown, USA",
-      created_at: "2024-08-19T16:17:16+07:00",
-      updated_at: "2024-08-19T16:17:16+07:00"
+      name: body.name,
+      email: body.email,
+      password:body.password,
+      is_admin: body.is_admin,
+      phone: body.phone,
+      image: body.image,
+      address: body.address,
+      created_at: body.created_at,
+      updated_at: body.updated_at,
     };
+    // const userData = {
+    //   name: "Alice Jo1234f",
+    //   email: "alice.johnson@example.comASDIFH98735",
+    //   password: "password123@%$@1234",
+    //   is_admin: false,
+    //   phone: 234567890,
+    //   image: "alice.jpg",
+    //   address: "123 Main St, Anytown, USA",
+    //   created_at: "2024-08-19T16:17:16+07:00",
+    //   updated_at: "2024-08-19T16:17:16+07:00"
+    // };
 
     try {
       const response = await axios.post(
@@ -49,15 +64,15 @@ class AuthRepository implements IAuthRepository {
       console.log("User added successfully:", response.data);
 
       const mappedData: RegisterBodyType = {
-        name: response.data.name,
-        email: response.data.email,
-        password: body.password, // Use the original password from the input body
-        is_admin: response.data.is_admin,
-        phone: String(response.data.phone), // Ensure phone is a string
-        image: response.data.image,
-        address: response.data.address,
-        created_at: response.data.created_at,
-        updated_at: response.data.updated_at
+        name: userData.name,
+        email: userData.email,
+        password: userData.password, // Use the original password from the input body
+        is_admin: userData.is_admin,
+        phone: userData.phone, // Ensure phone is a string
+        image: userData.image,
+        address: userData.address,
+        created_at: userData.created_at,
+        updated_at: userData.updated_at
       };
       return mappedData;
     } catch (error) {
@@ -137,7 +152,7 @@ async function register(body: RegisterBodyType): Promise<RegisterBodyType> {
 
   const userData = {
     name: "Alice ",
-    email: "alice.johnson@example.com1111111111111",
+    email: "alice.johnson@example.com111165",
     password: "password1231234",
     is_admin: false,
     phone: "1234567890", // Changed to string to match RegisterBodyType
@@ -157,7 +172,7 @@ async function register(body: RegisterBodyType): Promise<RegisterBodyType> {
       email: response.data.email,
       password: body.password, // Use the original password from the input body
       is_admin: response.data.is_admin,
-      phone: String(response.data.phone), // Ensure phone is a string
+      phone: response.data.phone, // Ensure phone is a string
       image: response.data.image,
       address: response.data.address,
       created_at: response.data.created_at,

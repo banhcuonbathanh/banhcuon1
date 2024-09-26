@@ -58,7 +58,7 @@ export const RegisterBody = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters long"),
   is_admin: z.boolean(),
-  phone: z.string(),
+  phone: z.number(),
   image: z.string().optional(),
   address: z.string().min(1, "Address is required"),
   created_at: z.string().datetime(),
@@ -67,4 +67,3 @@ export const RegisterBody = z.object({
 
 // Derive the type from the schema
 export type RegisterBodyType = z.infer<typeof RegisterBody>;
-
