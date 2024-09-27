@@ -26,6 +26,19 @@ import {
 
 const RegisterDialog = () => {
   const [open, setOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  if (!isClient) {
+    return null; // or a loading indicator
+  }
+
+  console.log(
+    "quananqr1/app/(public)/public-component/register-dialog.tsx state of dilago",
+    open
+  );
   // setOpen(false);
   const { register, openLoginDialog } = useAuthStore();
   const form = useForm<RegisterBodyType>({
@@ -73,18 +86,9 @@ const RegisterDialog = () => {
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(open) => (open ? setOpen(true) : setOpen(false))}
-    >
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          onClick={() => {
-            setOpen(true);
-          }}
-        >
-          Đăng ký ewrt
-        </Button>
+        <Button>Đăng ký ewrt</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800 shadow-lg">
         <DialogHeader>
