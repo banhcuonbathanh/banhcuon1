@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { LoginBodyType } from '@/schemaValidations/auth.schema';
+
 import authApiRequest from '@/apiRequests/auth';
 import { AccountType } from "@/schemaValidations/account.schema";
+import { LoginBodyType } from "../auth/domain/auth.schema";
 
 
 type AccountStore = {

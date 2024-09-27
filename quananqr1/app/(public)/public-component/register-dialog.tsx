@@ -23,58 +23,10 @@ import {
   RegisterBodyType,
   RegisterBody
 } from "@/zusstand/auth/domain/auth.schema";
-import axios from "axios";
 
 const RegisterDialog = () => {
-  const handleAddUser = async () => {
-    console.log(
-      "quananqr1/app/(public)/public-component/register-dialog.tsx hander use"
-    );
-    const userData = {
-      name: "Alice ",
-      email: "alice.johnson@example.com11111",
-      password: "password1231234",
-      is_admin: false,
-      phone: 1234567890,
-      image: "alice.jpg",
-      address: "123 Main St, Anytown, USA",
-      created_at: "2024-08-19T16:17:16+07:00",
-      updated_at: "2024-08-19T16:17:16+07:00"
-    };
-
-    try {
-      const response = await axios.post(
-        "http://localhost:8888/users",
-        userData
-      );
-      console.log("User added successfully:", response.data);
-    } catch (error) {
-      console.error("Error adding user:", error);
-    }
-  };
-
-  const [serverStatus, setServerStatus] = useState("");
-
-  // const checkServerConnection = async () => {
-  //   console.log("checkServerConnection");
-  //   try {
-  //     const response = await axios.get("http://localhost:8888/test");
-  //     console.log("checkServerConnectio n  done", response);
-  //     if (response.status === 200) {
-  //       setServerStatus("Connected to server successfully");
-  //     } else {
-  //       setServerStatus("Failed to connect to server");
-  //     }
-  //   } catch (error) {
-  //     setServerStatus("Error connecting to server");
-  //     console.error("Server connection error:", error);
-  //   }
-  // };
-  // console.log("checkServerConnectio n  done");
-  // useEffect(() => {
-  //   checkServerConnection();
-  // }, []);
-
+  const [open, setOpen] = useState(false);
+  // setOpen(false);
   const { register, openLoginDialog } = useAuthStore();
   const form = useForm<RegisterBodyType>({
     resolver: zodResolver(RegisterBody),
@@ -90,19 +42,7 @@ const RegisterDialog = () => {
       updated_at: new Date().toISOString()
     }
   });
-  const [open, setOpen] = useState(false);
-  //   {
-  //     "name": "Alice Johnson12341234",
-  //     "email": "alice.johnson@example.com12341234",
-  //     "password": "password1231234",
-  //     "is_admin": false,
-  //     "phone": 1234567890,
-  //     "image": "alice.jpg",
-  //     "address": "123 Main St, Anytown, USA",
-  //     "created_at": "2024-08-19T16:17:16+07:00",
-  //     "updated_at": "2024-08-19T16:17:16+07:00"
 
-  // }
   const onSubmit = async (data: RegisterBodyType) => {
     try {
       console.log(
@@ -133,9 +73,18 @@ const RegisterDialog = () => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => (open ? setOpen(true) : setOpen(false))}
+    >
       <DialogTrigger asChild>
-        <Button>Đăng ký</Button>
+        <Button
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
+          Đăng ký ewrt
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800 shadow-lg">
         <DialogHeader>
@@ -266,7 +215,6 @@ const RegisterDialog = () => {
               <Button type="submit" className="w-full">
                 Đăng ký
               </Button>
-              <Button onClick={handleAddUser}>Add User</Button>
             </div>
           </form>
         </Form>

@@ -10,7 +10,7 @@ const Error = () => {
         <div className="text-center">
           <p className="text-base font-semibold text-indigo-600">Oops</p>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-            Something went wrong
+  error from over all
           </h1>
           <p className="mt-6 text-base leading-7 text-gray-600">
             There was an error processing your request.

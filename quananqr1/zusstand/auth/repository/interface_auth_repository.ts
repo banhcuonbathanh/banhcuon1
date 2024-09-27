@@ -1,13 +1,31 @@
-import { LoginBodyType, LoginResType, LogoutBodyType, RefreshTokenBodyType, RefreshTokenResType, RegisterBodyType } from "../domain/auth.schema";
+import { LoginBodyType, LogoutBodyType, RefreshTokenBodyType, RegisterBodyType } from "../domain/auth.schema";
 
+export interface LoginResType {
+  message: string;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    account: {
+      name: string;
+      email: string;
+      id: number;
+      role: "Owner" | "Employee" | "Guest";
+      avatar: string | null;
+    };
+  };
+}
+
+export interface RefreshTokenResType {
+  message: string;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}
 
 export interface IAuthRepository {
-  sLogin(body: LoginBodyType): Promise<LoginResType>;
   login(body: LoginBodyType): Promise<LoginResType>;
-  sLogout(body: LogoutBodyType & { accessToken: string }): Promise<void>;
   logout(): Promise<void>;
-  sRefreshToken(body: RefreshTokenBodyType): Promise<RefreshTokenResType>;
-  refreshToken(): Promise<{ status: number; payload: RefreshTokenResType }>;
-
+  refreshToken(): Promise<RefreshTokenResType>;
   register(body: RegisterBodyType): Promise<RegisterBodyType>;
 }
