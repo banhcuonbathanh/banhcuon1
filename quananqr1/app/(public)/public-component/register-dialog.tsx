@@ -25,16 +25,28 @@ import {
 } from "@/zusstand/auth/domain/auth.schema";
 
 const RegisterDialog = () => {
-  const [open, setOpen] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  const [open, setOpen] = useState(true);
+
+  setTimeout(() => {
+    console.log("This message will log only once after 1 second");
+  }, 1000);
+  // const [isClient, setIsClient] = useState(false);
+
+  // useEffect(() => {
+  //   setIsClient(true);
+  // }, []);
+  // if (!isClient) {
+  //   return null; // or a loading indicator
+  // }
 
   useEffect(() => {
-    setIsClient(true);
+    console.log(
+      "quananqr1/app/(public)/public-component/register-dialog.tsx state of dilago",
+      open
+    );
+    // This will run after the component has mounted
+    setOpen(false);
   }, []);
-  if (!isClient) {
-    return null; // or a loading indicator
-  }
-
   console.log(
     "quananqr1/app/(public)/public-component/register-dialog.tsx state of dilago",
     open
