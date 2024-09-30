@@ -137,13 +137,13 @@ func (h *Handlercontroller) Login(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	// create a json web token (JWT) and return it as response
-	accessToken, accessClaims, err := h.TokenMaker.CreateToken(ur.GetId(), ur.GetEmail(), ur.GetIsAdmin(), 15*time.Minute)
+	accessToken, accessClaims, err := h.TokenMaker.CreateToken(ur.GetId(), ur.GetEmail(), ur.GetRole(), 15*time.Minute)
 	if err != nil {
 		http.Error(w, "error creating token", http.StatusInternalServerError)
 		return
 	}
 	log.Println("User login handlercontroller accessToken", accessToken)
-	refreshToken, refreshClaims, err := h.TokenMaker.CreateToken(ur.GetId(), ur.GetEmail(), ur.GetIsAdmin(), 24*time.Hour)
+	refreshToken, refreshClaims, err := h.TokenMaker.CreateToken(ur.GetId(), ur.GetEmail(), ur.GetRole(), 24*time.Hour)
 	if err != nil {
 		http.Error(w, "error creating token", http.StatusInternalServerError)
 		return
@@ -232,7 +232,7 @@ func (h *Handlercontroller) RenewAccessToken(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	accessToken, accessClaims, err := h.TokenMaker.CreateToken(refreshClaims.ID, refreshClaims.Email, refreshClaims.IsAdmin, 15*time.Minute)
+	accessToken, accessClaims, err := h.TokenMaker.CreateToken(refreshClaims.ID, refreshClaims.Email, refreshClaims.Role, 15*time.Minute)
 	if err != nil {
 		http.Error(w, "error creating token", http.StatusInternalServerError)
 		return

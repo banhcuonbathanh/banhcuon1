@@ -24,13 +24,12 @@ service EcommUser {
   rpc DeleteSession(SessionReq) returns (SessionRes) {}
 }
 
-// rpc GetUserById(UserReq) returns (UserReq);
 message UserReq {
   int64 id = 1;
   string name = 2;
   string email = 3;
   string password = 4;
-  bool is_admin = 5;
+  string role = 5;  // Changed from bool is_admin to string role
   int64 phone = 6;
   string image = 7;
   string address = 8;
@@ -43,19 +42,17 @@ message UserRes {
   string name = 2;
   string email = 3;
   string password = 4;
-  bool is_admin = 5;
+  string role = 5;  // Changed from bool is_admin to string role
   int64 phone = 6;
   string image = 7;
   string address = 8;
   google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp updated_at = 10;
 }
+
 message ListUserRes {
   repeated UserRes users = 1;
 }
-
-
-
 
 message PageRequest {
   int32 page_number = 1;
@@ -75,7 +72,6 @@ message RegisterResponse {
   bool success = 1;
   UserRes user = 2;
 }
-
 
 message SessionReq {
   string id = 1;

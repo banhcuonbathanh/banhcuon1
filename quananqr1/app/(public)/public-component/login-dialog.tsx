@@ -39,8 +39,13 @@ const LoginDialog: React.FC = () => {
 
   const onSubmit = async (data: LoginBodyType) => {
     try {
-      await login(data);
-      router.push("/manage/dashboard");
+      const response = await login(data);
+
+      console.log(
+        "quananqr1/app/(public)/public-component/login-dialog.tsx response",
+        response
+      );
+      // router.push("/manage/dashboard");
     } catch (error: any) {
       handleErrorApi({
         error,

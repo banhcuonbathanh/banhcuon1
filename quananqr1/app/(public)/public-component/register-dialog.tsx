@@ -40,17 +40,10 @@ const RegisterDialog = () => {
   // }
 
   useEffect(() => {
-    console.log(
-      "quananqr1/app/(public)/public-component/register-dialog.tsx state of dilago",
-      open
-    );
     // This will run after the component has mounted
     setOpen(false);
   }, []);
-  console.log(
-    "quananqr1/app/(public)/public-component/register-dialog.tsx state of dilago",
-    open
-  );
+
   // setOpen(false);
   const { register, openLoginDialog } = useAuthStore();
   const form = useForm<RegisterBodyType>({

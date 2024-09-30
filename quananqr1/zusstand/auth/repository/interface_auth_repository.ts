@@ -26,6 +26,6 @@ export interface RefreshTokenResType {
 export interface IAuthRepository {
   login(body: LoginBodyType): Promise<LoginResType>;
   logout(): Promise<void>;
-  refreshToken(): Promise<RefreshTokenResType>;
+  // refreshToken(): Promise<RefreshTokenResType>;
   register(body: RegisterBodyType): Promise<RegisterBodyType>;
 }

@@ -26,7 +26,7 @@ func RegisterReadingRoutes(r *chi.Mux, handler *ReadingHandlerController) *chi.M
 
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
-			r.Use(middleware.GetAdminMiddlewareFunc(tokenMaker))
+			r.Use(middleware.GetRoleMiddlewareFunc(tokenMaker))
 			
 			r.Get("/page", handler.FindReadingByPage)
 		})
