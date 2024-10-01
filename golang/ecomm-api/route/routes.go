@@ -20,6 +20,8 @@ func RegisterRoutes(r *chi.Mux,handler *handler.Handlercontroller) *chi.Mux {
 		w.Write([]byte("Server is running"))
 	})
 	r.Route("/users", func(r chi.Router) {
+		log.Printf("Starting HTTP server /users", )
+
 		r.Post("/", handler.CreateUser)
 		r.Post("/login", handler.Login)
 

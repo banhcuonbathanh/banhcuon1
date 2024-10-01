@@ -4,32 +4,11 @@ import (
 	"english-ai-full/ecomm-api/types"
 	pb "english-ai-full/ecomm-grpc/proto"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
 	// "google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// UserReqModel represents the user request model
-
-// ToPBUserReq converts a UserReqModel to a pb.UserReq
-func ToPBUserReq(u types.UserReqModel) *pb.UserReq {
-	var phone int64
-	if u.Phone != nil {
-		phone = *u.Phone
-	}
-	return &pb.UserReq{
-		Id:       u.ID,
-		Name:     u.Name,
-		Email:    u.Email,
-		Password: u.Password,
-		Role:  u.Role,
-		Phone:    phone,
-		Image:    u.Image,
-		Address:  u.Address,
-	}
-}
-
-
 // UserRes is the local user response struct
-
 
 // ToUserRes converts a pb.UserReq to a local UserRes struct
 func ToUserRes(u *pb.UserRes) types.UserResModel {
@@ -90,6 +69,22 @@ func ToUserResFromUserReq(u *pb.UserReq) types.UserResModel {
 		UpdatedAt: u.UpdatedAt.AsTime(),
 	}
 }
+
+func ToPBUserReq(u types.UserReqModel) *pb.UserReq {
+	return &pb.UserReq{
+		Id:        u.ID,
+		Name:      u.Name,
+		Email:     u.Email,
+		Password:  u.Password,
+		Role:      u.Role,
+		Phone:     u.Phone,
+		Image:     u.Image,
+		Address:   u.Address,
+		CreatedAt: timestamppb.New(u.CreatedAt),
+		UpdatedAt: timestamppb.New(u.UpdatedAt),
+	}
+}
+
 
 // func sessionToSessionRes(s *types.Session) *pb.SessionRes {
 //     return &pb.SessionRes{

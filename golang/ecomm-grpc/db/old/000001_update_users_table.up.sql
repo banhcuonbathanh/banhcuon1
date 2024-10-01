@@ -1,6 +1,3 @@
-CREATE TYPE question_type AS ENUM ('MultipleChoice', 'TrueFalseNotGiven', 'Matching', 'ShortAnswer');
-
--- Recreate tables
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -14,11 +11,13 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Add an index on the role column
 CREATE INDEX idx_users_role ON users(role);
 
+-- Add a check constraint to enforce valid roles
 ALTER TABLE users
 ADD CONSTRAINT check_valid_role
-CHECK (role IN ('Admin', 'Employee', 'Manager', 'Guest'));
+CHECK (role IN ('Admin', 'Employee', 'Manager')); 
 
 CREATE TABLE IF NOT EXISTS sessions (
     id varchar(255) PRIMARY KEY NOT NULL,
@@ -27,13 +26,17 @@ CREATE TABLE IF NOT EXISTS sessions (
     is_revoked BOOLEAN DEFAULT false,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
+CREATE TYPE question_type AS ENUM ('MultipleChoice', 'TrueFalseNotGiven', 'Matching', 'ShortAnswer');
 
+
+-- Create reading_test_models table
 CREATE TABLE IF NOT EXISTS reading_test_models (
     id SERIAL PRIMARY KEY,
     test_number INTEGER NOT NULL,
     sections JSONB NOT NULL
 );
 
+-- Create section_models table
 CREATE TABLE IF NOT EXISTS section_models (
     id SERIAL PRIMARY KEY,
     section_number INTEGER NOT NULL,
@@ -41,6 +44,7 @@ CREATE TABLE IF NOT EXISTS section_models (
     passages JSONB NOT NULL
 );
 
+-- Create passage_models table
 CREATE TABLE IF NOT EXISTS passage_models (
     id SERIAL PRIMARY KEY,
     passage_number INTEGER NOT NULL,
@@ -49,6 +53,7 @@ CREATE TABLE IF NOT EXISTS passage_models (
     questions JSONB NOT NULL
 );
 
+-- Create paragraph_content_models table
 CREATE TABLE IF NOT EXISTS paragraph_content_models (
     id SERIAL PRIMARY KEY,
     paragraph_summary TEXT NOT NULL,
@@ -56,6 +61,7 @@ CREATE TABLE IF NOT EXISTS paragraph_content_models (
     key_sentence TEXT NOT NULL
 );
 
+-- Create question_models table
 CREATE TABLE IF NOT EXISTS question_models (
     id SERIAL PRIMARY KEY,
     question_number INTEGER NOT NULL,
@@ -74,6 +80,7 @@ CREATE TABLE IF NOT EXISTS comments (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
+-- 001_create_accounts_table.up.sql
 CREATE TABLE IF NOT EXISTS accounts (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -86,6 +93,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 002_create_dishes_table.up.sql
 CREATE TABLE IF NOT EXISTS dishes (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -97,6 +105,7 @@ CREATE TABLE IF NOT EXISTS dishes (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 003_create_dish_snapshots_table.up.sql
 CREATE TABLE IF NOT EXISTS dish_snapshots (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -110,6 +119,7 @@ CREATE TABLE IF NOT EXISTS dish_snapshots (
     FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE SET NULL
 );
 
+-- 004_create_tables_table.up.sql
 CREATE TABLE IF NOT EXISTS tables (
     number INTEGER PRIMARY KEY,
     capacity INTEGER NOT NULL,
@@ -119,6 +129,7 @@ CREATE TABLE IF NOT EXISTS tables (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 005_create_guests_table.up.sql
 CREATE TABLE IF NOT EXISTS guests (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -130,6 +141,7 @@ CREATE TABLE IF NOT EXISTS guests (
     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL
 );
 
+-- 006_create_orders_table.up.sql
 CREATE TABLE IF NOT EXISTS orders (
     id BIGSERIAL PRIMARY KEY,
     guest_id BIGINT,
@@ -146,6 +158,7 @@ CREATE TABLE IF NOT EXISTS orders (
     FOREIGN KEY (order_handler_id) REFERENCES accounts(id) ON DELETE SET NULL
 );
 
+-- 007_create_refresh_tokens_table.up.sql
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     token VARCHAR(255) PRIMARY KEY,
     account_id BIGINT NOT NULL,
@@ -154,6 +167,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 );
 
+-- 008_create_sockets_table.up.sql
 CREATE TABLE IF NOT EXISTS sockets (
     socket_id VARCHAR(255) PRIMARY KEY,
     account_id BIGINT UNIQUE,
@@ -162,6 +176,7 @@ CREATE TABLE IF NOT EXISTS sockets (
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL
 );
 
+-- Add foreign key for owner_id in accounts table
 ALTER TABLE accounts
 ADD CONSTRAINT fk_owner
 FOREIGN KEY (owner_id) REFERENCES accounts(id) ON DELETE SET NULL;

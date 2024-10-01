@@ -137,6 +137,8 @@ golang/ecomm-grpc/proto/reading/reading.proto
 
 git checkout -b golang: create new branch
 
+
+
 reading_test_models
 section_models
 passage_models
@@ -194,3 +196,11 @@ protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=p
 
 
 http://localhost:8888/images/image?filename=Screenshot%202024-02-20%20at%2014.37.22.png&path=folder1/folder2
+
+
+
+=============================== test ========================
+
+stand at python
+
+git checkout -b test_isadmin

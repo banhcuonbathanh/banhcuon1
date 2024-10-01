@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -25,26 +25,26 @@ import {
 } from "@/zusstand/auth/domain/auth.schema";
 
 const RegisterDialog = () => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
-  setTimeout(() => {
-    console.log("This message will log only once after 1 second");
-  }, 1000);
-  // const [isClient, setIsClient] = useState(false);
-
-  // useEffect(() => {
-  //   setIsClient(true);
-  // }, []);
-  // if (!isClient) {
-  //   return null; // or a loading indicator
-  // }
+  const hasExecuted = useRef(false);
 
   useEffect(() => {
-    // This will run after the component has mounted
-    setOpen(false);
+    if (!hasExecuted.current) {
+      const timer = setTimeout(() => {
+        console.log(
+          "This message will log only once after 1 second open",
+          open
+        );
+        setOpen(true);
+        setOpen(false);
+        hasExecuted.current = true;
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
   }, []);
 
-  // setOpen(false);
   const { register, openLoginDialog } = useAuthStore();
   const form = useForm<RegisterBodyType>({
     resolver: zodResolver(RegisterBody),
@@ -52,8 +52,8 @@ const RegisterDialog = () => {
       name: "",
       email: "",
       password: "",
-      is_admin: false,
-      phone: 1234,
+      role: "",
+      phone: "",
       image: "",
       address: "",
       created_at: new Date().toISOString(),
@@ -72,15 +72,15 @@ const RegisterDialog = () => {
         name: data.name,
         email: data.email,
         password: data.password,
-        is_admin: data.is_admin,
+        role: "Guest",
         phone: data.phone,
         image: data.image,
         address: data.address,
         created_at: data.created_at,
         updated_at: data.updated_at
       });
-      setOpen(false);
-      openLoginDialog();
+      // setOpen(false);
+      // openLoginDialog();
     } catch (error: any) {
       console.log("Error during registration: ", error);
       handleErrorApi({
@@ -181,6 +181,7 @@ const RegisterDialog = () => {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="phone"
@@ -195,6 +196,7 @@ const RegisterDialog = () => {
                         required
                         className="border-2 border-gray-300 dark:border-gray-600"
                         {...field}
+                        onChange={(e) => field.onChange(e.target.value)}
                       />
                       <FormMessage />
                     </div>
