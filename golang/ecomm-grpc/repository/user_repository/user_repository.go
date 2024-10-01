@@ -83,11 +83,7 @@ func (us *UserRepository) FindAll() ([]types.UserReqModel, error) {
             return nil, fmt.Errorf("error scanning user: %w", err)
         }
         
-        if phoneNull.Valid {
-            user.Phone = &phoneNull.Int64
-        } else {
-            user.Phone = nil
-        }
+   
         
         users = append(users, user)
     }

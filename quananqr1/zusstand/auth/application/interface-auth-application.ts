@@ -9,6 +9,6 @@ export interface IAuthApplication {
     sRefreshToken(body: RefreshTokenBodyType): Promise<{ success: boolean; data?: RefreshTokenResType['data']; error?: string }>;
     refreshToken(): Promise<{ success: boolean; data?: RefreshTokenResType['data']; error?: string }>;
 
-    register(body: RegisterBodyType): Promise<{ success: boolean; data?: RegisterBodyType['data']; error?: string }>;
+    register(body: RegisterBodyType): Promise<{ success: boolean; data?: RegisterBodyType; error?: string }>;
   }
   

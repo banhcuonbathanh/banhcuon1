@@ -38,17 +38,24 @@ func NewHandler(client pb.EcommUserClient, secretKey string) *Handlercontroller 
 }
 
 func (h *Handlercontroller) CreateUser(w http.ResponseWriter, r *http.Request) {
+	log.Printf("create users golang/ecomm-api/handler/handler.go 1", )
 	var u types.UserReqModel
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+
+		log.Print("create users golang/ecomm-api/handler/handler.go 1 err",err )
 		http.Error(w, "error decoding request body", http.StatusBadRequest)
 		return
 	}
+	log.Printf("create users golang/ecomm-api/handler/handler.go 2", )
 	user, err := h.client.CreateUser(h.ctx, mapping_user.ToPBUserReq(u))
 	if err != nil {
 		http.Error(w, "error creating user", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("create users golang/ecomm-api/handler/handler.go 3", )
 	res := mapping_user.ToUserResFromUserReq(user)
+
+	log.Printf("create users golang/ecomm-api/handler/handler.go 4", )
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(res)

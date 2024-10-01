@@ -60,7 +60,7 @@ type UserReqModel struct {
     Name      string     `json:"name"`
     Email     string     `json:"email"`
     Role      string     `json:"role"`  // Changed from IsAdmin bool to Role string
-    Phone     *int64     `json:"phone"`
+    Phone     string     `json:"phone"`
     Image     string     `json:"image"`
     Address   string     `json:"address"`
     CreatedAt time.Time  `json:"created_at"`
@@ -72,7 +72,7 @@ type UserResModel struct {
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	Role      string    `json:"role"`  // Changed from IsAdmin bool to Role string
-	Phone     int64     `json:"phone"`
+	Phone     string     `json:"phone"`
 	Image     string    `json:"image"`
 	Address   string    `json:"address"`
 	CreatedAt time.Time `json:"created_at"`
@@ -93,7 +93,7 @@ type RegisterUserReq struct {
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	Role      string    `json:"role"`  // Changed from IsAdmin bool to Role string
-	Phone     int64     `json:"phone"`
+	Phone     string     `json:"phone"`
 	Image     string    `json:"image"`
 	Address   string    `json:"address"`
 	CreatedAt time.Time `json:"created_at"`

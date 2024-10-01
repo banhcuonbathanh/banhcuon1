@@ -43,7 +43,7 @@ newUser := &types.UserReqModel{
     Email:     req.Email,
     Password:  req.Password,
     Role:      req.Role,
-    Phone:     &req.Phone,
+    Phone:     req.Phone,
     Image:     req.Image,
     Address:   req.Address,
     CreatedAt: time.Now(),
@@ -73,7 +73,7 @@ func (us *UserServericeStruct) UpdateUser(ctx context.Context, req *proto.UserRe
         Email:     req.Email,
         Password:  req.Password,
         Role:      req.Role,
-        Phone:     &req.Phone,
+        Phone:     req.Phone,
         Image:     req.Image,
         Address:   req.Address,
         CreatedAt: time.Now(),
@@ -144,7 +144,7 @@ func convertModelUserToProtoUserReq(user *types.UserReqModel) *proto.UserReq {
         Email:     user.Email,
         Password:  user.Password,
         Role:      user.Role,
-        Phone:     getPhoneValue(user.Phone),
+        Phone:     user.Phone,
         Image:     user.Image,
         Address:   user.Address,
         CreatedAt: timestamppb.New(user.CreatedAt),
@@ -160,7 +160,7 @@ func convertModelUserToProtoUserRes(user *types.UserReqModel) *proto.UserRes {
         Email:     user.Email,
         Password:  user.Password,
         Role:      user.Role,
-        Phone:     getPhoneValue(user.Phone),
+        Phone:     user.Phone,
         Image:     user.Image,
         Address:   user.Address,
         CreatedAt: timestamppb.New(user.CreatedAt),
@@ -184,7 +184,7 @@ func ConvertProtoToUserReqModel(req *proto.UserReq) *types.UserReqModel {
         Email:    req.Email,
         Password: req.Password,
         Role:     req.Role,
-        Phone:    &req.Phone,
+        Phone:    req.Phone,
         Image:    req.Image,
         Address:  req.Address,
         CreatedAt: time.Now(),
@@ -198,16 +198,10 @@ func convertProtoUserReqToModelUser(user *proto.UserReq) types.UserReqModel {
         Email:     user.Email,
         Password:  user.Password,
         Role:      user.Role,
-        Phone:     &user.Phone,
+        Phone:     user.Phone,
         Image:     user.Image,
         Address:   user.Address,
     }
-}
-func getPhoneValue(phone *int64) int64 {
-    if phone != nil {
-        return *phone
-    }
-    return 0
 }
 
 

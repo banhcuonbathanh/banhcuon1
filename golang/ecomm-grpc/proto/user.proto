@@ -30,7 +30,7 @@ message UserReq {
   string email = 3;
   string password = 4;
   string role = 5;  // Changed from bool is_admin to string role
-  int64 phone = 6;
+  string phone = 6;
   string image = 7;
   string address = 8;
   google.protobuf.Timestamp created_at = 9;
@@ -43,7 +43,7 @@ message UserRes {
   string email = 3;
   string password = 4;
   string role = 5;  // Changed from bool is_admin to string role
-  int64 phone = 6;
+  string phone = 6;
   string image = 7;
   string address = 8;
   google.protobuf.Timestamp created_at = 9;

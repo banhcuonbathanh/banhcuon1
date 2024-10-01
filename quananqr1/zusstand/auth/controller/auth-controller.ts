@@ -17,6 +17,9 @@ export const useAuthStore = create<IAuthStore>()(
 
       // Actions
       register: async (body: RegisterBodyType) => {
+        console.log(
+          "register useAuthStore quananqr1/zusstand/auth/controller/auth-controller.ts"
+        );
         set({ loading: true, error: null });
         try {
           const result = await authApplication.register(body);

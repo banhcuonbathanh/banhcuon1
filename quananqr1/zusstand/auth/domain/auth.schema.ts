@@ -57,13 +57,20 @@ export const RegisterBody = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters long"),
-  is_admin: z.boolean(),
-  phone: z.number(),
+  role: z.string(),
+
+
+  phone: z.string().min(10, {
+    message: "Số điện thoại phải có ít nhất 10 số.",
+  }).max(15, {
+    message: "Số điện thoại không được quá 15 số.",
+  }).refine((val) => /^\d+$/.test(val), {
+    message: "Số điện thoại chỉ được chứa các chữ số.",
+  }),
   image: z.string().optional(),
   address: z.string().min(1, "Address is required"),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime()
 });
 
-// Derive the type from the schema
 export type RegisterBodyType = z.infer<typeof RegisterBody>;
