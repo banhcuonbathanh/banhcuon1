@@ -9,10 +9,10 @@ const unAuthPaths = ["/login"];
 
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  console.log(" middleware pathname", pathname);
-  const accessToken = request.cookies.get("accessToken")?.value;
-  const refreshToken = request.cookies.get("refreshToken")?.value;
+  // const { pathname } = request.nextUrl;
+  // console.log(" middleware pathname", pathname);
+  // const accessToken = request.cookies.get("accessToken")?.value;
+  // const refreshToken = request.cookies.get("refreshToken")?.value;
   return NextResponse.next();
 }
 
