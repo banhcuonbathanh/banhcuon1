@@ -27,23 +27,12 @@ import {
 const RegisterDialog = () => {
   const [open, setOpen] = useState(false);
 
-  const hasExecuted = useRef(false);
-
-  useEffect(() => {
-    if (!hasExecuted.current) {
-      const timer = setTimeout(() => {
-        console.log(
-          "This message will log only once after 1 second open",
-          open
-        );
-        setOpen(true);
-        setOpen(false);
-        hasExecuted.current = true;
-      }, 100);
-
-      return () => clearTimeout(timer);
-    }
-  }, []);
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+  if (renderCount.current === 1) {
+    setOpen(true);
+    setOpen(false);
+  }
 
   const { register, openLoginDialog } = useAuthStore();
   const form = useForm<RegisterBodyType>({
