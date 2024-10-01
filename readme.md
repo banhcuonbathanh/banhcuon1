@@ -137,8 +137,6 @@ golang/ecomm-grpc/proto/reading/reading.proto
 
 git checkout -b golang: create new branch
 
-
-
 reading_test_models
 section_models
 passage_models
@@ -193,15 +191,25 @@ protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=p
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/table/table.proto
 
-
-
-
 http://localhost:8888/images/image?filename=Screenshot%202024-02-20%20at%2014.37.22.png&path=folder1/folder2
-
-
 
 =============================== test ========================
 
 stand at python
 
 git checkout -b test_isadmin
+
+http://localhost:3000/admin/dished
+
+
+Exit the editor: If you’re using vim (which is the default editor for Git), you can quit by:
+Pressing Esc to ensure you’re in normal mode.
+Typing :q! and pressing Enter to quit without saving changes.
+Abort the merge: If you want to abort the merge entirely, you can run:
+git merge --abort
+
+If you need to write a proper commit message, you can edit the message above the lines starting with #. For example:
+
+Merge branch 'test_isadmin' into python
+
+This merge is necessary to integrate the latest changes from the 'test_isadmin' branch into the 'python' branch.

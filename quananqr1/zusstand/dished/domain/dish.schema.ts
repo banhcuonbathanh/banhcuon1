@@ -42,3 +42,4 @@ export const DishParams = z.object({
   id: z.coerce.number()
 })
 export type DishParamsType = z.TypeOf<typeof DishParams>
+export type Dish = z.TypeOf<typeof DishSchema>;
