@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export const TokenType = {
   ForgotPasswordToken: 'ForgotPasswordToken',
   AccessToken: 'AccessToken',
@@ -8,10 +10,11 @@ export const TokenType = {
 export const Role = {
   Owner: 'Owner',
   Employee: 'Employee',
-  Guest: 'Guest'
-} as const
+  Guest: 'Guest',
+  Admin: 'Admin'
+} as const;
 
-export const RoleValues = [Role.Owner, Role.Employee, Role.Guest] as const
+export const RoleValues = z.enum([Role.Owner, Role.Employee, Role.Guest, Role.Admin]);
 
 export const DishStatus = {
   Available: 'Available',

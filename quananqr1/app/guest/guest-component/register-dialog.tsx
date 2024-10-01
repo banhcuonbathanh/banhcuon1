@@ -25,20 +25,13 @@ import {
 } from "@/zusstand/auth/domain/auth.schema";
 
 const RegisterDialog = () => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const renderCount = useRef(0);
   renderCount.current += 1;
-
   if (renderCount.current === 1) {
-    console.log(
-      "quananqr1/app/(public)/public-component/register-dialog.tsx renderCount.current logic in if is execute "
-    );
+    setOpen(true);
     setOpen(false);
-    setOpen(false);
-    console.log(
-      "quananqr1/app/(public)/public-component/register-dialog.tsx renderCount.current logic in if is execute done "
-    );
   }
 
   const { register, openLoginDialog } = useAuthStore();
