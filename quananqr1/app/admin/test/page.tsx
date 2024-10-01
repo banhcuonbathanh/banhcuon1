@@ -7,7 +7,9 @@ import {
 } from "@/components/ui/card";
 
 import { Suspense } from "react";
-import DishTable from "../dishes/dish-table";
+import DishTable from "./dish-table";
+
+
 
 export default function DishesPage() {
   return (

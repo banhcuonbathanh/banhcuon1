@@ -12,6 +12,7 @@ import {
   DishSchema,
   UpdateDishBodyType
 } from "../domain/dish.schema";
+import envConfig from "@/config";
 
 interface DishStore {
   dish: Dish | null;
@@ -67,11 +68,13 @@ export const useDishStore = create<DishStore>((set) => ({
     }
   },
   addDish: async (body: CreateDishBodyType) => {
+
+    const link = envConfig.NEXT_PUBLIC_API_ENDPOINT + envConfig.NEXT_PUBLIC_Add_Dished
     set({ isLoading: true, error: null });
     try {
       const response = await useApiStore
         .getState()
-        .http.post<DishResType>("/api/dishes", body);
+        .http.post<DishResType>(link, body);
       set((state) => ({
         dishes: [...state.dishes, response.data.data],
         isLoading: false

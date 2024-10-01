@@ -1,12 +1,14 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-import { UploadImageResType } from '@/schemaValidations/media.schema';
-import { useApiStore } from '../api/api-controller';
+import { UploadImageResType } from "@/schemaValidations/media.schema";
+import { useApiStore } from "../api/api-controller";
+import envConfig from "@/config";
 interface MediaStore {
   isUploading: boolean;
   error: string | null;
-  uploadMedia: (file: File) => Promise<string>;
+  uploadMedia: (file: File, uploadPath: string) => Promise<UploadImageResType>;
+
 }
 
 export const useMediaStore = create<MediaStore>()(
@@ -14,20 +16,32 @@ export const useMediaStore = create<MediaStore>()(
     (set, get) => ({
       isUploading: false,
       error: null,
-      uploadMedia: async (file: File) => {
+      uploadMedia: async (file: File, uploadPath: string) => {
+        const link =
+          envConfig.NEXT_PUBLIC_API_ENDPOINT +
+          envConfig.NEXT_PUBLIC_Image_Upload;
+
         const { http } = useApiStore.getState();
         set({ isUploading: true, error: null });
+
         try {
           const formData = new FormData();
-          formData.append('file', file);
-          const response = await http.post<UploadImageResType>('/media/upload', formData);
+          formData.append("image", file); // Use "image" as the key to match the backend
+          formData.append("path", uploadPath); // Add the upload path to the form data
+
+          const response = await http.post<UploadImageResType>(link, formData);
           set({ isUploading: false });
-          return response.data.data; // Assuming the response contains the image URL in data.data
+
+          console.log(
+            "quananqr1/zusstand/media/usemediastore.ts response.data.data",
+            response.data
+          );
+          return response.data; // Adjust as per your actual response structure
         } catch (error) {
           set({ isUploading: false, error: "Failed to upload media" });
           throw error;
         }
-      },
+      }
     }),
     {
       name: "media-storage",

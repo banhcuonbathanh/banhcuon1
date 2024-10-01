@@ -57,9 +57,10 @@ import { useSearchParams } from 'next/navigation'
 import { toast } from '@/components/ui/use-toast'
 import AutoPagination from '@/components/auto-pagination'
 import { DishListResType } from '@/zusstand/dished/domain/dish.schema'
+
+import { useDeleteDishMutation, useDishListQuery } from '@/zusstand/dished/controller/dished-controller'
 import EditDish from './edit-dish'
 import AddDish from './add-dish'
-import { useDeleteDishMutation, useDishListQuery } from '@/zusstand/dished/controller/dished-controller'
 
 type DishItem = DishListResType['data'][0]
 
