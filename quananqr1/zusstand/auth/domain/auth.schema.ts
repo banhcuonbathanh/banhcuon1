@@ -10,19 +10,25 @@ export const LoginBody = z
 
 export type LoginBodyType = z.TypeOf<typeof LoginBody>;
 
+
+
 export const LoginRes = z.object({
-  data: z.object({
-    accessToken: z.string(),
-    refreshToken: z.string(),
-    account: z.object({
-      id: z.number(),
-      name: z.string(),
-      email: z.string(),
-      role: z.enum(RoleValues),
-      avatar: z.string().nullable()
-    })
-  }),
-  message: z.string()
+  accessToken: z.string(),
+  accessTokenExpiresAt: z.string(),
+  refreshToken: z.string(),
+  refreshTokenExpiresAt: z.string(),
+  sessionId: z.string(),
+  user: z.object({
+    id: z.number(),
+    name: z.string(),
+    email: z.string(),
+    role: RoleValues,
+    address: z.string(),
+    phone: z.string(),
+    image: z.string().nullable(),
+    createdAt: z.string(),
+    updatedAt: z.string()
+  })
 });
 
 export type LoginResType = z.TypeOf<typeof LoginRes>;
