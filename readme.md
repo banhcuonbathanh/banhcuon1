@@ -215,3 +215,5 @@ If you need to write a proper commit message, you can edit the message above the
 Merge branch 'test_isadmin' into python
 
 This merge is necessary to integrate the latest changes from the 'test_isadmin' branch into the 'python' branch.
+
+git checkout -b guest
