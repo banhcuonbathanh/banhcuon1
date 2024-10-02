@@ -29,6 +29,9 @@ import (
 	dish "english-ai-full/quanqr/dish"
 	pb_dish "english-ai-full/quanqr/proto_qr/dish"
 
+	guests "english-ai-full/quanqr/qr_guests"
+	pb_guests "english-ai-full/quanqr/proto_qr/guest"
+
 	// "github.com/go-chi/chi"
 
 	"github.com/go-chi/chi"
@@ -152,6 +155,13 @@ dish_client := pb_dish.NewDishServiceClient(conn)
 	dish_hdl := dish.NewDishHandler(dish_client, *secretKey)
 	
 	dish.RegisterDishRoutes(r, dish_hdl)
+
+	// guest
+
+	guests_client := pb_guests.NewGuestServiceClient(conn)
+	guests_hdl := guests.NewGuestHandler(guests_client, *secretKey)
+	
+	guests.RegisterGuestRoutes(r, guests_hdl)
 
 	//
     r.Get("/image", func(w http.ResponseWriter, r *http.Request) {

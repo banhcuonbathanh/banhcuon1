@@ -7,7 +7,8 @@ import (
 	// "os"
 	dish "english-ai-full/quanqr/dish"
 	dishPb "english-ai-full/quanqr/proto_qr/dish"
-
+	guests "english-ai-full/quanqr/qr_guests"
+	pb_guests "english-ai-full/quanqr/proto_qr/guest"
 	comment_repository "english-ai-full/ecomm-grpc/repository/comment_repository"
 	reading_repository "english-ai-full/ecomm-grpc/repository/reading_repository"
 	repository "english-ai-full/ecomm-grpc/repository/user_repository"
@@ -69,6 +70,9 @@ dishrepo := dish.NewDishRepository(dbConn)
 dishService := dish.NewDishService(dishrepo)
 
 
+
+guestsrepo := guests.NewGuestRepository(dbConn)
+guestsService := guests.NewGuestService(guestsrepo)
 // intiate commentRepo commentService
 
 
@@ -82,6 +86,8 @@ dishService := dish.NewDishService(dishrepo)
 	grpcServer := grpc.NewServer()
 	dishPb.RegisterDishServiceServer(grpcServer,dishService)
 	pb.RegisterEcommUserServer(grpcServer, userService)
+
+	pb_guests.RegisterGuestServiceServer(grpcServer,guestsService)
 
 	reading_pb.RegisterEcommReadingServer(grpcServer, readingService)
 

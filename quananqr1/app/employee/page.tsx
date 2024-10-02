@@ -11,9 +11,9 @@ import {
   AwaitedReactNode,
   ReactPortal
 } from "react";
-
-import dishController from "./data-public/public-dish/dish-controller";
-import LoginDialog from "./public-component/login-dialog";
+import { DishListResType } from "./data-guest/public-dish/dish.schema";
+import dishController from "./data-guest/public-dish/dish-controller";
+import LoginDialog from "./guest-component/login-dialog";
 
 export default async function Home() {
   // let dishList: DishListResType["data"] = [];

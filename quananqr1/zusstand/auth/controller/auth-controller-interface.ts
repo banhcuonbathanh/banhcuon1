@@ -1,7 +1,8 @@
+import { GuestLoginBodyType } from "@/schemaValidations/guest.schema";
 import { LoginBodyType, LoginResType, RegisterBodyType } from "../domain/auth.schema";
 
 export interface IAuthState {
-  user: LoginResType["data"]["account"] | null;
+  user: LoginResType | null;
   accessToken: string | null;
   refreshToken: string | null; // State property for refresh token
   loading: boolean;
@@ -11,6 +12,8 @@ export interface IAuthState {
 
 export interface IAuthActions {
   login: (body: LoginBodyType) => Promise<void>;
+
+  guestLogin: (body: GuestLoginBodyType) => Promise<void>;
   logout: () => Promise<void>;
   refreshAccessTokenAction: () => Promise<void>; // Renamed action for refreshing token
   clearError: () => void;

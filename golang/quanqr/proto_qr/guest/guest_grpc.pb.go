@@ -20,22 +20,22 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GuestService_Login_FullMethodName        = "/proto.GuestService/Login"
-	GuestService_Logout_FullMethodName       = "/proto.GuestService/Logout"
-	GuestService_RefreshToken_FullMethodName = "/proto.GuestService/RefreshToken"
-	GuestService_CreateOrders_FullMethodName = "/proto.GuestService/CreateOrders"
-	GuestService_GetOrders_FullMethodName    = "/proto.GuestService/GetOrders"
+	GuestService_GuestLoginGRPC_FullMethodName        = "/proto.GuestService/guestLoginGRPC"
+	GuestService_GuestLogoutGRPC_FullMethodName       = "/proto.GuestService/guestLogoutGRPC"
+	GuestService_GuestRefreshTokenGRPC_FullMethodName = "/proto.GuestService/guestRefreshTokenGRPC"
+	GuestService_GuestCreateOrdersGRPC_FullMethodName = "/proto.GuestService/guestCreateOrdersGRPC"
+	GuestService_GuestGetOrdersGRPC_FullMethodName    = "/proto.GuestService/guestGetOrdersGRPC"
 )
 
 // GuestServiceClient is the client API for GuestService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GuestServiceClient interface {
-	Login(ctx context.Context, in *GuestLoginRequest, opts ...grpc.CallOption) (*GuestLoginResponse, error)
-	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
-	CreateOrders(ctx context.Context, in *CreateOrdersRequest, opts ...grpc.CallOption) (*OrdersResponse, error)
-	GetOrders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*OrdersResponse, error)
+	GuestLoginGRPC(ctx context.Context, in *GuestLoginRequest, opts ...grpc.CallOption) (*GuestLoginResponse, error)
+	GuestLogoutGRPC(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GuestRefreshTokenGRPC(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
+	GuestCreateOrdersGRPC(ctx context.Context, in *CreateOrdersRequest, opts ...grpc.CallOption) (*OrdersResponse, error)
+	GuestGetOrdersGRPC(ctx context.Context, in *GuestGetOrdersGRPCRequest, opts ...grpc.CallOption) (*ListOrdersResponse, error)
 }
 
 type guestServiceClient struct {
@@ -46,50 +46,50 @@ func NewGuestServiceClient(cc grpc.ClientConnInterface) GuestServiceClient {
 	return &guestServiceClient{cc}
 }
 
-func (c *guestServiceClient) Login(ctx context.Context, in *GuestLoginRequest, opts ...grpc.CallOption) (*GuestLoginResponse, error) {
+func (c *guestServiceClient) GuestLoginGRPC(ctx context.Context, in *GuestLoginRequest, opts ...grpc.CallOption) (*GuestLoginResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GuestLoginResponse)
-	err := c.cc.Invoke(ctx, GuestService_Login_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, GuestService_GuestLoginGRPC_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *guestServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *guestServiceClient) GuestLogoutGRPC(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, GuestService_Logout_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, GuestService_GuestLogoutGRPC_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *guestServiceClient) RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error) {
+func (c *guestServiceClient) GuestRefreshTokenGRPC(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RefreshTokenResponse)
-	err := c.cc.Invoke(ctx, GuestService_RefreshToken_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, GuestService_GuestRefreshTokenGRPC_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *guestServiceClient) CreateOrders(ctx context.Context, in *CreateOrdersRequest, opts ...grpc.CallOption) (*OrdersResponse, error) {
+func (c *guestServiceClient) GuestCreateOrdersGRPC(ctx context.Context, in *CreateOrdersRequest, opts ...grpc.CallOption) (*OrdersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(OrdersResponse)
-	err := c.cc.Invoke(ctx, GuestService_CreateOrders_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, GuestService_GuestCreateOrdersGRPC_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *guestServiceClient) GetOrders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*OrdersResponse, error) {
+func (c *guestServiceClient) GuestGetOrdersGRPC(ctx context.Context, in *GuestGetOrdersGRPCRequest, opts ...grpc.CallOption) (*ListOrdersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OrdersResponse)
-	err := c.cc.Invoke(ctx, GuestService_GetOrders_FullMethodName, in, out, cOpts...)
+	out := new(ListOrdersResponse)
+	err := c.cc.Invoke(ctx, GuestService_GuestGetOrdersGRPC_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -100,11 +100,11 @@ func (c *guestServiceClient) GetOrders(ctx context.Context, in *emptypb.Empty, o
 // All implementations must embed UnimplementedGuestServiceServer
 // for forward compatibility.
 type GuestServiceServer interface {
-	Login(context.Context, *GuestLoginRequest) (*GuestLoginResponse, error)
-	Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error)
-	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
-	CreateOrders(context.Context, *CreateOrdersRequest) (*OrdersResponse, error)
-	GetOrders(context.Context, *emptypb.Empty) (*OrdersResponse, error)
+	GuestLoginGRPC(context.Context, *GuestLoginRequest) (*GuestLoginResponse, error)
+	GuestLogoutGRPC(context.Context, *LogoutRequest) (*emptypb.Empty, error)
+	GuestRefreshTokenGRPC(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
+	GuestCreateOrdersGRPC(context.Context, *CreateOrdersRequest) (*OrdersResponse, error)
+	GuestGetOrdersGRPC(context.Context, *GuestGetOrdersGRPCRequest) (*ListOrdersResponse, error)
 	mustEmbedUnimplementedGuestServiceServer()
 }
 
@@ -115,20 +115,20 @@ type GuestServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedGuestServiceServer struct{}
 
-func (UnimplementedGuestServiceServer) Login(context.Context, *GuestLoginRequest) (*GuestLoginResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+func (UnimplementedGuestServiceServer) GuestLoginGRPC(context.Context, *GuestLoginRequest) (*GuestLoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GuestLoginGRPC not implemented")
 }
-func (UnimplementedGuestServiceServer) Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
+func (UnimplementedGuestServiceServer) GuestLogoutGRPC(context.Context, *LogoutRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GuestLogoutGRPC not implemented")
 }
-func (UnimplementedGuestServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
+func (UnimplementedGuestServiceServer) GuestRefreshTokenGRPC(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GuestRefreshTokenGRPC not implemented")
 }
-func (UnimplementedGuestServiceServer) CreateOrders(context.Context, *CreateOrdersRequest) (*OrdersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateOrders not implemented")
+func (UnimplementedGuestServiceServer) GuestCreateOrdersGRPC(context.Context, *CreateOrdersRequest) (*OrdersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GuestCreateOrdersGRPC not implemented")
 }
-func (UnimplementedGuestServiceServer) GetOrders(context.Context, *emptypb.Empty) (*OrdersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetOrders not implemented")
+func (UnimplementedGuestServiceServer) GuestGetOrdersGRPC(context.Context, *GuestGetOrdersGRPCRequest) (*ListOrdersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GuestGetOrdersGRPC not implemented")
 }
 func (UnimplementedGuestServiceServer) mustEmbedUnimplementedGuestServiceServer() {}
 func (UnimplementedGuestServiceServer) testEmbeddedByValue()                      {}
@@ -151,92 +151,92 @@ func RegisterGuestServiceServer(s grpc.ServiceRegistrar, srv GuestServiceServer)
 	s.RegisterService(&GuestService_ServiceDesc, srv)
 }
 
-func _GuestService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GuestService_GuestLoginGRPC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GuestLoginRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GuestServiceServer).Login(ctx, in)
+		return srv.(GuestServiceServer).GuestLoginGRPC(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GuestService_Login_FullMethodName,
+		FullMethod: GuestService_GuestLoginGRPC_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GuestServiceServer).Login(ctx, req.(*GuestLoginRequest))
+		return srv.(GuestServiceServer).GuestLoginGRPC(ctx, req.(*GuestLoginRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GuestService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GuestService_GuestLogoutGRPC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LogoutRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GuestServiceServer).Logout(ctx, in)
+		return srv.(GuestServiceServer).GuestLogoutGRPC(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GuestService_Logout_FullMethodName,
+		FullMethod: GuestService_GuestLogoutGRPC_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GuestServiceServer).Logout(ctx, req.(*LogoutRequest))
+		return srv.(GuestServiceServer).GuestLogoutGRPC(ctx, req.(*LogoutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GuestService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GuestService_GuestRefreshTokenGRPC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefreshTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GuestServiceServer).RefreshToken(ctx, in)
+		return srv.(GuestServiceServer).GuestRefreshTokenGRPC(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GuestService_RefreshToken_FullMethodName,
+		FullMethod: GuestService_GuestRefreshTokenGRPC_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GuestServiceServer).RefreshToken(ctx, req.(*RefreshTokenRequest))
+		return srv.(GuestServiceServer).GuestRefreshTokenGRPC(ctx, req.(*RefreshTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GuestService_CreateOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GuestService_GuestCreateOrdersGRPC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateOrdersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GuestServiceServer).CreateOrders(ctx, in)
+		return srv.(GuestServiceServer).GuestCreateOrdersGRPC(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GuestService_CreateOrders_FullMethodName,
+		FullMethod: GuestService_GuestCreateOrdersGRPC_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GuestServiceServer).CreateOrders(ctx, req.(*CreateOrdersRequest))
+		return srv.(GuestServiceServer).GuestCreateOrdersGRPC(ctx, req.(*CreateOrdersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GuestService_GetOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+func _GuestService_GuestGetOrdersGRPC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GuestGetOrdersGRPCRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GuestServiceServer).GetOrders(ctx, in)
+		return srv.(GuestServiceServer).GuestGetOrdersGRPC(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GuestService_GetOrders_FullMethodName,
+		FullMethod: GuestService_GuestGetOrdersGRPC_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GuestServiceServer).GetOrders(ctx, req.(*emptypb.Empty))
+		return srv.(GuestServiceServer).GuestGetOrdersGRPC(ctx, req.(*GuestGetOrdersGRPCRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -249,24 +249,24 @@ var GuestService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*GuestServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Login",
-			Handler:    _GuestService_Login_Handler,
+			MethodName: "guestLoginGRPC",
+			Handler:    _GuestService_GuestLoginGRPC_Handler,
 		},
 		{
-			MethodName: "Logout",
-			Handler:    _GuestService_Logout_Handler,
+			MethodName: "guestLogoutGRPC",
+			Handler:    _GuestService_GuestLogoutGRPC_Handler,
 		},
 		{
-			MethodName: "RefreshToken",
-			Handler:    _GuestService_RefreshToken_Handler,
+			MethodName: "guestRefreshTokenGRPC",
+			Handler:    _GuestService_GuestRefreshTokenGRPC_Handler,
 		},
 		{
-			MethodName: "CreateOrders",
-			Handler:    _GuestService_CreateOrders_Handler,
+			MethodName: "guestCreateOrdersGRPC",
+			Handler:    _GuestService_GuestCreateOrdersGRPC_Handler,
 		},
 		{
-			MethodName: "GetOrders",
-			Handler:    _GuestService_GetOrders_Handler,
+			MethodName: "guestGetOrdersGRPC",
+			Handler:    _GuestService_GuestGetOrdersGRPC_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

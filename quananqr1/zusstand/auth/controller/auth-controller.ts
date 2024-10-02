@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { authApplication } from "../application/auth-application";
 import { LoginBodyType, RegisterBodyType } from "../domain/auth.schema";
 import { IAuthStore } from "./auth-controller-interface";
+import { GuestLoginBodyType } from "@/schemaValidations/guest.schema";
 
 export const useAuthStore = create<IAuthStore>()(
   persist(
@@ -54,9 +55,14 @@ export const useAuthStore = create<IAuthStore>()(
         set({ loading: true, error: null });
         try {
           const result = await authApplication.login(body);
+
+          // console.log(
+          //   "quananqr1/zusstand/auth/controller/auth-controller.ts auth controller login result.data",
+          //   result.data
+          // );
           if (result.success && result.data) {
             set({
-              user: result.data.account,
+              user: result.data,
               accessToken: result.data.accessToken,
               refreshToken: result.data.refreshToken,
               error: null,
@@ -127,7 +133,39 @@ export const useAuthStore = create<IAuthStore>()(
           set({ loading: false });
         }
       },
-
+      guestLogin: async (body: GuestLoginBodyType) => {
+        set({ loading: true, error: null });
+        try {
+          const result = await authApplication.guestLogin(body);
+          if (result.success && result.data) {
+            set({
+              user: {
+                id: result.data.guest.id,
+                name: result.data.guest.name,
+                role: result.data.guest.role,
+                tableNumber: result.data.guest.tableNumber,
+                createdAt: result.data.guest.createdAt,
+                updatedAt: result.data.guest.updatedAt
+              },
+              accessToken: result.data.accessToken,
+              refreshToken: result.data.refreshToken,
+              error: null,
+              isLoginDialogOpen: false
+            });
+          } else {
+            throw new Error(result.error || "Guest login failed");
+          }
+        } catch (error) {
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred"
+          });
+        } finally {
+          set({ loading: false });
+        }
+      },
       clearError: () => set({ error: null }),
       openLoginDialog: () => set({ isLoginDialogOpen: true }),
       closeLoginDialog: () => set({ isLoginDialogOpen: false })

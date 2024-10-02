@@ -154,7 +154,7 @@ export const CreateGuestRes = z.object({
   data: z.object({
     id: z.number(),
     name: z.string(),
-    role: z.enum(RoleValues),
+    role: RoleValues,
     tableNumber: z.number().nullable(),
     createdAt: z.date(),
     updatedAt: z.date()

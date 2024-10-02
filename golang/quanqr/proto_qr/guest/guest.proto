@@ -56,6 +56,7 @@ message RefreshTokenResponse {
 message CreateOrderItem {
   int64 dish_id = 1;
   int32 quantity = 2;
+  int64 guest_id = 3;
 }
 
 message CreateOrdersRequest {
@@ -80,10 +81,21 @@ message OrdersResponse {
   string message = 2;
 }
 
+
+message GuestGetOrdersGRPCRequest {
+
+  int64 guestId = 1;
+}
+
+message ListOrdersResponse {
+  repeated Order orders = 1;
+  string message = 2;
+}
+
 service GuestService {
-  rpc Login(GuestLoginRequest) returns (GuestLoginResponse);
-  rpc Logout(LogoutRequest) returns (google.protobuf.Empty);
-  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
-  rpc CreateOrders(CreateOrdersRequest) returns (OrdersResponse);
-  rpc GetOrders(google.protobuf.Empty) returns (OrdersResponse);
+  rpc guestLoginGRPC(GuestLoginRequest) returns (GuestLoginResponse);
+  rpc guestLogoutGRPC(LogoutRequest) returns (google.protobuf.Empty);
+  rpc guestRefreshTokenGRPC(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc guestCreateOrdersGRPC(CreateOrdersRequest) returns (OrdersResponse);
+  rpc guestGetOrdersGRPC(GuestGetOrdersGRPCRequest) returns (ListOrdersResponse);
 }

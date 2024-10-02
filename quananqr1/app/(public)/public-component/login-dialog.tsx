@@ -20,10 +20,18 @@ import { Info } from "lucide-react";
 import { handleErrorApi } from "@/lib/utils";
 import { LoginBody, LoginBodyType } from "@/zusstand/auth/domain/auth.schema";
 import { useAuthStore } from "@/zusstand/auth/controller/auth-controller";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const LoginDialog: React.FC = () => {
-  const { login, isLoginDialogOpen, openLoginDialog, closeLoginDialog } =
-    useAuthStore();
+  const {
+    login,
+    isLoginDialogOpen,
+    openLoginDialog,
+    closeLoginDialog,
+    error,
+    clearError
+  } = useAuthStore();
+
   const searchParams = useSearchParams();
   const clearTokens = searchParams.get("clearTokens");
 
@@ -38,35 +46,34 @@ const LoginDialog: React.FC = () => {
   const router = useRouter();
 
   const onSubmit = async (data: LoginBodyType) => {
+    console.log(
+      "quananqr1/app/(public)/public-component/login-dialog.tsx login"
+    );
     try {
-      const response = await login(data);
-
-      console.log(
-        "quananqr1/app/(public)/public-component/login-dialog.tsx response",
-        response
-      );
+      await login(data);
+      // Assuming successful login closes the dialog and redirects
+      // closeLoginDialog();
       // router.push("/manage/dashboard");
     } catch (error: any) {
-      handleErrorApi({
-        error,
-        setError: form.setError
-      });
+      // The error is now handled in the Zustand store
+      console.error("Login error:", error);
     }
   };
 
   return (
     <Dialog
       open={isLoginDialogOpen}
-      onOpenChange={(open) => (open ? openLoginDialog() : closeLoginDialog())}
+      onOpenChange={(open) => {
+        if (open) {
+          openLoginDialog();
+        } else {
+          closeLoginDialog();
+          clearError(); // Clear any existing errors when closing the dialog
+        }
+      }}
     >
       <DialogTrigger asChild>
-        <Button
-          onClick={() => {
-            openLoginDialog();
-          }}
-        >
-          Đăng nhập
-        </Button>
+        <Button onClick={openLoginDialog}>Đăng nhập</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800 shadow-lg">
         <DialogHeader>
@@ -75,6 +82,7 @@ const LoginDialog: React.FC = () => {
             Nhập email và mật khẩu của bạn để đăng nhập vào hệ thống
           </p>
         </DialogHeader>
+
         <Form {...form}>
           <form
             className="space-y-4 w-full"
@@ -83,61 +91,66 @@ const LoginDialog: React.FC = () => {
               console.log(err);
             })}
           >
-            <div className="grid gap-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="m@example.com"
-                        required
-                        className="border-2 border-gray-300 dark:border-gray-600"
-                        {...field}
-                      />
-                      <FormMessage />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="m@example.com"
+                      required
+                      className="border-2 border-gray-300 dark:border-gray-600"
+                      {...field}
+                    />
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      placeholder="password"
+                      id="password"
+                      type="password"
+                      required
+                      className="border-2 border-gray-300 dark:border-gray-600"
+                      {...field}
+                    />
+                    <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <Info size={16} />
+                      <span>
+                        Password should be at least 8 characters long and
+                        include a mix of letters, numbers, and symbols.
+                      </span>
                     </div>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid gap-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input
-                        placeholder="password"
-                        id="password"
-                        type="password"
-                        required
-                        className="border-2 border-gray-300 dark:border-gray-600"
-                        {...field}
-                      />
-                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                        <Info size={16} />
-                        <span>
-                          Password should be at least 8 characters long and
-                          include a mix of letters, numbers, and symbols.
-                        </span>
-                      </div>
-                      <FormMessage />
-                    </div>
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full">
-                Đăng nhập
-              </Button>
-              <Button variant="outline" className="w-full" type="button">
-                Đăng nhập bằng Google
-              </Button>
-            </div>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <Button type="submit" className="w-full">
+              Đăng nhập
+            </Button>
+            <Button variant="outline" className="w-full" type="button">
+              Đăng nhập bằng Google
+            </Button>
           </form>
         </Form>
       </DialogContent>
