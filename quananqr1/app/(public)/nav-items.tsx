@@ -24,6 +24,7 @@ import { useAuthStore } from "@/zusstand/auth/controller/auth-controller";
 import LoginDialog from "./public-component/login-dialog";
 import RegisterDialog from "./public-component/register-dialog";
 import { useRouter } from "next/navigation";
+import GuestLoginDialog from "./tables/[number]/guest-login-form";
 
 const menuItems: {
   title: string;
@@ -104,15 +105,12 @@ export default function NavItems({ className }: { className?: string }) {
   return (
     <>
       {menuItems.map((item) => {
-        const shouldDisplay =
-          !item.role || (user && item.role.includes(user.role as RoleType));
-        if (shouldDisplay) {
-          return (
-            <Link href={item.href} key={item.href} className={className}>
-              {item.title}
-            </Link>
-          );
-        }
+        return (
+          <Link href={item.href} key={item.href} className={className}>
+            {item.title}
+          </Link>
+        );
+
         return null;
       })}
 
@@ -120,6 +118,8 @@ export default function NavItems({ className }: { className?: string }) {
         <>
           <LoginDialog />
           <RegisterDialog />
+
+          <GuestLoginDialog />
         </>
       )}
 

@@ -13,6 +13,8 @@ const configSchema = z.object({
 
   NEXT_PUBLIC_Add_Guest_login:z.string(),
 
+  NEXT_PUBLIC_Get_Dished_intenal:z.string(),
+
 })
 // /users/email
 const configProject = configSchema.safeParse({
@@ -29,7 +31,8 @@ const configProject = configSchema.safeParse({
   NEXT_PUBLIC_Add_Dished: process.env.NEXT_PUBLIC_Add_Dished,
 
 
-  NEXT_PUBLIC_Add_Guest_login: process.env.NEXT_PUBLIC_Add_Guest_login
+  NEXT_PUBLIC_Add_Guest_login: process.env.NEXT_PUBLIC_Add_Guest_login,
+  NEXT_PUBLIC_Get_Dished_intenal: process.env.NEXT_PUBLIC_Get_Dished_intenal,
 })
 
 if (!configProject.success) {
