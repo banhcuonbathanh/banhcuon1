@@ -149,17 +149,17 @@ users
 sessions
 
 Jump back to the golang branch:
-git checkout python
+git checkout test_isadmin
 
 Merge the golang branch with the python branch:
-git merge test_isadmin
-git merge --no-ff test_isadmin
+git merge guest
+git merge --no-ff guest
 
 Update the changes to the remote repository:
-git push origin python
+git push origin guest
 
 Jump back to the python branch:
-git checkout test_isadmin
+git checkout guest
 
 git branch
 ========================================= golang ==============================
