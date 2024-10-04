@@ -31,7 +31,7 @@ TRUNCATE TABLE schema*migrations, users; delete all data
 \d reading_test_models;
 SELECT * FROM dishes;
 
-SELECT * FROM users;
+SELECT \* FROM users;
 SELECT \* FROM sessions;
 DELETE FROM sessions;
 \d order_items
@@ -152,11 +152,15 @@ Jump back to the golang branch:
 git checkout test_isadmin
 
 Merge the golang branch with the python branch:
+Jump back to the golang branch:
+git checkout test_isadmin
+
+Merge the golang branch with the python branch:
 git merge guest
 git merge --no-ff guest
 
 Update the changes to the remote repository:
-git push origin guest
+git push origin test_isadmin
 
 Jump back to the python branch:
 git checkout guest
@@ -202,7 +206,6 @@ stand at python
 git checkout -b test_isadmin
 
 http://localhost:3000/admin/dished
-
 
 Exit the editor: If you’re using vim (which is the default editor for Git), you can quit by:
 Pressing Esc to ensure you’re in normal mode.
