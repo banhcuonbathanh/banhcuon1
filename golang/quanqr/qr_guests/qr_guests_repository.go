@@ -73,7 +73,7 @@ func (gr *GuestRepository) GuestLogout(ctx context.Context, req *proto.LogoutReq
 	return nil
 }
 
-func (gr *GuestRepository) RefreshToken(ctx context.Context, req *proto.RefreshTokenRequest) (*proto.RefreshTokenResponse, error) {
+func (gr *GuestRepository) GuestRefreshToken(ctx context.Context, req *proto.RefreshTokenRequest) (*proto.RefreshTokenResponse, error) {
 	query := `
 		SELECT id FROM guests
 		WHERE refresh_token = $1 AND refresh_token_expires_at > $2
@@ -105,7 +105,7 @@ func (gr *GuestRepository) RefreshToken(ctx context.Context, req *proto.RefreshT
 	}, nil
 }
 
-func (gr *GuestRepository) CreateOrders(ctx context.Context, req *proto.CreateOrdersRequest) (*proto.OrdersResponse, error) {
+func (gr *GuestRepository) GuestCreateOrders(ctx context.Context, req *proto.GuestCreateOrderRequest) (*proto.OrdersResponse, error) {
 	tx, err := gr.db.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error starting transaction: %w", err)
@@ -157,7 +157,7 @@ func (gr *GuestRepository) CreateOrders(ctx context.Context, req *proto.CreateOr
 	}, nil
 }
 
-func (gr *GuestRepository) GetOrders(ctx context.Context, req *proto.GuestGetOrdersGRPCRequest) (*proto.ListOrdersResponse, error) {
+func (gr *GuestRepository) GuestGetOrders(ctx context.Context, req *proto.GuestGetOrdersGRPCRequest) (*proto.ListOrdersResponse, error) {
 	query := `
 		SELECT id, guest_id, table_number, dish_id, quantity, status, created_at, updated_at
 		FROM orders

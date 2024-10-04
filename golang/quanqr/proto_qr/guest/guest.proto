@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package proto;
+package guest;
 
 option go_package = "english-ai-full/quanqr/proto_qr/guest";
 
@@ -53,14 +53,14 @@ message RefreshTokenResponse {
   string message = 3;
 }
 
-message CreateOrderItem {
+message GuestCreateOrderItem {
   int64 dish_id = 1;
   int32 quantity = 2;
   int64 guest_id = 3;
 }
 
-message CreateOrdersRequest {
-  repeated CreateOrderItem items = 1;
+message GuestCreateOrderRequest {
+  repeated GuestCreateOrderItem items = 1;
 }
 
 message Order {
@@ -96,6 +96,6 @@ service GuestService {
   rpc guestLoginGRPC(GuestLoginRequest) returns (GuestLoginResponse);
   rpc guestLogoutGRPC(LogoutRequest) returns (google.protobuf.Empty);
   rpc guestRefreshTokenGRPC(RefreshTokenRequest) returns (RefreshTokenResponse);
-  rpc guestCreateOrdersGRPC(CreateOrdersRequest) returns (OrdersResponse);
+  rpc guestCreateOrdersGRPC(GuestCreateOrderRequest) returns (OrdersResponse);
   rpc guestGetOrdersGRPC(GuestGetOrdersGRPCRequest) returns (ListOrdersResponse);
 }

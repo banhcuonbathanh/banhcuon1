@@ -54,7 +54,7 @@ func (gs *GuestServiceStruct) GuestLogoutGRPC(ctx context.Context, req *guest.Lo
 func (gs *GuestServiceStruct) GuestRefreshTokenGRPC(ctx context.Context, req *guest.RefreshTokenRequest) (*guest.RefreshTokenResponse, error) {
 	log.Println("Token refresh attempt")
 
-	response, err := gs.guestRepo.RefreshToken(ctx, req)
+	response, err := gs.guestRepo.GuestRefreshToken(ctx, req)
 	if err != nil {
 		log.Println("Error during token refresh:", err)
 		return nil, err
@@ -64,7 +64,7 @@ func (gs *GuestServiceStruct) GuestRefreshTokenGRPC(ctx context.Context, req *gu
 	return response, nil
 }
 
-func (gs *GuestServiceStruct) GuestCreateOrdersGRPC(ctx context.Context, req *guest.CreateOrdersRequest) (*guest.OrdersResponse, error) {
+func (gs *GuestServiceStruct) GuestCreateOrdersGRPC(ctx context.Context, req *guest.GuestCreateOrderRequest) (*guest.OrdersResponse, error) {
 	log.Println("Create orders attempt:",
 		"Number of items:", len(req.Items),
 	)
@@ -79,7 +79,7 @@ func (gs *GuestServiceStruct) GuestCreateOrdersGRPC(ctx context.Context, req *gu
 		}
 	}
 
-	response, err := gs.guestRepo.CreateOrders(ctx, req)
+	response, err := gs.guestRepo.GuestCreateOrders(ctx, req)
 	if err != nil {
 		log.Println("Error creating orders:", err)
 		return nil, status.Errorf(codes.Internal, "Failed to create orders: %v", err)
@@ -92,7 +92,7 @@ func (gs *GuestServiceStruct) GuestCreateOrdersGRPC(ctx context.Context, req *gu
 func (gs *GuestServiceStruct) GuestGetOrdersGRPC(ctx context.Context, req *guest.GuestGetOrdersGRPCRequest) (*guest.ListOrdersResponse, error) {
 	log.Println("Get orders attempt for guest ID:", req.GuestId)
 
-	response, err := gs.guestRepo.GetOrders(ctx, req)
+	response, err := gs.guestRepo.GuestGetOrders(ctx, req)
 	if err != nil {
 		log.Println("Error fetching orders:", err)
 		return nil, err

@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "english-ai-full/quanqr/proto_qr/order";
+
+import "google/protobuf/timestamp.proto";
+
+
+message Order {
+  int64 id = 1;
+  int64 guest_id = 2;
+  int32 table_number = 3;
+  int64 dish_snapshot_id = 4;
+  int32 quantity = 5;
+  int64 order_handler_id = 6;
+  string status = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message Guest {
+  int64 id = 1;
+  string name = 2;
+  int32 table_number = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message DishSnapshot {
+  int64 id = 1;
+  string name = 2;
+  int32 price = 3;
+  string image = 4;
+  string description = 5;
+  string status = 6;
+  int64 dish_id = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message Account {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+  string avatar = 5;
+}
+
+message Table {
+  int32 number = 1;
+  int32 capacity = 2;
+  string status = 3;
+  string token = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message OrderDetail {
+  Order order = 1;
+  Guest guest = 2;
+  DishSnapshot dish_snapshot = 3;
+  Account order_handler = 4;
+  Table table = 5;
+}
+
+message CreateOrderItem {
+  int64 dish_id = 1;
+  int32 quantity = 2;
+}
+
+message CreateOrdersRequest {
+  int64 guest_id = 1;
+  repeated CreateOrderItem orders = 2;
+}
+
+message UpdateOrderRequest {
+  int64 order_id = 1;
+  string status = 2;
+  int64 dish_id = 3;
+  int32 quantity = 4;
+}
+
+message GetOrdersRequest {
+  google.protobuf.Timestamp from_date = 1;
+  google.protobuf.Timestamp to_date = 2;
+}
+
+message PayGuestOrdersRequest {
+  int64 guest_id = 1;
+}
+
+message OrderResponse {
+  string message = 1;
+  OrderDetail data = 2;
+}
+
+message OrderListResponse {
+  string message = 1;
+  repeated OrderDetail data = 2;
+}
+message OrderDetailIdParam {
+  int64 id = 1;
+}
+service OrderService {
+  rpc CreateOrders(CreateOrdersRequest) returns (OrderListResponse);
+  rpc GetOrders(GetOrdersRequest) returns (OrderListResponse);
+  rpc GetOrderDetail(OrderDetailIdParam) returns (OrderResponse);
+  rpc UpdateOrder(UpdateOrderRequest) returns (OrderResponse);
+  rpc PayGuestOrders(PayGuestOrdersRequest) returns (OrderListResponse);
+}

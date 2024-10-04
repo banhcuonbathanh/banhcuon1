@@ -32,6 +32,9 @@ import (
 	guests "english-ai-full/quanqr/qr_guests"
 	pb_guests "english-ai-full/quanqr/proto_qr/guest"
 
+
+		order "english-ai-full/quanqr/order"
+	pb_order "english-ai-full/quanqr/proto_qr/order"
 	// "github.com/go-chi/chi"
 
 	"github.com/go-chi/chi"
@@ -162,7 +165,12 @@ dish_client := pb_dish.NewDishServiceClient(conn)
 	guests_hdl := guests.NewGuestHandler(guests_client, *secretKey)
 	
 	guests.RegisterGuestRoutes(r, guests_hdl)
+// order
 
+order_client := pb_order.NewOrderServiceClient(conn)
+order_hdl := order.NewOrderHandler(order_client, *secretKey)
+
+order.RegisterOrderRoutes(r, order_hdl)
 	//
     r.Get("/image", func(w http.ResponseWriter, r *http.Request) {
 

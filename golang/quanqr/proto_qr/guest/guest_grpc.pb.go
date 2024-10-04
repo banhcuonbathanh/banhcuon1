@@ -20,11 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GuestService_GuestLoginGRPC_FullMethodName        = "/proto.GuestService/guestLoginGRPC"
-	GuestService_GuestLogoutGRPC_FullMethodName       = "/proto.GuestService/guestLogoutGRPC"
-	GuestService_GuestRefreshTokenGRPC_FullMethodName = "/proto.GuestService/guestRefreshTokenGRPC"
-	GuestService_GuestCreateOrdersGRPC_FullMethodName = "/proto.GuestService/guestCreateOrdersGRPC"
-	GuestService_GuestGetOrdersGRPC_FullMethodName    = "/proto.GuestService/guestGetOrdersGRPC"
+	GuestService_GuestLoginGRPC_FullMethodName        = "/guest.GuestService/guestLoginGRPC"
+	GuestService_GuestLogoutGRPC_FullMethodName       = "/guest.GuestService/guestLogoutGRPC"
+	GuestService_GuestRefreshTokenGRPC_FullMethodName = "/guest.GuestService/guestRefreshTokenGRPC"
+	GuestService_GuestCreateOrdersGRPC_FullMethodName = "/guest.GuestService/guestCreateOrdersGRPC"
+	GuestService_GuestGetOrdersGRPC_FullMethodName    = "/guest.GuestService/guestGetOrdersGRPC"
 )
 
 // GuestServiceClient is the client API for GuestService service.
@@ -34,7 +34,7 @@ type GuestServiceClient interface {
 	GuestLoginGRPC(ctx context.Context, in *GuestLoginRequest, opts ...grpc.CallOption) (*GuestLoginResponse, error)
 	GuestLogoutGRPC(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GuestRefreshTokenGRPC(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
-	GuestCreateOrdersGRPC(ctx context.Context, in *CreateOrdersRequest, opts ...grpc.CallOption) (*OrdersResponse, error)
+	GuestCreateOrdersGRPC(ctx context.Context, in *GuestCreateOrderRequest, opts ...grpc.CallOption) (*OrdersResponse, error)
 	GuestGetOrdersGRPC(ctx context.Context, in *GuestGetOrdersGRPCRequest, opts ...grpc.CallOption) (*ListOrdersResponse, error)
 }
 
@@ -76,7 +76,7 @@ func (c *guestServiceClient) GuestRefreshTokenGRPC(ctx context.Context, in *Refr
 	return out, nil
 }
 
-func (c *guestServiceClient) GuestCreateOrdersGRPC(ctx context.Context, in *CreateOrdersRequest, opts ...grpc.CallOption) (*OrdersResponse, error) {
+func (c *guestServiceClient) GuestCreateOrdersGRPC(ctx context.Context, in *GuestCreateOrderRequest, opts ...grpc.CallOption) (*OrdersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(OrdersResponse)
 	err := c.cc.Invoke(ctx, GuestService_GuestCreateOrdersGRPC_FullMethodName, in, out, cOpts...)
@@ -103,7 +103,7 @@ type GuestServiceServer interface {
 	GuestLoginGRPC(context.Context, *GuestLoginRequest) (*GuestLoginResponse, error)
 	GuestLogoutGRPC(context.Context, *LogoutRequest) (*emptypb.Empty, error)
 	GuestRefreshTokenGRPC(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
-	GuestCreateOrdersGRPC(context.Context, *CreateOrdersRequest) (*OrdersResponse, error)
+	GuestCreateOrdersGRPC(context.Context, *GuestCreateOrderRequest) (*OrdersResponse, error)
 	GuestGetOrdersGRPC(context.Context, *GuestGetOrdersGRPCRequest) (*ListOrdersResponse, error)
 	mustEmbedUnimplementedGuestServiceServer()
 }
@@ -124,7 +124,7 @@ func (UnimplementedGuestServiceServer) GuestLogoutGRPC(context.Context, *LogoutR
 func (UnimplementedGuestServiceServer) GuestRefreshTokenGRPC(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GuestRefreshTokenGRPC not implemented")
 }
-func (UnimplementedGuestServiceServer) GuestCreateOrdersGRPC(context.Context, *CreateOrdersRequest) (*OrdersResponse, error) {
+func (UnimplementedGuestServiceServer) GuestCreateOrdersGRPC(context.Context, *GuestCreateOrderRequest) (*OrdersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GuestCreateOrdersGRPC not implemented")
 }
 func (UnimplementedGuestServiceServer) GuestGetOrdersGRPC(context.Context, *GuestGetOrdersGRPCRequest) (*ListOrdersResponse, error) {
@@ -206,7 +206,7 @@ func _GuestService_GuestRefreshTokenGRPC_Handler(srv interface{}, ctx context.Co
 }
 
 func _GuestService_GuestCreateOrdersGRPC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateOrdersRequest)
+	in := new(GuestCreateOrderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func _GuestService_GuestCreateOrdersGRPC_Handler(srv interface{}, ctx context.Co
 		FullMethod: GuestService_GuestCreateOrdersGRPC_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GuestServiceServer).GuestCreateOrdersGRPC(ctx, req.(*CreateOrdersRequest))
+		return srv.(GuestServiceServer).GuestCreateOrdersGRPC(ctx, req.(*GuestCreateOrderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -245,7 +245,7 @@ func _GuestService_GuestGetOrdersGRPC_Handler(srv interface{}, ctx context.Conte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var GuestService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.GuestService",
+	ServiceName: "guest.GuestService",
 	HandlerType: (*GuestServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

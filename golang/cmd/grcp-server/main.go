@@ -5,6 +5,11 @@ import (
 	"english-ai-full/ecomm-grpc/db"
 
 	// "os"
+
+	order "english-ai-full/quanqr/order"
+	pb_order "english-ai-full/quanqr/proto_qr/order"
+
+//
 	dish "english-ai-full/quanqr/dish"
 	dishPb "english-ai-full/quanqr/proto_qr/dish"
 	guests "english-ai-full/quanqr/qr_guests"
@@ -75,7 +80,10 @@ guestsrepo := guests.NewGuestRepository(dbConn)
 guestsService := guests.NewGuestService(guestsrepo)
 // intiate commentRepo commentService
 
-
+// order "english-ai-full/quanqr/order"
+// pb_order "english-ai-full/quanqr/proto_qr/order"
+orderrepo := order.NewOrderRepository(dbConn)
+orderService := order.NewOrderService(orderrepo)
 
 
 	lis, err := net.Listen("tcp", cfg.GRPCAddress)
@@ -92,7 +100,7 @@ guestsService := guests.NewGuestService(guestsrepo)
 	reading_pb.RegisterEcommReadingServer(grpcServer, readingService)
 
 	comment_pb.RegisterCommentServiceServer(grpcServer, commentService)
-
+	pb_order.RegisterOrderServiceServer(grpcServer,orderService)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve gRPC: %v", err)
 	}

@@ -199,16 +199,16 @@ func ToRefreshTokenResponseFromPB(resp *guest.RefreshTokenResponse) RefreshToken
 	}
 }
 
-func ToPBCreateOrdersRequest(req CreateOrdersRequest) *guest.CreateOrdersRequest {
-	items := make([]*guest.CreateOrderItem, len(req.Items))
+func ToPBCreateOrdersRequest(req CreateOrdersRequest) *guest.GuestCreateOrderRequest {
+	items := make([]*guest.GuestCreateOrderItem, len(req.Items))
 	for i, item := range req.Items {
-		items[i] = &guest.CreateOrderItem{
+		items[i] = &guest.GuestCreateOrderItem{
 			DishId:   item.DishID,
 			Quantity: item.Quantity,
 			GuestId:  item.GuestID,
 		}
 	}
-	return &guest.CreateOrdersRequest{
+	return &guest.GuestCreateOrderRequest{
 		Items: items,
 	}
 }
