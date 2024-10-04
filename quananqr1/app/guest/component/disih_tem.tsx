@@ -1,18 +1,15 @@
-import React from 'react';
-
-import Image from 'next/image';
-import { Dish } from '@/zusstand/dished/domain/dish.schema';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-
-
+import { Dish } from '@/zusstand/dished/domain/dish.schema';
+import React from 'react'
+import Image from "next/image";
 interface DishCardProps {
   dish: Dish;
   onAddToOrder: (dish: Dish) => void;
 }
 
-const DishCard: React.FC<DishCardProps> = ({ dish, onAddToOrder }) => (
-    <Card className="w-full max-w-sm">
+export const DishCard: React.FC<DishCardProps> = ({ dish, onAddToOrder }) => (
+  <Card className="w-full max-w-sm">
     <CardHeader>
       <CardTitle>{dish.name}</CardTitle>
     </CardHeader>
@@ -36,5 +33,3 @@ const DishCard: React.FC<DishCardProps> = ({ dish, onAddToOrder }) => (
     </CardFooter>
   </Card>
 );
-
-export default DishCard;

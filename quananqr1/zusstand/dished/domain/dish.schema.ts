@@ -29,10 +29,7 @@ export const DishRes = z.object({
 
 export type DishResType = z.TypeOf<typeof DishRes>
 
-export const DishListRes = z.object({
-  data: z.array(DishSchema),
-  message: z.string()
-})
+export const DishListRes = z.array(DishSchema)
 
 export type DishListResType = z.TypeOf<typeof DishListRes>
 

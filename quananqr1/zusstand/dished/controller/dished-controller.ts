@@ -61,7 +61,7 @@ export const useDishStore = create<DishStore>((set) => ({
       const response = await useApiStore
         .getState()
         .http.get<DishListResType>("/api/dishes");
-      set({ dishes: response.data.data, isLoading: false });
+      set({ dishes: response.data, isLoading: false });
     } catch (error) {
       set({ isLoading: false, error: "Failed to fetch dishes" });
       throw error;

@@ -1,18 +1,19 @@
 import envConfig from "@/config";
 import {
   DishListRes,
-  DishListResType
+  DishListResType,
+  DishSchema
 } from "@/zusstand/dished/domain/dish.schema";
+import { z } from "zod";
+
+
+
 
 const get_dishes = async (): Promise<DishListResType> => {
-  // Change return type
   console.log("Fetching dishes from controller...");
 
   try {
-    const baseUrl =
-      envConfig.NEXT_PUBLIC_URL + envConfig.NEXT_PUBLIC_Get_Dished_intenal;
-    console.log("Fetching dishes from controller... 222 baseUrl", baseUrl);
-
+    const baseUrl = envConfig.NEXT_PUBLIC_URL + envConfig.NEXT_PUBLIC_Get_Dished_intenal;
     console.log("Fetching from URL:", baseUrl);
 
     const response = await fetch(baseUrl, {
@@ -20,29 +21,38 @@ const get_dishes = async (): Promise<DishListResType> => {
       cache: "no-store"
     });
 
-    // Check for response.ok before parsing JSON
     if (!response.ok) {
-      const errorData = await response.json(); // Log the error response body
+      const errorData = await response.json();
       console.log("Error response data:", errorData);
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorData.message}`
-      );
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
     }
 
     const data = await response.json();
     console.log("Fetched dishes data:", data);
 
-    // Validate with your schema
+    // Create a more lenient schema for parsing
+    const LenientDishSchema = DishSchema.extend({
+      createdAt: z.string().or(z.date()).optional(),
+      updatedAt: z.string().or(z.date()).optional(),
+    }).transform((dish) => ({
+      ...dish,
+      createdAt: dish.createdAt ? new Date(dish.createdAt) : new Date(),
+      updatedAt: dish.updatedAt ? new Date(dish.updatedAt) : new Date(),
+    }));
 
-    // Return the whole response object
-    return {
-      data: data, // Array of dishes
-      message: "data.message" // Message from the API
-    };
+    // Validate the response data against the lenient schema
+    const validatedData = z.array(LenientDishSchema).parse(data.data || data);
+
+    return validatedData;
   } catch (error) {
-    console.error("Error fetching dishes:", error);
-    throw error; // This will propagate the error to the calling function
+    console.error("Error fetching or parsing dishes:", error);
+    if (error instanceof z.ZodError) {
+      console.error("Zod validation errors:", JSON.stringify(error.errors, null, 2));
+    }
+    throw error;
   }
 };
+
+
 
 export { get_dishes };
