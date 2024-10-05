@@ -98,6 +98,8 @@ func (h *GuestHandlerController) RefreshToken(w http.ResponseWriter, r *http.Req
 }
 
 func (h *GuestHandlerController) CreateOrders(w http.ResponseWriter, r *http.Request) {
+
+	log.Print("golang/quanqr/qr_guests/qr_guests_handler.go")
 	var orderReq CreateOrdersRequest
 	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
 		http.Error(w, "error decoding request body", http.StatusBadRequest)

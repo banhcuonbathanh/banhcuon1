@@ -3,6 +3,7 @@ package qr_guests
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -106,6 +107,8 @@ func (gr *GuestRepository) GuestRefreshToken(ctx context.Context, req *proto.Ref
 }
 
 func (gr *GuestRepository) GuestCreateOrders(ctx context.Context, req *proto.GuestCreateOrderRequest) (*proto.OrdersResponse, error) {
+
+	log.Print("golang/quanqr/qr_guests/qr_guests_repository.go")
 	tx, err := gr.db.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error starting transaction: %w", err)
@@ -139,7 +142,7 @@ func (gr *GuestRepository) GuestCreateOrders(ctx context.Context, req *proto.Gue
 			&updatedAt,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error creating order: %w", err)
+			return nil, fmt.Errorf("error creating order: error %w", err)
 		}
 		order.CreatedAt = timestamppb.New(createdAt)
 		order.UpdatedAt = timestamppb.New(updatedAt)

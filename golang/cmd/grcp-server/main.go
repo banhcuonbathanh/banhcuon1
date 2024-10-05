@@ -9,6 +9,11 @@ import (
 	order "english-ai-full/quanqr/order"
 	pb_order "english-ai-full/quanqr/proto_qr/order"
 
+	//-----
+	tables "english-ai-full/quanqr/tables"
+	pb_table "english-ai-full/quanqr/proto_qr/table"
+	//-----
+
 //
 	dish "english-ai-full/quanqr/dish"
 	dishPb "english-ai-full/quanqr/proto_qr/dish"
@@ -84,7 +89,11 @@ guestsService := guests.NewGuestService(guestsrepo)
 // pb_order "english-ai-full/quanqr/proto_qr/order"
 orderrepo := order.NewOrderRepository(dbConn)
 orderService := order.NewOrderService(orderrepo)
+// pb_order "english-ai-full/quanqr/proto_qr/order"
+tablerepo := tables.NewTableRepository(dbConn)
+tableService := tables.NewTableService(tablerepo)
 
+//
 
 	lis, err := net.Listen("tcp", cfg.GRPCAddress)
 	if err != nil {
@@ -92,6 +101,9 @@ orderService := order.NewOrderService(orderrepo)
 	}
 
 	grpcServer := grpc.NewServer()
+
+	pb_table.RegisterTableServiceServer(grpcServer,tableService)
+
 	dishPb.RegisterDishServiceServer(grpcServer,dishService)
 	pb.RegisterEcommUserServer(grpcServer, userService)
 

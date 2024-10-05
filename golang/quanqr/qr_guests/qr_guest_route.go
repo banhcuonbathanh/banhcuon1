@@ -1,16 +1,15 @@
 package qr_guests
 
-
-
 import (
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
-	middleware "english-ai-full/ecomm-api"
+	// middleware "english-ai-full/ecomm-api"
 )
 
 func RegisterGuestRoutes(r *chi.Mux, handler *GuestHandlerController) *chi.Mux {
-	tokenMaker := handler.TokenMaker
+	// tokenMaker := handler.TokenMaker
 
 	r.Get("/qr/guest/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("guest test is running"))
@@ -23,7 +22,9 @@ func RegisterGuestRoutes(r *chi.Mux, handler *GuestHandlerController) *chi.Mux {
 
 		// Protected routes (authentication required)
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
+
+			log.Print("golang/quanqr/qr_guests/qr_guest_route.go")
+			// r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
 
 			r.Post("/logout", handler.GuestLogout)
 			r.Post("/orders", handler.CreateOrders)

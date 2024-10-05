@@ -65,6 +65,8 @@ func (gs *GuestServiceStruct) GuestRefreshTokenGRPC(ctx context.Context, req *gu
 }
 
 func (gs *GuestServiceStruct) GuestCreateOrdersGRPC(ctx context.Context, req *guest.GuestCreateOrderRequest) (*guest.OrdersResponse, error) {
+
+	log.Print("golang/quanqr/qr_guests/qr_guests_service.go")
 	log.Println("Create orders attempt:",
 		"Number of items:", len(req.Items),
 	)

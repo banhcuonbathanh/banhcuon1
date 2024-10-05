@@ -20,11 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TableService_GetTableList_FullMethodName   = "/proto.TableService/GetTableList"
-	TableService_GetTableDetail_FullMethodName = "/proto.TableService/GetTableDetail"
-	TableService_CreateTable_FullMethodName    = "/proto.TableService/CreateTable"
-	TableService_UpdateTable_FullMethodName    = "/proto.TableService/UpdateTable"
-	TableService_DeleteTable_FullMethodName    = "/proto.TableService/DeleteTable"
+	TableService_GetTableList_FullMethodName   = "/table.TableService/GetTableList"
+	TableService_GetTableDetail_FullMethodName = "/table.TableService/GetTableDetail"
+	TableService_CreateTable_FullMethodName    = "/table.TableService/CreateTable"
+	TableService_UpdateTable_FullMethodName    = "/table.TableService/UpdateTable"
+	TableService_DeleteTable_FullMethodName    = "/table.TableService/DeleteTable"
 )
 
 // TableServiceClient is the client API for TableService service.
@@ -245,7 +245,7 @@ func _TableService_DeleteTable_Handler(srv interface{}, ctx context.Context, dec
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TableService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.TableService",
+	ServiceName: "table.TableService",
 	HandlerType: (*TableServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

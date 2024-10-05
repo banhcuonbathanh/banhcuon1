@@ -37,6 +37,10 @@ import (
 	pb_order "english-ai-full/quanqr/proto_qr/order"
 	// "github.com/go-chi/chi"
 
+	tables "english-ai-full/quanqr/tables"
+	pb_tables "english-ai-full/quanqr/proto_qr/table"
+	//----------
+
 	"github.com/go-chi/chi"
 	"github.com/ianschenck/envflag"
 	"google.golang.org/grpc"
@@ -159,8 +163,15 @@ dish_client := pb_dish.NewDishServiceClient(conn)
 	
 	dish.RegisterDishRoutes(r, dish_hdl)
 
-	// guest
+	// table
 
+
+	table_client := pb_tables.NewTableServiceClient(conn)
+	table_hdl := tables.NewTableHandler(table_client)
+	
+	tables.RegisterTablesRoutes(r, table_hdl)
+
+	// guest
 	guests_client := pb_guests.NewGuestServiceClient(conn)
 	guests_hdl := guests.NewGuestHandler(guests_client, *secretKey)
 	
