@@ -90,7 +90,7 @@ guestsService := guests.NewGuestService(guestsrepo)
 orderrepo := order.NewOrderRepository(dbConn)
 orderService := order.NewOrderService(orderrepo)
 // pb_order "english-ai-full/quanqr/proto_qr/order"
-tablerepo := tables.NewTableRepository(dbConn)
+tablerepo := tables.NewTableRepository(dbConn, "asdfEWQR1234%#$@")
 tableService := tables.NewTableService(tablerepo)
 
 //
