@@ -13,6 +13,7 @@ import {
   UpdateDishBodyType
 } from "../domain/dish.schema";
 import envConfig from "@/config";
+import { z } from "zod";
 
 interface DishStore {
   dish: Dish | null;
@@ -21,7 +22,7 @@ interface DishStore {
   error: string | null;
   getDish: (id: number) => Promise<void>;
   updateDish: (body: UpdateDishBodyType & DishParamsType) => Promise<void>;
-  getDishes: () => Promise<void>;
+  getDishes: () => Promise<Dish[]>;
   addDish: (body: CreateDishBodyType) => Promise<void>;
   deleteDish: (id: number) => Promise<void>;
 }
@@ -56,20 +57,46 @@ export const useDishStore = create<DishStore>((set) => ({
     }
   },
   getDishes: async () => {
+    console.log("quananqr1/zusstand/dished/controller/dished-controller.ts");
+    const link = envConfig.NEXT_PUBLIC_API_ENDPOINT + envConfig.NEXT_PUBLIC_Add_Dished;
     set({ isLoading: true, error: null });
+    
     try {
-      const response = await useApiStore
-        .getState()
-        .http.get<DishListResType>("/api/dishes");
-      set({ dishes: response.data, isLoading: false });
+      const response = await useApiStore.getState().http.get<DishListResType>(link);
+  
+      console.log("quananqr1/zusstand/dished/controller/dished-controller.ts response", response.data);
+      console.log("111111111111111 link", link);
+  
+      // Create a more lenient schema for parsing
+      const LenientDishSchema = DishSchema.extend({
+        created_at: z.string().or(z.date()),
+        updated_at: z.string().or(z.date())
+      }).transform((dish) => ({
+        ...dish,
+        createdAt: new Date(dish.created_at),
+        updatedAt: new Date(dish.updated_at),
+        // Remove the original created_at and updated_at fields
+        created_at: undefined,
+        updated_at: undefined
+      }));
+  
+      // Validate and transform the response data
+      const validatedData = z.array(LenientDishSchema).parse(response.data);
+  
+      set({ dishes: validatedData, isLoading: false });
+      return validatedData;
     } catch (error) {
+      console.error("Error fetching or parsing dishes:", error);
+      if (error instanceof z.ZodError) {
+        console.error("Zod validation errors:", JSON.stringify(error.errors, null, 2));
+      }
       set({ isLoading: false, error: "Failed to fetch dishes" });
       throw error;
     }
   },
   addDish: async (body: CreateDishBodyType) => {
-
-    const link = envConfig.NEXT_PUBLIC_API_ENDPOINT + envConfig.NEXT_PUBLIC_Add_Dished
+    const link =
+      envConfig.NEXT_PUBLIC_API_ENDPOINT + envConfig.NEXT_PUBLIC_Add_Dished;
     set({ isLoading: true, error: null });
     try {
       const response = await useApiStore
@@ -120,8 +147,13 @@ export const useDeleteDishMutation = () => {
   };
 };
 
-export const useDishListQuery = () => {
+export const useDishListQuery = async () => {
   const { getDishes, dishes, isLoading, error } = useDishStore();
+
+  console.log(
+    "quananqr1/zusstand/dished/controller/dished-controller.ts useDishListQuery getDishes",
+    await getDishes()
+  );
   return {
     refetch: getDishes,
     data: dishes,
@@ -148,8 +180,6 @@ export const useUpdateDishMutation = () => {
     error
   };
 };
-
-
 
 // const { mutateAsync: addDish, isPending: isAdding, error: addError } = useAddDishMutation();
 // const { mutateAsync: deleteDish, isPending: isDeleting, error: deleteError } = useDeleteDishMutation();

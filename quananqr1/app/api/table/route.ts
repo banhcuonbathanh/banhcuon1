@@ -5,11 +5,15 @@ import {
   DishRes
 } from "@/zusstand/dished/domain/dish.schema"; // Adjust the import based on your project structure
 import envConfig from "@/config";
+import { CreateTableBody } from "@/zusstand/table/table.schema";
 
 export async function GET() {
+  const link_table = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Table_End_Point}`;
+
+  console.log("quananqr1/app/api/table/route.ts link_table", link_table);
   try {
     const response = await fetch(
-      `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Add_Dished}`,
+      `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Table_End_Point}`,
       {
         method: "GET",
         cache: "no-store"
@@ -21,12 +25,12 @@ export async function GET() {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const dishes = await response.json(); // Parse response once
-    // console.log("quananqr1/app/api/guest/route.ts diseds", dishes);
+    const tables = await response.json(); // Parse response once
+    console.log("quananqr1/app/api/table/route.ts tables", tables);
 
     return NextResponse.json({
-      data: dishes.data,
-      message: "Dishes retrieved successfully"
+      data: tables.data,
+      message: "tables retrieved successfully"
     });
   } catch (error) {
     console.error("Error fetching dishes:", error);
@@ -40,10 +44,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const validatedBody = CreateDishBody.parse(body);
+    const validatedBody = CreateTableBody.parse(body);
 
     const response = await fetch(
-      `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Add_Dished}`,
+      `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Table_End_Point}`,
       {
         method: "POST",
         headers: {
@@ -59,19 +63,19 @@ export async function POST(request: Request) {
 
     const newDish = await response.json();
     return NextResponse.json(
-      DishRes.parse({ data: newDish, message: "Dish created successfully" }),
+      DishRes.parse({ data: newDish, message: "table created successfully" }),
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error creating dish:", error);
+    console.error("Error creating table:", error);
     if (error instanceof Error) {
       return NextResponse.json(
-        { message: `Failed to create dish: ${error.message}` },
+        { message: `Failed to create table: ${error.message}` },
         { status: 400 }
       );
     }
     return NextResponse.json(
-      { message: "Failed to create dish" },
+      { message: "Failed to create table" },
       { status: 400 }
     );
   }

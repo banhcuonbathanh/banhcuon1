@@ -77,7 +77,10 @@ export default function AddDish() {
     try {
       let body = values;
       if (file) {
-        const imageUrl = await uploadMedia(file, "quananqr/" + values.name);
+        const imageUrl = await uploadMedia(
+          file,
+          envConfig.NEXT_PUBLIC_Folder1_BE + values.name
+        );
 
         console.log(
           "quananqr1/app/admin/test/add-dish.tsx onSubmit imageUrl",
@@ -85,7 +88,10 @@ export default function AddDish() {
         );
         body = {
           ...values,
-          image: envConfig.NEXT_PUBLIC_API_ENDPOINT + "uploads/" + imageUrl.path
+          image:
+            envConfig.NEXT_PUBLIC_API_ENDPOINT +
+            envConfig.NEXT_PUBLIC_Upload +
+            imageUrl.path
         };
       }
 
