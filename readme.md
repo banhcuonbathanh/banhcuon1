@@ -30,8 +30,8 @@ TRUNCATE TABLE schema*migrations, users; delete all data
 \d sessions
 \d reading_test_models;
 SELECT * FROM dishes;
-
-SELECT \* FROM users;
+SELECT * FROM accounts;
+SELECT * FROM users;
 SELECT \* FROM sessions;
 DELETE FROM sessions;
 \d order_items
@@ -222,4 +222,4 @@ Merge branch 'test_isadmin' into python
 
 This merge is necessary to integrate the latest changes from the 'test_isadmin' branch into the 'python' branch.
 
-git checkout -b guest
+git checkout -b testferetur---set--add--database

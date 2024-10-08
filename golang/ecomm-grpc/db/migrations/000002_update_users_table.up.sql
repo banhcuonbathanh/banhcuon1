@@ -119,14 +119,6 @@ CREATE TABLE IF NOT EXISTS tables (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- CREATE TABLE IF NOT EXISTS tables (
---     number INTEGER PRIMARY KEY,
---     capacity INTEGER NOT NULL,
---     status INTEGER DEFAULT 0, -- 0 corresponds to AVAILABLE in the enum
---     token VARCHAR(255) NOT NULL,
---     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
---     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
--- );
 
 CREATE TABLE IF NOT EXISTS guests (
     id BIGSERIAL PRIMARY KEY,
@@ -174,3 +166,75 @@ CREATE TABLE IF NOT EXISTS sockets (
 ALTER TABLE accounts
 ADD CONSTRAINT fk_owner
 FOREIGN KEY (owner_id) REFERENCES accounts(id) ON DELETE SET NULL;
+
+
+
+
+---------------------------------------------------------------
+
+
+-- New table for sets
+CREATE TABLE IF NOT EXISTS sets (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    user_id BIGINT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES accounts(id) ON DELETE SET NULL
+);
+
+-- New table for set_dishes (junction table between sets and dishes)
+CREATE TABLE IF NOT EXISTS set_dishes (
+    id SERIAL PRIMARY KEY,
+    set_id BIGINT NOT NULL,
+    dish_id BIGINT NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY (set_id) REFERENCES sets(id) ON DELETE CASCADE,
+    FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE CASCADE,
+    UNIQUE (set_id, dish_id)
+);
+
+-- New table for set snapshots
+CREATE TABLE IF NOT EXISTS set_snapshots (
+    id SERIAL PRIMARY KEY,
+    original_set_id BIGINT,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    user_id BIGINT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (original_set_id) REFERENCES sets(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES accounts(id) ON DELETE SET NULL
+);
+
+-- New table for set_snapshot_dishes
+CREATE TABLE IF NOT EXISTS set_snapshot_dishes (
+    id SERIAL PRIMARY KEY,
+    set_snapshot_id BIGINT NOT NULL,
+    dish_snapshot_id BIGINT NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY (set_snapshot_id) REFERENCES set_snapshots(id) ON DELETE CASCADE,
+    FOREIGN KEY (dish_snapshot_id) REFERENCES dish_snapshots(id) ON DELETE CASCADE,
+    UNIQUE (set_snapshot_id, dish_snapshot_id)
+);
+
+-- Add a column to the accounts table to store favorite sets
+ALTER TABLE accounts
+ADD COLUMN favorite_sets BIGINT[];
+
+-- Create an index on the user_id column in the sets table for faster lookups
+CREATE INDEX idx_sets_user_id ON sets(user_id);
+
+-- Create an index on the original_set_id column in the set_snapshots table
+CREATE INDEX idx_set_snapshots_original_set_id ON set_snapshots(original_set_id);
+
+------------------------------------
+-- CREATE TABLE IF NOT EXISTS tables (
+--     number INTEGER PRIMARY KEY,
+--     capacity INTEGER NOT NULL,
+--     status INTEGER DEFAULT 0, -- 0 corresponds to AVAILABLE in the enum
+--     token VARCHAR(255) NOT NULL,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- );
