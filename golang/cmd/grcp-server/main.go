@@ -10,21 +10,25 @@ import (
 	pb_order "english-ai-full/quanqr/proto_qr/order"
 
 	//-----
-	tables "english-ai-full/quanqr/tables"
 	pb_table "english-ai-full/quanqr/proto_qr/table"
+	tables "english-ai-full/quanqr/tables"
+
 	//-----
 
-//
-	dish "english-ai-full/quanqr/dish"
-	dishPb "english-ai-full/quanqr/proto_qr/dish"
-	guests "english-ai-full/quanqr/qr_guests"
-	pb_guests "english-ai-full/quanqr/proto_qr/guest"
+	pb_set "english-ai-full/quanqr/proto_qr/set"
+	set "english-ai-full/quanqr/set"
+
+	//
 	comment_repository "english-ai-full/ecomm-grpc/repository/comment_repository"
 	reading_repository "english-ai-full/ecomm-grpc/repository/reading_repository"
 	repository "english-ai-full/ecomm-grpc/repository/user_repository"
 	comment_service "english-ai-full/ecomm-grpc/service/comment_service"
 	reading_service "english-ai-full/ecomm-grpc/service/reading_service"
 	service "english-ai-full/ecomm-grpc/service/user_service"
+	dish "english-ai-full/quanqr/dish"
+	dishPb "english-ai-full/quanqr/proto_qr/dish"
+	pb_guests "english-ai-full/quanqr/proto_qr/guest"
+	guests "english-ai-full/quanqr/qr_guests"
 	"log"
 	"net"
 
@@ -92,7 +96,10 @@ orderService := order.NewOrderService(orderrepo)
 // pb_order "english-ai-full/quanqr/proto_qr/order"
 tablerepo := tables.NewTableRepository(dbConn, "asdfEWQR1234%#$@")
 tableService := tables.NewTableService(tablerepo)
+//
 
+setrepo := set.NewSetRepository(dbConn,)
+setService := set.NewSetService(setrepo)
 //
 
 	lis, err := net.Listen("tcp", cfg.GRPCAddress)
@@ -102,6 +109,7 @@ tableService := tables.NewTableService(tablerepo)
 
 	grpcServer := grpc.NewServer()
 
+	pb_set.RegisterSetServiceServer(grpcServer,setService)
 	pb_table.RegisterTableServiceServer(grpcServer,tableService)
 
 	dishPb.RegisterDishServiceServer(grpcServer,dishService)

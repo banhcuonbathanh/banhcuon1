@@ -29,16 +29,20 @@ import (
 	dish "english-ai-full/quanqr/dish"
 	pb_dish "english-ai-full/quanqr/proto_qr/dish"
 
-	guests "english-ai-full/quanqr/qr_guests"
+	pb_set "english-ai-full/quanqr/proto_qr/set"
+	set "english-ai-full/quanqr/set"
+
 	pb_guests "english-ai-full/quanqr/proto_qr/guest"
+	guests "english-ai-full/quanqr/qr_guests"
 
-
-		order "english-ai-full/quanqr/order"
+	order "english-ai-full/quanqr/order"
 	pb_order "english-ai-full/quanqr/proto_qr/order"
+
 	// "github.com/go-chi/chi"
 
-	tables "english-ai-full/quanqr/tables"
 	pb_tables "english-ai-full/quanqr/proto_qr/table"
+	tables "english-ai-full/quanqr/tables"
+
 	//----------
 
 	"github.com/go-chi/chi"
@@ -154,7 +158,12 @@ setupWebSocketService(r, )
 // websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
 
 // r.Get("/ws", websocketHandler.HandleWebSocket)
+// set
 
+set_client := pb_set.NewSetServiceClient(conn)
+set_hdl := set.NewSetHandler(set_client, *secretKey)
+	
+set.RegisterSetRoutes(r, set_hdl)
 
 // dish
 

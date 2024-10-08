@@ -1,6 +1,6 @@
+import { get_dishes } from "@/zusstand/server/dish-controller";
+import { DishSelection } from "./component/dish/dishh_list";
 
-import { DishSelection } from "./component/dishh_list";
-import { get_dishes } from "./controller/guest-controller";
 import { DishListResType, Dish } from "@/zusstand/dished/domain/dish.schema";
 
 // This is a server component

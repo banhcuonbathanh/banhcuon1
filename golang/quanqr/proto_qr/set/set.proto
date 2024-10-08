@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package set_qr;
+
+option go_package = "english-ai-full/quanqr/proto_qr/set";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+
+message SetProto {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  repeated SetProtoDish dishes = 4;
+  int32 user_id = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message SetProtoSnapshot {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  repeated SetProtoDish dishes = 4;
+  int32 user_id = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  int32 set_id = 8;
+}
+
+message SetProtoDish {
+  Dish dish = 1;
+  int32 quantity = 2;
+}
+
+message CreateSetProtoRequest {
+  string name = 1;
+  string description = 2;
+  repeated SetProtoDish dishes = 3;
+  int32 user_id = 4;
+}
+
+message UpdateSetProtoRequest {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  repeated SetProtoDish dishes = 4;
+}
+
+message SetProtoResponse {
+  SetProto data = 1;
+}
+
+message SetProtoListResponse {
+  repeated SetProto data = 1;
+}
+
+message SetProtoIdParam {
+  int32 id = 1;
+}
+
+service SetService {
+  rpc GetSetProtoList(google.protobuf.Empty) returns (SetProtoListResponse);
+  rpc GetSetProtoDetail(SetProtoIdParam) returns (SetProtoResponse);
+  rpc CreateSetProto(CreateSetProtoRequest) returns (SetProtoResponse);
+  rpc UpdateSetProto(UpdateSetProtoRequest) returns (SetProtoResponse);
+  rpc DeleteSetProto(SetProtoIdParam) returns (SetProtoResponse);
+}
+
+
+message Dish {
+    int64 id = 1;
+    string name = 2;
+    int32 price = 3;
+    string description = 4;
+    string image = 5;
+    string status = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+  }

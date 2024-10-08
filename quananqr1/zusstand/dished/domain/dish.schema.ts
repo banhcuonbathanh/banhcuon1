@@ -1,6 +1,9 @@
 import { DishStatusValues } from '@/constants/type'
 import z from 'zod'
 
+
+
+
 export const CreateDishBody = z.object({
   name: z.string().min(1).max(256),
   price: z.coerce.number().positive(),
@@ -11,7 +14,7 @@ export const CreateDishBody = z.object({
 
 export type CreateDishBodyType = z.TypeOf<typeof CreateDishBody>
 
-export const DishSchema = z.object({
+const DishSchema = z.object({
   id: z.number(),
   name: z.string(),
   price: z.coerce.number(),
@@ -19,8 +22,9 @@ export const DishSchema = z.object({
   image: z.string(),
   status: z.enum(DishStatusValues),
   createdAt: z.date(),
-  updatedAt: z.date()
-})
+  updatedAt: z.date(),
+  setId: z.number().optional() // New field to associate a dish with a set
+});
 
 export const DishRes = z.object({
   data: DishSchema,
@@ -40,3 +44,32 @@ export const DishParams = z.object({
 })
 export type DishParamsType = z.TypeOf<typeof DishParams>
 export type Dish = z.TypeOf<typeof DishSchema>;
+
+
+/// set schema
+
+const SetSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().optional(),
+  dishes: z.array(DishSchema)
+});
+
+export const SetListRes = z.array(SetSchema);
+export type SetListResType = z.TypeOf<typeof SetListRes>;
+
+export type Set = z.TypeOf<typeof SetSchema>;
+
+// set favourite dish
+
+const FavoriteSetSchema = z.object({
+  id: z.number(),
+  userId: z.number(), // Assuming you have user authentication
+  name: z.string(),
+  dishes: z.array(z.number()), // Array of dish IDs
+  createdAt: z.date(),
+  updatedAt: z.date()
+});
+export const FavoriteSetListRes = z.array(FavoriteSetSchema);
+export type FavoriteSetListResType = z.TypeOf<typeof FavoriteSetListRes>;
+export type FavoriteSet = z.TypeOf<typeof FavoriteSetSchema>;

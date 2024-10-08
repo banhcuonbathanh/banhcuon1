@@ -184,6 +184,9 @@ python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. python_proto/
 python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. python_proto/claude/claude.proto
 
 ------------------------------------- quan an qr ------------
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/set/set.proto
+
+
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/account/account.proto
 

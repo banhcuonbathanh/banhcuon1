@@ -4,9 +4,6 @@ import React, { useState } from "react";
 import { Dish, DishListResType } from "@/zusstand/dished/domain/dish.schema";
 import { DishCard } from "./disih_tem";
 
-
-
-
 interface DishSelectionProps {
   dishes: DishListResType;
 }
