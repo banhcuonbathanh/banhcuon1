@@ -2,8 +2,8 @@ package tables_test
 
 import (
 	"context"
-	"log"
 
+	"english-ai-full/logger" // Add this import
 	"english-ai-full/quanqr/proto_qr/table"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -11,21 +11,23 @@ import (
 
 type TableServiceStruct struct {
 	tableRepo *TableRepository
+	logger    *logger.Logger // Add this field
 	table.UnimplementedTableServiceServer
 }
 
 func NewTableService(tableRepo *TableRepository) *TableServiceStruct {
 	return &TableServiceStruct{
 		tableRepo: tableRepo,
+		logger:    logger.NewLogger(), // Initialize the logger
 	}
 }
 
 func (ts *TableServiceStruct) GetTableList(ctx context.Context, _ *emptypb.Empty) (*table.TableListResponse, error) {
-	log.Println("Fetching all tables")
+	ts.logger.Info("Fetching all tables golang/quanqr/tables/tables_service.go")
 
 	tables, err := ts.tableRepo.GetTableList(ctx)
 	if err != nil {
-		log.Println("Error fetching tables:", err)
+		ts.logger.Error("Error fetching tables: golang/quanqr/tables/tables_service.go" + err.Error())
 		return nil, err
 	}
 
@@ -36,11 +38,12 @@ func (ts *TableServiceStruct) GetTableList(ctx context.Context, _ *emptypb.Empty
 }
 
 func (ts *TableServiceStruct) GetTableDetail(ctx context.Context, req *table.TableNumberRequest) (*table.TableResponse, error) {
-	log.Println("Fetching table detail for number:", req.Number)
+
+	ts.logger.Info("Fetching table detail for number: golang/quanqr/tables/tables_service.go" )
 
 	tableDetail, err := ts.tableRepo.GetTableDetail(ctx, req.Number)
 	if err != nil {
-		log.Println("Error fetching table detail:", err)
+		ts.logger.Error("Error fetching table detail: golang/quanqr/tables/tables_service.go" + err.Error())
 		return nil, err
 	}
 
@@ -51,12 +54,12 @@ func (ts *TableServiceStruct) GetTableDetail(ctx context.Context, req *table.Tab
 }
 
 func (ts *TableServiceStruct) CreateTable(ctx context.Context, req *table.CreateTableRequest) (*table.TableResponse, error) {
-	log.Print("golang/quanqr/tables/tables_service.go 22 ")
+	ts.logger.Info("golang/quanqr/tables/tables_service.go 22 create table")
 
 	createdTable, err := ts.tableRepo.CreateTable(ctx, req)
 	if err != nil {
-		log.Print("golang/quanqr/tables/tables_service.go 22 err", err)
-		log.Println("Error creating table:", err)
+		ts.logger.Error("golang/quanqr/tables/tables_service.go 22 err: create table" + err.Error())
+		ts.logger.Error("Error creating table: " + err.Error())
 		return nil, err
 	}
 
@@ -67,11 +70,11 @@ func (ts *TableServiceStruct) CreateTable(ctx context.Context, req *table.Create
 }
 
 func (ts *TableServiceStruct) UpdateTable(ctx context.Context, req *table.UpdateTableRequest) (*table.TableResponse, error) {
-	log.Println("Updating table:", req.Number)
+	ts.logger.Info("Updating table: golang/quanqr/tables/tables_service.go" )
 
 	updatedTable, err := ts.tableRepo.UpdateTable(ctx, req)
 	if err != nil {
-		log.Println("Error updating table:", err)
+		ts.logger.Error("Error updating table: golang/quanqr/tables/tables_service.go" + err.Error())
 		return nil, err
 	}
 
@@ -82,11 +85,11 @@ func (ts *TableServiceStruct) UpdateTable(ctx context.Context, req *table.Update
 }
 
 func (ts *TableServiceStruct) DeleteTable(ctx context.Context, req *table.TableNumberRequest) (*table.TableResponse, error) {
-	log.Println("Deleting table:", req.Number)
+	ts.logger.Info("Deleting table: golang/quanqr/tables/tables_service.go" )
 
 	deletedTable, err := ts.tableRepo.DeleteTable(ctx, req.Number)
 	if err != nil {
-		log.Println("Error deleting table:", err)
+		ts.logger.Error("Error deleting table: golang/quanqr/tables/tables_service.go" + err.Error())
 		return nil, err
 	}
 

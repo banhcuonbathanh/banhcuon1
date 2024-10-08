@@ -17,15 +17,22 @@ const configSchema = z.object({
   NEXT_PUBLIC_Upload: z.string(),
   NEXT_PUBLIC_Folder1_BE: z.string(),
 
-  NEXT_PUBLIC_Table_End_Point: z.string(),
+  NEXT_PUBLIC_Table_List: z.string(),
 
-  NEXT_PUBLIC_intern_table_end_point: z.string()
+  NEXT_PUBLIC_intern_table_end_point: z.string(),
+
+
+  NEXT_PUBLIC_Table_End_Point: z.string()
 });
 // /users/email
 const configProject = configSchema.safeParse({
+  NEXT_PUBLIC_Table_End_Point:
+    process.env.NEXT_PUBLIC_Table_End_Point,
+
+
   NEXT_PUBLIC_intern_table_end_point:
     process.env.NEXT_PUBLIC_intern_table_end_point,
-  NEXT_PUBLIC_Table_End_Point: process.env.NEXT_PUBLIC_Table_End_Point,
+    NEXT_PUBLIC_Table_List: process.env.NEXT_PUBLIC_Table_List,
   NEXT_PUBLIC_Folder1_BE: process.env.NEXT_PUBLIC_Folder1_BE,
   NEXT_PUBLIC_Upload: process.env.NEXT_PUBLIC_Upload,
   NEXT_PUBLIC_API_ENDPOINT: process.env.NEXT_PUBLIC_API_ENDPOINT,

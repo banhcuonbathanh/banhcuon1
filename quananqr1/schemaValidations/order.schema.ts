@@ -1,6 +1,7 @@
 import { DishStatusValues, OrderStatusValues } from '@/constants/type'
 import { AccountSchema } from '@/schemaValidations/account.schema'
-import { TableSchema } from '@/schemaValidations/table.schema'
+import { TableSchema } from '@/zusstand/table/table.schema'
+
 import z from 'zod'
 
 const DishSnapshotSchema = z.object({

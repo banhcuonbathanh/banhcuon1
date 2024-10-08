@@ -3,35 +3,40 @@ package tables_test
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"english-ai-full/logger" // Add this import
 	"english-ai-full/quanqr/proto_qr/table"
 	"english-ai-full/token"
 )
 
 type TableRepository struct {
-	db *pgxpool.Pool
+	db       *pgxpool.Pool
 	jwtMaker *token.JWTMaker
+	logger   *logger.Logger // Add this field
 }
 
 func NewTableRepository(db *pgxpool.Pool, secretKey string) *TableRepository {
 	return &TableRepository{
-		db: db,
+		db:       db,
 		jwtMaker: token.NewJWTMaker(secretKey),
+		logger:   logger.NewLogger(), // Initialize the logger
 	}
 }
 
 func (tr *TableRepository) GetTableList(ctx context.Context) ([]*table.Table, error) {
+	tr.logger.Info("golang/quanqr/tables/tables_repository.go:GetTableList - Fetching all tables")
+
 	query := `
 		SELECT number, capacity, status, token, created_at, updated_at
 		FROM tables
 	`
 	rows, err := tr.db.Query(ctx, query)
 	if err != nil {
+		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:GetTableList - Error fetching tables: %v", err))
 		return nil, fmt.Errorf("error fetching tables: %w", err)
 	}
 	defer rows.Close()
@@ -40,29 +45,37 @@ func (tr *TableRepository) GetTableList(ctx context.Context) ([]*table.Table, er
 	for rows.Next() {
 		var t table.Table
 		var createdAt, updatedAt time.Time
+		var status string
 		err := rows.Scan(
 			&t.Number,
 			&t.Capacity,
-			&t.Status,
+			&status,
 			&t.Token,
 			&createdAt,
 			&updatedAt,
 		)
 		if err != nil {
+			tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:GetTableList - Error scanning table: %v", err))
 			return nil, fmt.Errorf("error scanning table: %w", err)
 		}
+		t.Status = table.TableStatus(table.TableStatus_value[status])
 		t.CreatedAt = timestamppb.New(createdAt)
 		t.UpdatedAt = timestamppb.New(updatedAt)
 		tables = append(tables, &t)
 	}
 	if err := rows.Err(); err != nil {
+		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:GetTableList - Error iterating over tables: %v", err))
 		return nil, fmt.Errorf("error iterating over tables: %w", err)
 	}
 
+	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:GetTableList - Successfully fetched %d tables", len(tables)))
 	return tables, nil
 }
 
+
 func (tr *TableRepository) GetTableDetail(ctx context.Context, number int32) (*table.Table, error) {
+	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:GetTableDetail - Fetching table detail for number: %d", number))
+
 	query := `
 		SELECT number, capacity, status, token, created_at, updated_at
 		FROM tables
@@ -80,6 +93,7 @@ func (tr *TableRepository) GetTableDetail(ctx context.Context, number int32) (*t
 		&updatedAt,
 	)
 	if err != nil {
+		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:GetTableDetail - Error fetching table detail: %v", err))
 		return nil, fmt.Errorf("error fetching table detail: %w", err)
 	}
 	
@@ -87,19 +101,22 @@ func (tr *TableRepository) GetTableDetail(ctx context.Context, number int32) (*t
 	t.CreatedAt = timestamppb.New(createdAt)
 	t.UpdatedAt = timestamppb.New(updatedAt)
 
+	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:GetTableDetail - Successfully fetched table detail for number: %d", number))
 	return &t, nil
 }
 
 func (tr *TableRepository) CreateTable(ctx context.Context, req *table.CreateTableRequest) (*table.Table, error) {
-	log.Print("golang/quanqr/tables/tables_repository.go 1 ")
+	tr.logger.Info("golang/quanqr/tables/tables_repository.go:CreateTable - Creating new table")
+
 	token, err := tr.generateToken(req.Number)
 	if err != nil {
+		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:CreateTable - Error generating token: %v", err))
 		return nil, fmt.Errorf("error generating token: %w", err)
 	}
 
-	// Truncate token if it's longer than 255 characters
 	if len(token) > 255 {
 		token = token[:255]
+		tr.logger.Warning("golang/quanqr/tables/tables_repository.go:CreateTable - Token truncated to 255 characters")
 	}
 
 	query := `
@@ -113,7 +130,7 @@ func (tr *TableRepository) CreateTable(ctx context.Context, req *table.CreateTab
 	err = tr.db.QueryRow(ctx, query,
 		req.Number,
 		req.Capacity,
-		req.Status.String(), // Convert enum to string
+		req.Status.String(),
 		token,
 		time.Now(),
 	).Scan(
@@ -125,31 +142,31 @@ func (tr *TableRepository) CreateTable(ctx context.Context, req *table.CreateTab
 		&updatedAt,
 	)
 	if err != nil {
-		log.Printf("Token: %s", t.Token)
-		log.Printf("Token pointer: %p", &t.Token)
+		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:CreateTable - Error creating table: %v", err))
 		return nil, fmt.Errorf("error creating table: %w", err)
 	}
 	
-	// Convert string status back to TableStatus enum
 	t.Status = table.TableStatus(table.TableStatus_value[statusStr])
 	t.CreatedAt = timestamppb.New(createdAt)
 	t.UpdatedAt = timestamppb.New(updatedAt)
 
+	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:CreateTable - Successfully created table with number: %d", t.Number))
 	return &t, nil
 }
 
 func (tr *TableRepository) UpdateTable(ctx context.Context, req *table.UpdateTableRequest) (*table.Table, error) {
+	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:UpdateTable - Updating table with number: %d", req.Number))
 
-	log.Print("golang/quanqr/tables/tables_repository.go ")
 	var newToken string
 	var err error
 	if req.ChangeToken {
 		newToken, err = tr.generateToken(req.Number)
 		if err != nil {
+			tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:UpdateTable - Error generating new token: %v", err))
 			return nil, fmt.Errorf("error generating new token: %w", err)
 		}
 	}
-	log.Print("golang/quanqr/tables/tables_repository.go 111 ")
+
 	query := `
 		UPDATE tables
 		SET capacity = $2, status = $3, token = CASE WHEN $4 THEN $5 ELSE token END, updated_at = $6
@@ -157,7 +174,6 @@ func (tr *TableRepository) UpdateTable(ctx context.Context, req *table.UpdateTab
 		RETURNING number, capacity, status, token, created_at, updated_at
 	`
 
-	log.Print("golang/quanqr/tables/tables_repository.go 222 ")
 	var t table.Table
 	var createdAt, updatedAt time.Time
 	var statusStr string
@@ -177,8 +193,8 @@ func (tr *TableRepository) UpdateTable(ctx context.Context, req *table.UpdateTab
 		&updatedAt,
 	)
 
-
 	if err != nil {
+		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:UpdateTable - Error updating table: %v", err))
 		return nil, fmt.Errorf("error updating table: %w", err)
 	}
 
@@ -186,9 +202,13 @@ func (tr *TableRepository) UpdateTable(ctx context.Context, req *table.UpdateTab
 	t.CreatedAt = timestamppb.New(createdAt)
 	t.UpdatedAt = timestamppb.New(updatedAt)
 
+	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:UpdateTable - Successfully updated table with number: %d", t.Number))
 	return &t, nil
 }
+
 func (tr *TableRepository) DeleteTable(ctx context.Context, number int32) (*table.Table, error) {
+	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:DeleteTable - Deleting table with number: %d", number))
+
 	query := `
 		DELETE FROM tables
 		WHERE number = $1
@@ -205,26 +225,30 @@ func (tr *TableRepository) DeleteTable(ctx context.Context, number int32) (*tabl
 		&updatedAt,
 	)
 	if err != nil {
+		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:DeleteTable - Error deleting table: %v", err))
 		return nil, fmt.Errorf("error deleting table: %w", err)
 	}
 	t.CreatedAt = timestamppb.New(createdAt)
 	t.UpdatedAt = timestamppb.New(updatedAt)
 
+	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:DeleteTable - Successfully deleted table with number: %d", number))
 	return &t, nil
 }
 
-// Helper function to generate a token (you need to implement this)
 func (tr *TableRepository) generateToken(tableNumber int32) (string, error) {
-	// Create a token with the table number as the subject
+	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Generating token for table number: %d", tableNumber))
+
 	tokenString, _, err := tr.jwtMaker.CreateToken(
 		int64(tableNumber),
 		fmt.Sprintf("table_%d@example.com", tableNumber),
 		"table",
-		100*365*24*time.Hour, // Token valid for 100 years, adjust as needed
+		100*365*24*time.Hour,
 	)
 	if err != nil {
+		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Error creating token: %v", err))
 		return "", fmt.Errorf("error creating token: %w", err)
 	}
 
+	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Successfully generated token for table number: %d", tableNumber))
 	return tokenString, nil
 }

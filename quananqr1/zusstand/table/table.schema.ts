@@ -42,3 +42,4 @@ export const TableParams = z.object({
   number: z.coerce.number()
 })
 export type TableParamsType = z.TypeOf<typeof TableParams>
+export type Table = z.TypeOf<typeof TableSchema>;

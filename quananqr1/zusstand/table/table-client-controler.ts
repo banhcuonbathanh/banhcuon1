@@ -49,7 +49,7 @@ export const useTableStore = create<TableStore>((set) => ({
     }
   },
   getTables: async () => {
-    const link = envConfig.NEXT_PUBLIC_API_ENDPOINT + envConfig.NEXT_PUBLIC_Table_End_Point;
+    const link = envConfig.NEXT_PUBLIC_API_ENDPOINT + envConfig.NEXT_PUBLIC_Table_List;
     set({ isLoading: true, error: null });
     
     try {
@@ -141,7 +141,7 @@ export const useTableListQuery = () => {
   };
 };
 
-export const useGetTableQuery = () => {
+export const useGetTableQuery = (p0: { id: any; }) => {
   const { getTable, table, isLoading, error } = useTableStore();
   return {
     refetch: getTable,
