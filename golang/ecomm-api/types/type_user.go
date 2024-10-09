@@ -54,11 +54,27 @@ type OrderRes struct {
 	UpdatedAt     *time.Time   `json:"updated_at"`
 }
 
-type UserReqModel struct {
-    Password  string     `json:"password"`
+type User struct {
+
     ID        int64      `json:"id"`
     Name      string     `json:"name"`
     Email     string     `json:"email"`
+	Password  string     `json:"password"`
+    Role      string     `json:"role"`  // Changed from IsAdmin bool to Role string
+    Phone     string     `json:"phone"`
+    Image     string     `json:"image"`
+    Address   string     `json:"address"`
+    CreatedAt time.Time  `json:"created_at"`
+    UpdatedAt time.Time  `json:"updated_at"`
+	FavoriteFood []string  `json:"favorite_food"`  // Added field for favorite food
+}
+
+type UserReqModel struct {
+
+    ID        int64      `json:"id"`
+    Name      string     `json:"name"`
+    Email     string     `json:"email"`
+	    Password  string     `json:"password"`
     Role      string     `json:"role"`  // Changed from IsAdmin bool to Role string
     Phone     string     `json:"phone"`
     Image     string     `json:"image"`
@@ -77,6 +93,7 @@ type UserResModel struct {
 	Address   string    `json:"address"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	FavoriteFood []string  `json:"favorite_food"`  // Added field for favorite food
 }
 
 type ListUserRes struct {

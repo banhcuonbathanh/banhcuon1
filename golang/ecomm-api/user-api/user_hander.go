@@ -38,6 +38,8 @@ func NewHandlerUser(client pb.EcommUserClient, secretKey string) *Handlercontrol
 }
 
 func (h *HandlercontrollerUser) CreateUsertest(w http.ResponseWriter, r *http.Request) {
+
+	
 	var u types.UserReqModel
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		http.Error(w, "error decoding request body", http.StatusBadRequest)

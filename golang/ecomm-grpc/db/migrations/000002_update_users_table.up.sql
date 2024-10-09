@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     image VARCHAR(255),
     address TEXT,
+    favorite_food INTEGER[] DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -181,7 +182,7 @@ CREATE TABLE IF NOT EXISTS sets (
     user_id BIGINT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES accounts(id) ON DELETE SET NULL
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- New table for set_dishes (junction table between sets and dishes)

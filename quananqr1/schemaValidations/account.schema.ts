@@ -1,22 +1,32 @@
-import { RoleValues } from "@/constants/type";
 import z from "zod";
+import { RoleValues } from "@/constants/type";
 
+// Define a schema for Google's protobuf Timestamp (assuming it's in string format for simplicity)
+const TimestampSchema = z.string();
+
+// Updated AccountSchema with new fields from the provided message
 export const AccountSchema = z.object({
-  id: z.number(),
+  id: z.number().int(),
   name: z.string(),
   email: z.string(),
-  role: z.string(),
-  avatar: z.string().nullable()
+  password: z.string(),
+  role: z.string(), // Role is now a string instead of is_admin
+  phone: z.string(),
+  image: z.string().nullable(),
+  address: z.string().nullable(),
+  created_at: TimestampSchema,
+  updated_at: TimestampSchema,
+  favorite_food: z.array(z.string()) // Added array of favorite foods
 });
 
-export type AccountType = z.TypeOf<typeof AccountSchema>;
+export type AccountType = z.infer<typeof AccountSchema>;
 
 export const AccountListRes = z.object({
   data: z.array(AccountSchema),
   message: z.string()
 });
 
-export type AccountListResType = z.TypeOf<typeof AccountListRes>;
+export type AccountListResType = z.infer<typeof AccountListRes>;
 
 export const AccountRes = z
   .object({
@@ -25,7 +35,7 @@ export const AccountRes = z
   })
   .strict();
 
-export type AccountResType = z.TypeOf<typeof AccountRes>;
+export type AccountResType = z.infer<typeof AccountRes>;
 
 export const CreateEmployeeAccountBody = z
   .object({
@@ -162,4 +172,3 @@ export const CreateGuestRes = z.object({
 });
 
 export type CreateGuestResType = z.TypeOf<typeof CreateGuestRes>;
-
