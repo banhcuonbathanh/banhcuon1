@@ -11,13 +11,12 @@ export const LoginBody = z
 export type LoginBodyType = z.TypeOf<typeof LoginBody>;
 
 
-
 export const LoginRes = z.object({
-  accessToken: z.string(),
-  accessTokenExpiresAt: z.string(),
-  refreshToken: z.string(),
-  refreshTokenExpiresAt: z.string(),
-  sessionId: z.string(),
+  access_token: z.string(),
+  access_token_expires_at: z.string(),
+  refresh_token: z.string(),
+  refresh_token_expires_at: z.string(),
+  session_id: z.string(),
   user: z.object({
     id: z.number(),
     name: z.string(),
@@ -26,8 +25,8 @@ export const LoginRes = z.object({
     address: z.string(),
     phone: z.string(),
     image: z.string().nullable(),
-    createdAt: z.string(),
-    updatedAt: z.string()
+    created_at: z.string(),
+    updated_at: z.string()
   })
 });
 

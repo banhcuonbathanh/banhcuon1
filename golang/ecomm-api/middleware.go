@@ -4,6 +4,7 @@ import (
 	"context"
 	"english-ai-full/token"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -21,12 +22,15 @@ const (
 func GetAuthMiddlewareFunc(tokenMaker *token.JWTMaker) func(http.Handler) http.Handler {
     return func(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            log.Println("Auth middleware started")
             claims, err := verifyClaimsFromAuthHeader(r, tokenMaker)
             if err != nil {
+                log.Printf("Error verifying token: %v", err)
                 http.Error(w, fmt.Sprintf("error verifying token: %v", err), http.StatusUnauthorized)
                 return
             }
 
+            log.Printf("Claims verified successfully: %+v", claims)
             ctx := context.WithValue(r.Context(), AuthKey{}, claims)
             next.ServeHTTP(w, r.WithContext(ctx))
         })
@@ -74,11 +78,14 @@ func verifyClaimsFromAuthHeader(r *http.Request, tokenMaker *token.JWTMaker) (*t
     }
 
     token := fields[1]
+    log.Printf("Token received: %s", token) // Log the token (be careful with this in production)
     claims, err := tokenMaker.VerifyToken(token)
     if err != nil {
+        log.Printf("Error verifying token: %v", err)
         return nil, fmt.Errorf("invalid token: %w", err)
     }
 
+    log.Printf("Claims verified: %+v", claims)
     return claims, nil
 }
 

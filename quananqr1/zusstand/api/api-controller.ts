@@ -5,7 +5,7 @@ import axios, {
   InternalAxiosRequestConfig,
   AxiosResponse
 } from "axios";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 import envConfig from "@/config";
 import { RefreshTokenResType } from "../auth/domain/auth.schema";
 
@@ -23,12 +23,15 @@ export const useApiStore = create<ApiStore>()(
         baseURL: envConfig.NEXT_PUBLIC_API_ENDPOINT
       }),
       accessToken: null,
-      setAccessToken: (token) => set({ accessToken: token }),
+      setAccessToken: (token) => {
+        set({ accessToken: token });
+        console.log("Access token updated:", token);
+      },
       refreshToken: async () => {
         try {
-          const refreshToken = Cookies.get('refreshToken');
+          const refreshToken = Cookies.get("refreshToken");
           if (!refreshToken) {
-            throw new Error('No refresh token available');
+            throw new Error("No refresh token available");
           }
           const response = await axios.post<RefreshTokenResType>(
             "/api/auth/refresh-token",
@@ -38,12 +41,15 @@ export const useApiStore = create<ApiStore>()(
           set({ accessToken: response.data.data.accessToken });
           // Update the refresh token cookie if a new one is provided
           if (response.data.data.refreshToken) {
-            Cookies.set('refreshToken', response.data.data.refreshToken, { secure: true, sameSite: 'strict' });
+            Cookies.set("refreshToken", response.data.data.refreshToken, {
+              secure: true,
+              sameSite: "strict"
+            });
           }
         } catch (error) {
           // Handle refresh token error (e.g., logout user)
           set({ accessToken: null });
-          Cookies.remove('refreshToken');
+          Cookies.remove("refreshToken");
         }
       }
     }),
@@ -67,6 +73,9 @@ if (typeof window !== "undefined") {
       if (accessToken) {
         config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${accessToken}`;
+        console.log("Adding access token to request:", accessToken);
+      } else {
+        console.log("No access token available for request");
       }
       return config;
     },
@@ -86,3 +95,23 @@ if (typeof window !== "undefined") {
     }
   );
 }
+
+// export const useApiStore = create<ApiStore>()(
+//   persist(
+//     (set, get) => ({
+//       http: axios.create({
+//         baseURL: envConfig.NEXT_PUBLIC_API_ENDPOINT
+//       }),
+//       accessToken: null,
+//       setAccessToken: (token) => {
+//         set({ accessToken: token });
+//         console.log("Access token updated:", token);
+//       },
+//       // ... other methods ...
+//     }),
+//     {
+//       name: "api-storage",
+//       skipHydration: true
+//     }
+//   )
+// );

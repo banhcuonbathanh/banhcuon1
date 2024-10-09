@@ -1,16 +1,18 @@
 import axios from "axios";
 
 import envConfig from "@/config";
-import {
-  LoginBodyType,
-  LoginResType,
-  LogoutBodyType,
-  RefreshTokenBodyType,
-  RefreshTokenResType
-} from "@/schemaValidations/auth.schema";
+
 import { IAuthRepository } from "../auth/repository/interface_auth_repository";
+import { LoginBodyType, LoginResType, LogoutBodyType, RefreshTokenBodyType, RefreshTokenResType, RegisterBodyType } from "../auth/domain/auth.schema";
+import { GuestLoginBodyType, GuestLoginResType } from "@/schemaValidations/guest.schema";
 
 class AuthRepository implements IAuthRepository {
+  register(body: RegisterBodyType): Promise<RegisterBodyType> {
+    throw new Error("Method not implemented.");
+  }
+  guestLogin(body: GuestLoginBodyType): Promise<GuestLoginResType> {
+    throw new Error("Method not implemented.");
+  }
   private baseUrl = envConfig.NEXT_PUBLIC_API_ENDPOINT;
   private createUserEndpoint = envConfig.NEXT_PUBLIC_API_Create_User;
 

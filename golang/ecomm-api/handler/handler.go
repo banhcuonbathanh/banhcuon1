@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	mapping_user "english-ai-full/ecomm-api/mapping"
 	"english-ai-full/ecomm-api/types"
 	pb "english-ai-full/ecomm-grpc/proto"
+	logg "english-ai-full/logger"
 	"english-ai-full/token"
 
 	// "english-ai-full/util"
@@ -24,42 +26,51 @@ import (
 )
 
 type Handlercontroller struct {
-	ctx        context.Context
-	client     pb.EcommUserClient 
-	TokenMaker *token.JWTMaker
+    ctx        context.Context
+    client     pb.EcommUserClient 
+    TokenMaker *token.JWTMaker
+	logger   *logg.Logger
+ 
 }
 
 func NewHandler(client pb.EcommUserClient, secretKey string) *Handlercontroller {
-	return &Handlercontroller{
-		ctx:        context.Background(),
-		client:     client,
-		TokenMaker: token.NewJWTMaker(secretKey),
-	}
+    return &Handlercontroller{
+        ctx:        context.Background(),
+        client:     client,
+        TokenMaker: token.NewJWTMaker(secretKey),
+		logger:   logg.NewLogger(),
+     
+    }
 }
 
 func (h *Handlercontroller) CreateUser(w http.ResponseWriter, r *http.Request) {
-	log.Printf("create users golang/ecomm-api/handler/handler.go 1", )
-	var u types.UserReqModel
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+    h.logger.Info("create users handler started")
+    var u types.UserReqModel
+    if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+        h.logger.Error(fmt.Sprintf("error decoding request body: %v", err))
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
 
-		log.Print("create users golang/ecomm-api/handler/handler.go 1 err",err )
-		http.Error(w, "error decoding request body", http.StatusBadRequest)
-		return
-	}
-	log.Printf("create users golang/ecomm-api/handler/handler.go 2", )
-	user, err := h.client.CreateUser(h.ctx, mapping_user.ToPBUserReq(u))
-	if err != nil {
-		http.Error(w, "error creating user", http.StatusInternalServerError)
-		return
-	}
-	log.Printf("create users golang/ecomm-api/handler/handler.go 3", )
-	res := mapping_user.ToUserResFromUserReq(user)
+    h.logger.Info("calling CreateUser from gRPC client")
+    user, err := h.client.CreateUser(h.ctx, mapping_user.ToPBUserReq(u))
+    if err != nil {
+        h.logger.Error(fmt.Sprintf("error creating user: %v", err))
+        http.Error(w, "error creating user", http.StatusInternalServerError)
+        return
+    }
 
-	log.Printf("create users golang/ecomm-api/handler/handler.go 4", )
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(res)
+    res := mapping_user.ToUserResFromUserReq(user)
+    h.logger.Info("user successfully created")
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        h.logger.Error(fmt.Sprintf("error encoding response: %v", err))
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+    }
 }
+
 
 func (h *Handlercontroller) FindByEmail(w http.ResponseWriter, r *http.Request) {
 	log.Println("User FindByEmail handlercontroller")
@@ -118,24 +129,23 @@ func (h *Handlercontroller) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 // Add these functions to handle login and register
 func (h *Handlercontroller) Login(w http.ResponseWriter, r *http.Request) {
-	log.Println("User login handlercontroller")
-	var u types.LoginUserReq
+    h.logger.Info("user login handler started")
+    var u types.LoginUserReq
 
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, "error decoding request body", http.StatusBadRequest)
-		return
-	}
+    if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+        h.logger.Error(fmt.Sprintf("error decoding request body: %v", err))
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
 
-	ur, err := h.client.FindByEmail(h.ctx, &pb.UserReq{Email: u.Email})
-	if err != nil {
-		http.Error(w, "error getting user", http.StatusInternalServerError)
-		return
-	}
+    ur, err := h.client.FindByEmail(h.ctx, &pb.UserReq{Email: u.Email})
+    if err != nil {
+        h.logger.Error(fmt.Sprintf("error getting user by email: %v", err))
+        http.Error(w, "error getting user", http.StatusInternalServerError)
+        return
+    }
 
-
-	log.Println("User login handlercontroller ur", u.Password)
-
-	log.Println("User login handlercontroller ur.Password", ur.Password)
+    h.logger.Info("user found, proceeding to create tokens")
 
 	// err = util.CheckPassword(u.Password, ur.Password)
 	// if err != nil {
@@ -195,18 +205,31 @@ func (h *Handlercontroller) Login(w http.ResponseWriter, r *http.Request) {
 
 
 func (h *Handlercontroller) LogoutUser(w http.ResponseWriter, r *http.Request) {
-	claims := r.Context().Value(middleware.AuthKey{}).(*token.UserClaims)
+    h.logger.Info("logout handler started")
 
-	_, err := h.client.DeleteSession(h.ctx, &pb.SessionReq{
-		Id: claims.RegisteredClaims.ID,
-	})
-	if err != nil {
-		http.Error(w, "error deleting session", http.StatusInternalServerError)
-		return
-	}
+    claims, ok := r.Context().Value(middleware.AuthKey{}).(*token.UserClaims)
+    if !ok {
+        h.logger.Error("failed to retrieve user claims from context")
+        http.Error(w, "failed to retrieve user claims", http.StatusUnauthorized)
+        return
+    }
 
-	w.WriteHeader(http.StatusNoContent)
+    // Attempt to delete the session
+    h.logger.Info(fmt.Sprintf("attempting to delete session with ID: %s", claims.RegisteredClaims.ID))
+    _, err := h.client.DeleteSession(h.ctx, &pb.SessionReq{
+        Id: claims.RegisteredClaims.ID,
+    })
+    if err != nil {
+        h.logger.Error(fmt.Sprintf("error deleting session: %v", err))
+        http.Error(w, "error deleting session", http.StatusInternalServerError)
+        return
+    }
+
+    // Successfully deleted session
+    h.logger.Info(fmt.Sprintf("session with ID %s successfully deleted", claims.RegisteredClaims.ID))
+    w.WriteHeader(http.StatusNoContent)
 }
+
 
 func (h *Handlercontroller) RenewAccessToken(w http.ResponseWriter, r *http.Request) {
 	var req types.RenewAccessTokenReq

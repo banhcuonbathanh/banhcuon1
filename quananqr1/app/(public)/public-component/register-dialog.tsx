@@ -75,8 +75,8 @@ const RegisterDialog = () => {
         created_at: data.created_at,
         updated_at: data.updated_at
       });
-      // setOpen(false);
-      // openLoginDialog();
+      setOpen(false);
+      openLoginDialog();
     } catch (error: any) {
       console.log("Error during registration: ", error);
       handleErrorApi({

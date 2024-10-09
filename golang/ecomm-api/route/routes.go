@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-chi/chi"
 
-	 "english-ai-full/ecomm-api/handler"
+	"english-ai-full/ecomm-api/handler"
 )
 
 
@@ -34,14 +34,14 @@ func RegisterRoutes(r *chi.Mux,handler *handler.Handlercontroller) *chi.Mux {
 		})
 
 		r.Group(func(r chi.Router) {
-			// r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
+			r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
 			r.Patch("/", handler.Login)
 			r.Post("/logout", handler.LogoutUser)
 			r.Get("/email/{email}", handler.FindByEmail)
 		})
 	})
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
+		// r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
 		r.Route("/tokens", func(r chi.Router) {
 			r.Post("/renew", handler.RenewAccessToken)
 			r.Post("/revoke", handler.RevokeSession)
