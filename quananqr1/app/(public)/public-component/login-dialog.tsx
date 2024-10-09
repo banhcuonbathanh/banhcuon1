@@ -46,19 +46,27 @@ const LoginDialog: React.FC = () => {
   const router = useRouter();
 
   const onSubmit = async (data: LoginBodyType) => {
-    console.log(
-      "quananqr1/app/(public)/public-component/login-dialog.tsx login"
-    );
     try {
-      await login(data);
-      // Assuming successful login closes the dialog and redirects
-      // closeLoginDialog();
-      // router.push("/manage/dashboard");
+      const loginResponse = await login(data);
+      const { role } = loginResponse.user;
+  
+      // Role-based redirection
+      const roleRedirects = {
+        'Admin': '/admin/dashboard',
+        'Manager': '/manager/dashboard',
+        'Employee': '/employee/dashboard',
+        'Guest': '/dashboard'
+      };
+  
+      const redirectPath = roleRedirects[role] || '/dashboard';
+      router.push(redirectPath);
     } catch (error: any) {
-      // The error is now handled in the Zustand store
       console.error("Login error:", error);
+      // Handle login error (e.g., show error message to user)
     }
   };
+
+
 
   return (
     <Dialog

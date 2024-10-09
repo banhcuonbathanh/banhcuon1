@@ -48,7 +48,7 @@ const menuItems: {
   },
   {
     title: "Quản lý",
-    href: "/manage/dashboard",
+    href: "/admin",
     role: ["Owner", "Employee"]
   }
 ];

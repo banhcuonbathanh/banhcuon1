@@ -9,10 +9,13 @@ const unAuthPaths = ["/login"];
 
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
-  // const { pathname } = request.nextUrl;
-  // console.log(" middleware pathname", pathname);
-  // const accessToken = request.cookies.get("accessToken")?.value;
-  // const refreshToken = request.cookies.get("refreshToken")?.value;
+  const { pathname } = request.nextUrl;
+  console.log(" middleware pathname", pathname);
+  const accessToken = request.cookies.get("accessToken")?.value;
+  console.log(" middleware accessToken", accessToken);
+  const refreshToken = request.cookies.get("refreshToken")?.value;
+
+  console.log(" middleware refreshToken", refreshToken);
   return NextResponse.next();
 }
 
@@ -69,3 +72,57 @@ export const config = {
 
 //     return NextResponse.next();
 //   }
+
+
+
+//
+
+
+// import { NextRequest, NextResponse } from 'next/server';
+// import { jwtVerify } from 'jose';
+
+// const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+// export async function middleware(request: NextRequest) {
+//   const { pathname } = request.nextUrl;
+//   const accessToken = request.cookies.get("accessToken")?.value;
+
+//   // Public routes that don't require authentication
+//   const publicRoutes = ['/login', '/register', '/forgot-password'];
+//   if (publicRoutes.includes(pathname)) {
+//     return NextResponse.next();
+//   }
+
+//   if (!accessToken) {
+//     return NextResponse.redirect(new URL('/login', request.url));
+//   }
+
+//   try {
+//     const { payload } = await jwtVerify(accessToken, new TextEncoder().encode(JWT_SECRET));
+//     const role = payload.role as string;
+
+//     // Define role-based route permissions
+//     const routePermissions = {
+//       '/admin': ['Admin'],
+//       '/manager': ['Manager', 'Admin'],
+//       '/employee': ['Employee', 'Manager', 'Admin'],
+//     };
+
+//     // Check if the current path requires specific roles
+//     for (const [route, allowedRoles] of Object.entries(routePermissions)) {
+//       if (pathname.startsWith(route) && !allowedRoles.includes(role)) {
+//         return NextResponse.redirect(new URL('/unauthorized', request.url));
+//       }
+//     }
+
+//     // For all other cases, allow the request to proceed
+//     return NextResponse.next();
+//   } catch (error) {
+//     console.error('Token verification failed:', error);
+//     return NextResponse.redirect(new URL('/login', request.url));
+//   }
+// }
+
+// export const config = {
+//   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"]
+// };

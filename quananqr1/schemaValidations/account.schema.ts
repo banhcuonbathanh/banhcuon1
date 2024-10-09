@@ -10,7 +10,7 @@ export const AccountSchema = z.object({
   name: z.string(),
   email: z.string(),
   password: z.string(),
-  role: z.string(), // Role is now a string instead of is_admin
+  role: RoleValues,
   phone: z.string(),
   image: z.string().nullable(),
   address: z.string().nullable(),

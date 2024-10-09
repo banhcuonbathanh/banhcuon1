@@ -10,7 +10,6 @@ export const LoginBody = z
 
 export type LoginBodyType = z.TypeOf<typeof LoginBody>;
 
-
 export const LoginRes = z.object({
   access_token: z.string(),
   access_token_expires_at: z.string(),
@@ -26,7 +25,8 @@ export const LoginRes = z.object({
     phone: z.string(),
     image: z.string().nullable(),
     created_at: z.string(),
-    updated_at: z.string()
+    updated_at: z.string(),
+    favorite_food: z.array(z.number().int()) // Added array of favorite foods
   })
 });
 
@@ -64,14 +64,17 @@ export const RegisterBody = z.object({
   password: z.string().min(8, "Password must be at least 8 characters long"),
   role: z.string(),
 
-
-  phone: z.string().min(10, {
-    message: "Số điện thoại phải có ít nhất 10 số.",
-  }).max(15, {
-    message: "Số điện thoại không được quá 15 số.",
-  }).refine((val) => /^\d+$/.test(val), {
-    message: "Số điện thoại chỉ được chứa các chữ số.",
-  }),
+  phone: z
+    .string()
+    .min(10, {
+      message: "Số điện thoại phải có ít nhất 10 số."
+    })
+    .max(15, {
+      message: "Số điện thoại không được quá 15 số."
+    })
+    .refine((val) => /^\d+$/.test(val), {
+      message: "Số điện thoại chỉ được chứa các chữ số."
+    }),
   image: z.string().optional(),
   address: z.string().min(1, "Address is required"),
   created_at: z.string().datetime(),
