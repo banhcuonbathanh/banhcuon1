@@ -3,7 +3,7 @@ import {
   CreateDishBody,
   DishListRes,
   DishRes
-} from "@/zusstand/dished/domain/dish.schema"; // Adjust the import based on your project structure
+} from "@/schemaValidations/dish.schema"; // Adjust the import based on your project structure
 import envConfig from "@/config";
 
 export async function GET() {

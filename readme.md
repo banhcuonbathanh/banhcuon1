@@ -29,6 +29,8 @@ TRUNCATE TABLE schema*migrations, users; delete all data
 \d comments
 \d sessions
 \d reading_test_models;
+SELECT * FROM set_dishes;
+SELECT * FROM sets;
 SELECT * FROM dishes;
 SELECT * FROM accounts;
 SELECT * FROM users;

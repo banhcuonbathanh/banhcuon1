@@ -21,7 +21,7 @@ type SetSnapshot struct {
     UserID      int       `json:"userId"`
     CreatedAt   time.Time `json:"created_at"`
     UpdatedAt   time.Time `json:"updated_at"`
-	SetID      int       `json:"setId"`
+	SetID      int       `json:"set_id"`
 }
 
 
@@ -33,6 +33,8 @@ type Set struct {
     UserID      int       `json:"userId"`
     CreatedAt   time.Time `json:"created_at"`
     UpdatedAt   time.Time `json:"updated_at"`
+    IsFavourite bool `json:"is_favourite"`
+    LikeBy []int64 `json:"like_by"`
 }
 
 type SetDish struct {

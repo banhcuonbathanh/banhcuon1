@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 
 import { CellAction } from "./cell-action";
 import { CellActionImageBillboards } from "./cell-action-image-billboards";
-import { Dish } from "@/zusstand/dished/domain/dish.schema";
+import { Dish } from "@/schemaValidations/dish.schema";
 
 export const columns: ColumnDef<Dish>[] = [
   {

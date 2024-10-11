@@ -1,4 +1,4 @@
-import http from '@/lib/http'
+import http from "@/lib/http";
 import {
   AccountListResType,
   AccountResType,
@@ -10,10 +10,10 @@ import {
   GetListGuestsResType,
   UpdateEmployeeAccountBodyType,
   UpdateMeBodyType
-} from '@/schemaValidations/account.schema'
-import queryString from 'query-string'
+} from "@/schemaValidations/user.schema";
+import queryString from "query-string";
 
-const prefix = '/accounts'
+const prefix = "/accounts";
 const accountApiRequest = {
   me: () => http.get<AccountResType>(`${prefix}/me`),
   sMe: (accessToken: string) =>
@@ -45,6 +45,6 @@ const accountApiRequest = {
     ),
   createGuest: (body: CreateGuestBodyType) =>
     http.post<CreateGuestResType>(`${prefix}/guests`, body)
-}
+};
 
-export default accountApiRequest
+export default accountApiRequest;

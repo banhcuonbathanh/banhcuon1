@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { AlertModal } from "@/components/modal/alert-modal";
-import { Dish } from "@/zusstand/dished/domain/dish.schema";
+import { Dish } from "@/schemaValidations/dish.schema";
 import EditDish from "../edit-dish";
-import { useDeleteDishMutation } from "@/zusstand/dished/controller/dished-controller";
+import { useDeleteDishMutation } from "@/zusstand/dished/dished-controller";
 
 interface CellActionProps {
   data: Dish;

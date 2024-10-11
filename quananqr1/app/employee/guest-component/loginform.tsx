@@ -1,62 +1,65 @@
-'use client'
-import { Button } from '@/components/ui/button'
+"use client";
+import { Button } from "@/components/ui/button";
 
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useForm } from 'react-hook-form'
-import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
-import { LoginBody, LoginBodyType } from '@/schemaValidations/auth.schema'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useForm } from "react-hook-form";
+import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { LoginBody, LoginBodyType } from "@/schemaValidations/auth.schema";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import { toast } from '@/components/ui/use-toast'
-import { handleErrorApi } from '@/lib/utils'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuth } from '@/zusstand/auth/useauth'
-
+import { toast } from "@/components/ui/use-toast";
+import { handleErrorApi } from "@/lib/utils";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { useAuth } from "../../../../auth/useauth";
 
 export default function LoginForm() {
+  const { login, user } = useAuth();
 
-    const {login, user } = useAuth()
-
-  const searchParams = useSearchParams()
-  const clearTokens = searchParams.get('clearTokens')
+  const searchParams = useSearchParams();
+  const clearTokens = searchParams.get("clearTokens");
 
   const form = useForm<LoginBodyType>({
     resolver: zodResolver(LoginBody),
     defaultValues: {
-      email: '',
-      password: ''
+      email: "",
+      password: ""
     }
-  })
-  const router = useRouter()
-//   useEffect(() => {
-//     if (clearTokens) {
-//       setRole()
-//     }
-//   }, [clearTokens, setRole])
+  });
+  const router = useRouter();
+  //   useEffect(() => {
+  //     if (clearTokens) {
+  //       setRole()
+  //     }
+  //   }, [clearTokens, setRole])
   const onSubmit = async (data: LoginBodyType) => {
-
     try {
-      const result = await login(data)
-    //   toast({
-    //     description: result.payload.message
-    //   })
-    //   setRole(result.payload.data.account.role)
-      router.push('/manage/dashboard')
+      const result = await login(data);
+      //   toast({
+      //     description: result.payload.message
+      //   })
+      //   setRole(result.payload.data.account.role)
+      router.push("/manage/dashboard");
     } catch (error: any) {
       handleErrorApi({
         error,
         setError: form.setError
-      })
+      });
     }
-  }
+  };
 
   return (
-    <Card className='mx-auto max-w-sm'>
+    <Card className="mx-auto max-w-sm">
       <CardHeader>
-        <CardTitle className='text-2xl'>Đăng nhập</CardTitle>
+        <CardTitle className="text-2xl">Đăng nhập</CardTitle>
         <CardDescription>
           Nhập email và mật khẩu của bạn để đăng nhập vào hệ thống
         </CardDescription>
@@ -64,24 +67,24 @@ export default function LoginForm() {
       <CardContent>
         <Form {...form}>
           <form
-            className='space-y-2 max-w-[600px] flex-shrink-0 w-full'
+            className="space-y-2 max-w-[600px] flex-shrink-0 w-full"
             noValidate
             onSubmit={form.handleSubmit(onSubmit, (err) => {
-              console.log(err)
+              console.log(err);
             })}
           >
-            <div className='grid gap-4'>
+            <div className="grid gap-4">
               <FormField
                 control={form.control}
-                name='email'
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <div className='grid gap-2'>
-                      <Label htmlFor='email'>Email</Label>
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">Email</Label>
                       <Input
-                        id='email'
-                        type='email'
-                        placeholder='m@example.com'
+                        id="email"
+                        type="email"
+                        placeholder="m@example.com"
                         required
                         {...field}
                       />
@@ -92,16 +95,16 @@ export default function LoginForm() {
               />
               <FormField
                 control={form.control}
-                name='password'
+                name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <div className='grid gap-2'>
-                      <div className='flex items-center'>
-                        <Label htmlFor='password'>Password</Label>
+                    <div className="grid gap-2">
+                      <div className="flex items-center">
+                        <Label htmlFor="password">Password</Label>
                       </div>
                       <Input
-                        id='password'
-                        type='password'
+                        id="password"
+                        type="password"
                         required
                         {...field}
                       />
@@ -110,10 +113,10 @@ export default function LoginForm() {
                   </FormItem>
                 )}
               />
-              <Button type='submit' className='w-full'>
+              <Button type="submit" className="w-full">
                 Đăng nhập
               </Button>
-              <Button variant='outline' className='w-full' type='button'>
+              <Button variant="outline" className="w-full" type="button">
                 Đăng nhập bằng Google
               </Button>
             </div>
@@ -121,5 +124,5 @@ export default function LoginForm() {
         </Form>
       </CardContent>
     </Card>
-  )
+  );
 }

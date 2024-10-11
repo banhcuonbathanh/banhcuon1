@@ -2,9 +2,19 @@ import axios from "axios";
 
 import envConfig from "@/config";
 
-import { IAuthRepository } from "../auth/repository/interface_auth_repository";
-import { LoginBodyType, LoginResType, LogoutBodyType, RefreshTokenBodyType, RefreshTokenResType, RegisterBodyType } from "../auth/domain/auth.schema";
-import { GuestLoginBodyType, GuestLoginResType } from "@/schemaValidations/guest.schema";
+import { IAuthRepository } from "../../../auth/repository/interface_auth_repository";
+import {
+  LoginBodyType,
+  LoginResType,
+  LogoutBodyType,
+  RefreshTokenBodyType,
+  RefreshTokenResType,
+  RegisterBodyType
+} from "../../../auth/domain/auth.schema";
+import {
+  GuestLoginBodyType,
+  GuestLoginResType
+} from "@/schemaValidations/guest.schema";
 
 class AuthRepository implements IAuthRepository {
   register(body: RegisterBodyType): Promise<RegisterBodyType> {

@@ -1,6 +1,4 @@
-import { useAuth } from "@/zusstand/auth/useauth";
-
-
+import { useAuth } from "../../../../auth/useauth";
 
 function LoginComponent() {
   const { login, loading, error, user } = useAuth();
@@ -13,9 +11,5 @@ function LoginComponent() {
   if (error) return <div>Error: {error}</div>;
   if (user) return <div>Welcome, {user.name}!</div>;
 
-  return (
-<div>
-    account page
-</div>
-  );
+  return <div>account page</div>;
 }

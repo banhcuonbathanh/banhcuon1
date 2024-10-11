@@ -33,11 +33,11 @@ import { PlusCircle, Upload } from "lucide-react";
 import revalidateApiRequest from "@/apiRequests/revalidate";
 import { DishStatus, DishStatusValues } from "@/constants/type";
 import { handleErrorApi, getVietnameseDishStatus } from "@/lib/utils";
-import { useDishStore } from "@/zusstand/dished/controller/dished-controller";
+import { useDishStore } from "@/zusstand/dished/dished-controller";
 import {
   CreateDishBodyType,
   CreateDishBody
-} from "@/zusstand/dished/domain/dish.schema";
+} from "@/schemaValidations/dish.schema";
 import { useMediaStore } from "@/zusstand/media/usemediastore";
 import envConfig from "@/config";
 

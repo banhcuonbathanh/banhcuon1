@@ -1,15 +1,16 @@
 import envConfig from "@/config";
-import {
-  DishListRes,
-  DishListResType,
-  DishSchema
-} from "@/zusstand/dished/domain/dish.schema";
+import { DishInterface } from "@/schemaValidations/interface/type_dish";
+
 import { z } from "zod";
 
-const get_dishes = async (): Promise<DishListResType> => {
+const get_dishes = async (): Promise<DishInterface[]> => {
   try {
     const baseUrl =
       envConfig.NEXT_PUBLIC_URL + envConfig.NEXT_PUBLIC_Get_Dished_intenal;
+    console.log(
+      "quananqr1/zusstand/server/dish-controller.ts baseUrl",
+      baseUrl
+    );
 
     const response = await fetch(baseUrl, {
       method: "GET",
@@ -26,20 +27,9 @@ const get_dishes = async (): Promise<DishListResType> => {
 
     const data = await response.json();
 
-    // Create a more lenient schema for parsing
-    const LenientDishSchema = DishSchema.extend({
-      createdAt: z.string().or(z.date()).optional(),
-      updatedAt: z.string().or(z.date()).optional()
-    }).transform((dish) => ({
-      ...dish,
-      createdAt: dish.createdAt ? new Date(dish.createdAt) : new Date(),
-      updatedAt: dish.updatedAt ? new Date(dish.updatedAt) : new Date()
-    }));
+    // Validate the response data against the DishSchema
 
-    // Validate the response data against the lenient schema
-    const validatedData = z.array(LenientDishSchema).parse(data.data || data);
-
-    return validatedData;
+    return data.data;
   } catch (error) {
     console.error("Error fetching or parsing dishes:", error);
     if (error instanceof z.ZodError) {

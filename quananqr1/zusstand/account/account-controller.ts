@@ -1,10 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import authApiRequest from '@/apiRequests/auth';
-import { AccountType } from "@/schemaValidations/account.schema";
-import { LoginBodyType } from "../auth/domain/auth.schema";
-
+import authApiRequest from "@/apiRequests/auth";
+import { AccountType } from "@/schemaValidations/user.schema";
+import { LoginBodyType } from "../../../auth/domain/auth.schema";
 
 type AccountStore = {
   account: AccountType | null;
@@ -32,10 +31,10 @@ export const useAccountStore = create<AccountStore>()(
             account,
             isAuthenticated: true,
             accessToken,
-            refreshToken, 
+            refreshToken
           });
         } catch (error) {
-          console.error('Login failed:', error);
+          console.error("Login failed:", error);
           throw error;
         }
       },
@@ -49,12 +48,19 @@ export const useAccountStore = create<AccountStore>()(
             refreshToken: null
           });
         } catch (error) {
-          console.error('Logout failed:', error);
+          console.error("Logout failed:", error);
           throw error;
         }
       },
-      setUser: (account: AccountType) => set({ account, isAuthenticated: true }),
-      clearUser: () => set({ account: null, isAuthenticated: false, accessToken: null, refreshToken: null }),
+      setUser: (account: AccountType) =>
+        set({ account, isAuthenticated: true }),
+      clearUser: () =>
+        set({
+          account: null,
+          isAuthenticated: false,
+          accessToken: null,
+          refreshToken: null
+        })
     }),
     {
       name: "auth-store",

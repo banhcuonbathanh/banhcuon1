@@ -18,7 +18,7 @@ import { cn, handleErrorApi } from "@/lib/utils";
 import { Role } from "@/constants/type";
 import { RoleType } from "@/types/jwt.types";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/zusstand/auth/useauth";
+import { useAuth } from "../../../auth/useauth";
 import LoginDialog from "./guest-component/login-dialog";
 import RegisterDialog from "./guest-component/register-dialog";
 

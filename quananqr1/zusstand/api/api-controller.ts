@@ -7,7 +7,8 @@ import axios, {
 } from "axios";
 import Cookies from "js-cookie";
 import envConfig from "@/config";
-import { RefreshTokenResType } from "../auth/domain/auth.schema";
+import { RefreshTokenResType } from "@/schemaValidations/auth.schema";
+
 
 interface ApiStore {
   http: AxiosInstance;

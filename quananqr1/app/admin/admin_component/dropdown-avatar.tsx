@@ -1,4 +1,6 @@
-'use client'
+"use client";
+
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,53 +8,58 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-
-import { handleErrorApi } from '@/lib/utils'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/zusstand/auth/useauth'
-
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from "next/link";
+import {
+  useAuthStore,
+  useLogoutMutation
+} from "@/zusstand/new_auth/new_auth_controller";
 
 export default function DropdownAvatar() {
+  const { user } = useAuthStore();
+  const { mutateAsync: logout, isPending: loading } = useLogoutMutation();
 
-
-  const { logout,login, loading, error, user } = useAuth();
-
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Handle successful logout (e.g., redirect to login page)
+    } catch (error) {
+      // Handle logout error
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant='outline'
-          size='icon'
-          className='overflow-hidden rounded-full'
+          variant="outline"
+          size="icon"
+          className="overflow-hidden rounded-full"
         >
           <Avatar>
-            <AvatarImage
-              src={user?.avatar ?? undefined}
-              alt={user?.name}
-            />
+            <AvatarImage src={user?.image ?? undefined} alt={user?.name} />
             <AvatarFallback>
-              {user?.name.slice(0, 2).toUpperCase()}
+              {user?.name ? user.name.slice(0, 2).toUpperCase() : "U"}
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end'>
-        <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{user?.name || "User"}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href={'/manage/setting'} className='cursor-pointer'>
+          <Link href="/manage/setting" className="cursor-pointer">
             Cài đặt
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>Hỗ trợ</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>Đăng xuất</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleLogout} disabled={loading}>
+          {loading ? "Đang đăng xuất..." : "Đăng xuất"}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

@@ -18,11 +18,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { handleErrorApi } from "@/lib/utils";
-import { useAuthStore } from "@/zusstand/auth/controller/auth-controller";
-import {
-  RegisterBodyType,
-  RegisterBody
-} from "@/zusstand/auth/domain/auth.schema";
+import { RegisterBodyType, RegisterBody } from "@/schemaValidations/auth.schema";
+import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
+
+
 
 const RegisterDialog = () => {
   const [open, setOpen] = useState(false);

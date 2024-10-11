@@ -18,8 +18,9 @@ import { Label } from "@/components/ui/label";
 import { Info } from "lucide-react";
 
 import { handleErrorApi } from "@/lib/utils";
-import { LoginBody, LoginBodyType } from "@/zusstand/auth/domain/auth.schema";
-import { useAuthStore } from "@/zusstand/auth/controller/auth-controller";
+
+import { LoginBody, LoginBodyType } from "@/schemaValidations/auth.schema";
+import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 
 const LoginDialog: React.FC = () => {
   const { login, isLoginDialogOpen, openLoginDialog, closeLoginDialog } =

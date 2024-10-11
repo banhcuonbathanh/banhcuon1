@@ -18,8 +18,8 @@ export const DishSchema = z.object({
   description: z.string(),
   image: z.string(),
   status: z.enum(DishStatusValues),
-  createdAt: z.date(),
-  updatedAt: z.date()
+  created_at: z.date(),
+  updated_at: z.date()
 })
 
 export const DishRes = z.object({

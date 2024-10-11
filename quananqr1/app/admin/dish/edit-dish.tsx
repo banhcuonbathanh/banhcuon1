@@ -35,7 +35,7 @@ import { toast } from "@/components/ui/use-toast";
 import {
   UpdateDishBody,
   UpdateDishBodyType
-} from "@/zusstand/dished/domain/dish.schema";
+} from "@/schemaValidations/dish.schema";
 
 import { handleErrorApi } from "@/lib/utils";
 import { DishStatus } from "@/constants/type";
@@ -43,7 +43,7 @@ import {
   useDishListQuery,
   useGetDishQuery,
   useUpdateDishMutation
-} from "@/zusstand/dished/controller/dished-controller";
+} from "@/zusstand/dished/dished-controller";
 import { useUploadMediaMutation } from "@/zusstand/media/usemediastore";
 
 export default function EditDish({

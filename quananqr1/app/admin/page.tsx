@@ -1,5 +1,5 @@
 import accountApiRequest from "@/apiRequests/account";
-import { get_Account } from "@/zusstand/auth/server/server-auth-controler";
+import { get_Account } from "../../../auth/server/server-auth-controler";
 import { cookies } from "next/headers";
 
 export default async function ManageHomePage() {
