@@ -13,9 +13,11 @@ message SetProto {
   string name = 2;
   string description = 3;
   repeated SetProtoDish dishes = 4;
-  int32 user_id = 5;
+  optional int32 user_id = 5;  // Changed to optional
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
+  bool is_favourite = 8;
+  repeated int64 like_by = 9;
 }
 
 message SetProtoSnapshot {
@@ -23,23 +25,23 @@ message SetProtoSnapshot {
   string name = 2;
   string description = 3;
   repeated SetProtoDish dishes = 4;
-  int32 user_id = 5;
+  optional int32 user_id = 5;  // Changed to optional
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
   int32 set_id = 8;
 }
 
 message SetProtoDish {
-  Dish dish = 1;
+  int32 dish_id = 1;  // Changed to only reference the dish id
   int32 quantity = 2;
 }
-
 message CreateSetProtoRequest {
   string name = 1;
   string description = 2;
   repeated SetProtoDish dishes = 3;
-  int32 user_id = 4;
+  optional int32 user_id = 4;  // Changed to optional
 }
+
 
 message UpdateSetProtoRequest {
   int32 id = 1;

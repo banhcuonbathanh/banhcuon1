@@ -6,10 +6,10 @@ import {
   CardContent
 } from "@/components/ui/card";
 import React from "react";
-import { DishClient } from "../dish/components-data-table/dish-client";
-import { SetClient } from "./component/components-data-table-set/set-client";
+
 import { get_Sets } from "@/zusstand/server/set-controller";
 import { get_dishes } from "@/zusstand/server/dish-controller";
+import { SetClient } from "./component/components-data-table-set/set-client";
 
 export default async function SetPage() {
   const set = await get_Sets();

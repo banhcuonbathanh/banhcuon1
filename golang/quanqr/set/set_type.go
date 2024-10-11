@@ -18,10 +18,10 @@ type SetSnapshot struct {
     Name        string    `json:"name"`
     Description string    `json:"description"`
     Dishes      []SetDish `json:"dishes"`
-    UserID      int       `json:"userId"`
+    UserID      *int      `json:"userId,omitempty"`  // Changed to pointer to allow null
     CreatedAt   time.Time `json:"created_at"`
     UpdatedAt   time.Time `json:"updated_at"`
-	SetID      int       `json:"set_id"`
+    SetID       int       `json:"set_id"`
 }
 
 
@@ -30,19 +30,17 @@ type Set struct {
     Name        string    `json:"name"`
     Description string    `json:"description"`
     Dishes      []SetDish `json:"dishes"`
-    UserID      int       `json:"userId"`
+    UserID      *int      `json:"userId,omitempty"`  // Changed to pointer to allow null
     CreatedAt   time.Time `json:"created_at"`
     UpdatedAt   time.Time `json:"updated_at"`
-    IsFavourite bool `json:"is_favourite"`
-    LikeBy []int64 `json:"like_by"`
+    IsFavourite bool      `json:"is_favourite"`
+    LikeBy      []int64   `json:"like_by"`
 }
 
 type SetDish struct {
-    Dish     Dish `json:"dish"`
-    Quantity int  `json:"quantity"`
+    DishID   int64 `json:"dish_id"`  // Changed to only store the dish id
+    Quantity int   `json:"quantity"`
 }
-
-
 
 
 
