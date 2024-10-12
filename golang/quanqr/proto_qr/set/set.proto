@@ -39,7 +39,7 @@ message CreateSetProtoRequest {
   string name = 1;
   string description = 2;
   repeated SetProtoDish dishes = 3;
-  optional int32 user_id = 4;  // Changed to optional
+  int32 user_id = 4;  // Changed to optional
 }
 
 

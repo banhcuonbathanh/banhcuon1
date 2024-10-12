@@ -137,15 +137,18 @@ func (h *SetHandlerController) DeleteSetProto(w http.ResponseWriter, r *http.Req
 }
 
 // Helper functions for mapping between protobuf and Go structs
+
 func ToPBCreateSetProtoRequest(req CreateSetRequest) *set.CreateSetProtoRequest {
-    return &set.CreateSetProtoRequest{
+    protoReq := &set.CreateSetProtoRequest{
         Name:        req.Name,
         Description: req.Description,
         Dishes:      ToPBSetProtoDishes(req.Dishes),
-        UserId:      Int32Ptr(req.UserID),
     }
+    if req.UserID != nil {
+        protoReq.UserId = *req.UserID
+    }
+    return protoReq
 }
-
 func ToPBUpdateSetProtoRequest(req UpdateSetRequest) *set.UpdateSetProtoRequest {
     return &set.UpdateSetProtoRequest{
         Id:          int32(req.ID),
@@ -154,18 +157,19 @@ func ToPBUpdateSetProtoRequest(req UpdateSetRequest) *set.UpdateSetProtoRequest 
         Dishes:      ToPBSetProtoDishes(req.Dishes),
     }
 }
-
-func ToPBSetProtoDishes(dishes []SetDish) []*set.SetProtoDish {
+func ToPBSetProtoDishes(dishes []struct {
+    Dish     Dish `json:"dish"`
+    Quantity int  `json:"quantity"`
+}) []*set.SetProtoDish {
     pbDishes := make([]*set.SetProtoDish, len(dishes))
     for i, dish := range dishes {
         pbDishes[i] = &set.SetProtoDish{
-            DishId: int32(dish.DishID)  ,
+            DishId:   int32(dish.Dish.ID),
             Quantity: int32(dish.Quantity),
         }
     }
     return pbDishes
 }
-
 func ToSetResFromPbSetResponse(pbRes *set.SetProtoResponse) SetResponse {
     return SetResponse{
         Data: ToSetFromPbSetProto(pbRes.Data),
@@ -183,12 +187,17 @@ func ToSetResListFromPbSetListResponse(pbRes *set.SetProtoListResponse) SetListR
 }
 
 func ToSetFromPbSetProto(pbSet *set.SetProto) Set {
+    var userID *int32
+    if pbSet.UserId != nil {
+        userID = pbSet.UserId
+    }
+
     return Set{
         ID:          int(pbSet.Id),
         Name:        pbSet.Name,
         Description: pbSet.Description,
         Dishes:      ToSetDishesFromPbSetProtoDishes(pbSet.Dishes),
-        UserID:      Int32PtrToIntPtr(pbSet.UserId),
+        UserID:      userID,
         CreatedAt:   pbSet.CreatedAt.AsTime(),
         UpdatedAt:   pbSet.UpdatedAt.AsTime(),
         IsFavourite: pbSet.IsFavourite,

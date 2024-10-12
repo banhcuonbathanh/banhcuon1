@@ -5,7 +5,7 @@ import "time"
 type Dish struct {
     ID          int64     `json:"id"`
     Name        string    `json:"name"`
-    Price       int32     `json:"price"`
+    Price       int       `json:"price"`
     Description string    `json:"description"`
     Image       string    `json:"image"`
     Status      string    `json:"status"`
@@ -30,7 +30,7 @@ type Set struct {
     Name        string    `json:"name"`
     Description string    `json:"description"`
     Dishes      []SetDish `json:"dishes"`
-    UserID      *int      `json:"userId,omitempty"`  // Changed to pointer to allow null
+    UserID      *int32     `json:"userId,omitempty"`  // Changed to pointer to allow null
     CreatedAt   time.Time `json:"created_at"`
     UpdatedAt   time.Time `json:"updated_at"`
     IsFavourite bool      `json:"is_favourite"`
@@ -45,17 +45,25 @@ type SetDish struct {
 
 
 type CreateSetRequest struct {
-    Name        string    `json:"name"`
-    Description string    `json:"description"`
-    Dishes      []SetDish `json:"dishes"`
-    UserID      int       `json:"userId"`
+    Name        string `json:"name"`
+    Description string `json:"description"`
+    Dishes      []struct {
+        Dish     Dish `json:"dish"`
+        Quantity int  `json:"quantity"`
+    } `json:"dishes"`
+    UserID *int32 `json:"userId,omitempty"`
 }
 
+
+
 type UpdateSetRequest struct {
-    ID          int       `json:"id"`
-    Name        string    `json:"name"`
-    Description string    `json:"description"`
-    Dishes      []SetDish `json:"dishes"`
+    ID          int    `json:"id"`
+    Name        string `json:"name"`
+    Description string `json:"description"`
+    Dishes      []struct {
+        Dish     Dish `json:"dish"`
+        Quantity int  `json:"quantity"`
+    } `json:"dishes"`
 }
 
 type SetResponse struct {
