@@ -18,31 +18,30 @@ type SetSnapshot struct {
     Name        string    `json:"name"`
     Description string    `json:"description"`
     Dishes      []SetDish `json:"dishes"`
-    UserID      *int      `json:"userId,omitempty"`  // Changed to pointer to allow null
+    UserID      *int      `json:"userId,omitempty"`
     CreatedAt   time.Time `json:"created_at"`
     UpdatedAt   time.Time `json:"updated_at"`
     SetID       int       `json:"set_id"`
+    IsPublic    bool      `json:"is_public"` // add
 }
-
 
 type Set struct {
     ID          int       `json:"id"`
     Name        string    `json:"name"`
     Description string    `json:"description"`
     Dishes      []SetDish `json:"dishes"`
-    UserID      *int32     `json:"userId,omitempty"`  // Changed to pointer to allow null
+    UserID      *int32    `json:"userId,omitempty"`
     CreatedAt   time.Time `json:"created_at"`
     UpdatedAt   time.Time `json:"updated_at"`
     IsFavourite bool      `json:"is_favourite"`
     LikeBy      []int64   `json:"like_by"`
+    IsPublic    bool      `json:"is_public"` // add
 }
 
 type SetDish struct {
     DishID   int64 `json:"dish_id"`  // Changed to only store the dish id
     Quantity int   `json:"quantity"`
 }
-
-
 
 type CreateSetRequest struct {
     Name        string `json:"name"`
@@ -51,8 +50,10 @@ type CreateSetRequest struct {
         Dish     Dish `json:"dish"`
         Quantity int  `json:"quantity"`
     } `json:"dishes"`
-    UserID *int32 `json:"userId,omitempty"`
+    UserID   *int32 `json:"userId,omitempty"`
+    IsPublic bool   `json:"is_public"` // add 
 }
+
 
 
 
@@ -64,8 +65,8 @@ type UpdateSetRequest struct {
         Dish     Dish `json:"dish"`
         Quantity int  `json:"quantity"`
     } `json:"dishes"`
+    IsPublic bool `json:"is_public"` // add
 }
-
 type SetResponse struct {
     Data    Set    `json:"data"`
 

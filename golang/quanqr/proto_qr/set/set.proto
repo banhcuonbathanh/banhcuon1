@@ -13,22 +13,25 @@ message SetProto {
   string name = 2;
   string description = 3;
   repeated SetProtoDish dishes = 4;
-  optional int32 user_id = 5;  // Changed to optional
+  optional int32 user_id = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
   bool is_favourite = 8;
   repeated int64 like_by = 9;
+  bool is_public = 10; // add
 }
+
 
 message SetProtoSnapshot {
   int32 id = 1;
   string name = 2;
   string description = 3;
   repeated SetProtoDish dishes = 4;
-  optional int32 user_id = 5;  // Changed to optional
+  optional int32 user_id = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
   int32 set_id = 8;
+  bool is_public = 9; // add 
 }
 
 message SetProtoDish {
@@ -39,15 +42,16 @@ message CreateSetProtoRequest {
   string name = 1;
   string description = 2;
   repeated SetProtoDish dishes = 3;
-  int32 user_id = 4;  // Changed to optional
+  int32 user_id = 4;
+  bool is_public = 5; // add 
 }
-
 
 message UpdateSetProtoRequest {
   int32 id = 1;
   string name = 2;
   string description = 3;
   repeated SetProtoDish dishes = 4;
+  bool is_public = 5; // add 
 }
 
 message SetProtoResponse {
