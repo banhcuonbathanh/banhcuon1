@@ -5,8 +5,9 @@ import { ColumnDef } from "@tanstack/react-table";
 import { CellAction } from "./cell-action";
 import { CellActionImageBillboards } from "./cell-action-image-billboards";
 import { Dish } from "@/schemaValidations/dish.schema";
+import { DishInterface } from "@/schemaValidations/interface/type_dish";
 
-export const set_dish_columns: ColumnDef<Dish>[] = [
+export const set_dish_columns: ColumnDef<DishInterface>[] = [
   {
     accessorKey: "id",
     header: "ID"
@@ -37,12 +38,12 @@ export const set_dish_columns: ColumnDef<Dish>[] = [
   {
     accessorKey: "createdAt",
     header: "Created At",
-    cell: ({ row }) => new Date(row.original.created_at).toLocaleDateString()
+    cell: ({ row }) =>  row.original.created_at
   },
   {
     accessorKey: "updatedAt",
     header: "Updated At",
-    cell: ({ row }) => new Date(row.original.updated_at).toLocaleDateString()
+    cell: ({ row }) => row.original.updated_at
   },
   {
     id: "actions",

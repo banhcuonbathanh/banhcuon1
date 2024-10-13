@@ -202,6 +202,7 @@ func ToSetFromPbSetProto(pbSet *set.SetProto) Set {
         UpdatedAt:   pbSet.UpdatedAt.AsTime(),
         IsFavourite: pbSet.IsFavourite,
         LikeBy:      pbSet.LikeBy,
+        IsPublic:    pbSet.IsPublic,
     }
 }
 
@@ -209,13 +210,28 @@ func ToSetDishesFromPbSetProtoDishes(pbDishes []*set.SetProtoDish) []SetDish {
     dishes := make([]SetDish, len(pbDishes))
     for i, pbDish := range pbDishes {
         dishes[i] = SetDish{
-            DishID:  int64(pbDish.DishId) ,
+            DishID:   int64(pbDish.DishId),
             Quantity: int(pbDish.Quantity),
+            Dish:     ToDishFromPbDish(pbDish.Dish),
         }
     }
     return dishes
 }
-
+func ToDishFromPbDish(pbDish *set.Dish) Dish {
+    if pbDish == nil {
+        return Dish{}
+    }
+    return Dish{
+        ID:          pbDish.Id,
+        Name:        pbDish.Name,
+        Price:       int(pbDish.Price),
+        Description: pbDish.Description,
+        Image:       pbDish.Image,
+        Status:      pbDish.Status,
+        CreatedAt:   pbDish.CreatedAt.AsTime(),
+        UpdatedAt:   pbDish.UpdatedAt.AsTime(),
+    }
+}
 // Helper function to convert int32 to *int32
 func Int32Ptr(i int) *int32 {
     if i == 0 {

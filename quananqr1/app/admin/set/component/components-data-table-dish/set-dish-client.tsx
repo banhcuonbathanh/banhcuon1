@@ -11,9 +11,10 @@ import { Heading } from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
 import { set_dish_columns } from "./set-dish-columns";
 import { useEffect, useState } from "react";
+import { DishInterface } from "@/schemaValidations/interface/type_dish";
 
 interface DishClientProps {
-  data: Dish[];
+  data: DishInterface[];
 }
 
 export const SetDishClient: React.FC<DishClientProps> = ({ data }) => {

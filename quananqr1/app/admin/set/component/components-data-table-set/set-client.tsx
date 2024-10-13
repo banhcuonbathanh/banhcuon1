@@ -20,9 +20,10 @@ import {
 
 import { useEffect } from "react";
 import { SetDishClient } from "../components-data-table-dish/set-dish-client";
+import { SetInterface } from "@/schemaValidations/interface/types_set";
 //   const { data: sets, isLoading: setsLoading, error: setsError, refetch: refetchSets } = useSetListQuery();
 interface SetClientProps {
-  data: SetType[];
+  data:  SetInterface[];
 }
 
 export const SetClient: React.FC<SetClientProps> = ({ data }) => {

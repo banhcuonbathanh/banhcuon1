@@ -1,53 +1,54 @@
-import { DishSchema } from "@/app/employee/data-guest/public-dish/dish.schema";
 import envConfig from "@/config";
+import { DishInterface } from "@/schemaValidations/interface/type_dish";
 import {
-  DishListRes,
-  DishListResType,
+  SetInterface,
   SetListResType,
-  SetSchema
-} from "@/schemaValidations/dish.schema";
-import { z } from "zod";
+  SetProtoDish
+} from "@/schemaValidations/interface/types_set";
 
-const get_Sets = async (): Promise<SetListResType> => {
+const get_Sets = async (): Promise<SetInterface[]> => {
   try {
     const baseUrl =
       envConfig.NEXT_PUBLIC_URL + envConfig.NEXT_PUBLIC_Get_set_intenal;
-    // console.log("quananqr1/zusstand/server/set-controller.ts baseUrl", baseUrl);
+    console.log("quananqr1/zusstand/server/set-controller.ts baseUrl", baseUrl);
     const response = await fetch(baseUrl, {
       method: "GET",
       cache: "no-store"
     });
 
-    // }
-
     const data = await response.json();
 
-    // console.log("quananqr1/zusstand/server/set-controller.ts data", data);
+    // console.log(
+    //   "quananqr1/zusstand/server/set-controller.ts data 2323232323232323232",
+    //   data
+    // );
 
-    // console.log("Received data:", JSON.stringify(data, null, 2));
-
-    // Create a more lenient schema for parsing
-    const LenientSetSchema = SetSchema.extend({
-      createdAt: z.string().or(z.date()).optional(),
-      updatedAt: z.string().or(z.date()).optional()
-    }).transform((set) => ({
-      ...set,
-      createdAt: set.createdAt ? new Date(set.createdAt) : new Date(),
-      updatedAt: set.updatedAt ? new Date(set.updatedAt) : new Date()
-    }));
-
-    // Validate the response data against the lenient schema
-    const validatedData = z.array(LenientSetSchema).parse(data.data || []);
+    // Validate and transform the data
+    const validatedData: SetInterface[] = data.data.map(
+      (set: SetInterface) => ({
+        id: set.id,
+        name: set.name,
+        description: set.description,
+        dishes: set.dishes.map((setProtoDish: SetProtoDish) => ({
+          dishId: setProtoDish.dishId,
+          quantity: setProtoDish.quantity,
+          dish: {
+            ...setProtoDish.dish,
+            price: Number(setProtoDish.dish.price) // Ensure price is a number
+          }
+        })),
+        userId: set.userId,
+        created_at: set.created_at,
+        updated_at: set.updated_at,
+        is_favourite: Boolean(set.is_favourite), // Ensure is_favourite is a boolean
+        like_by: set.like_by || [], // Ensure like_by is an array, defaulting to empty if null
+        is_public: Boolean(set.is_public) // Ensure is_public is a boolean
+      })
+    );
 
     return validatedData;
   } catch (error) {
     console.error("Error fetching or parsing sets:", error);
-    if (error instanceof z.ZodError) {
-      console.error(
-        "Zod validation errors:",
-        JSON.stringify(error.errors, null, 2)
-      );
-    }
     throw error;
   }
 };

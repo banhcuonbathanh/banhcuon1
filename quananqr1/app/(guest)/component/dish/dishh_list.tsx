@@ -3,15 +3,16 @@ import React, { useState } from "react";
 
 import { Dish, DishListResType } from "@/schemaValidations/dish.schema";
 import { DishCard } from "./disih_tem";
+import { DishInterface } from "@/schemaValidations/interface/type_dish";
 
 interface DishSelectionProps {
-  dishes: DishListResType;
+  dishes: DishInterface[];
 }
 
 export function DishSelection({ dishes }: DishSelectionProps) {
-  const [order, setOrder] = useState<Dish[]>([]);
+  const [order, setOrder] = useState<DishInterface[]>([]);
 
-  const addToOrder = (dish: Dish) => {
+  const addToOrder = (dish: DishInterface) => {
     setOrder([...order, dish]);
   };
 
@@ -19,7 +20,7 @@ export function DishSelection({ dishes }: DishSelectionProps) {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Menu</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {dishes.map((dish: Dish) => (
+        {dishes.map((dish: DishInterface) => (
           <DishCard key={dish.id} dish={dish} onAddToOrder={addToOrder} />
         ))}
       </div>

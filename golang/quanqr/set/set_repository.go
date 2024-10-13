@@ -2,9 +2,10 @@ package set_qr
 
 import (
 	"context"
+	"english-ai-full/logger"
 	"fmt"
 	"time"
-	"english-ai-full/logger"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -28,9 +29,9 @@ func NewSetRepository(db *pgxpool.Pool) *SetRepository {
 }
 
 func (sr *SetRepository) GetSetProtoList(ctx context.Context) ([]*set.SetProto, error) {
-    sr.logger.Info("Fetching set list")
+    sr.logger.Info("Fetching set list GetSetProtoList golang/quanqr/set/set_repository.go")
     query := `
-        SELECT id, name, description, user_id, created_at, updated_at, is_favourite, like_by
+        SELECT id, name, description, user_id, created_at, updated_at, is_favourite, like_by, is_public
         FROM sets
     `
     rows, err := sr.db.Query(ctx, query)
@@ -39,13 +40,14 @@ func (sr *SetRepository) GetSetProtoList(ctx context.Context) ([]*set.SetProto, 
         return nil, fmt.Errorf("error fetching sets: %w", err)
     }
     defer rows.Close()
-
+    
     var sets []*set.SetProto
     for rows.Next() {
         var s set.SetProto
         var createdAt, updatedAt time.Time
         var userID *int32
         var likeBy []int64
+        
         err := rows.Scan(
             &s.Id,
             &s.Name,
@@ -55,32 +57,41 @@ func (sr *SetRepository) GetSetProtoList(ctx context.Context) ([]*set.SetProto, 
             &updatedAt,
             &s.IsFavourite,
             &likeBy,
+            &s.IsPublic,
         )
         if err != nil {
             sr.logger.Error("Error scanning set: " + err.Error())
             return nil, fmt.Errorf("error scanning set: %w", err)
         }
+        
         s.CreatedAt = timestamppb.New(createdAt)
         s.UpdatedAt = timestamppb.New(updatedAt)
         s.UserId = userID
         s.LikeBy = likeBy
-
-        s.Dishes, err = sr.getSetDishes(ctx, s.Id)
+        
+        // Fetch dishes for the current set
+        dishes, err := sr.GetDishesForSet(ctx, s.Id)
+        sr.logger.Info(fmt.Sprintf("golang/quanqr/set/set_repository.go dishes: %+v", dishes))
         if err != nil {
             sr.logger.Error(fmt.Sprintf("Error fetching dishes for set %d: %s", s.Id, err.Error()))
             return nil, fmt.Errorf("error fetching dishes for set %d: %w", s.Id, err)
         }
-
+        
+        s.Dishes = dishes
         sets = append(sets, &s)
     }
+    
     if err := rows.Err(); err != nil {
         sr.logger.Error("Error iterating over sets: " + err.Error())
         return nil, fmt.Errorf("error iterating over sets: %w", err)
     }
-
+    
     sr.logger.Info(fmt.Sprintf("Successfully fetched %d sets", len(sets)))
     return sets, nil
 }
+
+
+
 
 func (sr *SetRepository) GetSetProtoDetail(ctx context.Context, id int32) (*set.SetProto, error) {
     sr.logger.Info(fmt.Sprintf("Fetching set detail for ID: %d", id))
@@ -326,5 +337,49 @@ func (sr *SetRepository) getSetDishes(ctx context.Context, setID int32) ([]*set.
     }
 
     sr.logger.Info(fmt.Sprintf("Successfully fetched %d dishes for set ID: %d", len(dishes), setID))
+    return dishes, nil
+}
+
+func (sr *SetRepository) GetDishesForSet(ctx context.Context, setID int32) ([]*set.SetProtoDish, error) {
+    query := `
+        SELECT sd.dish_id, sd.quantity, d.id, d.name, d.price, d.description, d.image, d.status, d.created_at, d.updated_at
+        FROM set_dishes sd
+        JOIN dishes d ON sd.dish_id = d.id
+        WHERE sd.set_id = $1
+    `
+    rows, err := sr.db.Query(ctx, query, setID)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching dishes for set: %w", err)
+    }
+    defer rows.Close()
+
+    var dishes []*set.SetProtoDish
+    for rows.Next() {
+        var spd set.SetProtoDish
+        var d set.Dish
+        var createdAt, updatedAt time.Time
+        err := rows.Scan(
+            &spd.DishId,
+            &spd.Quantity,
+            &d.Id,
+            &d.Name,
+            &d.Price,
+            &d.Description,
+            &d.Image,
+            &d.Status,
+            &createdAt,
+            &updatedAt,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning dish: %w", err)
+        }
+        d.CreatedAt = timestamppb.New(createdAt)
+        d.UpdatedAt = timestamppb.New(updatedAt)
+        spd.Dish = &d
+        dishes = append(dishes, &spd)
+    }
+    if err := rows.Err(); err != nil {
+        return nil, fmt.Errorf("error iterating over dishes: %w", err)
+    }
     return dishes, nil
 }

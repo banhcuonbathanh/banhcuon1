@@ -9,9 +9,10 @@ import {
 import { Dish } from "@/schemaValidations/dish.schema";
 import React from "react";
 import Image from "next/image";
+import { DishInterface } from "@/schemaValidations/interface/type_dish";
 interface DishCardProps {
-  dish: Dish;
-  onAddToOrder: (dish: Dish) => void;
+  dish: DishInterface;
+  onAddToOrder: (dish: DishInterface) => void;
 }
 
 export const DishCard: React.FC<DishCardProps> = ({ dish, onAddToOrder }) => (

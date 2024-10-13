@@ -35,8 +35,9 @@ message SetProtoSnapshot {
 }
 
 message SetProtoDish {
-  int32 dish_id = 1;  // Changed to only reference the dish id
+  int32 dish_id = 1;  // Keep this for backwards compatibility
   int32 quantity = 2;
+  Dish dish = 3;  // Add this field for full dish information
 }
 message CreateSetProtoRequest {
   string name = 1;

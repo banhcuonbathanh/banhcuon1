@@ -41,6 +41,7 @@ type Set struct {
 type SetDish struct {
     DishID   int64 `json:"dish_id"`  // Changed to only store the dish id
     Quantity int   `json:"quantity"`
+    Dish Dish    `json:"dish"`
 }
 
 type CreateSetRequest struct {

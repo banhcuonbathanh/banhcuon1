@@ -20,9 +20,10 @@ import { Dish } from "@/schemaValidations/dish.schema";
 
 import { useDeleteDishMutation } from "@/zusstand/dished/dished-controller";
 import EditDish from "@/app/admin/dish/edit-dish";
+import { DishInterface } from "@/schemaValidations/interface/type_dish";
 
 interface CellActionProps {
-  data: Dish;
+  data: DishInterface;
 }
 
 export const CellAction: React.FC<CellActionProps> = ({ data }) => {

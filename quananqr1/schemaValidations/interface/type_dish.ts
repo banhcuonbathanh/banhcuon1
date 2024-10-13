@@ -10,6 +10,8 @@ export interface CreateDishBody {
 
 export type CreateDishBodyType = CreateDishBody;
 
+
+
 export interface DishInterface {
   id: number;
   name: string;
@@ -17,8 +19,8 @@ export interface DishInterface {
   description: string;
   image: string;
   status: typeof DishStatusValues[number];
-  created_at: Date;
-  updated_at: Date;
+  created_at: String;
+  updated_at: String;
   set_id?: number;
 }
 

@@ -1,11 +1,77 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import { SetType } from "@/schemaValidations/dish.schema";
+
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal, ChevronDown, ChevronUp } from "lucide-react";
-import React from "react";
+import Image from "next/image";
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { DataTable } from "@/components/ui/data-table";
+import { DishInterface } from "@/schemaValidations/interface/type_dish";
+import { set_dish_columns } from "../components-data-table-dish/set-dish-columns";
+import {
+  SetInterface,
+  SetProtoDish
+} from "@/schemaValidations/interface/types_set";
 
-export const columns: ColumnDef<SetType>[] = [
+const DishDialog: React.FC<{ dish: DishInterface }> = ({ dish }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="link" className="p-0 h-auto font-normal">
+          {dish.name}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800 shadow-lg">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">{dish.name}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4">
+          <div className="relative w-full h-48">
+            <Image
+              src={dish.image}
+              alt={dish.name}
+              layout="fill"
+              objectFit="cover"
+              className="rounded-md"
+            />
+          </div>
+          <div className="grid gap-2">
+            <InfoRow label="ID" value={dish.id} />
+            <InfoRow label="Name" value={dish.name} />
+            <InfoRow label="Description" value={dish.description} />
+            <InfoRow label="Price" value={`$${dish.price.toFixed(2)}`} />
+            <InfoRow label="Status" value={dish.status} />
+            <InfoRow label="Created At" value={String(dish.created_at)} />
+            <InfoRow label="Updated At" value={String(dish.updated_at)} />
+            {dish.set_id && <InfoRow label="Set ID" value={dish.set_id} />}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const InfoRow: React.FC<{ label: string; value: string | number }> = ({
+  label,
+  value
+}) => (
+  <div className="grid grid-cols-3 items-center gap-4">
+    <span className="text-sm font-medium">{label}:</span>
+    <span className="col-span-2 text-sm">{value}</span>
+  </div>
+);
+
+export const columns: ColumnDef<SetInterface>[] = [
   {
     accessorKey: "id",
     header: "ID",
@@ -33,6 +99,11 @@ export const columns: ColumnDef<SetType>[] = [
       const [isExpanded, setIsExpanded] = React.useState(false);
       const dishes = row.original.dishes;
 
+      console.log(
+        "quananqr1/app/admin/set/component/components-data-table-set/set-columns.tsx dishes",
+        dishes
+      );
+
       return (
         <div>
           <Button
@@ -45,9 +116,11 @@ export const columns: ColumnDef<SetType>[] = [
           </Button>
           {isExpanded && (
             <ul className="mt-2 space-y-1">
-              {dishes.map((dish) => (
-                <li key={dish.id} className="text-sm">
-                  {dish.name} - ${dish.price.toFixed(2)}
+              {dishes.map((setProtoDish: SetProtoDish) => (
+                <li key={setProtoDish.dish.id} className="text-sm">
+                  <DishDialog dish={setProtoDish.dish} /> - $
+                  {setProtoDish.dish.price.toFixed(2)} (Qty:{" "}
+                  {setProtoDish.quantity})
                 </li>
               ))}
             </ul>
@@ -60,13 +133,13 @@ export const columns: ColumnDef<SetType>[] = [
     accessorKey: "createdAt",
     header: "Created At",
     size: 150,
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString()
+    cell: ({ row }) => new Date(row.original.created_at).toLocaleDateString()
   },
   {
     accessorKey: "updatedAt",
     header: "Updated At",
     size: 150,
-    cell: ({ row }) => new Date(row.original.updatedAt).toLocaleDateString()
+    cell: ({ row }) => new Date(row.original.updated_at).toLocaleDateString()
   },
   {
     id: "actions",

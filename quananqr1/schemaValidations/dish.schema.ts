@@ -18,24 +18,26 @@ export const DishSchema = z.object({
   description: z.string(),
   image: z.string(),
   status: z.enum(DishStatusValues),
-  created_at: z.date(),
-  updated_at: z.date(),
-  set_id: z.number().optional() // New field to associate a dish with a set
+  created_at: z.string(), // Changed from z.date() to z.string()
+  updated_at: z.string(), // Changed from z.date() to z.string()
+  set_id: z.number().optional()
 });
-export const LenientDishSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  price: z.number(),
-  description: z.string(),
-  image: z.string(),
-  status: z.string(),
-  created_at: z.string().or(z.date()).optional(),
-  updated_at: z.string().or(z.date()).optional()
-}).transform((dish) => ({
-  ...dish,
-  created_at: dish.created_at ? new Date(dish.created_at) : new Date(),
-  updated_at: dish.updated_at ? new Date(dish.updated_at) : new Date()
-}));
+export const LenientDishSchema = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+    price: z.number(),
+    description: z.string(),
+    image: z.string(),
+    status: z.string(),
+    created_at: z.string().or(z.date()).optional(),
+    updated_at: z.string().or(z.date()).optional()
+  })
+  .transform((dish) => ({
+    ...dish,
+    created_at: dish.created_at ? new Date(dish.created_at) : new Date(),
+    updated_at: dish.updated_at ? new Date(dish.updated_at) : new Date()
+  }));
 export type DishListResTypeTranform = z.infer<typeof LenientDishSchema>[];
 export const DishRes = z.object({
   data: DishSchema,
@@ -57,18 +59,17 @@ export type DishParamsType = z.TypeOf<typeof DishParams>;
 export type Dish = z.TypeOf<typeof DishSchema>;
 
 /// set schema
-
 export const SetSchema = z.object({
   id: z.number(),
   name: z.string(),
   description: z.string().optional(),
   dishes: z.array(DishSchema),
-  created_at: z.date(),
-  updated_at: z.date(),
-  user_id: z.number(), 
-  is_favourite: z.number(), 
-  like_by: z.array(z.number()), 
-
+  userId: z.number(),
+  created_at: z.string(), // Changed from z.date() to z.string()
+  updated_at: z.string(), // Changed from z.date() to z.string()
+  is_favourite: z.boolean(), // Changed from z.number() to z.boolean()
+  like_by: z.array(z.number()).nullable(), // Changed to nullable array
+  is_public: z.boolean() // Added new field
 });
 
 export const SetListRes = z.array(SetSchema);
@@ -80,7 +81,7 @@ export type SetType = z.TypeOf<typeof SetSchema>;
 
 const FavoriteSetSchema = z.object({
   id: z.number(),
-  userId: z.number(), 
+  userId: z.number(),
   name: z.string(),
   dishes: z.array(z.number()), // Array of dish IDs
   createdAt: z.date(),
