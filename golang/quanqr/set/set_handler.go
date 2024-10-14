@@ -3,6 +3,7 @@ package set_qr
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 	"github.com/go-chi/chi"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-
+	"english-ai-full/logger"
 	"english-ai-full/quanqr/proto_qr/set"
 	"english-ai-full/token"
 )
@@ -22,6 +23,7 @@ type SetHandlerController struct {
     ctx        context.Context
     client     set.SetServiceClient
     TokenMaker *token.JWTMaker
+    logger *logger.Logger
 }
 
 func NewSetHandler(client set.SetServiceClient, secretKey string) *SetHandlerController {
@@ -29,17 +31,20 @@ func NewSetHandler(client set.SetServiceClient, secretKey string) *SetHandlerCon
         ctx:        context.Background(),
         client:     client,
         TokenMaker: token.NewJWTMaker(secretKey),
+        logger: logger.NewLogger(),
     }
 }
 
 func (h *SetHandlerController) CreateSetProto(w http.ResponseWriter, r *http.Request) {
     var setReq CreateSetRequest
+
+
     if err := json.NewDecoder(r.Body).Decode(&setReq); err != nil {
         http.Error(w, "error decoding request body", http.StatusBadRequest)
         return
     }
 
-    log.Println("Creating new set:", setReq.Name)
+    h.logger.Info(fmt.Sprintf("Creating new set:CreateSetProto handlser  %+v", setReq)) 
     createdSetResponse, err := h.client.CreateSetProto(h.ctx, ToPBCreateSetProtoRequest(setReq))
     if err != nil {
         log.Println("Error creating set:", err)
@@ -137,12 +142,21 @@ func (h *SetHandlerController) DeleteSetProto(w http.ResponseWriter, r *http.Req
 }
 
 // Helper functions for mapping between protobuf and Go structs
-
+// func ToPBCreateSetProtoRequest(req CreateSetRequest) *set.CreateSetProtoRequest {
+//     return &set.CreateSetProtoRequest{
+//         Name:        req.Name,
+//         Description: req.Description,
+//         UserId:      req.UserID,
+//         Dishes:      ToPBSetProtoDishes(req.Dishes),
+//         IsPublic:    req.IsPublic,  // Make sure this line is present
+//     }
+// }
 func ToPBCreateSetProtoRequest(req CreateSetRequest) *set.CreateSetProtoRequest {
     protoReq := &set.CreateSetProtoRequest{
         Name:        req.Name,
         Description: req.Description,
         Dishes:      ToPBSetProtoDishes(req.Dishes),
+        IsPublic:    req.IsPublic,  // Make sure this line is present
     }
     if req.UserID != nil {
         protoReq.UserId = *req.UserID

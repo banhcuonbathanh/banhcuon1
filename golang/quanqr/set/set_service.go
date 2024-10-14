@@ -50,8 +50,8 @@ func (ss *SetServiceStruct) GetSetProtoDetail(ctx context.Context, req *set.SetP
 	}, nil
 }
 func (ss *SetServiceStruct) CreateSetProto(ctx context.Context, req *set.CreateSetProtoRequest) (*set.SetProtoResponse, error) {
-    ss.logger.Info("Creating new set: " + req.Name)
 
+    ss.logger.Info(fmt.Sprintf("Creating new set:CreateSetProto serviace  %+v", req)) 
     createdSet, err := ss.setRepo.CreateSetProto(ctx, req)
     if err != nil {
         ss.logger.Error("Error creating set: " + err.Error())

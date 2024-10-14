@@ -7,28 +7,29 @@ import { z } from "zod";
 
 import {
   CreateDishBodyType,
-  Dish,
-  DishListResType,
   DishParamsType,
   DishResType,
-  DishSchema,
   UpdateDishBodyType
 } from "@/schemaValidations/dish.schema";
-import { DishInterface, DishResInterface } from "@/schemaValidations/interface/type_dish";
+import { DishInterface } from "@/schemaValidations/interface/type_dish";
+import { SetCreateBodyInterface } from "@/schemaValidations/interface/types_set";
 
 interface DishStore {
-  dish: Dish | null;
-  dishes: Dish[];
+  set_Dishes: string[];
+  dish: DishInterface | null;
+  dishes: DishInterface[];
   isLoading: boolean;
   error: string | null;
   getDish: (id: number) => Promise<void>;
   updateDish: (body: UpdateDishBodyType & DishParamsType) => Promise<void>;
-  getDishes: () => Promise<Dish[]>;
+  getDishes: () => Promise<DishInterface[]>;
   addDish: (body: CreateDishBodyType) => Promise<void>;
   deleteDish: (id: number) => Promise<void>;
+  addSet: (body: SetCreateBodyInterface) => Promise<void>; // New function
 }
 
 export const useDishStore = create<DishStore>((set) => ({
+  set_Dishes: [],
   dish: null,
   dishes: [],
   isLoading: false,
@@ -61,16 +62,18 @@ export const useDishStore = create<DishStore>((set) => ({
     const link =
       envConfig.NEXT_PUBLIC_API_ENDPOINT + envConfig.NEXT_PUBLIC_Add_Dished;
     set({ isLoading: true, error: null });
-  
+
     try {
-      const response = await useApiStore.getState().http.get<{ data: DishInterface[], message: string }>(link);
-  
+      const response = await useApiStore
+        .getState()
+        .http.get<{ data: DishInterface[]; message: string }>(link);
+
       console.log(
         "quananqr1/zusstand/dished/controller/dished-controller.ts response",
         response.data
       );
       console.log("111111111111111 link", link);
-  
+
       const dishes = response.data.data;
       set({ dishes, isLoading: false });
       return dishes;
@@ -115,6 +118,33 @@ export const useDishStore = create<DishStore>((set) => ({
       }));
     } catch (error) {
       set({ isLoading: false, error: "Failed to delete dish" });
+      throw error;
+    }
+  },
+
+  addSet: async (body: SetCreateBodyInterface) => {
+    console.log("quananqr1/zusstand/dished/dished-controller.ts start");
+    const link = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}sets`; // Assuming this is the correct endpoint
+
+    console.log("quananqr1/zusstand/dished/dished-controller.ts link", link);
+    set({ isLoading: true, error: null });
+    try {
+      const response = await useApiStore
+        .getState()
+        .http.post<{ data: SetCreateBodyInterface; message: string }>(
+          link,
+          body
+        );
+      console.log(
+        "quananqr1/zusstand/dished/dished-controller.ts response",
+        response.data.data
+      );
+      set((state) => ({
+        set_Dishes: [...state.set_Dishes, response.data.data.name], // Assuming set_Dishes stores set names
+        isLoading: false
+      }));
+    } catch (error) {
+      set({ isLoading: false, error: "Failed to add set" });
       throw error;
     }
   }

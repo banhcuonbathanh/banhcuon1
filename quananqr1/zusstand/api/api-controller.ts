@@ -19,7 +19,7 @@ interface ApiStore {
 
 export const useApiStore = create<ApiStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       http: axios.create({
         baseURL: envConfig.NEXT_PUBLIC_API_ENDPOINT
       }),

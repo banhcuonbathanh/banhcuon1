@@ -19,11 +19,10 @@ export interface DishInterface {
   description: string;
   image: string;
   status: typeof DishStatusValues[number];
-  created_at: String;
-  updated_at: String;
+  created_at: String;  // Note: capital 'S'
+  updated_at: String;  // Note: capital 'S'
   set_id?: number;
 }
-
 
 
 export interface DishResInterface {

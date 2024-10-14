@@ -6,7 +6,22 @@ export interface SetProtoDish {
   dish: DishInterface;  // Assuming Dish interface is defined elsewhere
 }
 
+export interface SetCreateBodyInterface {
+  image: string;
+  name: string;
+  description?: string;
+  dishes: SetProtoDish[];
+  userId: number; // Changed from user_id to userId
+  created_at: string; // Changed from Date to string
+  updated_at: string; // Changed from Date to string
+  is_favourite: boolean; // Changed from number to boolean
+  like_by: number[] | null; // Changed to allow null
+  is_public: boolean; // Added new field
+}
+
+
 export interface SetInterface {
+  image: string;
   id: number;
   name: string;
   description?: string;

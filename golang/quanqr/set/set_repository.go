@@ -134,7 +134,7 @@ func (sr *SetRepository) GetSetProtoDetail(ctx context.Context, id int32) (*set.
 }
 
 func (sr *SetRepository) CreateSetProto(ctx context.Context, req *set.CreateSetProtoRequest) (*set.SetProto, error) {
-    sr.logger.Info(fmt.Sprintf("Creating new set: %s", req.Name))
+    sr.logger.Info(fmt.Sprintf("Creating new set:CreateSetProto repository  %+v", req)) 
     tx, err := sr.db.Begin(ctx)
     if err != nil {
         sr.logger.Error("Error starting transaction: " + err.Error())
@@ -143,8 +143,8 @@ func (sr *SetRepository) CreateSetProto(ctx context.Context, req *set.CreateSetP
     defer tx.Rollback(ctx)
 
     query := `
-        INSERT INTO sets (name, description, user_id, created_at, updated_at, is_favourite, like_by)
-        VALUES ($1, $2, $3, $4, $4, $5, $6)
+        INSERT INTO sets (name, description, user_id, created_at, updated_at, is_favourite, like_by, is_public)
+        VALUES ($1, $2, $3, $4, $4, $5, $6, $7)
         RETURNING id, created_at, updated_at
     `
     var s set.SetProto
@@ -156,6 +156,7 @@ func (sr *SetRepository) CreateSetProto(ctx context.Context, req *set.CreateSetP
         time.Now(),
         false,
         []int64{}, // Empty array for like_by
+        req.IsPublic,
     ).Scan(&s.Id, &createdAt, &updatedAt)
     if err != nil {
         sr.logger.Error("Error creating set: " + err.Error())
@@ -169,6 +170,7 @@ func (sr *SetRepository) CreateSetProto(ctx context.Context, req *set.CreateSetP
     s.UpdatedAt = timestamppb.New(updatedAt)
     s.IsFavourite = false
     s.LikeBy = []int64{}
+    s.IsPublic = req.IsPublic
 
     for _, dish := range req.Dishes {
         _, err := tx.Exec(ctx, "INSERT INTO set_dishes (set_id, dish_id, quantity) VALUES ($1, $2, $3)",
