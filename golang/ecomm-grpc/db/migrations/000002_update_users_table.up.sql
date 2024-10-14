@@ -189,7 +189,7 @@ CREATE TABLE sockets (
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL
 );
 
--- New table for sets
+-- Updated table for sets
 CREATE TABLE sets (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -199,6 +199,8 @@ CREATE TABLE sets (
     like_by BIGINT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    is_public BOOLEAN DEFAULT FALSE,
+    image VARCHAR(255),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
@@ -213,7 +215,7 @@ CREATE TABLE set_dishes (
     UNIQUE (set_id, dish_id)
 );
 
--- New table for set snapshots
+-- Updated table for set snapshots
 CREATE TABLE set_snapshots (
     id BIGSERIAL PRIMARY KEY,
     original_set_id BIGINT,
@@ -223,6 +225,8 @@ CREATE TABLE set_snapshots (
     user_id BIGINT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    is_public BOOLEAN DEFAULT FALSE,
+    image VARCHAR(255),
     FOREIGN KEY (original_set_id) REFERENCES sets(id) ON DELETE SET NULL,
     FOREIGN KEY (set_id) REFERENCES sets(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -249,10 +253,6 @@ CREATE INDEX idx_sets_is_favourite ON sets(is_favourite);
 CREATE INDEX idx_sets_like_by ON sets USING GIN (like_by);
 CREATE INDEX idx_set_snapshots_original_set_id ON set_snapshots(original_set_id);
 
-ALTER TABLE sets
-ADD CONSTRAINT check_user_id_positive
-CHECK (user_id IS NULL OR user_id > 0);
-
-ALTER TABLE set_snapshots
-ADD CONSTRAINT check_set_snapshots_user_id_positive
-CHECK (user_id IS NULL OR user_id > 0);
+-- New indexes for is_public column
+CREATE INDEX idx_sets_is_public ON sets(is_public);
+CREATE INDEX idx_set_snapshots_is_public ON set_snapshots(is_public);

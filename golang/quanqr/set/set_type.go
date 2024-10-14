@@ -23,6 +23,7 @@ type SetSnapshot struct {
     UpdatedAt   time.Time `json:"updated_at"`
     SetID       int       `json:"set_id"`
     IsPublic    bool      `json:"is_public"` // add
+    Image       string    `json:"image"`
 }
 
 type Set struct {
@@ -36,6 +37,7 @@ type Set struct {
     IsFavourite bool      `json:"is_favourite"`
     LikeBy      []int64   `json:"like_by"`
     IsPublic    bool      `json:"is_public"` // add
+    Image       string    `json:"image"`
 }
 
 type SetDish struct {
@@ -53,6 +55,7 @@ type CreateSetRequest struct {
     } `json:"dishes"`
     UserID   *int32 `json:"userId,omitempty"`
     IsPublic bool   `json:"is_public"` // add 
+    Image       string    `json:"image"`
 }
 
 
@@ -67,6 +70,7 @@ type UpdateSetRequest struct {
         Quantity int  `json:"quantity"`
     } `json:"dishes"`
     IsPublic bool `json:"is_public"` // add
+     Image       string    `json:"image"`
 }
 type SetResponse struct {
     Data    Set    `json:"data"`

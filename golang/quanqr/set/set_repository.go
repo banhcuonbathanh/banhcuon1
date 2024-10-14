@@ -13,9 +13,6 @@ import (
 )
 
 
-
-
-
 type SetRepository struct {
     db     *pgxpool.Pool
     logger *logger.Logger
@@ -31,7 +28,7 @@ func NewSetRepository(db *pgxpool.Pool) *SetRepository {
 func (sr *SetRepository) GetSetProtoList(ctx context.Context) ([]*set.SetProto, error) {
     sr.logger.Info("Fetching set list GetSetProtoList golang/quanqr/set/set_repository.go")
     query := `
-        SELECT id, name, description, user_id, created_at, updated_at, is_favourite, like_by, is_public
+        SELECT id, name, description, user_id, created_at, updated_at, is_favourite, like_by, is_public, image
         FROM sets
     `
     rows, err := sr.db.Query(ctx, query)
@@ -58,6 +55,7 @@ func (sr *SetRepository) GetSetProtoList(ctx context.Context) ([]*set.SetProto, 
             &s.IsFavourite,
             &likeBy,
             &s.IsPublic,
+            &s.Image,
         )
         if err != nil {
             sr.logger.Error("Error scanning set: " + err.Error())
@@ -69,9 +67,7 @@ func (sr *SetRepository) GetSetProtoList(ctx context.Context) ([]*set.SetProto, 
         s.UserId = userID
         s.LikeBy = likeBy
         
-        // Fetch dishes for the current set
         dishes, err := sr.GetDishesForSet(ctx, s.Id)
-        sr.logger.Info(fmt.Sprintf("golang/quanqr/set/set_repository.go dishes: %+v", dishes))
         if err != nil {
             sr.logger.Error(fmt.Sprintf("Error fetching dishes for set %d: %s", s.Id, err.Error()))
             return nil, fmt.Errorf("error fetching dishes for set %d: %w", s.Id, err)
@@ -90,13 +86,10 @@ func (sr *SetRepository) GetSetProtoList(ctx context.Context) ([]*set.SetProto, 
     return sets, nil
 }
 
-
-
-
 func (sr *SetRepository) GetSetProtoDetail(ctx context.Context, id int32) (*set.SetProto, error) {
     sr.logger.Info(fmt.Sprintf("Fetching set detail for ID: %d", id))
     query := `
-        SELECT id, name, description, user_id, created_at, updated_at, is_favourite, like_by
+        SELECT id, name, description, user_id, created_at, updated_at, is_favourite, like_by, is_public, image
         FROM sets 
         WHERE id = $1
     `
@@ -113,6 +106,8 @@ func (sr *SetRepository) GetSetProtoDetail(ctx context.Context, id int32) (*set.
         &updatedAt,
         &s.IsFavourite,
         &likeBy,
+        &s.IsPublic,
+        &s.Image,
     )
     if err != nil {
         sr.logger.Error(fmt.Sprintf("Error fetching set detail for ID %d: %s", id, err.Error()))
@@ -123,7 +118,7 @@ func (sr *SetRepository) GetSetProtoDetail(ctx context.Context, id int32) (*set.
     s.UserId = userID
     s.LikeBy = likeBy
 
-    s.Dishes, err = sr.getSetDishes(ctx, s.Id)
+    s.Dishes, err = sr.GetDishesForSet(ctx, s.Id)
     if err != nil {
         sr.logger.Error(fmt.Sprintf("Error fetching dishes for set %d: %s", s.Id, err.Error()))
         return nil, fmt.Errorf("error fetching dishes for set %d: %w", s.Id, err)
@@ -134,7 +129,7 @@ func (sr *SetRepository) GetSetProtoDetail(ctx context.Context, id int32) (*set.
 }
 
 func (sr *SetRepository) CreateSetProto(ctx context.Context, req *set.CreateSetProtoRequest) (*set.SetProto, error) {
-    sr.logger.Info(fmt.Sprintf("Creating new set:CreateSetProto repository  %+v", req)) 
+    sr.logger.Info(fmt.Sprintf("Creating new set:CreateSetProto repository %+v", req))
     tx, err := sr.db.Begin(ctx)
     if err != nil {
         sr.logger.Error("Error starting transaction: " + err.Error())
@@ -143,8 +138,8 @@ func (sr *SetRepository) CreateSetProto(ctx context.Context, req *set.CreateSetP
     defer tx.Rollback(ctx)
 
     query := `
-        INSERT INTO sets (name, description, user_id, created_at, updated_at, is_favourite, like_by, is_public)
-        VALUES ($1, $2, $3, $4, $4, $5, $6, $7)
+        INSERT INTO sets (name, description, user_id, created_at, updated_at, is_favourite, like_by, is_public, image)
+        VALUES ($1, $2, $3, $4, $4, $5, $6, $7, $8)
         RETURNING id, created_at, updated_at
     `
     var s set.SetProto
@@ -155,8 +150,9 @@ func (sr *SetRepository) CreateSetProto(ctx context.Context, req *set.CreateSetP
         req.UserId,
         time.Now(),
         false,
-        []int64{}, // Empty array for like_by
+        []int64{},
         req.IsPublic,
+        req.Image,
     ).Scan(&s.Id, &createdAt, &updatedAt)
     if err != nil {
         sr.logger.Error("Error creating set: " + err.Error())
@@ -171,6 +167,7 @@ func (sr *SetRepository) CreateSetProto(ctx context.Context, req *set.CreateSetP
     s.IsFavourite = false
     s.LikeBy = []int64{}
     s.IsPublic = req.IsPublic
+    s.Image = req.Image
 
     for _, dish := range req.Dishes {
         _, err := tx.Exec(ctx, "INSERT INTO set_dishes (set_id, dish_id, quantity) VALUES ($1, $2, $3)",
@@ -202,7 +199,7 @@ func (sr *SetRepository) UpdateSetProto(ctx context.Context, req *set.UpdateSetP
 
     query := `
         UPDATE sets
-        SET name = $2, description = $3, updated_at = $4
+        SET name = $2, description = $3, updated_at = $4, is_public = $5, image = $6
         WHERE id = $1
         RETURNING user_id, created_at, updated_at, is_favourite, like_by
     `
@@ -215,6 +212,8 @@ func (sr *SetRepository) UpdateSetProto(ctx context.Context, req *set.UpdateSetP
         req.Name,
         req.Description,
         time.Now(),
+        req.IsPublic,
+        req.Image,
     ).Scan(&userID, &createdAt, &updatedAt, &s.IsFavourite, &likeBy)
     if err != nil {
         sr.logger.Error(fmt.Sprintf("Error updating set with ID %d: %s", req.Id, err.Error()))
@@ -228,6 +227,8 @@ func (sr *SetRepository) UpdateSetProto(ctx context.Context, req *set.UpdateSetP
     s.CreatedAt = timestamppb.New(createdAt)
     s.UpdatedAt = timestamppb.New(updatedAt)
     s.LikeBy = likeBy
+    s.IsPublic = req.IsPublic
+    s.Image = req.Image
 
     _, err = tx.Exec(ctx, "DELETE FROM set_dishes WHERE set_id = $1", req.Id)
     if err != nil {
@@ -272,7 +273,7 @@ func (sr *SetRepository) DeleteSetProto(ctx context.Context, id int32) (*set.Set
     query := `
         DELETE FROM sets
         WHERE id = $1
-        RETURNING id, name, description, user_id, created_at, updated_at, is_favourite, like_by
+        RETURNING id, name, description, user_id, created_at, updated_at, is_favourite, like_by, is_public, image
     `
     var s set.SetProto
     var createdAt, updatedAt time.Time
@@ -287,6 +288,8 @@ func (sr *SetRepository) DeleteSetProto(ctx context.Context, id int32) (*set.Set
         &updatedAt,
         &s.IsFavourite,
         &likeBy,
+        &s.IsPublic,
+        &s.Image,
     )
     if err != nil {
         sr.logger.Error(fmt.Sprintf("Error deleting set with ID %d: %s", id, err.Error()))
@@ -304,42 +307,6 @@ func (sr *SetRepository) DeleteSetProto(ctx context.Context, id int32) (*set.Set
 
     sr.logger.Info(fmt.Sprintf("Successfully deleted set with ID: %d", id))
     return &s, nil
-}
-
-func (sr *SetRepository) getSetDishes(ctx context.Context, setID int32) ([]*set.SetProtoDish, error) {
-    sr.logger.Info(fmt.Sprintf("Fetching dishes for set ID: %d", setID))
-    query := `
-        SELECT dish_id, quantity
-        FROM set_dishes
-        WHERE set_id = $1
-    `
-    rows, err := sr.db.Query(ctx, query, setID)
-    if err != nil {
-        sr.logger.Error(fmt.Sprintf("Error fetching set dishes for set ID %d: %s", setID, err.Error()))
-        return nil, fmt.Errorf("error fetching set dishes: %w", err)
-    }
-    defer rows.Close()
-
-    var dishes []*set.SetProtoDish
-    for rows.Next() {
-        var sd set.SetProtoDish
-        err := rows.Scan(
-            &sd.DishId,
-            &sd.Quantity,
-        )
-        if err != nil {
-            sr.logger.Error(fmt.Sprintf("Error scanning set dish for set ID %d: %s", setID, err.Error()))
-            return nil, fmt.Errorf("error scanning set dish: %w", err)
-        }
-        dishes = append(dishes, &sd)
-    }
-    if err := rows.Err(); err != nil {
-        sr.logger.Error(fmt.Sprintf("Error iterating over set dishes for set ID %d: %s", setID, err.Error()))
-        return nil, fmt.Errorf("error iterating over set dishes: %w", err)
-    }
-
-    sr.logger.Info(fmt.Sprintf("Successfully fetched %d dishes for set ID: %d", len(dishes), setID))
-    return dishes, nil
 }
 
 func (sr *SetRepository) GetDishesForSet(ctx context.Context, setID int32) ([]*set.SetProtoDish, error) {

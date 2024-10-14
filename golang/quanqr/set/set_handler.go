@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+
 	"net/http"
 	"strconv"
 
@@ -17,13 +17,11 @@ import (
 )
 
 
-
-
 type SetHandlerController struct {
     ctx        context.Context
     client     set.SetServiceClient
     TokenMaker *token.JWTMaker
-    logger *logger.Logger
+    logger     *logger.Logger
 }
 
 func NewSetHandler(client set.SetServiceClient, secretKey string) *SetHandlerController {
@@ -31,23 +29,22 @@ func NewSetHandler(client set.SetServiceClient, secretKey string) *SetHandlerCon
         ctx:        context.Background(),
         client:     client,
         TokenMaker: token.NewJWTMaker(secretKey),
-        logger: logger.NewLogger(),
+        logger:     logger.NewLogger(),
     }
 }
 
 func (h *SetHandlerController) CreateSetProto(w http.ResponseWriter, r *http.Request) {
     var setReq CreateSetRequest
 
-
     if err := json.NewDecoder(r.Body).Decode(&setReq); err != nil {
         http.Error(w, "error decoding request body", http.StatusBadRequest)
         return
     }
 
-    h.logger.Info(fmt.Sprintf("Creating new set:CreateSetProto handlser  %+v", setReq)) 
+    h.logger.Info(fmt.Sprintf("Creating new set:CreateSetProto handler %+v", setReq))
     createdSetResponse, err := h.client.CreateSetProto(h.ctx, ToPBCreateSetProtoRequest(setReq))
     if err != nil {
-        log.Println("Error creating set:", err)
+        h.logger.Error("Error creating set: " + err.Error())
         http.Error(w, "error creating set", http.StatusInternalServerError)
         return
     }
@@ -66,10 +63,10 @@ func (h *SetHandlerController) GetSetProtoDetail(w http.ResponseWriter, r *http.
         return
     }
 
-    log.Println("Fetching set detail for ID:", i)
+    h.logger.Info(fmt.Sprintf("Fetching set detail for ID: %d", i))
     setResponse, err := h.client.GetSetProtoDetail(h.ctx, &set.SetProtoIdParam{Id: int32(i)})
     if err != nil {
-        log.Println("Error fetching set detail:", err)
+        h.logger.Error("Error fetching set detail: " + err.Error())
         http.Error(w, "error getting set", http.StatusInternalServerError)
         return
     }
@@ -81,10 +78,10 @@ func (h *SetHandlerController) GetSetProtoDetail(w http.ResponseWriter, r *http.
 }
 
 func (h *SetHandlerController) GetSetProtoList(w http.ResponseWriter, r *http.Request) {
-    log.Println("Fetching set list")
+    h.logger.Info("Fetching set list")
     setsResponse, err := h.client.GetSetProtoList(h.ctx, &emptypb.Empty{})
     if err != nil {
-        log.Println("Error fetching set list:", err)
+        h.logger.Error("Error fetching set list: " + err.Error())
         http.Error(w, "failed to fetch sets: "+err.Error(), http.StatusInternalServerError)
         return
     }
@@ -105,10 +102,10 @@ func (h *SetHandlerController) UpdateSetProto(w http.ResponseWriter, r *http.Req
         return
     }
 
-    log.Println("Updating set:", setReq.ID)
+    h.logger.Info(fmt.Sprintf("Updating set: %d", setReq.ID))
     updatedSetResponse, err := h.client.UpdateSetProto(h.ctx, ToPBUpdateSetProtoRequest(setReq))
     if err != nil {
-        log.Println("Error updating set:", err)
+        h.logger.Error("Error updating set: " + err.Error())
         http.Error(w, "error updating set", http.StatusInternalServerError)
         return
     }
@@ -127,10 +124,10 @@ func (h *SetHandlerController) DeleteSetProto(w http.ResponseWriter, r *http.Req
         return
     }
 
-    log.Println("Deleting set:", i)
+    h.logger.Info(fmt.Sprintf("Deleting set: %d", i))
     deletedSetResponse, err := h.client.DeleteSetProto(h.ctx, &set.SetProtoIdParam{Id: int32(i)})
     if err != nil {
-        log.Println("Error deleting set:", err)
+        h.logger.Error("Error deleting set: " + err.Error())
         http.Error(w, "error deleting set", http.StatusInternalServerError)
         return
     }
@@ -141,36 +138,31 @@ func (h *SetHandlerController) DeleteSetProto(w http.ResponseWriter, r *http.Req
     json.NewEncoder(w).Encode(res)
 }
 
-// Helper functions for mapping between protobuf and Go structs
-// func ToPBCreateSetProtoRequest(req CreateSetRequest) *set.CreateSetProtoRequest {
-//     return &set.CreateSetProtoRequest{
-//         Name:        req.Name,
-//         Description: req.Description,
-//         UserId:      req.UserID,
-//         Dishes:      ToPBSetProtoDishes(req.Dishes),
-//         IsPublic:    req.IsPublic,  // Make sure this line is present
-//     }
-// }
 func ToPBCreateSetProtoRequest(req CreateSetRequest) *set.CreateSetProtoRequest {
     protoReq := &set.CreateSetProtoRequest{
         Name:        req.Name,
         Description: req.Description,
         Dishes:      ToPBSetProtoDishes(req.Dishes),
-        IsPublic:    req.IsPublic,  // Make sure this line is present
+        IsPublic:    req.IsPublic,
+        Image:       req.Image,
     }
     if req.UserID != nil {
         protoReq.UserId = *req.UserID
     }
     return protoReq
 }
+
 func ToPBUpdateSetProtoRequest(req UpdateSetRequest) *set.UpdateSetProtoRequest {
     return &set.UpdateSetProtoRequest{
         Id:          int32(req.ID),
         Name:        req.Name,
         Description: req.Description,
         Dishes:      ToPBSetProtoDishes(req.Dishes),
+        IsPublic:    req.IsPublic,
+        Image:       req.Image,
     }
 }
+
 func ToPBSetProtoDishes(dishes []struct {
     Dish     Dish `json:"dish"`
     Quantity int  `json:"quantity"`
@@ -184,6 +176,7 @@ func ToPBSetProtoDishes(dishes []struct {
     }
     return pbDishes
 }
+
 func ToSetResFromPbSetResponse(pbRes *set.SetProtoResponse) SetResponse {
     return SetResponse{
         Data: ToSetFromPbSetProto(pbRes.Data),
@@ -217,6 +210,7 @@ func ToSetFromPbSetProto(pbSet *set.SetProto) Set {
         IsFavourite: pbSet.IsFavourite,
         LikeBy:      pbSet.LikeBy,
         IsPublic:    pbSet.IsPublic,
+        Image:       pbSet.Image,
     }
 }
 
@@ -231,6 +225,7 @@ func ToSetDishesFromPbSetProtoDishes(pbDishes []*set.SetProtoDish) []SetDish {
     }
     return dishes
 }
+
 func ToDishFromPbDish(pbDish *set.Dish) Dish {
     if pbDish == nil {
         return Dish{}
@@ -246,6 +241,7 @@ func ToDishFromPbDish(pbDish *set.Dish) Dish {
         UpdatedAt:   pbDish.UpdatedAt.AsTime(),
     }
 }
+
 // Helper function to convert int32 to *int32
 func Int32Ptr(i int) *int32 {
     if i == 0 {
@@ -263,7 +259,6 @@ func Int32PtrToIntPtr(i *int32) *int {
     intVal := int(*i)
     return &intVal
 }
-
 // type SetHandlerController struct {
 //     ctx        context.Context
 //     client     set.SetServiceClient

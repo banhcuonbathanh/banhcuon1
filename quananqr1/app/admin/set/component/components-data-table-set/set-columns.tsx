@@ -20,6 +20,7 @@ import {
   SetInterface,
   SetProtoDish
 } from "@/schemaValidations/interface/types_set";
+import { CellActionImageBillboards } from "./cell-action-set";
 
 const DishDialog: React.FC<{ dish: DishInterface }> = ({ dish }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -81,6 +82,14 @@ export const columns: ColumnDef<SetInterface>[] = [
     accessorKey: "name",
     header: "Set Name",
     size: 200
+  },
+
+  {
+    accessorKey: "image",
+    header: "Image",
+    cell: ({ row }) => {
+      return <CellActionImageBillboards data={row.original.image} />;
+    }
   },
   {
     accessorKey: "description",

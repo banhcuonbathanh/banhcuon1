@@ -19,6 +19,8 @@ message SetProto {
   bool is_favourite = 8;
   repeated int64 like_by = 9;
   bool is_public = 10; // add
+
+  string image = 11;
 }
 
 
@@ -32,6 +34,8 @@ message SetProtoSnapshot {
   google.protobuf.Timestamp updated_at = 7;
   int32 set_id = 8;
   bool is_public = 9; // add 
+
+  string image = 10;
 }
 
 message SetProtoDish {
@@ -45,6 +49,7 @@ message CreateSetProtoRequest {
   repeated SetProtoDish dishes = 3;
   int32 user_id = 4;
   bool is_public = 5; // add 
+  string image = 6;
 }
 
 message UpdateSetProtoRequest {
@@ -53,6 +58,7 @@ message UpdateSetProtoRequest {
   string description = 3;
   repeated SetProtoDish dishes = 4;
   bool is_public = 5; // add 
+  string image = 6;
 }
 
 message SetProtoResponse {
