@@ -100,6 +100,12 @@ export const columns: ColumnDef<SetInterface>[] = [
       return description ? description : "N/A";
     }
   },
+
+  {
+    accessorKey: "is_public",
+    header: "is_public",
+    size: 60
+  },
   {
     accessorKey: "dishes",
     header: "Dishes",
