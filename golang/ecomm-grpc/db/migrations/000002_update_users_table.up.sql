@@ -26,19 +26,7 @@ DROP TYPE IF EXISTS question_type;
 CREATE TYPE question_type AS ENUM ('MultipleChoice', 'TrueFalseNotGiven', 'Matching', 'ShortAnswer');
 
 -- Recreate tables
-CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'Employee',
-    phone VARCHAR(20),
-    image VARCHAR(255),
-    address TEXT,
-    favorite_food INTEGER[] DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+
 
 CREATE INDEX idx_users_role ON users(role);
 
@@ -146,16 +134,6 @@ CREATE TABLE tables (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE guests (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    table_number INTEGER,
-    refresh_token VARCHAR(255),
-    refresh_token_expires_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL
-);
 
 CREATE TABLE refresh_tokens (
     token VARCHAR(255) PRIMARY KEY,
@@ -291,4 +269,29 @@ CREATE TABLE set_snapshots (
     FOREIGN KEY (original_set_id) REFERENCES sets(id) ON DELETE SET NULL,
     FOREIGN KEY (set_id) REFERENCES sets(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+
+CREATE TABLE guests (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    table_number INTEGER,
+    refresh_token VARCHAR(255),
+    refresh_token_expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL
+);
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'Employee',
+    phone VARCHAR(20),
+    image VARCHAR(255),
+    address TEXT,
+    favorite_food INTEGER[] DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
