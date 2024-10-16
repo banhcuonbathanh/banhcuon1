@@ -6,28 +6,42 @@ import { Button } from "@/components/ui/button";
 import useOrderStore from "@/zusstand/order/order_zustand";
 
 const OrderSummary = () => {
-  const { items, updateQuantity, removeItem, getOrderSummary } =
-    useOrderStore();
+  const { 
+    getOrderSummary, 
+    updateDishQuantity, 
+    updateSetQuantity, 
+    removeDishItem, 
+    removeSetItem 
+  } = useOrderStore();
+  
   const { dishes, sets, totalItems, totalPrice } = getOrderSummary();
 
-  const handleQuantityChange = (
-    type: "dish" | "set",
-    id: number,
-    change: number
-  ) => {
-    const item = items.find((i) => i.type === type && i.id === id);
-    if (item) {
-      const newQuantity = item.quantity + change;
+  const handleDishQuantityChange = (id: number, change: number) => {
+    const dish = dishes.find(d => d.id === id);
+    if (dish) {
+      const newQuantity = dish.quantity + change;
       if (newQuantity > 0) {
-        updateQuantity(type, id, newQuantity);
+        updateDishQuantity(id, newQuantity);
       } else {
-        removeItem(type, id);
+        removeDishItem(id);
+      }
+    }
+  };
+
+  const handleSetQuantityChange = (id: number, change: number) => {
+    const set = sets.find(s => s.id === id);
+    if (set) {
+      const newQuantity = set.quantity + change;
+      if (newQuantity > 0) {
+        updateSetQuantity(id, newQuantity);
+      } else {
+        removeSetItem(id);
       }
     }
   };
 
   return (
-    <div className="space-y-4">
+    <div className="container mx-auto px-4 py-8 space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>Order Summary</CardTitle>
@@ -53,13 +67,13 @@ const OrderSummary = () => {
               </span>
               <div>
                 <Button
-                  onClick={() => handleQuantityChange("dish", dish.id, -1)}
+                  onClick={() => handleDishQuantityChange(dish.id, -1)}
                 >
                   -
                 </Button>
                 <span className="mx-2">{dish.quantity}</span>
                 <Button
-                  onClick={() => handleQuantityChange("dish", dish.id, 1)}
+                  onClick={() => handleDishQuantityChange(dish.id, 1)}
                 >
                   +
                 </Button>
@@ -82,13 +96,13 @@ const OrderSummary = () => {
                 </span>
                 <div>
                   <Button
-                    onClick={() => handleQuantityChange("set", set.id, -1)}
+                    onClick={() => handleSetQuantityChange(set.id, -1)}
                   >
                     -
                   </Button>
                   <span className="mx-2">{set.quantity}</span>
                   <Button
-                    onClick={() => handleQuantityChange("set", set.id, 1)}
+                    onClick={() => handleSetQuantityChange(set.id, 1)}
                   >
                     +
                   </Button>
@@ -111,6 +125,8 @@ const OrderSummary = () => {
           ))}
         </CardContent>
       </Card>
+      <div className="w-full"></div>
+      <Button onClick={() => {}}> add order</Button>
     </div>
   );
 };

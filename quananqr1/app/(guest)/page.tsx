@@ -14,12 +14,18 @@ export default async function GuestPage() {
 
   const setsData: SetInterface[] = await get_Sets();
   // const dishes: Dish[] = dishesData;
-  console.log("quananqr1/app/guest/page.tsx dishes.data asdf", dishesData);
+  // console.log("quananqr1/app/guest/page.tsx dishes.data asdf", dishesData);
   return (
     <div className="guest-page">
-      <DishSelection dishes={dishesData} />
-
+      <div className="container mx-auto px-4 py-8">
+        <img
+          src={"/api/placeholder/300/400"}
+          className="w-full h-full object-cover rounded-md"
+        />
+      </div>
       <SetCardList sets={setsData} />
+
+      <DishSelection dishes={dishesData} />
 
       <OrderSummary />
     </div>

@@ -7,10 +7,10 @@ const get_dishes = async (): Promise<DishInterface[]> => {
   try {
     const baseUrl =
       envConfig.NEXT_PUBLIC_URL + envConfig.NEXT_PUBLIC_Get_Dished_intenal;
-    console.log(
-      "quananqr1/zusstand/server/dish-controller.ts baseUrl",
-      baseUrl
-    );
+    // console.log(
+    //   "quananqr1/zusstand/server/dish-controller.ts baseUrl",
+    //   baseUrl
+    // );
 
     const response = await fetch(baseUrl, {
       method: "GET",

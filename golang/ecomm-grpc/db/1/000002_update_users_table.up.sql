@@ -157,6 +157,22 @@ CREATE TABLE guests (
     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL
 );
 
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    guest_id BIGINT,
+    table_number INTEGER,
+    dish_snapshot_id BIGINT NOT NULL,
+    quantity INTEGER NOT NULL,
+    order_handler_id BIGINT,
+    status VARCHAR(50) DEFAULT 'Pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
+    FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
+    FOREIGN KEY (dish_snapshot_id) REFERENCES dish_snapshots(id) ON DELETE CASCADE,
+    FOREIGN KEY (order_handler_id) REFERENCES accounts(id) ON DELETE SET NULL
+);
+
 CREATE TABLE refresh_tokens (
     token VARCHAR(255) PRIMARY KEY,
     account_id BIGINT NOT NULL,
@@ -244,51 +260,3 @@ CREATE INDEX idx_set_snapshots_is_public ON set_snapshots(is_public);
 
 
 -- set 
-CREATE TABLE orders (
-    id BIGSERIAL PRIMARY KEY,
-    guest_id BIGINT,
-    table_number BIGINT,
-    order_handler_id BIGINT,
-    status VARCHAR(50) DEFAULT 'Pending',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    total_price INTEGER,
-    FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
-    FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
-    FOREIGN KEY (order_handler_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
-CREATE TABLE dish_order_items (
-    id BIGSERIAL PRIMARY KEY,
-    order_id BIGINT NOT NULL,
-    dish_snapshot_id BIGINT NOT NULL,
-    quantity INTEGER NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (dish_snapshot_id) REFERENCES dish_snapshots(id) ON DELETE CASCADE
-);
-
-CREATE TABLE set_order_items (
-    id BIGSERIAL PRIMARY KEY,
-    order_id BIGINT NOT NULL,
-    set_snapshot_id BIGINT NOT NULL,
-    quantity INTEGER NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (set_snapshot_id) REFERENCES set_snapshots(id) ON DELETE CASCADE
-);
-
--- Existing set_snapshots table (for reference)
-CREATE TABLE set_snapshots (
-    id BIGSERIAL PRIMARY KEY,
-    original_set_id BIGINT,
-    set_id BIGINT,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    user_id BIGINT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    is_public BOOLEAN DEFAULT FALSE,
-    image VARCHAR(255),
-    FOREIGN KEY (original_set_id) REFERENCES sets(id) ON DELETE SET NULL,
-    FOREIGN KEY (set_id) REFERENCES sets(id) ON DELETE SET NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);

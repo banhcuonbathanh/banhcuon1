@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus } from "lucide-react";
 import { DishInterface } from "@/schemaValidations/interface/type_dish";
@@ -12,54 +12,61 @@ interface DishCardProps {
 }
 
 export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
-  const { addItem, removeItem, findOrderItem } = useOrderStore();
+  const { addDishItem, removeDishItem, updateDishQuantity, findDishOrderItem } =
+    useOrderStore();
 
-  // Use the useOrderStore hook to get the current quantity
-  const orderItem = useOrderStore((state) =>
-    state.findOrderItem("dish", dish.id)
-  );
-  const quantity = orderItem ? orderItem.quantity : 0;
+  const currentDish = findDishOrderItem(dish.id);
+  const quantity = currentDish ? currentDish.quantity : 0;
 
   const handleIncrease = () => {
-    addItem(dish, 1);
+    if (currentDish) {
+      updateDishQuantity(dish.id, currentDish.quantity + 1);
+    } else {
+      addDishItem(dish, 1);
+    }
   };
 
   const handleDecrease = () => {
-    if (quantity > 0) {
-      if (quantity === 1) {
-        removeItem("dish", dish.id);
+    if (currentDish) {
+      if (currentDish.quantity > 1) {
+        updateDishQuantity(dish.id, currentDish.quantity - 1);
       } else {
-        addItem(dish, -1);
+        removeDishItem(dish.id);
       }
     }
   };
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-lg">{dish.name}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <img
-          src={dish.image || "/api/placeholder/150/100"}
-          alt={dish.name}
-          className="w-full h-24 object-cover rounded-md mb-2"
-        />
-        <p className="text-sm">{dish.description}</p>
-        <p className="font-semibold mt-2">Price: ${dish.price.toFixed(2)}</p>
-        <div className="flex items-center justify-between mt-2">
-          <span>Quantity:</span>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={handleDecrease}>
-              <Minus className="h-3 w-3" />
-            </Button>
-            <span className="w-8 text-center">{quantity}</span>
-            <Button variant="outline" size="sm" onClick={handleIncrease}>
-              <Plus className="h-3 w-3" />
-            </Button>
+      <CardContent className="p-4 flex">
+        <div className="w-1/3 pr-4">
+          <img
+            src={dish.image || "/api/placeholder/150/150"}
+            alt={dish.name}
+            className="w-full h-full object-cover rounded-md"
+          />
+        </div>
+        <div className="w-2/3 flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-semibold mb-2">{dish.name}</h3>
+            <p className="text-sm mb-2">{dish.description}</p>
+            <p className="font-semibold">Price: ${dish.price.toFixed(2)}</p>
+          </div>
+          <div className="flex items-center justify-end mt-2">
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={handleDecrease}>
+                <Minus className="h-3 w-3" />
+              </Button>
+              <span className="w-8 text-center">{quantity}</span>
+              <Button variant="outline" size="sm" onClick={handleIncrease}>
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
     </Card>
   );
 };
+
+export default DishCard;
