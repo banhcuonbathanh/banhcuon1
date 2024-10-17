@@ -7,25 +7,24 @@ import (
 )
 
 func RegisterOrderRoutes(r *chi.Mux, handler *OrderHandlerController) *chi.Mux {
-	r.Get("/qr/orders-test", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Order service is running"))
+	r.Get("/orders-test", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Server order is running"))
 	})
 
-	r.Route("/qr/orders", func(r chi.Router) {
+	r.Route("/orders", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
-			// You can add middleware here if needed
-			// r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
+			// If you need authentication middleware, uncomment and adjust the following line:
+			// r.Use(middleware.GetAuthMiddlewareFunc(handler.TokenMaker))
 
-			r.Get("/", handler.GetOrders)               // Fetch orders
-			r.Post("/", handler.CreateOrders)           // Create new orders
+			r.Post("/", handler.CreateOrders)
+			r.Get("/", handler.GetOrders)
 
 			r.Route("/{id}", func(r chi.Router) {
-				r.Get("/", handler.GetOrderDetail)      // Fetch order details by ID
-				r.Put("/", handler.UpdateOrder)          // Update an existing order
-				// You might want to implement DeleteOrder as well
+				r.Get("/", handler.GetOrderDetail)
+				r.Put("/", handler.UpdateOrder)
 			})
 
-			r.Post("/pay", handler.PayGuestOrders)      // Pay for guest orders
+			r.Post("/pay/{guest_id}", handler.PayGuestOrders)
 		})
 	})
 

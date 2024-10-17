@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package proto;
+package order_proto;
 
 option go_package = "english-ai-full/quanqr/proto_qr/order";
 
@@ -9,24 +9,22 @@ import "google/protobuf/timestamp.proto";
 
 message Order {
   int64 id = 1;
-  int64 guest_id = 2;
-  int64 table_number = 3;
-  int64 dish_snapshot_id = 4;
-  // int32 quantity = 5;
-  int64 order_handler_id = 6;
-  string status = 7;
-  google.protobuf.Timestamp created_at = 8;
-  google.protobuf.Timestamp updated_at = 9;
-  int32 total_price = 12;
+  optional int64 guest_id = 2;
+  optional int64 user_id = 3;
+  optional int64 table_number = 4;
+  optional int64 order_handler_id = 5;
+  string status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  int32 total_price = 9;
   repeated DishOrderItem dish_items = 10;
   repeated SetOrderItem set_items = 11;
 }
-
-
 
 message CreateOrderRequest {
+  optional int64 guest_id = 1;
+  optional int64 user_id = 2;
 
-  int64 guest_id = 2;
   int64 table_number = 3;
   int64 dish_snapshot_id = 4;
   // int32 quantity = 5;
@@ -38,22 +36,17 @@ message CreateOrderRequest {
   repeated DishOrderItem dish_items = 10;
   repeated SetOrderItem set_items = 11;
 }
-
-
 
 message UpdateOrderRequest {
   int64 id = 1;
-  int64 guest_id = 2;
-  int64 table_number = 3;
-  int64 dish_snapshot_id = 4;
-  // int32 quantity = 5;
-  int64 order_handler_id = 6;
-  string status = 7;
-  google.protobuf.Timestamp created_at = 8;
-  google.protobuf.Timestamp updated_at = 9;
-  int32 total_price = 12;
-  repeated DishOrderItem dish_items = 10;
-  repeated SetOrderItem set_items = 11;
+  optional int64 guest_id = 2;
+  optional int64 user_id = 3;
+  optional int64 table_number = 4;
+  optional int64 order_handler_id = 5;
+  string status = 6;
+  int32 total_price = 7;
+  repeated DishOrderItem dish_items = 8;
+  repeated SetOrderItem set_items = 9;
 }
 
 message OrderResponse {
@@ -75,35 +68,44 @@ message OrderIdParam {
 message DishOrderItem {
   int64 id = 1;
   int32 quantity = 2;
-  Dish dish = 3;
+  DishOrder dish = 3;
 }
 
 message SetOrderItem {
   int64 id = 1;
   int32 quantity = 2;
-  Set set = 3;
+  SetProto set = 3;
   repeated SetProtoDish modified_dishes = 4;
 }
 
 
 
-message Dish {
+message DishOrder {
   int64 id = 1;
   string name = 2;
   int32 price = 3;
-  string image = 4;
-  string description = 5;
+  string description = 4;
+  string image = 5;
+  string status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
 }
 
-message Set {
-  int64 id = 1;
+
+message SetProto {
+  int32 id = 1;
   string name = 2;
-  int32 price = 3;
-  string image = 4;
-  string description = 5;
-  repeated Dish dishes = 6;
-}
+  string description = 3;
+  repeated SetProtoDish dishes = 4;
+  optional int32 user_id = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  bool is_favourite = 8;
+  repeated int64 like_by = 9;
+  bool is_public = 10; // add
 
+  string image = 11;
+}
 message SetProtoDish {
   int64 id = 1;
   string name = 2;
@@ -112,9 +114,10 @@ message SetProtoDish {
 }
 
 message CreateOrderItem {
-  int64 id = 1;
-  int32 quantity = 2;
-  repeated SetProtoDish modified_dishes = 3;
+  optional int64 dish_snapshot_id = 1;
+  optional int64 set_snapshot_id = 2;
+  int32 quantity = 3;
+  repeated SetProtoDish modified_dishes = 4;
 }
 
 
@@ -123,8 +126,9 @@ message CreateOrderItem {
 message GetOrdersRequest {
   google.protobuf.Timestamp from_date = 1;
   google.protobuf.Timestamp to_date = 2;
+  optional int64 user_id = 3;
+  optional int64 guest_id = 4;
 }
-
 
 
 message Guest {
@@ -171,18 +175,20 @@ message Table {
 
 
 
-message PayGuestOrdersRequest {
-  int64 guest_id = 1;
+message PayOrdersRequest {
+  oneof identifier {
+    int64 guest_id = 1;
+    int64 user_id = 2;
+  }
 }
-
 
 message OrderDetailIdParam {
   int64 id = 1;
 }
 service OrderService {
-  rpc CreateOrders(CreateOrderRequest) returns (OrderListResponse);
+  rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
   rpc GetOrders(GetOrdersRequest) returns (OrderListResponse);
-  rpc GetOrderDetail(OrderDetailIdParam) returns (OrderResponse);
+  rpc GetOrderDetail(OrderIdParam) returns (OrderResponse);
   rpc UpdateOrder(UpdateOrderRequest) returns (OrderResponse);
-  rpc PayGuestOrders(PayGuestOrdersRequest) returns (OrderListResponse);
+  rpc PayOrders(PayOrdersRequest) returns (OrderListResponse);
 }

@@ -26,7 +26,39 @@ DROP TYPE IF EXISTS question_type;
 CREATE TYPE question_type AS ENUM ('MultipleChoice', 'TrueFalseNotGiven', 'Matching', 'ShortAnswer');
 
 -- Recreate tables
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'Employee',
+    phone VARCHAR(20),
+    image VARCHAR(255),
+    address TEXT,
+    favorite_food INTEGER[] DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
 
+CREATE TABLE tables (
+    number INTEGER PRIMARY KEY,
+    capacity INTEGER NOT NULL,
+    status VARCHAR(50) DEFAULT 'Available',
+    token VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE guests (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    table_number INTEGER,
+    refresh_token VARCHAR(255),
+    refresh_token_expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL
+);
 
 CREATE INDEX idx_users_role ON users(role);
 
@@ -125,16 +157,6 @@ CREATE TABLE dish_snapshots (
     FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE SET NULL
 );
 
-CREATE TABLE tables (
-    number INTEGER PRIMARY KEY,
-    capacity INTEGER NOT NULL,
-    status VARCHAR(50) DEFAULT 'Available',
-    token VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-
 CREATE TABLE refresh_tokens (
     token VARCHAR(255) PRIMARY KEY,
     account_id BIGINT NOT NULL,
@@ -177,7 +199,7 @@ CREATE TABLE set_dishes (
     UNIQUE (set_id, dish_id)
 );
 
--- Updated table for set snapshots
+-- Updated table for set snapshots (moved here and removed duplicate)
 CREATE TABLE set_snapshots (
     id BIGSERIAL PRIMARY KEY,
     original_set_id BIGINT,
@@ -219,23 +241,24 @@ CREATE INDEX idx_set_snapshots_original_set_id ON set_snapshots(original_set_id)
 CREATE INDEX idx_sets_is_public ON sets(is_public);
 CREATE INDEX idx_set_snapshots_is_public ON set_snapshots(is_public);
 
-
-
 -- set 
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     guest_id BIGINT,
-    table_number BIGINT,
-    order_handler_id BIGINT,
+    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    table_number INTEGER REFERENCES tables(number) ON DELETE SET NULL,
+    order_handler_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     status VARCHAR(50) DEFAULT 'Pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     total_price INTEGER,
-    FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
-    FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
-    FOREIGN KEY (order_handler_id) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT guest_or_user_check CHECK (
+        (guest_id IS NULL AND user_id IS NOT NULL) OR
+        (guest_id IS NOT NULL AND user_id IS NULL)
+    )
 );
 
+-- Recreate order items tables
 CREATE TABLE dish_order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
@@ -254,44 +277,8 @@ CREATE TABLE set_order_items (
     FOREIGN KEY (set_snapshot_id) REFERENCES set_snapshots(id) ON DELETE CASCADE
 );
 
--- Existing set_snapshots table (for reference)
-CREATE TABLE set_snapshots (
-    id BIGSERIAL PRIMARY KEY,
-    original_set_id BIGINT,
-    set_id BIGINT,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    user_id BIGINT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    is_public BOOLEAN DEFAULT FALSE,
-    image VARCHAR(255),
-    FOREIGN KEY (original_set_id) REFERENCES sets(id) ON DELETE SET NULL,
-    FOREIGN KEY (set_id) REFERENCES sets(id) ON DELETE SET NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
-
-CREATE TABLE guests (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    table_number INTEGER,
-    refresh_token VARCHAR(255),
-    refresh_token_expires_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL
-);
-CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'Employee',
-    phone VARCHAR(20),
-    image VARCHAR(255),
-    address TEXT,
-    favorite_food INTEGER[] DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+-- Create indexes for better performance
+CREATE INDEX idx_orders_guest_id ON orders(guest_id) WHERE guest_id IS NOT NULL;
+CREATE INDEX idx_orders_user_id ON orders(user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX idx_orders_order_handler_id ON orders(order_handler_id) WHERE order_handler_id IS NOT NULL;
+CREATE INDEX idx_orders_table_number ON orders(table_number) WHERE table_number IS NOT NULL;
