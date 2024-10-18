@@ -16,7 +16,7 @@ func RegisterOrderRoutes(r *chi.Mux, handler *OrderHandlerController) *chi.Mux {
 			// If you need authentication middleware, uncomment and adjust the following line:
 			// r.Use(middleware.GetAuthMiddlewareFunc(handler.TokenMaker))
 
-			r.Post("/", handler.CreateOrders)
+			r.Post("/", handler.CreateOrder)
 			r.Get("/", handler.GetOrders)
 
 			r.Route("/{id}", func(r chi.Router) {
@@ -24,7 +24,7 @@ func RegisterOrderRoutes(r *chi.Mux, handler *OrderHandlerController) *chi.Mux {
 				r.Put("/", handler.UpdateOrder)
 			})
 
-			r.Post("/pay/{guest_id}", handler.PayGuestOrders)
+			r.Post("/pay/{guest_id}", handler.PayOrders)
 		})
 	})
 

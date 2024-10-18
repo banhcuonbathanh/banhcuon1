@@ -26,6 +26,7 @@ DROP TYPE IF EXISTS question_type;
 CREATE TYPE question_type AS ENUM ('MultipleChoice', 'TrueFalseNotGiven', 'Matching', 'ShortAnswer');
 
 -- Recreate tables
+
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -39,6 +40,19 @@ CREATE TABLE users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+-- CREATE TABLE users (
+--     id BIGSERIAL PRIMARY KEY,
+--     name VARCHAR(100) NOT NULL,
+--     email VARCHAR(100) UNIQUE NOT NULL,
+--     password VARCHAR(255) NOT NULL,
+--     role VARCHAR(50) DEFAULT 'Employee',
+--     phone VARCHAR(20),
+--     image VARCHAR(255),
+--     address TEXT,
+--     favorite_food INTEGER[] DEFAULT '{}',
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- );
 
 CREATE TABLE tables (
     number INTEGER PRIMARY KEY,
@@ -245,21 +259,26 @@ CREATE INDEX idx_set_snapshots_is_public ON set_snapshots(is_public);
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     guest_id BIGINT,
-    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    table_number INTEGER REFERENCES tables(number) ON DELETE SET NULL,
-    order_handler_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    user_id BIGINT,
+    is_guest BOOLEAN NOT NULL,
+    table_number INTEGER,
+    order_handler_id BIGINT,
     status VARCHAR(50) DEFAULT 'Pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     total_price INTEGER,
+    FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
+    FOREIGN KEY (order_handler_id) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT guest_or_user_check CHECK (
-        (guest_id IS NULL AND user_id IS NOT NULL) OR
-        (guest_id IS NOT NULL AND user_id IS NULL)
+        (is_guest = TRUE AND guest_id IS NOT NULL AND user_id IS NULL) OR
+        (is_guest = FALSE AND user_id IS NOT NULL AND guest_id IS NULL)
     )
 );
 
 -- Recreate order items tables
-CREATE TABLE dish_order_items (
+REATE TABLE dish_order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     dish_snapshot_id BIGINT NOT NULL,
@@ -282,3 +301,4 @@ CREATE INDEX idx_orders_guest_id ON orders(guest_id) WHERE guest_id IS NOT NULL;
 CREATE INDEX idx_orders_user_id ON orders(user_id) WHERE user_id IS NOT NULL;
 CREATE INDEX idx_orders_order_handler_id ON orders(order_handler_id) WHERE order_handler_id IS NOT NULL;
 CREATE INDEX idx_orders_table_number ON orders(table_number) WHERE table_number IS NOT NULL;
+CREATE INDEX idx_orders_is_guest ON orders(is_guest);

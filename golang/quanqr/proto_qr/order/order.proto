@@ -9,10 +9,12 @@ import "google/protobuf/timestamp.proto";
 
 message Order {
   int64 id = 1;
-  optional int64 guest_id = 2;
-  optional int64 user_id = 3;
-  optional int64 table_number = 4;
-  optional int64 order_handler_id = 5;
+   int64 guest_id = 2;
+   int64 user_id = 3;
+
+   bool is_guest = 12;
+   int64 table_number = 4;
+   int64 order_handler_id = 5;
   string status = 6;
   google.protobuf.Timestamp created_at = 7;
   google.protobuf.Timestamp updated_at = 8;
@@ -22,11 +24,11 @@ message Order {
 }
 
 message CreateOrderRequest {
-  optional int64 guest_id = 1;
-  optional int64 user_id = 2;
-
+   int64 guest_id = 1;
+   int64 user_id = 2;
+   bool is_guest = 13;
   int64 table_number = 3;
-  int64 dish_snapshot_id = 4;
+  // int64 dish_snapshot_id = 4;
   // int32 quantity = 5;
   int64 order_handler_id = 6;
   string status = 7;
@@ -39,14 +41,15 @@ message CreateOrderRequest {
 
 message UpdateOrderRequest {
   int64 id = 1;
-  optional int64 guest_id = 2;
-  optional int64 user_id = 3;
-  optional int64 table_number = 4;
-  optional int64 order_handler_id = 5;
+   int64 guest_id = 2;
+   int64 user_id = 3;
+   int64 table_number = 4;
+   int64 order_handler_id = 5;
   string status = 6;
   int32 total_price = 7;
   repeated DishOrderItem dish_items = 8;
   repeated SetOrderItem set_items = 9;
+  bool is_guest = 10;
 }
 
 message OrderResponse {
@@ -75,7 +78,7 @@ message SetOrderItem {
   int64 id = 1;
   int32 quantity = 2;
   SetProto set = 3;
-  repeated SetProtoDish modified_dishes = 4;
+
 }
 
 
@@ -97,7 +100,7 @@ message SetProto {
   string name = 2;
   string description = 3;
   repeated SetProtoDish dishes = 4;
-  optional int32 user_id = 5;
+   int64 user_id = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
   bool is_favourite = 8;
@@ -110,15 +113,13 @@ message SetProtoDish {
   int64 id = 1;
   string name = 2;
   int32 price = 3;
-  // Add other necessary fields
+  string description = 4;
+  string image = 5;
+  string status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
 }
 
-message CreateOrderItem {
-  optional int64 dish_snapshot_id = 1;
-  optional int64 set_snapshot_id = 2;
-  int32 quantity = 3;
-  repeated SetProtoDish modified_dishes = 4;
-}
 
 
 
@@ -139,34 +140,7 @@ message Guest {
   google.protobuf.Timestamp updated_at = 5;
 }
 
-message DishSnapshot {
-  int64 id = 1;
-  string name = 2;
-  int32 price = 3;
-  string image = 4;
-  string description = 5;
-  string status = 6;
-  int64 dish_id = 7;
-  google.protobuf.Timestamp created_at = 8;
-  google.protobuf.Timestamp updated_at = 9;
-}
 
-message Account {
-  int64 id = 1;
-  string name = 2;
-  string email = 3;
-  string role = 4;
-  string avatar = 5;
-}
-
-message Table {
-  int32 number = 1;
-  int32 capacity = 2;
-  string status = 3;
-  string token = 4;
-  google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp updated_at = 6;
-}
 
 
 
@@ -192,3 +166,43 @@ service OrderService {
   rpc UpdateOrder(UpdateOrderRequest) returns (OrderResponse);
   rpc PayOrders(PayOrdersRequest) returns (OrderListResponse);
 }
+
+
+
+// message DishSnapshot {
+//   int64 id = 1;
+//   string name = 2;
+//   int32 price = 3;
+//   string image = 4;
+//   string description = 5;
+//   string status = 6;
+//   int64 dish_id = 7;
+//   google.protobuf.Timestamp created_at = 8;
+//   google.protobuf.Timestamp updated_at = 9;
+// }
+
+// message CreateOrderItem {
+//   optional int64 dish_snapshot_id = 1;
+//   optional int64 set_snapshot_id = 2;
+//   int32 quantity = 3;
+//   repeated SetProtoDish modified_dishes = 4;
+// }
+
+
+
+// message Account {
+//   int64 id = 1;
+//   string name = 2;
+//   string email = 3;
+//   string role = 4;
+//   string avatar = 5;
+// }
+
+// message Table {
+//   int32 number = 1;
+//   int32 capacity = 2;
+//   string status = 3;
+//   string token = 4;
+//   google.protobuf.Timestamp created_at = 5;
+//   google.protobuf.Timestamp updated_at = 6;
+// }

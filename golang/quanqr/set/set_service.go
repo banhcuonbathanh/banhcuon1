@@ -63,35 +63,7 @@ func (ss *SetServiceStruct) CreateSetProto(ctx context.Context, req *set.CreateS
         Data: createdSet,
     }, nil
 }
-// func (ss *SetServiceStruct) CreateSetProto(ctx context.Context, req *CreateSetRequest) (*set.SetProtoResponse, error) {
-// 	ss.logger.Info("Creating new set: " + req.Name)
 
-// 	// Transform the request into the format expected by the repository
-// 	repoReq := &set.CreateSetProtoRequest{
-// 		Name:        req.Name,
-// 		Description: req.Description,
-// 		UserId:      int(req.UserID),
-// 		Dishes:      make([]*set.SetDishProto, len(req.Dishes)),
-// 	}
-
-// 	for i, dish := range req.Dishes {
-// 		repoReq.Dishes[i] = &set.SetDishProto{
-// 			DishId:   dish.Dish.ID,
-// 			Quantity: int32(dish.Quantity),
-// 		}
-// 	}
-
-// 	createdSet, err := ss.setRepo.CreateSetProto(ctx, repoReq)
-// 	if err != nil {
-// 		ss.logger.Error("Error creating set: " + err.Error())
-// 		return nil, err
-// 	}
-
-// 	ss.logger.Info("Set created successfully. ID: " + fmt.Sprint(createdSet.Id))
-// 	return &set.SetProtoResponse{
-// 		Data: createdSet,
-// 	}, nil
-// }
 func (ss *SetServiceStruct) UpdateSetProto(ctx context.Context, req *set.UpdateSetProtoRequest) (*set.SetProtoResponse, error) {
 	ss.logger.Info("Updating set: " )
 	updatedSet, err := ss.setRepo.UpdateSetProto(ctx, req)
@@ -185,4 +157,35 @@ func (ss *SetServiceStruct) DeleteSetProto(ctx context.Context, req *set.SetProt
 //     return &set.SetProtoResponse{
 //         Data: deletedSet,
 //     }, nil
+// }
+
+
+// func (ss *SetServiceStruct) CreateSetProto(ctx context.Context, req *CreateSetRequest) (*set.SetProtoResponse, error) {
+// 	ss.logger.Info("Creating new set: " + req.Name)
+
+// 	// Transform the request into the format expected by the repository
+// 	repoReq := &set.CreateSetProtoRequest{
+// 		Name:        req.Name,
+// 		Description: req.Description,
+// 		UserId:      int(req.UserID),
+// 		Dishes:      make([]*set.SetDishProto, len(req.Dishes)),
+// 	}
+
+// 	for i, dish := range req.Dishes {
+// 		repoReq.Dishes[i] = &set.SetDishProto{
+// 			DishId:   dish.Dish.ID,
+// 			Quantity: int32(dish.Quantity),
+// 		}
+// 	}
+
+// 	createdSet, err := ss.setRepo.CreateSetProto(ctx, repoReq)
+// 	if err != nil {
+// 		ss.logger.Error("Error creating set: " + err.Error())
+// 		return nil, err
+// 	}
+
+// 	ss.logger.Info("Set created successfully. ID: " + fmt.Sprint(createdSet.Id))
+// 	return &set.SetProtoResponse{
+// 		Data: createdSet,
+// 	}, nil
 // }

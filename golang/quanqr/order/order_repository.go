@@ -1,49 +1,50 @@
 package order_grpc
 
+
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"log"
 	"time"
-
+"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"english-ai-full/logger"
 	"english-ai-full/quanqr/proto_qr/order"
 )
 
-
 type OrderRepository struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	logger *logger.Logger
 }
 
 func NewOrderRepository(db *pgxpool.Pool) *OrderRepository {
 	return &OrderRepository{
-		db: db,
+		db:     db,
+		logger: logger.NewLogger(),
 	}
 }
 
-func (or *OrderRepository) CreateOrders(ctx context.Context, req *order.CreateOrderRequest) ([]*order.Order, error) {
-	// Start a transaction
-
-	log.Print("golang/quanqr/order/order_repository.go CreateOrders")
+func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrderRequest) (*order.Order, error) {
+	or.logger.Info(fmt.Sprintf("Creating new order: %+v", req))
 	tx, err := or.db.Begin(ctx)
 	if err != nil {
+		or.logger.Error("Error starting transaction: " + err.Error())
 		return nil, fmt.Errorf("error starting transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	// Insert the main order - removed dish_snapshot_id from the query
 	query := `
-		INSERT INTO orders (guest_id, table_number, order_handler_id, status, created_at, updated_at, total_price)
-		VALUES ($1, $2, $3, $4, $5, $5, $6)
+		INSERT INTO orders (guest_id, user_id, is_guest, table_number, order_handler_id, status, created_at, updated_at, total_price)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8)
 		RETURNING id, created_at, updated_at
 	`
 	var o order.Order
 	var createdAt, updatedAt time.Time
 	err = tx.QueryRow(ctx, query,
 		req.GuestId,
+		req.UserId,
+		req.IsGuest,
 		req.TableNumber,
 		req.OrderHandlerId,
 		req.Status,
@@ -51,57 +52,66 @@ func (or *OrderRepository) CreateOrders(ctx context.Context, req *order.CreateOr
 		req.TotalPrice,
 	).Scan(&o.Id, &createdAt, &updatedAt)
 	if err != nil {
+		or.logger.Error("Error creating order: " + err.Error())
 		return nil, fmt.Errorf("error creating order: %w", err)
 	}
 
-	// Insert dish items - Updated to use dish_snapshot_id instead of dish_id
+	o.GuestId = req.GuestId
+	o.UserId = req.UserId
+	o.IsGuest = req.IsGuest
+	o.TableNumber = req.TableNumber
+	o.OrderHandlerId = req.OrderHandlerId
+	o.Status = req.Status
+	o.CreatedAt = timestamppb.New(createdAt)
+	o.UpdatedAt = timestamppb.New(updatedAt)
+	o.TotalPrice = req.TotalPrice
+
+	// Insert dish items
 	for _, item := range req.DishItems {
-		_, err := tx.Exec(ctx, `
-			INSERT INTO dish_order_items (order_id, dish_snapshot_id, quantity)
-			VALUES ($1, $2, $3)
-		`, o.Id, item.Dish.Id, item.Quantity)
+		err := or.insertDishOrderItem(ctx, tx, o.Id, item)
 		if err != nil {
-			return nil, fmt.Errorf("error inserting dish order item: %w", err)
+			return nil, err
 		}
 	}
 
 	// Insert set items
 	for _, item := range req.SetItems {
-		_, err := tx.Exec(ctx, `
-			INSERT INTO set_order_items (order_id, set_snapshot_id, quantity)
-			VALUES ($1, $2, $3)
-		`, o.Id, item.Set.Id, item.Quantity)
+		err := or.insertSetOrderItem(ctx, tx, o.Id, item)
 		if err != nil {
-			return nil, fmt.Errorf("error inserting set order item: %w", err)
+			return nil, err
 		}
 	}
 
-	// Commit the transaction
 	if err := tx.Commit(ctx); err != nil {
+		or.logger.Error("Error committing transaction: " + err.Error())
 		return nil, fmt.Errorf("error committing transaction: %w", err)
 	}
 
-	// Populate the order struct with the inserted data
-	o.GuestId = req.GuestId
-	o.TableNumber = req.TableNumber
-	o.OrderHandlerId = req.OrderHandlerId
-	o.Status = req.Status
-	o.TotalPrice = req.TotalPrice
-	o.CreatedAt = timestamppb.New(createdAt)
-	o.UpdatedAt = timestamppb.New(updatedAt)
 	o.DishItems = req.DishItems
 	o.SetItems = req.SetItems
-
-	return []*order.Order{&o}, nil
+	or.logger.Info(fmt.Sprintf("Successfully created new order with ID: %d", o.Id))
+	return &o, nil
 }
+
 func (or *OrderRepository) GetOrders(ctx context.Context, req *order.GetOrdersRequest) ([]*order.Order, error) {
+	or.logger.Info("Fetching orders")
 	query := `
-		SELECT id, guest_id, table_number, dish_snapshot_id, order_handler_id, status, created_at, updated_at, total_price 
+		SELECT id, guest_id, user_id, is_guest, table_number, order_handler_id, status, created_at, updated_at, total_price
 		FROM orders
 		WHERE created_at BETWEEN $1 AND $2
 	`
-	rows, err := or.db.Query(ctx, query, req.FromDate.AsTime(), req.ToDate.AsTime())
+	args := []interface{}{req.FromDate.AsTime(), req.ToDate.AsTime()}
+	if req.UserId != nil {
+		query += " AND user_id = $3"
+		args = append(args, *req.UserId)
+	} else if req.GuestId != nil {
+		query += " AND guest_id = $3"
+		args = append(args, *req.GuestId)
+	}
+
+	rows, err := or.db.Query(ctx, query, args...)
 	if err != nil {
+		or.logger.Error("Error fetching orders: " + err.Error())
 		return nil, fmt.Errorf("error fetching orders: %w", err)
 	}
 	defer rows.Close()
@@ -111,255 +121,229 @@ func (or *OrderRepository) GetOrders(ctx context.Context, req *order.GetOrdersRe
 		var o order.Order
 		var createdAt, updatedAt time.Time
 		err := rows.Scan(
-			&o.Id,
-			&o.GuestId,
-			&o.TableNumber,
-			&o.DishSnapshotId,
-			&o.OrderHandlerId,
-			&o.Status,
-			&createdAt,
-			&updatedAt,
-			&o.TotalPrice,
+			&o.Id, &o.GuestId, &o.UserId, &o.IsGuest, &o.TableNumber, &o.OrderHandlerId,
+			&o.Status, &createdAt, &updatedAt, &o.TotalPrice,
 		)
 		if err != nil {
+			or.logger.Error("Error scanning order: " + err.Error())
 			return nil, fmt.Errorf("error scanning order: %w", err)
 		}
 		o.CreatedAt = timestamppb.New(createdAt)
 		o.UpdatedAt = timestamppb.New(updatedAt)
 
-		// Fetch dish items
-		o.DishItems, err = or.getDishItems(ctx, o.Id)
+		dishItems, err := or.getDishItemsForOrder(ctx, o.Id)
 		if err != nil {
 			return nil, err
 		}
+		o.DishItems = dishItems
 
-		// Fetch set items
-		o.SetItems, err = or.getSetItems(ctx, o.Id)
+		setItems, err := or.getSetItemsForOrder(ctx, o.Id)
 		if err != nil {
 			return nil, err
 		}
+		o.SetItems = setItems
 
 		orders = append(orders, &o)
 	}
+
 	if err := rows.Err(); err != nil {
+		or.logger.Error("Error iterating over orders: " + err.Error())
 		return nil, fmt.Errorf("error iterating over orders: %w", err)
 	}
 
+	or.logger.Info(fmt.Sprintf("Successfully fetched %d orders", len(orders)))
 	return orders, nil
 }
 
 func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order.Order, error) {
+	or.logger.Info(fmt.Sprintf("Fetching order detail for ID: %d", id))
 	query := `
-		SELECT id, guest_id, table_number, dish_snapshot_id, order_handler_id, status, created_at, updated_at, total_price 
-		FROM orders 
+		SELECT id, guest_id, user_id, is_guest, table_number, order_handler_id, status, created_at, updated_at, total_price
+		FROM orders
 		WHERE id = $1
 	`
 	var o order.Order
 	var createdAt, updatedAt time.Time
 	err := or.db.QueryRow(ctx, query, id).Scan(
-		&o.Id,
-		&o.GuestId,
-		&o.TableNumber,
-		&o.DishSnapshotId,
-		&o.OrderHandlerId,
-		&o.Status,
-		&createdAt,
-		&updatedAt,
-		&o.TotalPrice,
+		&o.Id, &o.GuestId, &o.UserId, &o.IsGuest, &o.TableNumber, &o.OrderHandlerId,
+		&o.Status, &createdAt, &updatedAt, &o.TotalPrice,
 	)
 	if err != nil {
+		or.logger.Error(fmt.Sprintf("Error fetching order detail for ID %d: %s", id, err.Error()))
 		return nil, fmt.Errorf("error fetching order detail: %w", err)
 	}
 	o.CreatedAt = timestamppb.New(createdAt)
 	o.UpdatedAt = timestamppb.New(updatedAt)
 
-	// Fetch dish items
-	o.DishItems, err = or.getDishItems(ctx, o.Id)
+	dishItems, err := or.getDishItemsForOrder(ctx, o.Id)
 	if err != nil {
 		return nil, err
 	}
+	o.DishItems = dishItems
 
-	// Fetch set items
-	o.SetItems, err = or.getSetItems(ctx, o.Id)
+	setItems, err := or.getSetItemsForOrder(ctx, o.Id)
 	if err != nil {
 		return nil, err
 	}
+	o.SetItems = setItems
 
+	or.logger.Info(fmt.Sprintf("Successfully fetched order detail for ID: %d", id))
 	return &o, nil
 }
 
 func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.Order, error) {
-	// Start a transaction
+	or.logger.Info(fmt.Sprintf("Updating order with ID: %d", req.Id))
 	tx, err := or.db.Begin(ctx)
 	if err != nil {
+		or.logger.Error("Error starting transaction: " + err.Error())
 		return nil, fmt.Errorf("error starting transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	// Update the main order
 	query := `
 		UPDATE orders
-		SET guest_id = $2, table_number = $3, dish_snapshot_id = $4, order_handler_id = $5, status = $6, updated_at = $7, total_price = $8
+		SET guest_id = $2, user_id = $3, table_number = $4, order_handler_id = $5, status = $6, updated_at = $7, total_price = $8, is_guest = $9
 		WHERE id = $1
 		RETURNING created_at, updated_at
 	`
+	var o order.Order
 	var createdAt, updatedAt time.Time
 	err = tx.QueryRow(ctx, query,
-		req.Id,
-		req.GuestId,
-		req.TableNumber,
-		req.DishSnapshotId,
-		req.OrderHandlerId,
-		req.Status,
-		time.Now(),
-		req.TotalPrice,
+		req.Id, req.GuestId, req.UserId, req.TableNumber, req.OrderHandlerId, req.Status, time.Now(), req.TotalPrice, req.IsGuest,
 	).Scan(&createdAt, &updatedAt)
 	if err != nil {
+		or.logger.Error(fmt.Sprintf("Error updating order with ID %d: %s", req.Id, err.Error()))
 		return nil, fmt.Errorf("error updating order: %w", err)
 	}
 
-	// Delete existing dish items and set items
-	_, err = tx.Exec(ctx, "DELETE FROM dish_order_items WHERE order_id = $1", req.Id)
+	o.Id = req.Id
+	o.GuestId = req.GuestId
+	o.UserId = req.UserId
+	o.TableNumber = req.TableNumber
+	o.OrderHandlerId = req.OrderHandlerId
+	o.Status = req.Status
+	o.CreatedAt = timestamppb.New(createdAt)
+	o.UpdatedAt = timestamppb.New(updatedAt)
+	o.TotalPrice = req.TotalPrice
+	o.IsGuest = req.IsGuest
+
+	// Update dish items
+	err = or.updateOrderItems(ctx, tx, o.Id, req.DishItems, req.SetItems)
 	if err != nil {
-		return nil, fmt.Errorf("error deleting existing dish order items: %w", err)
-	}
-	_, err = tx.Exec(ctx, "DELETE FROM set_order_items WHERE order_id = $1", req.Id)
-	if err != nil {
-		return nil, fmt.Errorf("error deleting existing set order items: %w", err)
+		return nil, err
 	}
 
-	// Insert updated dish items
-	for _, item := range req.DishItems {
-		_, err := tx.Exec(ctx, `
-			INSERT INTO dish_order_items (order_id, dish_id, quantity)
-			VALUES ($1, $2, $3)
-		`, req.Id, item.Dish.Id, item.Quantity)
-		if err != nil {
-			return nil, fmt.Errorf("error inserting updated dish order item: %w", err)
-		}
-	}
-
-	// Insert updated set items
-	for _, item := range req.SetItems {
-		setItemId := int64(0)
-		err := tx.QueryRow(ctx, `
-			INSERT INTO set_order_items (order_id, set_id, quantity)
-			VALUES ($1, $2, $3)
-			RETURNING id
-		`, req.Id, item.Set.Id, item.Quantity).Scan(&setItemId)
-		if err != nil {
-			return nil, fmt.Errorf("error inserting updated set order item: %w", err)
-		}
-
-		// Insert modified dishes for set items
-		for _, modifiedDish := range item.ModifiedDishes {
-			_, err := tx.Exec(ctx, `
-				INSERT INTO set_order_item_modified_dishes (set_order_item_id, dish_id, name, price)
-				VALUES ($1, $2, $3, $4)
-			`, setItemId, modifiedDish.Id, modifiedDish.Name, modifiedDish.Price)
-			if err != nil {
-				return nil, fmt.Errorf("error inserting modified dish for updated set order item: %w", err)
-			}
-		}
-	}
-
-	// Commit the transaction
 	if err := tx.Commit(ctx); err != nil {
+		or.logger.Error("Error committing transaction: " + err.Error())
 		return nil, fmt.Errorf("error committing transaction: %w", err)
 	}
 
-	return &order.Order{
-		Id:              req.Id,
-		GuestId:         req.GuestId,
-		TableNumber:     req.TableNumber,
-		DishSnapshotId:  req.DishSnapshotId,
-		OrderHandlerId:  req.OrderHandlerId,
-		Status:          req.Status,
-		CreatedAt:       timestamppb.New(createdAt),
-		UpdatedAt:       timestamppb.New(updatedAt),
-		TotalPrice:      req.TotalPrice,
-		DishItems:       req.DishItems,
-		SetItems:        req.SetItems,
-	}, nil
+	o.DishItems = req.DishItems
+	o.SetItems = req.SetItems
+	or.logger.Info(fmt.Sprintf("Successfully updated order with ID: %d", o.Id))
+	return &o, nil
 }
 
-func (or *OrderRepository) PayGuestOrders(ctx context.Context, guestId int64) ([]*order.Order, error) {
-	// Start a transaction
+func (or *OrderRepository) PayOrders(ctx context.Context, req *order.PayOrdersRequest) ([]*order.Order, error) {
+	or.logger.Info("Processing payment for orders")
 	tx, err := or.db.Begin(ctx)
 	if err != nil {
+		or.logger.Error("Error starting transaction: " + err.Error())
 		return nil, fmt.Errorf("error starting transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	// Update the status of all unpaid orders for the guest
-	query := `
-		UPDATE orders
-		SET status = 'PAID', updated_at = $2
-		WHERE guest_id = $1 AND status != 'PAID'
-		RETURNING id, guest_id, table_number, dish_snapshot_id, order_handler_id, status, created_at, updated_at, total_price
-	`
-	rows, err := tx.Query(ctx, query, guestId, time.Now())
+	var query string
+	var arg interface{}
+	if req.GetGuestId() != 0 {
+		query = "UPDATE orders SET status = 'paid', updated_at = $1 WHERE guest_id = $2 AND status != 'paid' RETURNING id"
+		arg = req.GetGuestId()
+	} else if req.GetUserId() != 0 {
+		query = "UPDATE orders SET status = 'paid', updated_at = $1 WHERE user_id = $2 AND status != 'paid' RETURNING id"
+		arg = req.GetUserId()
+	} else {
+		return nil, fmt.Errorf("either guest_id or user_id must be provided")
+	}
+
+	rows, err := tx.Query(ctx, query, time.Now(), arg)
 	if err != nil {
-		return nil, fmt.Errorf("error updating guest orders: %w", err)
+		or.logger.Error("Error updating orders: " + err.Error())
+		return nil, fmt.Errorf("error updating orders: %w", err)
 	}
 	defer rows.Close()
 
-	var orders []*order.Order
+	var orderIDs []int64
 	for rows.Next() {
-		var o order.Order
-		var createdAt, updatedAt time.Time
-		err := rows.Scan(
-			&o.Id,
-			&o.GuestId,
-			&o.TableNumber,
-			&o.DishSnapshotId,
-			&o.OrderHandlerId,
-			&o.Status,
-			&createdAt,
-			&updatedAt,
-			&o.TotalPrice,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("error scanning paid order: %w", err)
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			or.logger.Error("Error scanning order ID: " + err.Error())
+			return nil, fmt.Errorf("error scanning order ID: %w", err)
 		}
-		o.CreatedAt = timestamppb.New(createdAt)
-		o.UpdatedAt = timestamppb.New(updatedAt)
-
-		// Fetch dish items and set items (these methods should be implemented)
-		o.DishItems, err = or.getDishItems(ctx, o.Id)
-		if err != nil {
-			return nil, err
-		}
-		o.SetItems, err = or.getSetItems(ctx, o.Id)
-		if err != nil {
-			return nil, err
-		}
-
-		orders = append(orders, &o)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating over paid orders: %w", err)
+		orderIDs = append(orderIDs, id)
 	}
 
-	// Commit the transaction
 	if err := tx.Commit(ctx); err != nil {
+		or.logger.Error("Error committing transaction: " + err.Error())
 		return nil, fmt.Errorf("error committing transaction: %w", err)
 	}
 
-	return orders, nil
+	var paidOrders []*order.Order
+	for _, id := range orderIDs {
+		o, err := or.GetOrderDetail(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		paidOrders = append(paidOrders, o)
+	}
+
+	or.logger.Info(fmt.Sprintf("Successfully processed payment for %d orders", len(paidOrders)))
+	return paidOrders, nil
 }
 
-
-func (or *OrderRepository) getDishItems(ctx context.Context, orderId int64) ([]*order.DishOrderItem, error) {
+func (or *OrderRepository) insertDishOrderItem(ctx context.Context, tx pgx.Tx, orderID int64, item *order.DishOrderItem) error {
 	query := `
-		SELECT doi.id, doi.quantity, d.id, d.name, d.price, d.description, d.image, d.status, d.created_at, d.updated_at
-		FROM dish_order_items doi
-		JOIN dishes d ON doi.dish_id = d.id
-		WHERE doi.order_id = $1
+		INSERT INTO order_dish_items (order_id, dish_id, quantity)
+		VALUES ($1, $2, $3)
+		RETURNING id
 	`
-	rows, err := or.db.Query(ctx, query, orderId)
+	var itemID int64
+	err := tx.QueryRow(ctx, query, orderID, item.Dish.Id, item.Quantity).Scan(&itemID)
 	if err != nil {
-		return nil, fmt.Errorf("error fetching dish items: %w", err)
+		or.logger.Error(fmt.Sprintf("Error inserting dish order item: %s", err.Error()))
+		return fmt.Errorf("error inserting dish order item: %w", err)
+	}
+	item.Id = itemID
+	return nil
+}
+
+func (or *OrderRepository) insertSetOrderItem(ctx context.Context, tx pgx.Tx, orderID int64, item *order.SetOrderItem) error {
+	query := `
+		INSERT INTO order_set_items (order_id, set_id, quantity)
+		VALUES ($1, $2, $3)
+		RETURNING id
+	`
+	var itemID int64
+	err := tx.QueryRow(ctx, query, orderID, item.Set.Id, item.Quantity).Scan(&itemID)
+	if err != nil {
+		or.logger.Error(fmt.Sprintf("Error inserting set order item: %s", err.Error()))
+		return fmt.Errorf("error inserting set order item: %w", err)
+	}
+	item.Id = itemID
+	return nil
+}
+
+func (or *OrderRepository) getDishItemsForOrder(ctx context.Context, orderID int64) ([]*order.DishOrderItem, error) {
+	query := `
+		SELECT odi.id, odi.quantity, d.id, d.name, d.price, d.description, d.image, d.status, d.created_at, d.updated_at
+		FROM order_dish_items odi
+		JOIN dishes d ON odi.dish_id = d.id
+		WHERE odi.order_id = $1
+	`
+	rows, err := or.db.Query(ctx, query, orderID)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching dish items for order: %w", err)
+
+
 	}
 	defer rows.Close()
 
@@ -369,25 +353,19 @@ func (or *OrderRepository) getDishItems(ctx context.Context, orderId int64) ([]*
 		var dish order.DishOrder
 		var createdAt, updatedAt time.Time
 		err := rows.Scan(
-			&item.Id,
-			&item.Quantity,
-			&dish.Id,
-			&dish.Name,
-			&dish.Price,
-			&dish.Description,
-			&dish.Image,
-			&dish.Status,
-			&createdAt,
-			&updatedAt,
+			&item.Id, &item.Quantity,
+			&dish.Id, &dish.Name, &dish.Price, &dish.Description, &dish.Image, &dish.Status,
+			&createdAt, &updatedAt,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error scanning dish item: %w", err)
+			return nil, fmt.Errorf("error scanning dish order item: %w", err)
 		}
 		dish.CreatedAt = timestamppb.New(createdAt)
 		dish.UpdatedAt = timestamppb.New(updatedAt)
 		item.Dish = &dish
 		items = append(items, &item)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating over dish items: %w", err)
 	}
@@ -395,94 +373,116 @@ func (or *OrderRepository) getDishItems(ctx context.Context, orderId int64) ([]*
 	return items, nil
 }
 
-
-func (or *OrderRepository) getSetItems(ctx context.Context, orderId int64) ([]*order.SetOrderItem, error) {
+func (or *OrderRepository) getSetItemsForOrder(ctx context.Context, orderID int64) ([]*order.SetOrderItem, error) {
 	query := `
-		SELECT soi.id, soi.quantity, 
-			s.id, s.name, s.description, s.created_at, s.updated_at, s.is_favourite, s.is_public, s.image,
-			spd.id, spd.name, spd.price,
-			soimd.id, soimd.name, soimd.price
-		FROM set_order_items soi
-		JOIN sets s ON soi.set_id = s.id
-		LEFT JOIN set_proto_dishes spd ON s.id = spd.set_id
-		LEFT JOIN set_order_item_modified_dishes soimd ON soi.id = soimd.set_order_item_id
-		WHERE soi.order_id = $1
+		SELECT osi.id, osi.quantity, s.id, s.name, s.description, s.user_id, s.created_at, s.updated_at, s.is_favourite, s.is_public, s.image
+		FROM order_set_items osi
+		JOIN sets s ON osi.set_id = s.id
+		WHERE osi.order_id = $1
 	`
-	rows, err := or.db.Query(ctx, query, orderId)
+	rows, err := or.db.Query(ctx, query, orderID)
 	if err != nil {
-		return nil, fmt.Errorf("error fetching set items: %w", err)
+		return nil, fmt.Errorf("error fetching set items for order: %w", err)
 	}
 	defer rows.Close()
 
-	setItemMap := make(map[int64]*order.SetOrderItem)
+	var items []*order.SetOrderItem
 	for rows.Next() {
-		var setItem order.SetOrderItem
+		var item order.SetOrderItem
 		var set order.SetProto
-		// var setDish order.SetProtoDish
-		// var modifiedDish order.SetProtoDish
-		var setCreatedAt, setUpdatedAt time.Time
-		var setDishId, modifiedDishId sql.NullInt64
-		var setDishName, modifiedDishName sql.NullString
-		var setDishPrice, modifiedDishPrice sql.NullInt32
-
+		var createdAt, updatedAt time.Time
+		var userID int64
 		err := rows.Scan(
-			&setItem.Id, &setItem.Quantity,
-			&set.Id, &set.Name, &set.Description, &setCreatedAt, &setUpdatedAt, &set.IsFavourite, &set.IsPublic, &set.Image,
-			&setDishId, &setDishName, &setDishPrice,
-			&modifiedDishId, &modifiedDishName, &modifiedDishPrice,
+			&item.Id, &item.Quantity,
+			&set.Id, &set.Name, &set.Description, &userID, &createdAt, &updatedAt,
+			&set.IsFavourite, &set.IsPublic, &set.Image,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error scanning set item: %w", err)
+			return nil, fmt.Errorf("error scanning set order item: %w", err)
+		}
+		set.CreatedAt = timestamppb.New(createdAt)
+		set.UpdatedAt = timestamppb.New(updatedAt)
+		set.UserId = userID
+		
+		// Fetch dishes for the set
+		set.Dishes, err = or.getDishesForSet(ctx, set.Id)
+		if err != nil {
+			return nil, err
 		}
 
-		set.CreatedAt = timestamppb.New(setCreatedAt)
-		set.UpdatedAt = timestamppb.New(setUpdatedAt)
-
-		if existingSetItem, ok := setItemMap[setItem.Id]; ok {
-			// If the set item already exists, we just need to add the dishes
-			if setDishId.Valid {
-				existingSetItem.Set.Dishes = append(existingSetItem.Set.Dishes, &order.SetProtoDish{
-					Id:    setDishId.Int64,
-					Name:  setDishName.String,
-					Price: setDishPrice.Int32,
-				})
-			}
-			if modifiedDishId.Valid {
-				existingSetItem.ModifiedDishes = append(existingSetItem.ModifiedDishes, &order.SetProtoDish{
-					Id:    modifiedDishId.Int64,
-					Name:  modifiedDishName.String,
-					Price: modifiedDishPrice.Int32,
-				})
-			}
-		} else {
-			// If it's a new set item, we create it with the current set and dishes
-			setItem.Set = &set
-			if setDishId.Valid {
-				setItem.Set.Dishes = []*order.SetProtoDish{{
-					Id:    setDishId.Int64,
-					Name:  setDishName.String,
-					Price: setDishPrice.Int32,
-				}}
-			}
-			if modifiedDishId.Valid {
-				setItem.ModifiedDishes = []*order.SetProtoDish{{
-					Id:    modifiedDishId.Int64,
-					Name:  modifiedDishName.String,
-					Price: modifiedDishPrice.Int32,
-				}}
-			}
-			setItemMap[setItem.Id] = &setItem
-		}
+		item.Set = &set
+		items = append(items, &item)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating over set items: %w", err)
 	}
 
-	// Convert the map to a slice
-	setItems := make([]*order.SetOrderItem, 0, len(setItemMap))
-	for _, item := range setItemMap {
-		setItems = append(setItems, item)
+	return items, nil
+}
+
+func (or *OrderRepository) getDishesForSet(ctx context.Context, setID int32) ([]*order.SetProtoDish, error) {
+	query := `
+		SELECT d.id, d.name, d.price, d.description, d.image, d.status, d.created_at, d.updated_at
+		FROM set_dishes sd
+		JOIN dishes d ON sd.dish_id = d.id
+		WHERE sd.set_id = $1
+	`
+	rows, err := or.db.Query(ctx, query, setID)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching dishes for set: %w", err)
+	}
+	defer rows.Close()
+
+	var dishes []*order.SetProtoDish
+	for rows.Next() {
+		var dish order.SetProtoDish
+		var createdAt, updatedAt time.Time
+		err := rows.Scan(
+			&dish.Id, &dish.Name, &dish.Price, &dish.Description, &dish.Image, &dish.Status,
+			&createdAt, &updatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning dish for set: %w", err)
+		}
+		dish.CreatedAt = timestamppb.New(createdAt)
+		dish.UpdatedAt = timestamppb.New(updatedAt)
+		dishes = append(dishes, &dish)
 	}
 
-	return setItems, nil
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over dishes for set: %w", err)
+	}
+
+	return dishes, nil
+}
+
+func (or *OrderRepository) updateOrderItems(ctx context.Context, tx pgx.Tx, orderID int64, dishItems []*order.DishOrderItem, setItems []*order.SetOrderItem) error {
+	// Delete existing items
+	_, err := tx.Exec(ctx, "DELETE FROM order_dish_items WHERE order_id = $1", orderID)
+	if err != nil {
+		return fmt.Errorf("error deleting existing dish items: %w", err)
+	}
+	_, err = tx.Exec(ctx, "DELETE FROM order_set_items WHERE order_id = $1", orderID)
+	if err != nil {
+		return fmt.Errorf("error deleting existing set items: %w", err)
+	}
+
+	// Insert new dish items
+	for _, item := range dishItems {
+		err := or.insertDishOrderItem(ctx, tx, orderID, item)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Insert new set items
+	for _, item := range setItems {
+		err := or.insertSetOrderItem(ctx, tx, orderID, item)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

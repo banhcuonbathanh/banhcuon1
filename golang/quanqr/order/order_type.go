@@ -5,74 +5,89 @@ import (
 )
 
 // Order struct aligned with the proto definition
-type Order struct {
+type OrderType struct {
 	ID             int64          `json:"id"`
-	GuestID        *int64         `json:"guest_id,omitempty"`
-	UserID         *int64         `json:"user_id,omitempty"`
-	TableNumber    *int64         `json:"table_number,omitempty"`
-	OrderHandlerID *int64         `json:"order_handler_id,omitempty"`
+	GuestID        int64         `json:"guest_id"`
+	UserID         int64         `json:"user_id"`
+	IsGuest			bool			`json:"is_guest"`
+	TableNumber    int64         `json:"table_number"`
+	OrderHandlerID int64         `json:"order_handler_id"`
 	Status         string         `json:"status"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	TotalPrice     int32          `json:"total_price"`
 	DishItems      []DishOrderItem `json:"dish_items"`
-	SetItems       []SetOrderItem  `json:"set_items"`
+	SetItems       []SetOrderItemType  `json:"set_items"`
 }
 
 // CreateOrderRequest struct
-type CreateOrderRequest struct {
-	GuestID        *int64         `json:"guest_id,omitempty"`
-	UserID         *int64         `json:"user_id,omitempty"`
-	TableNumber    *int64         `json:"table_number,omitempty"`
-	OrderHandlerID *int64         `json:"order_handler_id,omitempty"`
+type CreateOrderRequestType struct {
+	GuestID        int64         `json:"guest_id"`
+	UserID         int64         `json:"user_id"`
+	IsGuest			bool			`json:"is_guest"`
+	TableNumber    int64         `json:"table_number"`
+	OrderHandlerID int64         `json:"order_handler_id"`
 	Status         string         `json:"status"`
 	TotalPrice     int32          `json:"total_price"`
-	DishItems      []CreateOrderItem `json:"dish_items"`
-	SetItems       []CreateOrderItem `json:"set_items"`
+	DishItems      []CreateOrderItemType `json:"dish_items"`
+	SetItems       []CreateOrderItemType `json:"set_items"`
 }
 
 // UpdateOrderRequest struct
-type UpdateOrderRequest struct {
+type UpdateOrderRequestType struct {
 	ID             int64          `json:"id"`
-	GuestID        *int64         `json:"guest_id,omitempty"`
-	UserID         *int64         `json:"user_id,omitempty"`
-	TableNumber    *int64         `json:"table_number,omitempty"`
-	OrderHandlerID *int64         `json:"order_handler_id,omitempty"`
+	GuestID        int64         `json:"guest_id"`
+	UserID         int64         `json:"user_id"`
+		IsGuest			bool			`json:"is_guest"`
+	TableNumber    int64         `json:"table_number"`
+	OrderHandlerID int64         `json:"order_handler_id"`
 	Status         string         `json:"status"`
 	TotalPrice     int32          `json:"total_price"`
 	DishItems      []DishOrderItem `json:"dish_items"`
-	SetItems       []SetOrderItem  `json:"set_items"`
+	SetItems       []SetOrderItemType  `json:"set_items"`
 }
 
+
+type DishOrderType struct {
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	Price       int32     `json:"price"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
 // DishOrderItem struct
 type DishOrderItem struct {
 	ID              int64       `json:"id"`
-	OrderID         int64       `json:"order_id"`
-	DishSnapshotID  int64       `json:"dish_snapshot_id"`
+
+
 	Quantity        int32       `json:"quantity"`
+
+	Dish 		DishOrderType `json:"dish"`
 	// DishSnapshot    DishSnapshot `json:"dish_snapshot,omitempty"` // For response data
 }
 
 // SetOrderItem struct
-type SetOrderItem struct {
+type SetOrderItemType struct {
 	ID             int64          `json:"id"`
-	OrderID        int64          `json:"order_id"`
-	SetSnapshotID  int64          `json:"set_snapshot_id"`
+
 	Quantity       int32          `json:"quantity"`
-	Set            SetProto       `json:"set,omitempty"` // For response data
-	ModifiedDishes []SetProtoDish `json:"modified_dishes"`
+	Set            SetProtoType       `json:"set,omitempty"` // For response data
+	ModifiedDishes []SetProtoDishType `json:"modified_dishes"`
 }
 
 // CreateOrderItem struct
-type CreateOrderItem struct {
+type CreateOrderItemType struct {
 	DishSnapshotID *int64         `json:"dish_snapshot_id,omitempty"`
 	SetSnapshotID  *int64         `json:"set_snapshot_id,omitempty"`
 	Quantity       int32          `json:"quantity"`
-	ModifiedDishes []SetProtoDish `json:"modified_dishes,omitempty"`
+	ModifiedDishes []SetProtoDishType `json:"modified_dishes,omitempty"`
 }
 
 // GetOrdersRequest struct
-type GetOrdersRequest struct {
+type GetOrdersRequestType struct {
 	FromDate time.Time `json:"from_date"`
 	ToDate   time.Time `json:"to_date"`
 	UserID   *int64    `json:"user_id,omitempty"`
@@ -80,19 +95,19 @@ type GetOrdersRequest struct {
 }
 
 // PayOrdersRequest struct
-type PayOrdersRequest struct {
+type PayOrdersRequestType struct {
 	GuestID *int64 `json:"guest_id,omitempty"`
 	UserID  *int64 `json:"user_id,omitempty"`
 }
 
 // OrderResponse struct
 type OrderResponse struct {
-	Data Order `json:"data"`
+	Data OrderType `json:"data"`
 }
 
 // OrderListResponse struct
 type OrderListResponse struct {
-	Data []Order `json:"data"`
+	Data []OrderType `json:"data"`
 }
 
 // OrderIDParam struct
@@ -101,29 +116,33 @@ type OrderIDParam struct {
 }
 
 // SetProto struct
-type SetProto struct {
-	ID          int32          `json:"id"`
+type SetProtoType struct {
+	ID          int64          `json:"id"`
 	Name        string         `json:"name"`
 	Description string         `json:"description"`
-	Dishes      []SetProtoDish `json:"dishes"`
-	UserID      *int32         `json:"user_id,omitempty"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+
+	UserID      int64         `json:"user_id"`
+
 	IsFavourite bool           `json:"is_favourite"`
 	LikeBy      []int64        `json:"like_by"`
+			CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
 	IsPublic    bool           `json:"is_public"`
 	Image       string         `json:"image"`
+
+		Dishes      []SetProtoDishType `json:"dishes"`
+	
 }
 
 // SetProtoDish struct
-type SetProtoDish struct {
+type SetProtoDishType struct {
 	ID    int64  `json:"id"`
 	Name  string `json:"name"`
 	Price int32  `json:"price"`
 }
 
 // Guest struct
-type Guest struct {
+type GuestType struct {
 	ID          int64     `json:"id"`
 	Name        string    `json:"name"`
 	TableNumber int32     `json:"table_number"`
@@ -132,7 +151,7 @@ type Guest struct {
 }
 
 // Account struct
-type Account struct {
+type AccountType struct {
 	ID     int64  `json:"id"`
 	Name   string `json:"name"`
 	Email  string `json:"email"`
@@ -141,7 +160,7 @@ type Account struct {
 }
 
 // Table struct
-type Table struct {
+type TableType struct {
 	Number    int32     `json:"number"`
 	Capacity  int32     `json:"capacity"`
 	Status    string    `json:"status"`
@@ -151,7 +170,7 @@ type Table struct {
 }
 
 // OrderDetailIDParam struct
-type OrderDetailIDParam struct {
+type OrderDetailIDParamType struct {
 	ID int64 `json:"id"`
 }
 
