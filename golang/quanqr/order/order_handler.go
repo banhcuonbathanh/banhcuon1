@@ -3,363 +3,360 @@ package order_grpc
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
-	"time"
+
+	"english-ai-full/logger"
+	"english-ai-full/quanqr/proto_qr/order"
+	"english-ai-full/token"
 
 	"github.com/go-chi/chi"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"english-ai-full/token"
-	"english-ai-full/logger"
-	"english-ai-full/quanqr/proto_qr/order"
 )
-
 type OrderHandlerController struct {
-	ctx     context.Context
-	service  order.OrderServiceClient
-	logger  *logger.Logger
-	TokenMaker *token.JWTMaker
+    ctx        context.Context
+    client     order.OrderServiceClient
+    TokenMaker *token.JWTMaker
+    logger     *logger.Logger
 }
 
-func NewOrderHandler(service order.OrderServiceClient, secretKey string) *OrderHandlerController {
-	return &OrderHandlerController{
-		ctx:     context.Background(),
-		service: service,
-		logger:  logger.NewLogger(),
-		TokenMaker: token.NewJWTMaker(secretKey),
-	}
+func NewOrderHandler(client order.OrderServiceClient, secretKey string) *OrderHandlerController {
+    return &OrderHandlerController{
+        ctx:        context.Background(),
+        client:     client,
+        TokenMaker: token.NewJWTMaker(secretKey),
+        logger:     logger.NewLogger(),
+    }
 }
 
 func (h *OrderHandlerController) CreateOrder(w http.ResponseWriter, r *http.Request) {
-	var req CreateOrderRequestType
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "error decoding request body", http.StatusBadRequest)
-		return
-	}
+    var orderReq CreateOrderRequestType
 
-	h.logger.Info("Creating new order")
-	createdOrderResponse, err := h.service.CreateOrder(h.ctx, ToCreateOrderRequest(req))
-	if err != nil {
-		h.logger.Error("Error creating order: " + err.Error())
-		http.Error(w, "error creating order", http.StatusInternalServerError)
-		return
-	}
+    if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
 
-	res := OrderResponse{Data: ToOrderType(createdOrderResponse.Data)}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(res)
+    h.logger.Info(fmt.Sprintf("Creating new order: %+v", orderReq))
+    createdOrderResponse, err := h.client.CreateOrder(h.ctx, ToPBCreateOrderRequest(orderReq))
+    if err != nil {
+        h.logger.Error("Error creating order: " + err.Error())
+        http.Error(w, "error creating order", http.StatusInternalServerError)
+        return
+    }
+
+    res := ToOrderResFromPbOrderResponse(createdOrderResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(res)
 }
 
-
 func (h *OrderHandlerController) GetOrders(w http.ResponseWriter, r *http.Request) {
-	var req GetOrdersRequestType
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "error decoding request body", http.StatusBadRequest)
-		return
-	}
+    var req GetOrdersRequestType
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
 
-	h.logger.Info("Fetching orders")
-	ordersResponse, err := h.service.GetOrders(h.ctx, ToGetOrdersRequest(req))
-	if err != nil {
-		h.logger.Error("Error fetching orders: " + err.Error())
-		http.Error(w, "error fetching orders", http.StatusInternalServerError)
-		return
-	}
+    h.logger.Info("Fetching orders")
+    ordersResponse, err := h.client.GetOrders(h.ctx, ToPBGetOrdersRequest(req))
+    if err != nil {
+        h.logger.Error("Error fetching orders: " + err.Error())
+        http.Error(w, "error getting orders", http.StatusInternalServerError)
+        return
+    }
 
-	res := OrderListResponse{Data: ToOrderTypeList(ordersResponse.Data)}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(res)
+    res := ToOrderListResFromPbOrderListResponse(ordersResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(res)
 }
 
 func (h *OrderHandlerController) GetOrderDetail(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		http.Error(w, "invalid order ID", http.StatusBadRequest)
-		return
-	}
+    id := chi.URLParam(r, "id")
+    i, err := strconv.ParseInt(id, 10, 64)
+    if err != nil {
+        http.Error(w, "error parsing ID", http.StatusBadRequest)
+        return
+    }
 
-	h.logger.Info("Fetching order detail")
-	orderDetailResponse, err := h.service.GetOrderDetail(h.ctx, &order.OrderIdParam{Id: id})
-	if err != nil {
-		h.logger.Error("Error fetching order detail: " + err.Error())
-		http.Error(w, "error fetching order detail", http.StatusInternalServerError)
-		return
-	}
+    h.logger.Info(fmt.Sprintf("Fetching order detail for ID: %d", i))
+    orderResponse, err := h.client.GetOrderDetail(h.ctx, &order.OrderIdParam{Id: i})
+    if err != nil {
+        h.logger.Error("Error fetching order detail: " + err.Error())
+        http.Error(w, "error getting order", http.StatusInternalServerError)
+        return
+    }
 
-	res := OrderResponse{Data: ToOrderType(orderDetailResponse.Data)}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(res)
+    res := ToOrderResFromPbOrderResponse(orderResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(res)
 }
 
-
 func (h *OrderHandlerController) UpdateOrder(w http.ResponseWriter, r *http.Request) {
-	var req UpdateOrderRequestType
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "error decoding request body", http.StatusBadRequest)
-		return
-	}
+    var orderReq UpdateOrderRequestType
+    if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
 
-	h.logger.Info("Updating order")
-	updatedOrderResponse, err := h.service.UpdateOrder(h.ctx, ToUpdateOrderRequest(req))
-	if err != nil {
-		h.logger.Error("Error updating order: " + err.Error())
-		http.Error(w, "error updating order", http.StatusInternalServerError)
-		return
-	}
+    h.logger.Info(fmt.Sprintf("Updating order: %d", orderReq.ID))
+    updatedOrderResponse, err := h.client.UpdateOrder(h.ctx, ToPBUpdateOrderRequest(orderReq))
+    if err != nil {
+        h.logger.Error("Error updating order: " + err.Error())
+        http.Error(w, "error updating order", http.StatusInternalServerError)
+        return
+    }
 
-	res := OrderResponse{Data: ToOrderType(updatedOrderResponse.Data)}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(res)
+    res := ToOrderResFromPbOrderResponse(updatedOrderResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(res)
 }
 
 func (h *OrderHandlerController) PayOrders(w http.ResponseWriter, r *http.Request) {
-	var req PayOrdersRequestType
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "error decoding request body", http.StatusBadRequest)
-		return
-	}
+    var req PayOrdersRequestType
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
 
-	h.logger.Info("Processing payment for orders")
-	paidOrdersResponse, err := h.service.PayOrders(h.ctx, ToPayOrdersRequest(req))
-	if err != nil {
-		h.logger.Error("Error processing payment: " + err.Error())
-		http.Error(w, "error processing payment", http.StatusInternalServerError)
-		return
-	}
+    h.logger.Info("Processing payment for orders")
+    paidOrdersResponse, err := h.client.PayOrders(h.ctx, ToPBPayOrdersRequest(req))
+    if err != nil {
+        h.logger.Error("Error processing payment: " + err.Error())
+        http.Error(w, "error processing payment", http.StatusInternalServerError)
+        return
+    }
 
-	res := OrderListResponse{Data: ToOrderTypeList(paidOrdersResponse.Data)}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(res)
+    res := ToOrderListResFromPbOrderListResponse(paidOrdersResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(res)
 }
 
 // Conversion functions
-
-func ToCreateOrderRequest(req CreateOrderRequestType) *order.CreateOrderRequest {
-	return &order.CreateOrderRequest{
-		GuestId:        req.GuestID,
-		UserId:         req.UserID,
-		IsGuest:        req.IsGuest,
-		TableNumber:    req.TableNumber,
-		OrderHandlerId: req.OrderHandlerID,
-		Status:         req.Status,
-		CreatedAt:      timestamppb.New(time.Now()),
-		UpdatedAt:      timestamppb.New(time.Now()),
-		TotalPrice:     req.TotalPrice,
-		DishItems:      ToDishOrderItems(req.DishItems),
-		SetItems:       ToSetOrderItems(req.SetItems),
-	}
+func ToPBCreateOrderRequest(req CreateOrderRequestType) *order.CreateOrderRequest {
+    return &order.CreateOrderRequest{
+        GuestId:        req.GuestID,
+        UserId:         req.UserID,
+        IsGuest:        req.IsGuest,
+        TableNumber:    req.TableNumber,
+        OrderHandlerId: req.OrderHandlerID,
+        Status:         req.Status,
+        CreatedAt:      timestamppb.New(req.CreatedAt),
+        UpdatedAt:      timestamppb.New(req.UpdatedAt),
+        TotalPrice:     req.TotalPrice,
+        DishItems:      ToPBDishOrderItems(req.DishItems),
+        SetItems:       ToPBSetOrderItems(req.SetItems),
+    }
 }
 
-func ToGetOrdersRequest(req GetOrdersRequestType) *order.GetOrdersRequest {
-	return &order.GetOrdersRequest{
-		FromDate: timestamppb.New(req.FromDate),
-		ToDate:   timestamppb.New(req.ToDate),
-		UserId:   req.UserID,
-		GuestId:  req.GuestID,
-	}
+func ToPBUpdateOrderRequest(req UpdateOrderRequestType) *order.UpdateOrderRequest {
+    return &order.UpdateOrderRequest{
+        Id:             req.ID,
+        GuestId:        req.GuestID,
+        UserId:         req.UserID,
+        TableNumber:    req.TableNumber,
+        OrderHandlerId: req.OrderHandlerID,
+        Status:         req.Status,
+        TotalPrice:     req.TotalPrice,
+        DishItems:      ToPBDishOrderItems(req.DishItems),
+        SetItems:       ToPBSetOrderItems(req.SetItems),
+        IsGuest:        req.IsGuest,
+    }
 }
 
-func ToUpdateOrderRequest(req UpdateOrderRequestType) *order.UpdateOrderRequest {
-	return &order.UpdateOrderRequest{
-		Id:             req.ID,
-		GuestId:        req.GuestID,
-		UserId:         req.UserID,
-		TableNumber:    req.TableNumber,
-		OrderHandlerId: req.OrderHandlerID,
-		Status:         req.Status,
-		TotalPrice:     req.TotalPrice,
-		DishItems:      ToDishOrderItemsProto(req.DishItems),
-		SetItems:       ToSetOrderItemsProto(req.SetItems),
-		IsGuest:        req.IsGuest,
-	}
+func ToPBGetOrdersRequest(req GetOrdersRequestType) *order.GetOrdersRequest {
+    return &order.GetOrdersRequest{
+        FromDate: timestamppb.New(req.FromDate),
+        ToDate:   timestamppb.New(req.ToDate),
+        UserId:   req.UserID,
+        GuestId:  req.GuestID,
+    }
 }
 
-func ToPayOrdersRequest(req PayOrdersRequestType) *order.PayOrdersRequest {
-	payReq := &order.PayOrdersRequest{}
-	if req.GuestID != nil {
-		payReq.Identifier = &order.PayOrdersRequest_GuestId{GuestId: *req.GuestID}
-	} else if req.UserID != nil {
-		payReq.Identifier = &order.PayOrdersRequest_UserId{UserId: *req.UserID}
-	}
-	return payReq
+func ToPBPayOrdersRequest(req PayOrdersRequestType) *order.PayOrdersRequest {
+    pbReq := &order.PayOrdersRequest{}
+    if req.GuestID != nil {
+        pbReq.Identifier = &order.PayOrdersRequest_GuestId{GuestId: *req.GuestID}
+    } else if req.UserID != nil {
+        pbReq.Identifier = &order.PayOrdersRequest_UserId{UserId: *req.UserID}
+    }
+    return pbReq
 }
 
-func ToOrderType(o *order.Order) OrderType {
-	return OrderType{
-		ID:             o.Id,
-		GuestID:        o.GuestId,
-		UserID:         o.UserId,
-		IsGuest:        o.IsGuest,
-		TableNumber:    o.TableNumber,
-		OrderHandlerID: o.OrderHandlerId,
-		Status:         o.Status,
-		CreatedAt:      o.CreatedAt.AsTime(),
-		UpdatedAt:      o.UpdatedAt.AsTime(),
-		TotalPrice:     o.TotalPrice,
-		DishItems:      ToDishOrderItemTypes(o.DishItems),
-		SetItems:       ToSetOrderItemTypes(o.SetItems),
-	}
+func ToPBDishOrderItems(items []DishOrderItem) []*order.DishOrderItem {
+    pbItems := make([]*order.DishOrderItem, len(items))
+    for i, item := range items {
+        pbItems[i] = &order.DishOrderItem{
+            Id:       item.ID,
+            Quantity: item.Quantity,
+            Dish:     ToPBDishOrder(item.Dish),
+        }
+    }
+    return pbItems
 }
 
-func ToOrderTypeList(orders []*order.Order) []OrderType {
-	result := make([]OrderType, len(orders))
-	for i, o := range orders {
-		result[i] = ToOrderType(o)
-	}
-	return result
+func ToPBSetOrderItems(items []SetOrderItem) []*order.SetOrderItem {
+    pbItems := make([]*order.SetOrderItem, len(items))
+    for i, item := range items {
+        pbItems[i] = &order.SetOrderItem{
+            Id:       item.ID,
+            Quantity: item.Quantity,
+            Set:      ToPBSetProto(item.Set),
+        }
+    }
+    return pbItems
 }
 
-func ToDishOrderItems(items []CreateOrderItemType) []*order.DishOrderItem {
-	result := make([]*order.DishOrderItem, len(items))
-	for i, item := range items {
-		result[i] = &order.DishOrderItem{
-			Quantity: item.Quantity,
-		}
-	}
-	return result
+func ToPBDishOrder(dish DishOrder) *order.DishOrder {
+    return &order.DishOrder{
+        Id:          dish.ID,
+        Name:        dish.Name,
+        Price:       dish.Price,
+        Description: dish.Description,
+        Image:       dish.Image,
+        Status:      dish.Status,
+        CreatedAt:   timestamppb.New(dish.CreatedAt),
+        UpdatedAt:   timestamppb.New(dish.UpdatedAt),
+    }
 }
 
-func ToSetOrderItems(items []CreateOrderItemType) []*order.SetOrderItem {
-	result := make([]*order.SetOrderItem, len(items))
-	for i, item := range items {
-		result[i] = &order.SetOrderItem{
-			Quantity: item.Quantity,
-		}
-	}
-	return result
+func ToPBSetProto(set SetProto) *order.SetProto {
+    return &order.SetProto{
+        Id:          set.ID,
+        Name:        set.Name,
+        Description: set.Description,
+        Dishes:      ToPBSetProtoDishes(set.Dishes),
+        UserId:      set.UserID,
+        CreatedAt:   timestamppb.New(set.CreatedAt),
+        UpdatedAt:   timestamppb.New(set.UpdatedAt),
+        IsFavourite: set.IsFavourite,
+        LikeBy:      set.LikeBy,
+        IsPublic:    set.IsPublic,
+        Image:       set.Image,
+    }
 }
 
-func ToDishOrderItemTypes(items []*order.DishOrderItem) []DishOrderItem {
-	result := make([]DishOrderItem, len(items))
-	for i, item := range items {
-		result[i] = DishOrderItem{
-			ID:       item.Id,
-			Quantity: item.Quantity,
-			Dish:     ToDishOrderType(item.Dish),
-		}
-	}
-	return result
+func ToPBSetProtoDishes(dishes []SetProtoDish) []*order.SetProtoDish {
+    pbDishes := make([]*order.SetProtoDish, len(dishes))
+    for i, dish := range dishes {
+        pbDishes[i] = &order.SetProtoDish{
+            Id:          dish.ID,
+            Name:        dish.Name,
+            Price:       dish.Price,
+            Description: dish.Description,
+            Image:       dish.Image,
+            Status:      dish.Status,
+            CreatedAt:   timestamppb.New(dish.CreatedAt),
+            UpdatedAt:   timestamppb.New(dish.UpdatedAt),
+        }
+    }
+    return pbDishes
 }
 
-func ToSetOrderItemTypes(items []*order.SetOrderItem) []SetOrderItemType {
-	result := make([]SetOrderItemType, len(items))
-	for i, item := range items {
-		result[i] = SetOrderItemType{
-			ID:       item.Id,
-			Quantity: item.Quantity,
-			Set:      ToSetProtoType(item.Set),
-		}
-	}
-	return result
+func ToOrderResFromPbOrderResponse(pbRes *order.OrderResponse) OrderResponse {
+    return OrderResponse{
+        Data: ToOrderFromPbOrder(pbRes.Data),
+    }
 }
 
-func ToDishOrderType(d *order.DishOrder) DishOrderType {
-	return DishOrderType{
-		ID:          d.Id,
-		Name:        d.Name,
-		Price:       d.Price,
-		Description: d.Description,
-		Image:       d.Image,
-		Status:      d.Status,
-		CreatedAt:   d.CreatedAt.AsTime(),
-		UpdatedAt:   d.UpdatedAt.AsTime(),
-	}
+func ToOrderListResFromPbOrderListResponse(pbRes *order.OrderListResponse) OrderListResponse {
+    orders := make([]OrderType, len(pbRes.Data))
+    for i, pbOrder := range pbRes.Data {
+        orders[i] = ToOrderFromPbOrder(pbOrder)
+    }
+    return OrderListResponse{
+        Data: orders,
+    }
 }
 
-func ToSetProtoType(s *order.SetProto) SetProtoType {
-	return SetProtoType{
-		ID:          int64(s.Id),
-		Name:        s.Name,
-		Description: s.Description,
-		UserID:      s.UserId,
-		IsFavourite: s.IsFavourite,
-		LikeBy:      s.LikeBy,
-		CreatedAt:   s.CreatedAt.AsTime(),
-		UpdatedAt:   s.UpdatedAt.AsTime(),
-		IsPublic:    s.IsPublic,
-		Image:       s.Image,
-		Dishes:      ToSetProtoDishTypes(s.Dishes),
-	}
+func ToOrderFromPbOrder(pbOrder *order.Order) OrderType {
+    return OrderType{
+        ID:             pbOrder.Id,
+        GuestID:        pbOrder.GuestId,
+        UserID:         pbOrder.UserId,
+        IsGuest:        pbOrder.IsGuest,
+        TableNumber:    pbOrder.TableNumber,
+        OrderHandlerID: pbOrder.OrderHandlerId,
+        Status:         pbOrder.Status,
+        CreatedAt:      pbOrder.CreatedAt.AsTime(),
+        UpdatedAt:      pbOrder.UpdatedAt.AsTime(),
+        TotalPrice:     pbOrder.TotalPrice,
+        DishItems:      ToDishOrderItemsFromPb(pbOrder.DishItems),
+        SetItems:       ToSetOrderItemsFromPb(pbOrder.SetItems),
+    }
 }
 
-func ToSetProtoDishTypes(dishes []*order.SetProtoDish) []SetProtoDishType {
-	result := make([]SetProtoDishType, len(dishes))
-	for i, d := range dishes {
-		result[i] = SetProtoDishType{
-			ID:    d.Id,
-			Name:  d.Name,
-			Price: d.Price,
-		}
-	}
-	return result
+func ToDishOrderItemsFromPb(pbItems []*order.DishOrderItem) []DishOrderItem {
+    items := make([]DishOrderItem, len(pbItems))
+    for i, pbItem := range pbItems {
+        items[i] = DishOrderItem{
+            ID:       pbItem.Id,
+            Quantity: pbItem.Quantity,
+            Dish:     ToDishOrderFromPb(pbItem.Dish),
+        }
+    }
+    return items
 }
 
-func ToDishOrderItemsProto(items []DishOrderItem) []*order.DishOrderItem {
-	result := make([]*order.DishOrderItem, len(items))
-	for i, item := range items {
-		result[i] = &order.DishOrderItem{
-			Id:       item.ID,
-			Quantity: item.Quantity,
-			Dish:     ToDishOrderProto(item.Dish),
-		}
-	}
-	return result
+func ToSetOrderItemsFromPb(pbItems []*order.SetOrderItem) []SetOrderItem {
+    items := make([]SetOrderItem, len(pbItems))
+    for i, pbItem := range pbItems {
+        items[i] = SetOrderItem{
+            ID:       pbItem.Id,
+            Quantity: pbItem.Quantity,
+            Set:      ToSetProtoFromPb(pbItem.Set),
+        }
+    }
+    return items
 }
 
-func ToSetOrderItemsProto(items []SetOrderItemType) []*order.SetOrderItem {
-	result := make([]*order.SetOrderItem, len(items))
-	for i, item := range items {
-		result[i] = &order.SetOrderItem{
-			Id:       item.ID,
-			Quantity: item.Quantity,
-			Set:      ToSetProtoProto(item.Set),
-		}
-	}
-	return result
+func ToDishOrderFromPb(pbDish *order.DishOrder) DishOrder {
+    return DishOrder{
+        ID:          pbDish.Id,
+        Name:        pbDish.Name,
+        Price:       pbDish.Price,
+        Description: pbDish.Description,
+        Image:       pbDish.Image,
+        Status:      pbDish.Status,
+        CreatedAt:   pbDish.CreatedAt.AsTime(),
+        UpdatedAt:   pbDish.UpdatedAt.AsTime(),
+    }
 }
 
-func ToDishOrderProto(dish DishOrderType) *order.DishOrder {
-	return &order.DishOrder{
-		Id:          dish.ID,
-		Name:        dish.Name,
-		Price:       dish.Price,
-		Description: dish.Description,
-		Image:       dish.Image,
-		Status:      dish.Status,
-		CreatedAt:   timestamppb.New(dish.CreatedAt),
-		UpdatedAt:   timestamppb.New(dish.UpdatedAt),
-	}
+func ToSetProtoFromPb(pbSet *order.SetProto) SetProto {
+    return SetProto{
+        ID:          pbSet.Id,
+        Name:        pbSet.Name,
+        Description: pbSet.Description,
+        Dishes:      ToSetProtoDishesFromPb(pbSet.Dishes),
+        UserID:      pbSet.UserId,
+        CreatedAt:   pbSet.CreatedAt.AsTime(),
+        UpdatedAt:   pbSet.UpdatedAt.AsTime(),
+        IsFavourite: pbSet.IsFavourite,
+        LikeBy:      pbSet.LikeBy,
+        IsPublic:    pbSet.IsPublic,
+        Image:       pbSet.Image,
+    }
 }
 
-func ToSetProtoProto(set SetProtoType) *order.SetProto {
-	return &order.SetProto{
-		Id:          int32(set.ID),
-		Name:        set.Name,
-		Description: set.Description,
-		UserId:      set.UserID,
-		IsFavourite: set.IsFavourite,
-		LikeBy:      set.LikeBy,
-		CreatedAt:   timestamppb.New(set.CreatedAt),
-		UpdatedAt:   timestamppb.New(set.UpdatedAt),
-		IsPublic:    set.IsPublic,
-		Image:       set.Image,
-		Dishes:      ToSetProtoDishesProto(set.Dishes),
-	}
-}
-func ToSetProtoDishesProto(dishes []SetProtoDishType) []*order.SetProtoDish {
-	result := make([]*order.SetProtoDish, len(dishes))
-	for i, dish := range dishes {
-		result[i] = &order.SetProtoDish{
-			Id:    dish.ID,
-			Name:  dish.Name,
-			Price: dish.Price,
-		}
-	}
-	return result
+func ToSetProtoDishesFromPb(pbDishes []*order.SetProtoDish) []SetProtoDish {
+    dishes := make([]SetProtoDish, len(pbDishes))
+    for i, pbDish := range pbDishes {
+        dishes[i] = SetProtoDish{
+            ID:          pbDish.Id,
+            Name:        pbDish.Name,
+            Price:       pbDish.Price,
+            Description: pbDish.Description,
+            Image:       pbDish.Image,
+            Status:      pbDish.Status,
+            CreatedAt:   pbDish.CreatedAt.AsTime(),
+            UpdatedAt:   pbDish.UpdatedAt.AsTime(),
+        }
+    }
+    return dishes
 }

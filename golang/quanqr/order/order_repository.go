@@ -1,11 +1,12 @@
 package order_grpc
 
-
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
-"github.com/jackc/pgx/v4"
+
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -24,74 +25,244 @@ func NewOrderRepository(db *pgxpool.Pool) *OrderRepository {
 		logger: logger.NewLogger(),
 	}
 }
-
 func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrderRequest) (*order.Order, error) {
-	or.logger.Info(fmt.Sprintf("Creating new order: %+v", req))
-	tx, err := or.db.Begin(ctx)
-	if err != nil {
-		or.logger.Error("Error starting transaction: " + err.Error())
-		return nil, fmt.Errorf("error starting transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
+    or.logger.Info(fmt.Sprintf("Creating new order: %+v", req))
+    tx, err := or.db.Begin(ctx)
+    if err != nil {
+        or.logger.Error("Error starting transaction: " + err.Error())
+        return nil, fmt.Errorf("error starting transaction: %w", err)
+    }
+    defer tx.Rollback(ctx)
 
-	query := `
-		INSERT INTO orders (guest_id, user_id, is_guest, table_number, order_handler_id, status, created_at, updated_at, total_price)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8)
-		RETURNING id, created_at, updated_at
-	`
-	var o order.Order
-	var createdAt, updatedAt time.Time
-	err = tx.QueryRow(ctx, query,
-		req.GuestId,
-		req.UserId,
-		req.IsGuest,
-		req.TableNumber,
-		req.OrderHandlerId,
-		req.Status,
-		time.Now(),
-		req.TotalPrice,
-	).Scan(&o.Id, &createdAt, &updatedAt)
-	if err != nil {
-		or.logger.Error("Error creating order: " + err.Error())
-		return nil, fmt.Errorf("error creating order: %w", err)
-	}
+    // Check if the table exists
+    var tableExists bool
+    err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM tables WHERE number = $1)", req.TableNumber).Scan(&tableExists)
+    if err != nil {
+        or.logger.Error("Error checking table existence: " + err.Error())
+        return nil, fmt.Errorf("error checking table existence: %w", err)
+    }
+    if !tableExists {
+        or.logger.Error(fmt.Sprintf("Table number %d does not exist", req.TableNumber))
+        return nil, fmt.Errorf("table number %d does not exist", req.TableNumber)
+    }
 
-	o.GuestId = req.GuestId
-	o.UserId = req.UserId
-	o.IsGuest = req.IsGuest
-	o.TableNumber = req.TableNumber
-	o.OrderHandlerId = req.OrderHandlerId
-	o.Status = req.Status
-	o.CreatedAt = timestamppb.New(createdAt)
-	o.UpdatedAt = timestamppb.New(updatedAt)
-	o.TotalPrice = req.TotalPrice
+	// check set
 
-	// Insert dish items
-	for _, item := range req.DishItems {
-		err := or.insertDishOrderItem(ctx, tx, o.Id, item)
+    // Create the order
+    query := `
+        INSERT INTO orders 
+            (guest_id, user_id, is_guest, table_number, order_handler_id, status, created_at, updated_at, total_price)
+        VALUES 
+            ($1, $2, $3, $4, $5, $6, $7, $7, $8)
+        RETURNING id, created_at, updated_at
+    `
+    
+    var o order.Order
+    var createdAt, updatedAt time.Time
+    var guestId, userId sql.NullInt64
+
+    if req.IsGuest {
+        guestId = sql.NullInt64{Int64: req.GuestId, Valid: true}
+        userId = sql.NullInt64{Valid: false}
+    } else {
+        userId = sql.NullInt64{Int64: req.UserId, Valid: true}
+        guestId = sql.NullInt64{Valid: false}
+    }
+    err = tx.QueryRow(ctx, query,
+        guestId,
+        userId,
+        req.IsGuest,
+        req.TableNumber,
+        req.OrderHandlerId,
+        req.Status,
+        time.Now(),
+        req.TotalPrice,
+    ).Scan(&o.Id, &createdAt, &updatedAt)
+    
+    if err != nil {
+        or.logger.Error("Error creating order: " + err.Error())
+        return nil, fmt.Errorf("error creating order: %w", err)
+    }
+
+    // Insert dish order items
+    for _, item := range req.DishItems {
+        // Create a dish snapshot
+        var dishSnapshotId int64
+        err := tx.QueryRow(ctx, `
+            INSERT INTO dish_snapshots (name, price, description, image, status, dish_id)
+            SELECT name, price, description, image, status, id
+            FROM dishes
+            WHERE id = $1
+            RETURNING id
+        `, item.Dish.Id).Scan(&dishSnapshotId)
+        if err != nil {
+            or.logger.Error("Error creating dish snapshot: " + err.Error())
+            return nil, fmt.Errorf("error creating dish snapshot: %w", err)
+        }
+
+        // Insert the dish order item using the snapshot
+        _, err = tx.Exec(ctx, `
+            INSERT INTO dish_order_items (order_id, dish_snapshot_id, quantity)
+            VALUES ($1, $2, $3)
+        `, o.Id, dishSnapshotId, item.Quantity)
+        if err != nil {
+            or.logger.Error("Error inserting dish order item: " + err.Error())
+            return nil, fmt.Errorf("error inserting dish order item: %w", err)
+        }
+    }
+
+    // Insert set order items
+    for _, item := range req.SetItems {
+        // Create a set snapshot
+        var setSnapshotId int64
+
+		var setExists bool
+		err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM sets WHERE id = $1)", item.Set.Id).Scan(&setExists)
 		if err != nil {
-			return nil, err
+			or.logger.Error("Error checking set existence: " + err.Error())
+			return nil, fmt.Errorf("error checking set existence: %w", err)
 		}
-	}
-
-	// Insert set items
-	for _, item := range req.SetItems {
-		err := or.insertSetOrderItem(ctx, tx, o.Id, item)
-		if err != nil {
-			return nil, err
+		if !setExists {
+			or.logger.Error(fmt.Sprintf("Set with ID %d does not exist", item.Set.Id))
+			return nil, fmt.Errorf("set with ID %d does not exist", item.Set.Id)
 		}
-	}
 
-	if err := tx.Commit(ctx); err != nil {
-		or.logger.Error("Error committing transaction: " + err.Error())
-		return nil, fmt.Errorf("error committing transaction: %w", err)
-	}
+        err := tx.QueryRow(ctx, `
+            INSERT INTO set_snapshots (original_set_id, name, description, user_id, is_public, image)
+            SELECT id, name, description, user_id, is_public, image
+            FROM sets
+            WHERE id = $1
+            RETURNING id
+        `, item.Set.Id).Scan(&setSnapshotId)
+        if err != nil {
+            or.logger.Error("Error creating set snapshot: " + err.Error())
+            return nil, fmt.Errorf("error creating set snapshot: %w", err)
+        }
 
-	o.DishItems = req.DishItems
-	o.SetItems = req.SetItems
-	or.logger.Info(fmt.Sprintf("Successfully created new order with ID: %d", o.Id))
-	return &o, nil
+        // Insert the set order item using the snapshot
+        _, err = tx.Exec(ctx, `
+            INSERT INTO set_order_items (order_id, set_snapshot_id, quantity)
+            VALUES ($1, $2, $3)
+        `, o.Id, setSnapshotId, item.Quantity)
+        if err != nil {
+            or.logger.Error("Error inserting set order item: " + err.Error())
+            return nil, fmt.Errorf("error inserting set order item: %w", err)
+        }
+
+        // Create dish snapshots for each dish in the set and link them to the set snapshot
+        for _, dish := range item.Set.Dishes {
+            var dishSnapshotId int64
+            err := tx.QueryRow(ctx, `
+                INSERT INTO dish_snapshots (name, price, description, image, status, dish_id)
+                SELECT name, price, description, image, status, id
+                FROM dishes
+                WHERE id = $1
+                RETURNING id
+            `, dish.Id).Scan(&dishSnapshotId)
+            if err != nil {
+                or.logger.Error("Error creating dish snapshot for set: " + err.Error())
+                return nil, fmt.Errorf("error creating dish snapshot for set: %w", err)
+            }
+
+            _, err = tx.Exec(ctx, `
+                INSERT INTO set_snapshot_dishes (set_snapshot_id, dish_snapshot_id, quantity)
+                VALUES ($1, $2, 1)
+            `, setSnapshotId, dishSnapshotId)
+            if err != nil {
+                or.logger.Error("Error linking dish snapshot to set snapshot: " + err.Error())
+                return nil, fmt.Errorf("error linking dish snapshot to set snapshot: %w", err)
+            }
+        }
+    }
+
+    if err := tx.Commit(ctx); err != nil {
+        or.logger.Error("Error committing transaction: " + err.Error())
+        return nil, fmt.Errorf("error committing transaction: %w", err)
+    }
+
+    // Populate the response object
+    o.GuestId = req.GuestId
+    o.UserId = req.UserId
+    o.IsGuest = req.IsGuest
+    o.TableNumber = req.TableNumber
+    o.OrderHandlerId = req.OrderHandlerId
+    o.Status = req.Status
+    o.CreatedAt = timestamppb.New(createdAt)
+    o.UpdatedAt = timestamppb.New(updatedAt)
+    o.TotalPrice = req.TotalPrice
+    o.DishItems = req.DishItems
+    o.SetItems = req.SetItems
+
+    or.logger.Info(fmt.Sprintf("Successfully created new order with ID: %d", o.Id))
+    return &o, nil
 }
+// func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrderRequest) (*order.Order, error) {
+// 	or.logger.Info(fmt.Sprintf("Creating new order: %+v", req))
+// 	tx, err := or.db.Begin(ctx)
+// 	if err != nil {
+// 		or.logger.Error("Error starting transaction: " + err.Error())
+// 		return nil, fmt.Errorf("error starting transaction: %w", err)
+// 	}
+// 	defer tx.Rollback(ctx)
+
+// 	query := `
+// 		INSERT INTO orders (guest_id, user_id, is_guest, table_number, order_handler_id, status, created_at, updated_at, total_price)
+// 		VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8)
+// 		RETURNING id, created_at, updated_at
+// 	`
+// 	var o order.Order
+// 	var createdAt, updatedAt time.Time
+// 	err = tx.QueryRow(ctx, query,
+// 		req.GuestId,
+// 		req.UserId,
+// 		req.IsGuest,
+// 		req.TableNumber,
+// 		req.OrderHandlerId,
+// 		req.Status,
+// 		time.Now(),
+// 		req.TotalPrice,
+// 	).Scan(&o.Id, &createdAt, &updatedAt)
+// 	if err != nil {
+// 		or.logger.Error("Error creating order: " + err.Error())
+// 		return nil, fmt.Errorf("error creating order: %w", err)
+// 	}
+
+// 	o.GuestId = req.GuestId
+// 	o.UserId = req.UserId
+// 	o.IsGuest = req.IsGuest
+// 	o.TableNumber = req.TableNumber
+// 	o.OrderHandlerId = req.OrderHandlerId
+// 	o.Status = req.Status
+// 	o.CreatedAt = timestamppb.New(createdAt)
+// 	o.UpdatedAt = timestamppb.New(updatedAt)
+// 	o.TotalPrice = req.TotalPrice
+
+// 	// Insert dish items
+// 	for _, item := range req.DishItems {
+// 		err := or.insertDishOrderItem(ctx, tx, o.Id, item)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+
+// 	// Insert set items
+// 	for _, item := range req.SetItems {
+// 		err := or.insertSetOrderItem(ctx, tx, o.Id, item)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+
+// 	if err := tx.Commit(ctx); err != nil {
+// 		or.logger.Error("Error committing transaction: " + err.Error())
+// 		return nil, fmt.Errorf("error committing transaction: %w", err)
+// 	}
+
+// 	o.DishItems = req.DishItems
+// 	o.SetItems = req.SetItems
+// 	or.logger.Info(fmt.Sprintf("Successfully created new order with ID: %d", o.Id))
+// 	return &o, nil
+// }
 
 func (or *OrderRepository) GetOrders(ctx context.Context, req *order.GetOrdersRequest) ([]*order.Order, error) {
 	or.logger.Info("Fetching orders")

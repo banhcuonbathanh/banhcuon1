@@ -277,8 +277,8 @@ CREATE TABLE orders (
     )
 );
 
--- Recreate order items tables
-REATE TABLE dish_order_items (
+-- Recreate the order items tables
+CREATE TABLE dish_order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     dish_snapshot_id BIGINT NOT NULL,
