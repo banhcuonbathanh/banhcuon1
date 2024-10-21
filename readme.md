@@ -30,6 +30,8 @@ TRUNCATE TABLE schema*migrations, users; delete all data
 \d sessions
 \d reading_test_models;
 
+\d orders
+
 SELECT * FROM tables;
 SELECT * FROM set_dishes;
 SELECT * FROM sets;

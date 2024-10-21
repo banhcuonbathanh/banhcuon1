@@ -41,7 +41,7 @@ message SetProtoSnapshot {
 message SetProtoDish {
   int32 dish_id = 1;  // Keep this for backwards compatibility
   int32 quantity = 2;
-  Dish dish = 3;  // Add this field for full dish information
+
 }
 message CreateSetProtoRequest {
   string name = 1;
@@ -82,13 +82,3 @@ service SetService {
 }
 
 
-message Dish {
-    int64 id = 1;
-    string name = 2;
-    int32 price = 3;
-    string description = 4;
-    string image = 5;
-    string status = 6;
-    google.protobuf.Timestamp created_at = 7;
-    google.protobuf.Timestamp updated_at = 8;
-  }

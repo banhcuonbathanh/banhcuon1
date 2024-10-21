@@ -1,7 +1,32 @@
--- Create ENUM type
+-- Drop existing tables and types
+DROP TABLE IF EXISTS set_snapshot_dishes;
+DROP TABLE IF EXISTS set_snapshots;
+DROP TABLE IF EXISTS set_dishes;
+DROP TABLE IF EXISTS sets;
+DROP TABLE IF EXISTS sockets;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS guests;
+DROP TABLE IF EXISTS tables;
+DROP TABLE IF EXISTS dish_snapshots;
+DROP TABLE IF EXISTS dishes;
+DROP TABLE IF EXISTS accounts;
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS question_models;
+DROP TABLE IF EXISTS paragraph_content_models;
+DROP TABLE IF EXISTS passage_models;
+DROP TABLE IF EXISTS section_models;
+DROP TABLE IF EXISTS reading_test_models;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS users;
+
+DROP TYPE IF EXISTS question_type;
+
+-- Recreate types
 CREATE TYPE question_type AS ENUM ('MultipleChoice', 'TrueFalseNotGiven', 'Matching', 'ShortAnswer');
 
--- Create tables
+-- Recreate tables
+
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -17,7 +42,7 @@ CREATE TABLE users (
 );
 
 CREATE TABLE tables (
-    number BIGINT PRIMARY KEY,
+    number INTEGER PRIMARY KEY,
     capacity INTEGER NOT NULL,
     status VARCHAR(50) DEFAULT 'Available',
     token VARCHAR(255) NOT NULL,
@@ -28,7 +53,7 @@ CREATE TABLE tables (
 CREATE TABLE guests (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    table_number BIGINT,
+    table_number INTEGER,
     refresh_token VARCHAR(255),
     refresh_token_expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -36,8 +61,14 @@ CREATE TABLE guests (
     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL
 );
 
+CREATE INDEX idx_users_role ON users(role);
+
+ALTER TABLE users
+ADD CONSTRAINT check_valid_role
+CHECK (role IN ('Admin', 'Employee', 'Manager', 'Guest'));
+
 CREATE TABLE sessions (
-    id VARCHAR(255) PRIMARY KEY NOT NULL,
+    id varchar(255) PRIMARY KEY NOT NULL,
     user_email VARCHAR(100) NOT NULL,
     refresh_token TEXT NOT NULL,
     is_revoked BOOLEAN DEFAULT false,
@@ -143,6 +174,7 @@ CREATE TABLE sockets (
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL
 );
 
+-- Updated table for sets
 CREATE TABLE sets (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -157,6 +189,7 @@ CREATE TABLE sets (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- New table for set_dishes (junction table between sets and dishes)
 CREATE TABLE set_dishes (
     id BIGSERIAL PRIMARY KEY,
     set_id BIGINT NOT NULL,
@@ -167,6 +200,7 @@ CREATE TABLE set_dishes (
     UNIQUE (set_id, dish_id)
 );
 
+-- Updated table for set snapshots (moved here and removed duplicate)
 CREATE TABLE set_snapshots (
     id BIGSERIAL PRIMARY KEY,
     original_set_id BIGINT,
@@ -183,6 +217,7 @@ CREATE TABLE set_snapshots (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- New table for set_snapshot_dishes
 CREATE TABLE set_snapshot_dishes (
     id BIGSERIAL PRIMARY KEY,
     set_snapshot_id BIGINT NOT NULL,
@@ -193,19 +228,32 @@ CREATE TABLE set_snapshot_dishes (
     UNIQUE (set_snapshot_id, dish_snapshot_id)
 );
 
+-- Add constraints and indexes
+ALTER TABLE accounts
+ADD CONSTRAINT fk_owner
+FOREIGN KEY (owner_id) REFERENCES accounts(id) ON DELETE SET NULL;
+
+CREATE INDEX idx_sets_user_id ON sets(user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX idx_sets_is_favourite ON sets(is_favourite);
+CREATE INDEX idx_sets_like_by ON sets USING GIN (like_by);
+CREATE INDEX idx_set_snapshots_original_set_id ON set_snapshots(original_set_id);
+
+-- New indexes for is_public column
+CREATE INDEX idx_sets_is_public ON sets(is_public);
+CREATE INDEX idx_set_snapshots_is_public ON set_snapshots(is_public);
+
+-- set 
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     guest_id BIGINT,
     user_id BIGINT,
     is_guest BOOLEAN NOT NULL,
-    table_number BIGINT,
+    table_number INTEGER,
     order_handler_id BIGINT,
     status VARCHAR(50) DEFAULT 'Pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     total_price INTEGER,
-    bow_chili BIGINT DEFAULT 0,
-    bow_no_chili BIGINT DEFAULT 0,
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
@@ -216,47 +264,26 @@ CREATE TABLE orders (
     )
 );
 
-
+-- Recreate the order items tables
 CREATE TABLE dish_order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
-    dish_id BIGINT NOT NULL,
+    dish_snapshot_id BIGINT NOT NULL,
     quantity INTEGER NOT NULL,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE CASCADE
+    FOREIGN KEY (dish_snapshot_id) REFERENCES dish_snapshots(id) ON DELETE CASCADE
 );
 
 CREATE TABLE set_order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
-    set_id BIGINT NOT NULL,
+    set_snapshot_id BIGINT NOT NULL,
     quantity INTEGER NOT NULL,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (set_id) REFERENCES sets(id) ON DELETE CASCADE
+    FOREIGN KEY (set_snapshot_id) REFERENCES set_snapshots(id) ON DELETE CASCADE
 );
 
--- Add constraints and create indexes
-ALTER TABLE users ADD CONSTRAINT check_valid_role CHECK (role IN ('Admin', 'Employee', 'Manager', 'Guest'));
-ALTER TABLE accounts ADD CONSTRAINT fk_owner FOREIGN KEY (owner_id) REFERENCES accounts(id) ON DELETE SET NULL;
-
--- CREATE INDEX idx_users_role ON users(role);
--- CREATE INDEX idx_sets_user_id ON sets(user_id) WHERE user_id IS NOT NULL;
--- CREATE INDEX idx_sets_is_favourite ON sets(is_favourite);
--- CREATE INDEX idx_sets_like_by ON sets USING GIN (like_by);
--- CREATE INDEX idx_set_snapshots_original_set_id ON set_snapshots(original_set_id);
--- CREATE INDEX idx_sets_is_public ON sets(is_public);
--- CREATE INDEX idx_set_snapshots_is_public ON set_snapshots(is_public);
--- CREATE INDEX idx_orders_guest_id ON orders(guest_id) WHERE guest_id IS NOT NULL;
--- CREATE INDEX idx_orders_user_id ON orders(user_id) WHERE user_id IS NOT NULL;
--- CREATE INDEX idx_orders_order_handler_id ON orders(order_handler_id) WHERE order_handler_id IS NOT NULL;
--- CREATE INDEX idx_orders_table_number ON orders(table_number) WHERE table_number IS NOT NULL;
--- CREATE INDEX idx_orders_is_guest ON orders(is_guest);
-
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_sets_user_id ON sets(user_id) WHERE user_id IS NOT NULL;
-CREATE INDEX idx_sets_is_favourite ON sets(is_favourite);
-CREATE INDEX idx_sets_like_by ON sets USING GIN (like_by);
-CREATE INDEX idx_sets_is_public ON sets(is_public);
+-- Create indexes for better performance
 CREATE INDEX idx_orders_guest_id ON orders(guest_id) WHERE guest_id IS NOT NULL;
 CREATE INDEX idx_orders_user_id ON orders(user_id) WHERE user_id IS NOT NULL;
 CREATE INDEX idx_orders_order_handler_id ON orders(order_handler_id) WHERE order_handler_id IS NOT NULL;

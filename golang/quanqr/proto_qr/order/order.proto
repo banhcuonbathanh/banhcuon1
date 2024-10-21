@@ -11,7 +11,6 @@ message Order {
   int64 id = 1;
    int64 guest_id = 2;
    int64 user_id = 3;
-
    bool is_guest = 12;
    int64 table_number = 4;
    int64 order_handler_id = 5;
@@ -21,6 +20,9 @@ message Order {
   int32 total_price = 9;
   repeated DishOrderItem dish_items = 10;
   repeated SetOrderItem set_items = 11;
+
+  int64 bow_chili = 13;
+  int64 bow_no_chili = 14;
 }
 
 message CreateOrderRequest {
@@ -37,6 +39,8 @@ message CreateOrderRequest {
   int32 total_price = 12;
   repeated DishOrderItem dish_items = 10;
   repeated SetOrderItem set_items = 11;
+  int64 bow_chili = 14;
+  int64 bow_no_chili = 15;
 }
 
 message UpdateOrderRequest {
@@ -50,6 +54,8 @@ message UpdateOrderRequest {
   repeated DishOrderItem dish_items = 8;
   repeated SetOrderItem set_items = 9;
   bool is_guest = 10;
+  int64 bow_chili = 13;
+  int64 bow_no_chili = 14;
 }
 
 message OrderResponse {
@@ -71,54 +77,19 @@ message OrderIdParam {
 message DishOrderItem {
   int64 id = 1;
   int32 quantity = 2;
-  DishOrder dish = 3;
+
 }
 
 message SetOrderItem {
   int64 id = 1;
   int32 quantity = 2;
-  SetProto set = 3;
+
 
 }
 
 
 
-message DishOrder {
-  int64 id = 1;
-  string name = 2;
-  int32 price = 3;
-  string description = 4;
-  string image = 5;
-  string status = 6;
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp updated_at = 8;
-}
 
-
-message SetProto {
-  int32 id = 1;
-  string name = 2;
-  string description = 3;
-  repeated SetProtoDish dishes = 4;
-   int64 user_id = 5;
-  google.protobuf.Timestamp created_at = 6;
-  google.protobuf.Timestamp updated_at = 7;
-  bool is_favourite = 8;
-  repeated int64 like_by = 9;
-  bool is_public = 10; // add
-
-  string image = 11;
-}
-message SetProtoDish {
-  int64 id = 1;
-  string name = 2;
-  int32 price = 3;
-  string description = 4;
-  string image = 5;
-  string status = 6;
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp updated_at = 8;
-}
 
 
 
@@ -139,14 +110,6 @@ message Guest {
   google.protobuf.Timestamp created_at = 4;
   google.protobuf.Timestamp updated_at = 5;
 }
-
-
-
-
-
-
-
-
 
 
 message PayOrdersRequest {

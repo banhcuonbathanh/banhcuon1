@@ -151,8 +151,11 @@ func ToPBCreateOrderRequest(req CreateOrderRequestType) *order.CreateOrderReques
         TotalPrice:     req.TotalPrice,
         DishItems:      ToPBDishOrderItems(req.DishItems),
         SetItems:       ToPBSetOrderItems(req.SetItems),
+        BowChili:       req.BowChili,
+        BowNoChili:     req.BowNoChili,
     }
 }
+
 
 func ToPBUpdateOrderRequest(req UpdateOrderRequestType) *order.UpdateOrderRequest {
     return &order.UpdateOrderRequest{
@@ -166,8 +169,11 @@ func ToPBUpdateOrderRequest(req UpdateOrderRequestType) *order.UpdateOrderReques
         DishItems:      ToPBDishOrderItems(req.DishItems),
         SetItems:       ToPBSetOrderItems(req.SetItems),
         IsGuest:        req.IsGuest,
+        BowChili:       req.BowChili,
+        BowNoChili:     req.BowNoChili,
     }
 }
+
 
 func ToPBGetOrdersRequest(req GetOrdersRequestType) *order.GetOrdersRequest {
     return &order.GetOrdersRequest{
@@ -194,7 +200,6 @@ func ToPBDishOrderItems(items []DishOrderItem) []*order.DishOrderItem {
         pbItems[i] = &order.DishOrderItem{
             Id:       item.ID,
             Quantity: item.Quantity,
-            Dish:     ToPBDishOrder(item.Dish),
         }
     }
     return pbItems
@@ -206,57 +211,15 @@ func ToPBSetOrderItems(items []SetOrderItem) []*order.SetOrderItem {
         pbItems[i] = &order.SetOrderItem{
             Id:       item.ID,
             Quantity: item.Quantity,
-            Set:      ToPBSetProto(item.Set),
         }
     }
     return pbItems
 }
 
-func ToPBDishOrder(dish DishOrder) *order.DishOrder {
-    return &order.DishOrder{
-        Id:          dish.ID,
-        Name:        dish.Name,
-        Price:       dish.Price,
-        Description: dish.Description,
-        Image:       dish.Image,
-        Status:      dish.Status,
-        CreatedAt:   timestamppb.New(dish.CreatedAt),
-        UpdatedAt:   timestamppb.New(dish.UpdatedAt),
-    }
-}
 
-func ToPBSetProto(set SetProto) *order.SetProto {
-    return &order.SetProto{
-        Id:          set.ID,
-        Name:        set.Name,
-        Description: set.Description,
-        Dishes:      ToPBSetProtoDishes(set.Dishes),
-        UserId:      set.UserID,
-        CreatedAt:   timestamppb.New(set.CreatedAt),
-        UpdatedAt:   timestamppb.New(set.UpdatedAt),
-        IsFavourite: set.IsFavourite,
-        LikeBy:      set.LikeBy,
-        IsPublic:    set.IsPublic,
-        Image:       set.Image,
-    }
-}
 
-func ToPBSetProtoDishes(dishes []SetProtoDish) []*order.SetProtoDish {
-    pbDishes := make([]*order.SetProtoDish, len(dishes))
-    for i, dish := range dishes {
-        pbDishes[i] = &order.SetProtoDish{
-            Id:          dish.ID,
-            Name:        dish.Name,
-            Price:       dish.Price,
-            Description: dish.Description,
-            Image:       dish.Image,
-            Status:      dish.Status,
-            CreatedAt:   timestamppb.New(dish.CreatedAt),
-            UpdatedAt:   timestamppb.New(dish.UpdatedAt),
-        }
-    }
-    return pbDishes
-}
+
+
 
 func ToOrderResFromPbOrderResponse(pbRes *order.OrderResponse) OrderResponse {
     return OrderResponse{
@@ -288,8 +251,11 @@ func ToOrderFromPbOrder(pbOrder *order.Order) OrderType {
         TotalPrice:     pbOrder.TotalPrice,
         DishItems:      ToDishOrderItemsFromPb(pbOrder.DishItems),
         SetItems:       ToSetOrderItemsFromPb(pbOrder.SetItems),
+        BowChili:       pbOrder.BowChili,
+        BowNoChili:     pbOrder.BowNoChili,
     }
 }
+
 
 func ToDishOrderItemsFromPb(pbItems []*order.DishOrderItem) []DishOrderItem {
     items := make([]DishOrderItem, len(pbItems))
@@ -297,7 +263,6 @@ func ToDishOrderItemsFromPb(pbItems []*order.DishOrderItem) []DishOrderItem {
         items[i] = DishOrderItem{
             ID:       pbItem.Id,
             Quantity: pbItem.Quantity,
-            Dish:     ToDishOrderFromPb(pbItem.Dish),
         }
     }
     return items
@@ -309,54 +274,11 @@ func ToSetOrderItemsFromPb(pbItems []*order.SetOrderItem) []SetOrderItem {
         items[i] = SetOrderItem{
             ID:       pbItem.Id,
             Quantity: pbItem.Quantity,
-            Set:      ToSetProtoFromPb(pbItem.Set),
         }
     }
     return items
 }
 
-func ToDishOrderFromPb(pbDish *order.DishOrder) DishOrder {
-    return DishOrder{
-        ID:          pbDish.Id,
-        Name:        pbDish.Name,
-        Price:       pbDish.Price,
-        Description: pbDish.Description,
-        Image:       pbDish.Image,
-        Status:      pbDish.Status,
-        CreatedAt:   pbDish.CreatedAt.AsTime(),
-        UpdatedAt:   pbDish.UpdatedAt.AsTime(),
-    }
-}
 
-func ToSetProtoFromPb(pbSet *order.SetProto) SetProto {
-    return SetProto{
-        ID:          pbSet.Id,
-        Name:        pbSet.Name,
-        Description: pbSet.Description,
-        Dishes:      ToSetProtoDishesFromPb(pbSet.Dishes),
-        UserID:      pbSet.UserId,
-        CreatedAt:   pbSet.CreatedAt.AsTime(),
-        UpdatedAt:   pbSet.UpdatedAt.AsTime(),
-        IsFavourite: pbSet.IsFavourite,
-        LikeBy:      pbSet.LikeBy,
-        IsPublic:    pbSet.IsPublic,
-        Image:       pbSet.Image,
-    }
-}
 
-func ToSetProtoDishesFromPb(pbDishes []*order.SetProtoDish) []SetProtoDish {
-    dishes := make([]SetProtoDish, len(pbDishes))
-    for i, pbDish := range pbDishes {
-        dishes[i] = SetProtoDish{
-            ID:          pbDish.Id,
-            Name:        pbDish.Name,
-            Price:       pbDish.Price,
-            Description: pbDish.Description,
-            Image:       pbDish.Image,
-            Status:      pbDish.Status,
-            CreatedAt:   pbDish.CreatedAt.AsTime(),
-            UpdatedAt:   pbDish.UpdatedAt.AsTime(),
-        }
-    }
-    return dishes
-}
+

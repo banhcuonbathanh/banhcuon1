@@ -137,19 +137,15 @@ func (h *SetHandlerController) DeleteSetProto(w http.ResponseWriter, r *http.Req
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(res)
 }
-
 func ToPBCreateSetProtoRequest(req CreateSetRequest) *set.CreateSetProtoRequest {
-    protoReq := &set.CreateSetProtoRequest{
+    return &set.CreateSetProtoRequest{
         Name:        req.Name,
         Description: req.Description,
         Dishes:      ToPBSetProtoDishes(req.Dishes),
+        UserId:      req.UserID,
         IsPublic:    req.IsPublic,
         Image:       req.Image,
     }
-    if req.UserID != nil {
-        protoReq.UserId = *req.UserID
-    }
-    return protoReq
 }
 
 func ToPBUpdateSetProtoRequest(req UpdateSetRequest) *set.UpdateSetProtoRequest {
@@ -163,14 +159,11 @@ func ToPBUpdateSetProtoRequest(req UpdateSetRequest) *set.UpdateSetProtoRequest 
     }
 }
 
-func ToPBSetProtoDishes(dishes []struct {
-    Dish     Dish `json:"dish"`
-    Quantity int  `json:"quantity"`
-}) []*set.SetProtoDish {
+func ToPBSetProtoDishes(dishes []SetDish) []*set.SetProtoDish {
     pbDishes := make([]*set.SetProtoDish, len(dishes))
     for i, dish := range dishes {
         pbDishes[i] = &set.SetProtoDish{
-            DishId:   int32(dish.Dish.ID),
+            DishId:   int32(dish.DishID),
             Quantity: int32(dish.Quantity),
         }
     }
@@ -194,17 +187,12 @@ func ToSetResListFromPbSetListResponse(pbRes *set.SetProtoListResponse) SetListR
 }
 
 func ToSetFromPbSetProto(pbSet *set.SetProto) Set {
-    var userID *int32
-    if pbSet.UserId != nil {
-        userID = pbSet.UserId
-    }
-
     return Set{
-        ID:          int(pbSet.Id),
+        ID:          int64(pbSet.Id),
         Name:        pbSet.Name,
         Description: pbSet.Description,
         Dishes:      ToSetDishesFromPbSetProtoDishes(pbSet.Dishes),
-        UserID:      userID,
+        UserID:      pbSet.UserId,
         CreatedAt:   pbSet.CreatedAt.AsTime(),
         UpdatedAt:   pbSet.UpdatedAt.AsTime(),
         IsFavourite: pbSet.IsFavourite,
@@ -219,45 +207,10 @@ func ToSetDishesFromPbSetProtoDishes(pbDishes []*set.SetProtoDish) []SetDish {
     for i, pbDish := range pbDishes {
         dishes[i] = SetDish{
             DishID:   int64(pbDish.DishId),
-            Quantity: int(pbDish.Quantity),
-            Dish:     ToDishFromPbDish(pbDish.Dish),
+            Quantity: int64(pbDish.Quantity),
         }
     }
     return dishes
-}
-
-func ToDishFromPbDish(pbDish *set.Dish) Dish {
-    if pbDish == nil {
-        return Dish{}
-    }
-    return Dish{
-        ID:          pbDish.Id,
-        Name:        pbDish.Name,
-        Price:       int(pbDish.Price),
-        Description: pbDish.Description,
-        Image:       pbDish.Image,
-        Status:      pbDish.Status,
-        CreatedAt:   pbDish.CreatedAt.AsTime(),
-        UpdatedAt:   pbDish.UpdatedAt.AsTime(),
-    }
-}
-
-// Helper function to convert int32 to *int32
-func Int32Ptr(i int) *int32 {
-    if i == 0 {
-        return nil
-    }
-    i32 := int32(i)
-    return &i32
-}
-
-// Helper function to convert *int32 to *int
-func Int32PtrToIntPtr(i *int32) *int {
-    if i == nil {
-        return nil
-    }
-    intVal := int(*i)
-    return &intVal
 }
 // type SetHandlerController struct {
 //     ctx        context.Context
