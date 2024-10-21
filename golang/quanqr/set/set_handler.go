@@ -42,14 +42,23 @@ func (h *SetHandlerController) CreateSetProto(w http.ResponseWriter, r *http.Req
     }
 
     h.logger.Info(fmt.Sprintf("Creating new set:CreateSetProto handler %+v", setReq))
-    createdSetResponse, err := h.client.CreateSetProto(h.ctx, ToPBCreateSetProtoRequest(setReq))
+    h.logger.Info(fmt.Sprintf("Input request price: %v", setReq.Price))
+    
+    pbReq := ToPBCreateSetProtoRequest(setReq)
+    h.logger.Info(fmt.Sprintf("Converted to protobuf request price: %v", pbReq.Price))
+    
+    createdSetResponse, err := h.client.CreateSetProto(h.ctx, pbReq)
     if err != nil {
         h.logger.Error("Error creating set: " + err.Error())
         http.Error(w, "error creating set", http.StatusInternalServerError)
         return
     }
 
+    h.logger.Info(fmt.Sprintf("Received protobuf response price: %v", createdSetResponse.Data.Price))
+    
     res := ToSetResFromPbSetResponse(createdSetResponse)
+    h.logger.Info(fmt.Sprintf("Final response price: %v", res.Data.Price))
+    
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(res)
@@ -145,6 +154,7 @@ func ToPBCreateSetProtoRequest(req CreateSetRequest) *set.CreateSetProtoRequest 
         UserId:      req.UserID,
         IsPublic:    req.IsPublic,
         Image:       req.Image,
+        Price:       int32(req.Price), // Add price conversion
     }
 }
 
@@ -156,6 +166,7 @@ func ToPBUpdateSetProtoRequest(req UpdateSetRequest) *set.UpdateSetProtoRequest 
         Dishes:      ToPBSetProtoDishes(req.Dishes),
         IsPublic:    req.IsPublic,
         Image:       req.Image,
+        Price:       int32(req.Price), // Add price conversion
     }
 }
 
@@ -169,13 +180,11 @@ func ToPBSetProtoDishes(dishes []SetDish) []*set.SetProtoDish {
     }
     return pbDishes
 }
-
 func ToSetResFromPbSetResponse(pbRes *set.SetProtoResponse) SetResponse {
     return SetResponse{
         Data: ToSetFromPbSetProto(pbRes.Data),
     }
 }
-
 func ToSetResListFromPbSetListResponse(pbRes *set.SetProtoListResponse) SetListResponse {
     sets := make([]Set, len(pbRes.Data))
     for i, pbSet := range pbRes.Data {
@@ -185,6 +194,7 @@ func ToSetResListFromPbSetListResponse(pbRes *set.SetProtoListResponse) SetListR
         Data: sets,
     }
 }
+
 
 func ToSetFromPbSetProto(pbSet *set.SetProto) Set {
     return Set{
@@ -199,8 +209,10 @@ func ToSetFromPbSetProto(pbSet *set.SetProto) Set {
         LikeBy:      pbSet.LikeBy,
         IsPublic:    pbSet.IsPublic,
         Image:       pbSet.Image,
+        Price:       float64(pbSet.Price), // Add price conversion
     }
 }
+
 
 func ToSetDishesFromPbSetProtoDishes(pbDishes []*set.SetProtoDish) []SetDish {
     dishes := make([]SetDish, len(pbDishes))
@@ -212,6 +224,7 @@ func ToSetDishesFromPbSetProtoDishes(pbDishes []*set.SetProtoDish) []SetDish {
     }
     return dishes
 }
+
 // type SetHandlerController struct {
 //     ctx        context.Context
 //     client     set.SetServiceClient

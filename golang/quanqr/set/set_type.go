@@ -4,17 +4,20 @@ import (
     "time"
 )
 
+
+// Go structs
 type SetSnapshot struct {
     ID          int32       `json:"id"`
     Name        string      `json:"name"`
     Description string      `json:"description"`
     Dishes      []SetDish   `json:"dishes"`
-    UserID      *int32      `json:"userId,omitempty"`
+    UserID      int32       `json:"userId"`
     CreatedAt   time.Time   `json:"created_at"`
     UpdatedAt   time.Time   `json:"updated_at"`
     SetID       int32       `json:"set_id"`
     IsPublic    bool        `json:"is_public"`
     Image       string      `json:"image"`
+    Price       float64     `json:"price"`
 }
 
 type Set struct {
@@ -22,13 +25,14 @@ type Set struct {
     Name        string      `json:"name"`
     Description string      `json:"description"`
     Dishes      []SetDish   `json:"dishes"`
-    UserID      *int32      `json:"userId,omitempty"`
+    UserID      int32       `json:"userId"`
     CreatedAt   time.Time   `json:"created_at"`
     UpdatedAt   time.Time   `json:"updated_at"`
     IsFavourite bool        `json:"is_favourite"`
     LikeBy      []int64     `json:"like_by"`
     IsPublic    bool        `json:"is_public"`
     Image       string      `json:"image"`
+    Price       float64     `json:"price"`
 }
 
 type SetDish struct {
@@ -43,6 +47,7 @@ type CreateSetRequest struct {
     UserID      int32     `json:"userId"`
     IsPublic    bool      `json:"is_public"`
     Image       string    `json:"image"`
+    Price       float64   `json:"price"`
 }
 
 type UpdateSetRequest struct {
@@ -52,6 +57,7 @@ type UpdateSetRequest struct {
     Dishes      []SetDish `json:"dishes"`
     IsPublic    bool      `json:"is_public"`
     Image       string    `json:"image"`
+    Price       float64   `json:"price"`
 }
 
 type SetResponse struct {
