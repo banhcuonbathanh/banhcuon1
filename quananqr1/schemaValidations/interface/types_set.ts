@@ -1,9 +1,9 @@
 
-import { DishInterface } from "./type_dish";
+
 export interface SetProtoDish {
-  dishId: number;  // Changed from dish_id to dishId for consistency
+  dish_id: number;  // Changed back to snake_case to match Go struct
   quantity: number;
-  dish: DishInterface;  // Assuming Dish interface is defined elsewhere
+
 }
 
 export interface SetInterface {
@@ -18,6 +18,7 @@ export interface SetInterface {
   is_favourite: boolean; // Changed from number to boolean
   like_by: number[] | null; // Changed to allow null
   is_public: boolean; // Added new field
+  price: number;  // Added price field
 }
 export interface SetCreateBodyInterface {
   image: string;

@@ -1,9 +1,8 @@
 package set_qr
 
 import (
-    "time"
+	"time"
 )
-
 
 // Go structs
 type SetSnapshot struct {
@@ -17,7 +16,7 @@ type SetSnapshot struct {
     SetID       int32       `json:"set_id"`
     IsPublic    bool        `json:"is_public"`
     Image       string      `json:"image"`
-    Price       float64     `json:"price"`
+    Price       int32     `json:"price"`
 }
 
 type Set struct {
@@ -32,7 +31,7 @@ type Set struct {
     LikeBy      []int64     `json:"like_by"`
     IsPublic    bool        `json:"is_public"`
     Image       string      `json:"image"`
-    Price       float64     `json:"price"`
+    Price       int32     `json:"price"`
 }
 
 type SetDish struct {
@@ -47,7 +46,7 @@ type CreateSetRequest struct {
     UserID      int32     `json:"userId"`
     IsPublic    bool      `json:"is_public"`
     Image       string    `json:"image"`
-    Price       float64   `json:"price"`
+    Price       int32   `json:"price"`
 }
 
 type UpdateSetRequest struct {
@@ -57,7 +56,7 @@ type UpdateSetRequest struct {
     Dishes      []SetDish `json:"dishes"`
     IsPublic    bool      `json:"is_public"`
     Image       string    `json:"image"`
-    Price       float64   `json:"price"`
+    Price       int32   `json:"price"`
 }
 
 type SetResponse struct {

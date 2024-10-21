@@ -209,7 +209,7 @@ func ToSetFromPbSetProto(pbSet *set.SetProto) Set {
         LikeBy:      pbSet.LikeBy,
         IsPublic:    pbSet.IsPublic,
         Image:       pbSet.Image,
-        Price:       float64(pbSet.Price), // Add price conversion
+        Price:       int32(pbSet.Price), // Add price conversion
     }
 }
 

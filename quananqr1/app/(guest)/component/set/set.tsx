@@ -34,39 +34,6 @@ interface DishCardProps {
   onDecrease: () => void;
 }
 
-// const SetDishCard: React.FC<DishCardProps> = ({
-//   dish,
-//   quantity,
-//   onIncrease,
-//   onDecrease
-// }) => (
-//   <Card className="w-full">
-//     <CardHeader>
-//       <CardTitle className="text-lg">{dish.name}</CardTitle>
-//     </CardHeader>
-//     <CardContent>
-//       <img
-//         src={dish.image || "/api/placeholder/150/100"}
-//         alt={dish.name}
-//         className="w-full h-24 object-cover rounded-md mb-2"
-//       />
-//       <p className="text-sm">{dish.description}</p>
-//       <p className="font-semibold mt-2">Price: ${dish.price.toFixed(2)}</p>
-//       <div className="flex items-center justify-center mt-2">
-//         <div className="flex items-center space-x-2">
-//           <Button variant="outline" size="sm" onClick={onDecrease}>
-//             <Minus className="h-3 w-3" />
-//           </Button>
-//           <span className="w-8 text-center">{quantity}</span>
-//           <Button variant="outline" size="sm" onClick={onIncrease}>
-//             <Plus className="h-3 w-3" />
-//           </Button>
-//         </div>
-//       </div>
-//     </CardContent>
-//   </Card>
-// );
-
 export function SetCard({ set }: SetSelectionProps) {
   const {
     addSetItem,
@@ -83,17 +50,17 @@ export function SetCard({ set }: SetSelectionProps) {
   >(
     setOrderItem
       ? setOrderItem.modifiedDishes.reduce(
-          (acc, dish) => ({ ...acc, [dish.dishId]: dish.quantity }),
+          (acc, dish) => ({ ...acc, [dish.dish_id]: dish.quantity }),
           {}
         )
       : set.dishes.reduce(
-          (acc, dish) => ({ ...acc, [dish.dishId]: dish.quantity }),
+          (acc, dish) => ({ ...acc, [dish.dish_id]: dish.quantity }),
           {}
         )
   );
 
   const totalPrice = set.dishes.reduce(
-    (sum, dish) => sum + dish.dish.price * (dishQuantities[dish.dishId] || 0),
+    (sum, dish) => sum + dish.dish.price * (dishQuantities[dish.dish_id] || 0),
     0
   );
   const totalDishes = Object.values(dishQuantities).reduce(
@@ -107,7 +74,7 @@ export function SetCard({ set }: SetSelectionProps) {
     } else {
       const modifiedDishes: SetProtoDish[] = set.dishes.map((dish) => ({
         ...dish,
-        quantity: dishQuantities[dish.dishId] || 0
+        quantity: dishQuantities[dish.dish_id] || 0
       }));
       addSetItem(set, 1, modifiedDishes);
     }
@@ -134,7 +101,7 @@ export function SetCard({ set }: SetSelectionProps) {
           set.id,
           set.dishes.map((dish) => ({
             ...dish,
-            quantity: newQuantities[dish.dishId] || 0
+            quantity: newQuantities[dish.dish_id] || 0
           }))
         );
       }
@@ -153,7 +120,7 @@ export function SetCard({ set }: SetSelectionProps) {
           set.id,
           set.dishes.map((dish) => ({
             ...dish,
-            quantity: newQuantities[dish.dishId] || 0
+            quantity: newQuantities[dish.dish_id] || 0
           }))
         );
       }
@@ -185,7 +152,7 @@ export function SetCard({ set }: SetSelectionProps) {
             <ul className="space-y-2">
               {set.dishes.map((dish) => (
                 <li
-                  key={`${set.id}-${dish.dishId}`}
+                  key={`${set.id}-${dish.dish_id}`}
                   className="flex items-center justify-between"
                 >
                   <span>
@@ -195,17 +162,17 @@ export function SetCard({ set }: SetSelectionProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDishDecrease(dish.dishId)}
+                      onClick={() => handleDishDecrease(dish.dish_id)}
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
                     <span className="w-8 text-center">
-                      {dishQuantities[dish.dishId] || 0}
+                      {dishQuantities[dish.dish_id] || 0}
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDishIncrease(dish.dishId)}
+                      onClick={() => handleDishIncrease(dish.dish_id)}
                     >
                       <Plus className="h-3 w-3" />
                     </Button>

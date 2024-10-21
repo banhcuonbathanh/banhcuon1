@@ -23,7 +23,7 @@ export default async function GuestPage() {
           className="w-full h-full object-cover rounded-md"
         />
       </div>
-      {/* <SetCardList sets={setsData} /> */}
+      <SetCardList sets={setsData} />
 
       <DishSelection dishes={dishesData} />
 

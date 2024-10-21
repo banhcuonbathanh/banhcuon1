@@ -10,7 +10,7 @@ import { CreateTableBody } from "@/zusstand/table/table.schema";
 export async function GET() {
   const link_set = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Set_End_Point}`;
 
-  // console.log("quananqr1/app/api/sets/route.ts link_set", link_set);
+  console.log("quananqr1/app/api/sets/route.ts link_set", link_set);
   try {
     const response = await fetch(link_set, {
       method: "GET",
@@ -23,7 +23,10 @@ export async function GET() {
     }
 
     const tables = await response.json(); // Parse response once
-    // console.log("quananqr1/app/api/sets/route.ts set 2121212121212121212121212", tables);
+    console.log(
+      "quananqr1/app/api/sets/route.ts set 2121212121212121212121212",
+      tables
+    );
 
     return NextResponse.json({
       data: tables.data,
