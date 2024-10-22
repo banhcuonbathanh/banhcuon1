@@ -241,18 +241,7 @@ CREATE TABLE set_order_items (
 ALTER TABLE users ADD CONSTRAINT check_valid_role CHECK (role IN ('Admin', 'Employee', 'Manager', 'Guest'));
 ALTER TABLE accounts ADD CONSTRAINT fk_owner FOREIGN KEY (owner_id) REFERENCES accounts(id) ON DELETE SET NULL;
 
--- CREATE INDEX idx_users_role ON users(role);
--- CREATE INDEX idx_sets_user_id ON sets(user_id) WHERE user_id IS NOT NULL;
--- CREATE INDEX idx_sets_is_favourite ON sets(is_favourite);
--- CREATE INDEX idx_sets_like_by ON sets USING GIN (like_by);
--- CREATE INDEX idx_set_snapshots_original_set_id ON set_snapshots(original_set_id);
--- CREATE INDEX idx_sets_is_public ON sets(is_public);
--- CREATE INDEX idx_set_snapshots_is_public ON set_snapshots(is_public);
--- CREATE INDEX idx_orders_guest_id ON orders(guest_id) WHERE guest_id IS NOT NULL;
--- CREATE INDEX idx_orders_user_id ON orders(user_id) WHERE user_id IS NOT NULL;
--- CREATE INDEX idx_orders_order_handler_id ON orders(order_handler_id) WHERE order_handler_id IS NOT NULL;
--- CREATE INDEX idx_orders_table_number ON orders(table_number) WHERE table_number IS NOT NULL;
--- CREATE INDEX idx_orders_is_guest ON orders(is_guest);
+
 
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_sets_user_id ON sets(user_id) WHERE user_id IS NOT NULL;

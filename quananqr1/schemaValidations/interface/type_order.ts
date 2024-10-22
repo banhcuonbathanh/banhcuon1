@@ -2,195 +2,139 @@ import { DishInterface } from "./type_dish";
 import { SetInterface, SetProtoDish } from "./types_set";
 
 // Base interface for order items
-export interface OrderItemBase {
-  id: number;
-  quantity: number;
-}
 
 // Order item for a dish
-export interface DishOrderItem extends OrderItemBase {
-  id: number;
+export interface DishOrderItem {
+  dish_id: number;
   quantity: number;
-  dish: DishInterface; // Assuming you have this interface defined elsewhere
 }
 
 // Order item for a set
-export interface SetOrderItem extends OrderItemBase {
-  id: number;
+export interface SetOrderItem {
+  set_id: number;
   quantity: number;
   set: SetInterface;
-  modifiedDishes: SetProtoDish[];
 }
 
 // Main order interface
 export interface Order {
   id: number;
-  guestId: number;
-
-  tableNumber: number;
-  dishSnapshotId: number;
-
-  orderHandlerId: number;
-  status: "pending" | "processing" | "completed" | "cancelled";
-  createdAt: string;
-  updatedAt: string;
-  totalPrice: number;
-  dishOrderItems: DishOrderItem[];
-
-  setOrderItems: SetOrderItem[];
+  guest_id: number;
+  user_id: number;
+  is_guest: boolean;
+  table_number: number;
+  order_handler_id: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  total_price: number;
+  dish_items: DishOrderItem[];
+  set_items: SetOrderItem[];
+  bow_chili: number;
+  bow_no_chili: number;
 }
 
 // Interface for creating a new order
-export interface CreateOrderBody {
-  guestId: number;
-
-
-  tableNumber: number;
-  dishSnapshotId: number;
-
-  orderHandlerId: number;
-  status: "pending" | "processing" | "completed" | "cancelled";
-  createdAt: string;
-  updatedAt: string;
-  totalPrice: number;
-  dishOrderItems: DishOrderItem[];
-
-  setOrderItems: SetOrderItem[];
-}
-
-// export interface Dish {
-//   id: number;
-//   name: string;
-//   price: number;
-//   image: string;
-//   description: string;
-// }
-
-// export interface Set {
-//   id: number;
-//   name: string;
-//   price: number;
-//   image: string;
-//   description: string;
-//   dishes: Dish[];
-// }
-
-// export interface SetProtoDish {
-//   id: number;
-//   name: string;
-//   price: number;
-//   // Add other necessary fields as needed
-// }
-
-// export interface DishOrderItem {
-//   id: number;
-//   quantity: number;
-//   dish: Dish;
-// }
-
-// export interface SetOrderItem {
-//   id: number;
-//   quantity: number;
-//   set: Set;
-//   modifiedDishes: SetProtoDish[];
-// }
-
-// export interface CreateOrderItem {
-//   id: number;
-//   quantity: number;
-//   modifiedDishes?: SetProtoDish[];
-// }
-
-// export interface CreateOrderRequest {
-//   userId: number;
-//   items: CreateOrderItem[];
-// }
-
-// export interface Order {
-//   id: number;
+// export interface CreateOrderBody {
 //   guestId: number;
+
 //   tableNumber: number;
 //   dishSnapshotId: number;
-//   quantity: number;
+
 //   orderHandlerId: number;
-//   status: string;
-//   createdAt: Date;
-//   updatedAt: Date;
+//   status: "pending" | "processing" | "completed" | "cancelled";
+//   createdAt: string;
+//   updatedAt: string;
 //   totalPrice: number;
-//   dishItems: DishOrderItem[];
-//   setItems: SetOrderItem[];
-// }
+//   dishOrderItems: DishOrderItem[];
 
-// export interface Guest {
-//   id: number;
-//   name: string;
-//   tableNumber: number;
-//   createdAt: Date;
-//   updatedAt: Date;
+//   setOrderItems: SetOrderItem[];
 // }
+export interface CreateOrderRequest {
+  guest_id: number;
+  user_id: number;
+  is_guest: boolean;
+  table_number: number;
+  order_handler_id: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  total_price: number;
+  dish_items: DishOrderItem[];
+  set_items: SetOrderItem[];
+  bow_chili: number;
+  bow_no_chili: number;
+}
 
-// export interface DishSnapshot {
-//   id: number;
-//   name: string;
-//   price: number;
-//   image: string;
-//   description: string;
-//   status: string;
-//   dishId: number;
-//   createdAt: Date;
-//   updatedAt: Date;
-// }
+export interface UpdateOrderRequest {
+  id: number;
+  guest_id: number;
+  user_id: number;
+  table_number: number;
+  order_handler_id: number;
+  status: string;
+  total_price: number;
+  dish_items: DishOrderItem[];
+  set_items: SetOrderItem[];
+  is_guest: boolean;
+  bow_chili: number;
+  bow_no_chili: number;
+}
 
-// export interface Account {
-//   id: number;
-//   name: string;
-//   email: string;
-//   role: string;
-//   avatar: string;
-// }
+export interface GetOrdersRequest {
+  from_date: string;
+  to_date: string;
+  user_id?: number;
+  guest_id?: number;
+}
 
-// export interface Table {
-//   number: number;
-//   capacity: number;
-//   status: string;
-//   token: string;
-//   createdAt: Date;
-//   updatedAt: Date;
-// }
+export interface PayOrdersRequest {
+  guest_id?: number;
+  user_id?: number;
+}
 
-// export interface CreateOrdersRequest {
-//   guestId: number;
-//   orders: CreateOrderItem[];
-// }
+// Response interfaces
+export interface OrderResponse {
+  data: Order;
+}
 
-// export interface UpdateOrderRequest {
-//   orderId: number;
-//   status: string;
-//   dishId: number;
-//   quantity: number;
-// }
+export interface OrderListResponse {
+  data: Order[];
+}
 
-// export interface PayGuestOrdersRequest {
-//   guestId: number;
-// }
+export interface OrderDetailedListResponse {
+  data: OrderSetDetailed[];
+}
 
-// export interface GetOrdersRequest {
-//   fromDate: Date;
-//   toDate: Date;
-// }
+// Parameter interfaces
+export interface OrderIDParam {
+  id: number;
+}
 
-// export interface OrderResponse {
-//   data: Order;
-// }
+export interface OrderDetailIDParam {
+  id: number;
+}
 
-// export interface OrderListResponse {
-//   data: Order[];
-// }
+// Guest interface
+export interface Guest {
+  id: number;
+  name: string;
+  table_number: number;
+  created_at: string;
+  updated_at: string;
+}
 
-// export interface OrderIdParam {
-//   id: number;
-// }
-
-// export interface OrderDetailIdParam {
-//   id: number;
-// }
+export interface OrderSetDetailed {
+  id: number;
+  name: string;
+  description: string;
+  dishes: DishOrderItem[];
+  userId: number;
+  created_at: string;
+  updated_at: string;
+  is_favourite: boolean;
+  like_by: number[];
+  is_public: boolean;
+  image: string;
+  price: number;
+}

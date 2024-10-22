@@ -3,6 +3,19 @@ package order_grpc
 import (
 	"time"
 )
+
+type OrderDish struct {
+    DishID   int64 `json:"dish_id"`
+    Quantity int64 `json:"quantity"`
+}
+
+
+type OrderSet struct {
+    SetID   int64 `json:"set_id"`
+    Quantity int64 `json:"quantity"`
+}
+
+
 type OrderType struct {
     ID             int64           `json:"id"`
     GuestID        int64           `json:"guest_id"`
@@ -14,8 +27,8 @@ type OrderType struct {
     CreatedAt      time.Time       `json:"created_at"`
     UpdatedAt      time.Time       `json:"updated_at"`
     TotalPrice     int32           `json:"total_price"`
-    DishItems      []DishOrderItem `json:"dish_items"`
-    SetItems       []SetOrderItem  `json:"set_items"`
+    DishItems      []OrderDish `json:"dish_items"`
+    SetItems       []OrderSet  `json:"set_items"`
     BowChili       int64           `json:"bow_chili"`
     BowNoChili     int64           `json:"bow_no_chili"`
 }
@@ -31,8 +44,8 @@ type CreateOrderRequestType struct {
     CreatedAt      time.Time       `json:"created_at"`
     UpdatedAt      time.Time       `json:"updated_at"`
     TotalPrice     int32           `json:"total_price"`
-    DishItems      []DishOrderItem `json:"dish_items"`
-    SetItems       []SetOrderItem  `json:"set_items"`
+    DishItems      []OrderDish `json:"dish_items"`
+    SetItems       []OrderSet  `json:"set_items"`
     BowChili       int64           `json:"bow_chili"`
     BowNoChili     int64           `json:"bow_no_chili"`
 }
@@ -46,37 +59,12 @@ type UpdateOrderRequestType struct {
     OrderHandlerID int64           `json:"order_handler_id"`
     Status         string          `json:"status"`
     TotalPrice     int32           `json:"total_price"`
-    DishItems      []DishOrderItem `json:"dish_items"`
-    SetItems       []SetOrderItem  `json:"set_items"`
+    DishItems      []OrderDish `json:"dish_items"`
+    SetItems       []OrderSet  `json:"set_items"`
     IsGuest        bool            `json:"is_guest"`
     BowChili       int64           `json:"bow_chili"`
     BowNoChili     int64           `json:"bow_no_chili"`
 }
-
-// DishOrder struct
-type DishOrder struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	Price       int32     `json:"price"`
-	Description string    `json:"description"`
-	Image       string    `json:"image"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-// DishOrderItem struct
-type DishOrderItem struct {
-    ID       int64 `json:"id"`
-    Quantity int32 `json:"quantity"`
-}
-
-// SetOrderItem struct
-type SetOrderItem struct {
-    ID       int64 `json:"id"`
-    Quantity int32 `json:"quantity"`
-}
-
 
 
 
@@ -122,4 +110,34 @@ type Guest struct {
 	TableNumber int32     `json:"table_number"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+
+type OrderDetailedDish struct {
+    DishID      int64  `json:"dish_id"`
+    Quantity    int64  `json:"quantity"`
+    Name        string `json:"name"`
+    Price       int32  `json:"price"`
+    Description string `json:"description"`
+    Image       string `json:"image"`
+    Status      string `json:"status"`
+}
+
+type OrderSetDetailed struct {
+    ID          int64            `json:"id"`
+    Name        string           `json:"name"`
+    Description string           `json:"description"`
+    Dishes      []OrderDetailedDish `json:"dishes"`
+    UserID      int32            `json:"userId"`
+    CreatedAt   time.Time        `json:"created_at"`
+    UpdatedAt   time.Time        `json:"updated_at"`
+    IsFavourite bool             `json:"is_favourite"`
+    LikeBy      []int64          `json:"like_by"`
+    IsPublic    bool             `json:"is_public"`
+    Image       string           `json:"image"`
+    Price       int32            `json:"price"`
+}
+
+type OrderDetailedListResponse struct {
+    Data []OrderSetDetailed `json:"data"`
 }

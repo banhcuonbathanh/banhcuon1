@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,22 +20,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrderService_CreateOrder_FullMethodName    = "/order_proto.OrderService/CreateOrder"
-	OrderService_GetOrders_FullMethodName      = "/order_proto.OrderService/GetOrders"
-	OrderService_GetOrderDetail_FullMethodName = "/order_proto.OrderService/GetOrderDetail"
-	OrderService_UpdateOrder_FullMethodName    = "/order_proto.OrderService/UpdateOrder"
-	OrderService_PayOrders_FullMethodName      = "/order_proto.OrderService/PayOrders"
+	OrderService_CreateOrder_FullMethodName             = "/order_proto.OrderService/CreateOrder"
+	OrderService_GetOrders_FullMethodName               = "/order_proto.OrderService/GetOrders"
+	OrderService_GetOrderDetail_FullMethodName          = "/order_proto.OrderService/GetOrderDetail"
+	OrderService_UpdateOrder_FullMethodName             = "/order_proto.OrderService/UpdateOrder"
+	OrderService_PayOrders_FullMethodName               = "/order_proto.OrderService/PayOrders"
+	OrderService_GetOrderProtoListDetail_FullMethodName = "/order_proto.OrderService/GetOrderProtoListDetail"
 )
 
 // OrderServiceClient is the client API for OrderService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// Service definition
 type OrderServiceClient interface {
 	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*OrderResponse, error)
 	GetOrders(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error)
 	GetOrderDetail(ctx context.Context, in *OrderIdParam, opts ...grpc.CallOption) (*OrderResponse, error)
 	UpdateOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderResponse, error)
 	PayOrders(ctx context.Context, in *PayOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error)
+	GetOrderProtoListDetail(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 }
 
 type orderServiceClient struct {
@@ -95,15 +100,28 @@ func (c *orderServiceClient) PayOrders(ctx context.Context, in *PayOrdersRequest
 	return out, nil
 }
 
+func (c *orderServiceClient) GetOrderProtoListDetail(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*OrderDetailedListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OrderDetailedListResponse)
+	err := c.cc.Invoke(ctx, OrderService_GetOrderProtoListDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
+//
+// Service definition
 type OrderServiceServer interface {
 	CreateOrder(context.Context, *CreateOrderRequest) (*OrderResponse, error)
 	GetOrders(context.Context, *GetOrdersRequest) (*OrderListResponse, error)
 	GetOrderDetail(context.Context, *OrderIdParam) (*OrderResponse, error)
 	UpdateOrder(context.Context, *UpdateOrderRequest) (*OrderResponse, error)
 	PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error)
+	GetOrderProtoListDetail(context.Context, *emptypb.Empty) (*OrderDetailedListResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -128,6 +146,9 @@ func (UnimplementedOrderServiceServer) UpdateOrder(context.Context, *UpdateOrder
 }
 func (UnimplementedOrderServiceServer) PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PayOrders not implemented")
+}
+func (UnimplementedOrderServiceServer) GetOrderProtoListDetail(context.Context, *emptypb.Empty) (*OrderDetailedListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrderProtoListDetail not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -240,6 +261,24 @@ func _OrderService_PayOrders_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_GetOrderProtoListDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetOrderProtoListDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_GetOrderProtoListDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetOrderProtoListDetail(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +305,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PayOrders",
 			Handler:    _OrderService_PayOrders_Handler,
+		},
+		{
+			MethodName: "GetOrderProtoListDetail",
+			Handler:    _OrderService_GetOrderProtoListDetail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

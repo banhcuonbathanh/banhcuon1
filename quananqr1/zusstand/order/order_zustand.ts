@@ -54,18 +54,18 @@ const useOrderStore = create<OrderState>((set, get) => ({
 
   addDishItem: (dish, quantity) =>
     set((state) => {
-      const existingItem = state.dishItems.find((i) => i.id === dish.id);
+      const existingItem = state.dishItems.find((i) => i.dish_id === dish.id);
       if (existingItem) {
         return {
           dishItems: state.dishItems.map((i) =>
-            i.id === dish.id ? { ...i, quantity: i.quantity + quantity } : i
+            i.dish_id === dish.id ? { ...i, quantity: i.quantity + quantity } : i
           )
         };
       } else {
         const newItem: DishOrderItem = {
-          id: dish.id,
+          dish_id: dish.id,
           quantity,
-          dish: dish
+      
         };
         return { dishItems: [...state.dishItems, newItem] };
       }
@@ -73,13 +73,13 @@ const useOrderStore = create<OrderState>((set, get) => ({
 
   removeDishItem: (id) =>
     set((state) => ({
-      dishItems: state.dishItems.filter((i) => i.id !== id)
+      dishItems: state.dishItems.filter((i) => i.dish_id !== id)
     })),
 
   updateDishQuantity: (id, quantity) =>
     set((state) => ({
       dishItems: state.dishItems.map((i) =>
-        i.id === id ? { ...i, quantity } : i
+        i.dish_id === id ? { ...i, quantity } : i
       )
     })),
 
@@ -90,21 +90,21 @@ const useOrderStore = create<OrderState>((set, get) => ({
   ) => {
     set((state: OrderState) => {
       const existingItem = state.setItems.find(
-        (item) => item.set.id === setItem.id
+        (item) => item.set_id === setItem.id
       );
       if (existingItem) {
         return {
           setItems: state.setItems.map((item) =>
-            item.set.id === setItem.id
+            item.set_id === setItem.id
               ? { ...item, quantity: item.quantity + quantity }
               : item
           )
         };
       } else {
         const newItem: SetOrderItem = {
-          id: setItem.id,
+          set_id: setItem.id,
           quantity,
-          set: setItem,
+          set_id: setItem,
           modifiedDishes: modifiedDishes || setItem.dishes
         };
         return { setItems: [...state.setItems, newItem] };
@@ -114,20 +114,20 @@ const useOrderStore = create<OrderState>((set, get) => ({
 
   removeSetItem: (id) =>
     set((state) => ({
-      setItems: state.setItems.filter((i) => i.id !== id)
+      setItems: state.setItems.filter((i) => i.set_id !== id)
     })),
 
   updateSetQuantity: (id, quantity) =>
     set((state) => ({
       setItems: state.setItems.map((i) =>
-        i.id === id ? { ...i, quantity } : i
+        i.set_id === id ? { ...i, quantity } : i
       )
     })),
 
   updateSetDishes: (setId, modifiedDishes) =>
     set((state) => ({
       setItems: state.setItems.map((i) =>
-        i.id === setId ? { ...i, modifiedDishes } : i
+        i.set_id === setId ? { ...i, modifiedDishes } : i
       )
     })),
 
