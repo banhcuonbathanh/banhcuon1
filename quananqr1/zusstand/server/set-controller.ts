@@ -20,7 +20,10 @@ const get_Sets = async (): Promise<SetInterface[]> => {
       description: set.description,
       dishes: set.dishes.map((dish: any) => ({
         dish_id: dish.dish_id,
-        quantity: dish.quantity
+        quantity: dish.quantity,
+        name: dish.name,
+        price: dish.price,
+        status: dish.status
       })),
       userId: set.userId,
       created_at: set.created_at,

@@ -87,6 +87,25 @@ func (ss *SetServiceStruct) DeleteSetProto(ctx context.Context, req *set.SetProt
 		Data: deletedSet,
 	}, nil
 }
+
+
+
+// 
+func (ss *SetServiceStruct) GetSetProtoListDetail(ctx context.Context, _ *emptypb.Empty) (*set.SetProtoListDetailResponse, error) {
+    ss.logger.Info("Fetching detailed set list")
+    sets, err := ss.setRepo.GetSetProtoListDetail(ctx)
+    if err != nil {
+        ss.logger.Error("Error fetching detailed set list: " + err.Error())
+        return nil, err
+    }
+    return &set.SetProtoListDetailResponse{
+        Data: sets,
+    }, nil
+}
+
+//-----
+
+
 // type SetServiceStruct struct {
 //     setRepo *SetRepository
 //     set.UnimplementedSetServiceServer

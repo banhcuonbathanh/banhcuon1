@@ -9,11 +9,15 @@ export interface OrderItemBase {
 
 // Order item for a dish
 export interface DishOrderItem extends OrderItemBase {
-  dish: DishInterface;
+  id: number;
+  quantity: number;
+  dish: DishInterface; // Assuming you have this interface defined elsewhere
 }
 
 // Order item for a set
 export interface SetOrderItem extends OrderItemBase {
+  id: number;
+  quantity: number;
   set: SetInterface;
   modifiedDishes: SetProtoDish[];
 }

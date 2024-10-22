@@ -440,3 +440,111 @@ func (sr *SetRepository) calculateSetPrice(ctx context.Context, dishes []*set.Se
     sr.logger.Info(fmt.Sprintf("Final calculated price: %d", totalPrice))
     return totalPrice, nil
 }
+
+
+func (sr *SetRepository) GetSetProtoListDetail(ctx context.Context) ([]*set.SetProtoDetailedResponse, error) {
+    sr.logger.Info("Fetching detailed set list GetSetProtoListDetail")
+    
+    // First, fetch all sets
+    query := `
+        SELECT id, name, description, user_id, created_at, updated_at, is_favourite, like_by, is_public, image, price
+        FROM sets
+    `
+    rows, err := sr.db.Query(ctx, query)
+    if err != nil {
+        sr.logger.Error("Error fetching sets: " + err.Error())
+        return nil, fmt.Errorf("error fetching sets: %w", err)
+    }
+    defer rows.Close()
+
+    var sets []*set.SetProtoDetailedResponse
+    for rows.Next() {
+        var s set.SetProtoDetailedResponse
+        var createdAt, updatedAt time.Time
+        var userID int32
+        var likeBy []int64
+
+        err := rows.Scan(
+            &s.Id,
+            &s.Name,
+            &s.Description,
+            &userID,
+            &createdAt,
+            &updatedAt,
+            &s.IsFavourite,
+            &likeBy,
+            &s.IsPublic,
+            &s.Image,
+            &s.Price,
+        )
+        if err != nil {
+            sr.logger.Error("Error scanning set: " + err.Error())
+            return nil, fmt.Errorf("error scanning set: %w", err)
+        }
+
+        s.CreatedAt = timestamppb.New(createdAt)
+        s.UpdatedAt = timestamppb.New(updatedAt)
+        s.UserId = userID
+        s.LikeBy = likeBy
+
+        // Fetch detailed dishes for this set
+        dishes, err := sr.GetDetailedDishesForSet(ctx, s.Id)
+        if err != nil {
+            sr.logger.Error(fmt.Sprintf("Error fetching detailed dishes for set %d: %s", s.Id, err.Error()))
+            return nil, fmt.Errorf("error fetching detailed dishes for set %d: %w", s.Id, err)
+        }
+
+        s.Dishes = dishes
+        sets = append(sets, &s)
+    }
+
+    if err := rows.Err(); err != nil {
+        sr.logger.Error("Error iterating over sets: " + err.Error())
+        return nil, fmt.Errorf("error iterating over sets: %w", err)
+    }
+
+    sr.logger.Info(fmt.Sprintf("Successfully fetched %d detailed sets", len(sets)))
+    return sets, nil
+}
+
+// New helper function to get detailed dishes for a set
+func (sr *SetRepository) GetDetailedDishesForSet(ctx context.Context, setID int32) ([]*set.SetProtoDishDetailed, error) {
+    query := `
+        SELECT d.id, sd.quantity, d.name, d.price, d.description, d.image, d.status
+        FROM set_dishes sd
+        JOIN dishes d ON sd.dish_id = d.id
+        WHERE sd.set_id = $1
+    `
+    rows, err := sr.db.Query(ctx, query, setID)
+    if err != nil {
+        sr.logger.Error(fmt.Sprintf("Error fetching detailed dishes for set %d: %s", setID, err.Error()))
+        return nil, fmt.Errorf("error fetching detailed dishes for set: %w", err)
+    }
+    defer rows.Close()
+
+    var dishes []*set.SetProtoDishDetailed
+    for rows.Next() {
+        var dish set.SetProtoDishDetailed
+        err := rows.Scan(
+            &dish.DishId,
+            &dish.Quantity,
+            &dish.Name,
+            &dish.Price,
+            &dish.Description,
+            &dish.Image,
+            &dish.Status,
+        )
+        if err != nil {
+            sr.logger.Error(fmt.Sprintf("Error scanning detailed dish for set %d: %s", setID, err.Error()))
+            return nil, fmt.Errorf("error scanning detailed dish: %w", err)
+        }
+        dishes = append(dishes, &dish)
+    }
+
+    if err := rows.Err(); err != nil {
+        sr.logger.Error(fmt.Sprintf("Error iterating over detailed dishes for set %d: %s", setID, err.Error()))
+        return nil, fmt.Errorf("error iterating over detailed dishes: %w", err)
+    }
+
+    return dishes, nil
+}

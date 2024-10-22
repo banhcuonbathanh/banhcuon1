@@ -20,11 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SetService_GetSetProtoList_FullMethodName   = "/set_qr.SetService/GetSetProtoList"
-	SetService_GetSetProtoDetail_FullMethodName = "/set_qr.SetService/GetSetProtoDetail"
-	SetService_CreateSetProto_FullMethodName    = "/set_qr.SetService/CreateSetProto"
-	SetService_UpdateSetProto_FullMethodName    = "/set_qr.SetService/UpdateSetProto"
-	SetService_DeleteSetProto_FullMethodName    = "/set_qr.SetService/DeleteSetProto"
+	SetService_GetSetProtoList_FullMethodName       = "/set_qr.SetService/GetSetProtoList"
+	SetService_GetSetProtoDetail_FullMethodName     = "/set_qr.SetService/GetSetProtoDetail"
+	SetService_CreateSetProto_FullMethodName        = "/set_qr.SetService/CreateSetProto"
+	SetService_UpdateSetProto_FullMethodName        = "/set_qr.SetService/UpdateSetProto"
+	SetService_DeleteSetProto_FullMethodName        = "/set_qr.SetService/DeleteSetProto"
+	SetService_GetSetProtoListDetail_FullMethodName = "/set_qr.SetService/GetSetProtoListDetail"
 )
 
 // SetServiceClient is the client API for SetService service.
@@ -36,6 +37,7 @@ type SetServiceClient interface {
 	CreateSetProto(ctx context.Context, in *CreateSetProtoRequest, opts ...grpc.CallOption) (*SetProtoResponse, error)
 	UpdateSetProto(ctx context.Context, in *UpdateSetProtoRequest, opts ...grpc.CallOption) (*SetProtoResponse, error)
 	DeleteSetProto(ctx context.Context, in *SetProtoIdParam, opts ...grpc.CallOption) (*SetProtoResponse, error)
+	GetSetProtoListDetail(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SetProtoListDetailResponse, error)
 }
 
 type setServiceClient struct {
@@ -96,6 +98,16 @@ func (c *setServiceClient) DeleteSetProto(ctx context.Context, in *SetProtoIdPar
 	return out, nil
 }
 
+func (c *setServiceClient) GetSetProtoListDetail(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SetProtoListDetailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetProtoListDetailResponse)
+	err := c.cc.Invoke(ctx, SetService_GetSetProtoListDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SetServiceServer is the server API for SetService service.
 // All implementations must embed UnimplementedSetServiceServer
 // for forward compatibility.
@@ -105,6 +117,7 @@ type SetServiceServer interface {
 	CreateSetProto(context.Context, *CreateSetProtoRequest) (*SetProtoResponse, error)
 	UpdateSetProto(context.Context, *UpdateSetProtoRequest) (*SetProtoResponse, error)
 	DeleteSetProto(context.Context, *SetProtoIdParam) (*SetProtoResponse, error)
+	GetSetProtoListDetail(context.Context, *emptypb.Empty) (*SetProtoListDetailResponse, error)
 	mustEmbedUnimplementedSetServiceServer()
 }
 
@@ -129,6 +142,9 @@ func (UnimplementedSetServiceServer) UpdateSetProto(context.Context, *UpdateSetP
 }
 func (UnimplementedSetServiceServer) DeleteSetProto(context.Context, *SetProtoIdParam) (*SetProtoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSetProto not implemented")
+}
+func (UnimplementedSetServiceServer) GetSetProtoListDetail(context.Context, *emptypb.Empty) (*SetProtoListDetailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSetProtoListDetail not implemented")
 }
 func (UnimplementedSetServiceServer) mustEmbedUnimplementedSetServiceServer() {}
 func (UnimplementedSetServiceServer) testEmbeddedByValue()                    {}
@@ -241,6 +257,24 @@ func _SetService_DeleteSetProto_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SetService_GetSetProtoListDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SetServiceServer).GetSetProtoListDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SetService_GetSetProtoListDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SetServiceServer).GetSetProtoListDetail(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SetService_ServiceDesc is the grpc.ServiceDesc for SetService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -267,6 +301,10 @@ var SetService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteSetProto",
 			Handler:    _SetService_DeleteSetProto_Handler,
+		},
+		{
+			MethodName: "GetSetProtoListDetail",
+			Handler:    _SetService_GetSetProtoListDetail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -15,9 +15,9 @@ func RegisterSetRoutes(r *chi.Mux, handler *SetHandlerController) *chi.Mux {
 		r.Group(func(r chi.Router) {
 			// r.Use(middleware.GetAuthMiddlewareFunc(handler.TokenMaker))
 
-			r.Get("/", handler.GetSetProtoList)
+			r.Get("/", handler.GetSetProtoListDetail)
 			r.Post("/", handler.CreateSetProto)
-
+			r.Get("/", handler.GetSetProtoListDetail)
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/", handler.GetSetProtoDetail)
 				r.Put("/", handler.UpdateSetProto)

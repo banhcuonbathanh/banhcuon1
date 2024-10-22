@@ -146,6 +146,68 @@ func (h *SetHandlerController) DeleteSetProto(w http.ResponseWriter, r *http.Req
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(res)
 }
+
+
+// ---------
+func (h *SetHandlerController) GetSetProtoListDetail(w http.ResponseWriter, r *http.Request) {
+    h.logger.Info("Fetching detailed set list")
+    setsResponse, err := h.client.GetSetProtoListDetail(h.ctx, &emptypb.Empty{})
+    if err != nil {
+        h.logger.Error("Error fetching detailed set list: " + err.Error())
+        http.Error(w, "failed to fetch detailed sets: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    res := ToSetDetailedResListFromPbSetDetailedListResponse(setsResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        http.Error(w, "failed to encode response: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+}
+func ToSetDetailedResListFromPbSetDetailedListResponse(pbRes *set.SetProtoListDetailResponse) SetDetailedListResponse {
+    sets := make([]SetDetailed, len(pbRes.Data))
+    for i, pbSet := range pbRes.Data {
+        sets[i] = ToSetDetailedFromPbSetDetailedResponse(pbSet)
+    }
+    return SetDetailedListResponse{
+        Data: sets,
+    }
+}
+func ToSetDetailedFromPbSetDetailedResponse(pbSet *set.SetProtoDetailedResponse) SetDetailed {
+    return SetDetailed{
+        ID:          int64(pbSet.Id),
+        Name:        pbSet.Name,
+        Description: pbSet.Description,
+        Dishes:      ToSetDetailedDishesFromPbSetDetailedDishes(pbSet.Dishes),
+        UserID:      pbSet.UserId,
+        CreatedAt:   pbSet.CreatedAt.AsTime(),
+        UpdatedAt:   pbSet.UpdatedAt.AsTime(),
+        IsFavourite: pbSet.IsFavourite,
+        LikeBy:      pbSet.LikeBy,
+        IsPublic:    pbSet.IsPublic,
+        Image:       pbSet.Image,
+        Price:       pbSet.Price,
+    }
+}
+
+func ToSetDetailedDishesFromPbSetDetailedDishes(pbDishes []*set.SetProtoDishDetailed) []SetDetailedDish {
+    dishes := make([]SetDetailedDish, len(pbDishes))
+    for i, pbDish := range pbDishes {
+        dishes[i] = SetDetailedDish{
+            DishID:      int64(pbDish.DishId),
+            Quantity:    int64(pbDish.Quantity),
+            Name:        pbDish.Name,
+            Price:       pbDish.Price,
+            Description: pbDish.Description,
+            Image:       pbDish.Image,
+            Status:      pbDish.Status,
+        }
+    }
+    return dishes
+}
+//-------
 func ToPBCreateSetProtoRequest(req CreateSetRequest) *set.CreateSetProtoRequest {
     return &set.CreateSetProtoRequest{
         Name:        req.Name,

@@ -1,31 +1,32 @@
 import { DishInterface } from "@/schemaValidations/interface/type_dish";
-import { DishOrderItem, SetOrderItem } from "@/schemaValidations/interface/type_order";
+import {
+  DishOrderItem,
+  SetOrderItem
+} from "@/schemaValidations/interface/type_order";
 import {
   SetInterface,
   SetProtoDish
 } from "@/schemaValidations/interface/types_set";
 import { create } from "zustand";
 
-
-
 interface OrderState {
   dishItems: DishOrderItem[];
   setItems: SetOrderItem[];
   isLoading: boolean;
   error: string | null;
-  
-  // Dish-specific functions
+
+  // Functions remain the same, but with updated types
   addDishItem: (dish: DishInterface, quantity: number) => void;
   removeDishItem: (id: number) => void;
   updateDishQuantity: (id: number, quantity: number) => void;
-  
-  // Set-specific functions
-  addSetItem: (set: SetInterface, quantity: number, modifiedDishes?: SetProtoDish[]) => void;
+  addSetItem: (
+    set: SetInterface,
+    quantity: number,
+    modifiedDishes?: SetProtoDish[]
+  ) => void;
   removeSetItem: (id: number) => void;
   updateSetQuantity: (id: number, quantity: number) => void;
   updateSetDishes: (setId: number, modifiedDishes: SetProtoDish[]) => void;
-  
-  // General functions
   clearOrder: () => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
@@ -82,26 +83,34 @@ const useOrderStore = create<OrderState>((set, get) => ({
       )
     })),
 
-    addSetItem: (set: SetInterface, quantity: number, modifiedDishes?: SetProtoDish[]) => {
-      useOrderStore.setState((state) => {
-        const existingItem = state.setItems.find((i) => i.set.id === set.id);
-        if (existingItem) {
-          return {
-            setItems: state.setItems.map((i) =>
-              i.set.id === set.id ? { ...i, quantity: i.quantity + quantity } : i
-            )
-          };
-        } else {
-          const newItem: SetOrderItem = {
-            id: set.id,
-            quantity,
-            set: set,
-            modifiedDishes: modifiedDishes || set.dishes
-          };
-          return { setItems: [...state.setItems, newItem] };
-        }
-      });
-    },
+  addSetItem: (
+    setItem: SetInterface,
+    quantity: number,
+    modifiedDishes?: SetProtoDish[]
+  ) => {
+    set((state: OrderState) => {
+      const existingItem = state.setItems.find(
+        (item) => item.set.id === setItem.id
+      );
+      if (existingItem) {
+        return {
+          setItems: state.setItems.map((item) =>
+            item.set.id === setItem.id
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          )
+        };
+      } else {
+        const newItem: SetOrderItem = {
+          id: setItem.id,
+          quantity,
+          set: setItem,
+          modifiedDishes: modifiedDishes || setItem.dishes
+        };
+        return { setItems: [...state.setItems, newItem] };
+      }
+    });
+  },
 
   removeSetItem: (id) =>
     set((state) => ({
@@ -174,7 +183,7 @@ const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   findDishOrderItem: (id) => get().dishItems.find((item) => item.id === id),
-  findSetOrderItem: (id) => get().setItems.find((item) => item.id === id),
+  findSetOrderItem: (id) => get().setItems.find((item) => item.id === id)
 }));
 
 function calculateSetPrice(dishes: SetProtoDish[] | undefined): number {
@@ -182,13 +191,8 @@ function calculateSetPrice(dishes: SetProtoDish[] | undefined): number {
     return 0;
   }
   return dishes.reduce((acc, d) => {
-    if (
-      d &&
-      d.dish &&
-      typeof d.dish.price === "number" &&
-      typeof d.quantity === "number"
-    ) {
-      return acc + d.dish.price * d.quantity;
+    if (typeof d.price === "number" && typeof d.quantity === "number") {
+      return acc + d.price * d.quantity;
     }
     return acc;
   }, 0);
