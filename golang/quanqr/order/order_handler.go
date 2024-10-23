@@ -171,8 +171,12 @@ func ToPBCreateOrderRequest(req CreateOrderRequestType) *order.CreateOrderReques
         SetItems:       ToPBSetOrderItems(req.SetItems),
         BowChili:       req.BowChili,
         BowNoChili:     req.BowNoChili,
+        TakeAway:       req.TakeAway,
+        ChiliNumber:    req.ChiliNumber,
+        TableToken:     req.TableToken,
     }
 }
+
 
 func ToPBUpdateOrderRequest(req UpdateOrderRequestType) *order.UpdateOrderRequest {
     return &order.UpdateOrderRequest{
@@ -188,8 +192,12 @@ func ToPBUpdateOrderRequest(req UpdateOrderRequestType) *order.UpdateOrderReques
         IsGuest:        req.IsGuest,
         BowChili:       req.BowChili,
         BowNoChili:     req.BowNoChili,
+        TakeAway:       req.TakeAway,
+        ChiliNumber:    req.ChiliNumber,
+        TableToken:     req.TableToken,
     }
 }
+
 
 func ToPBGetOrdersRequest(req GetOrdersRequestType) *order.GetOrdersRequest {
     return &order.GetOrdersRequest{
@@ -221,6 +229,7 @@ func ToPBDishOrderItems(items []OrderDish) []*order.DishOrderItem {
     return pbItems
 }
 
+
 func ToPBSetOrderItems(items []OrderSet) []*order.SetOrderItem {
     pbItems := make([]*order.SetOrderItem, len(items))
     for i, item := range items {
@@ -231,6 +240,7 @@ func ToPBSetOrderItems(items []OrderSet) []*order.SetOrderItem {
     }
     return pbItems
 }
+
 
 func ToOrderResFromPbOrderResponse(pbRes *order.OrderResponse) OrderResponse {
     return OrderResponse{
@@ -264,6 +274,9 @@ func ToOrderFromPbOrder(pbOrder *order.Order) OrderType {
         SetItems:       ToOrderSetsFromPbSetOrderItems(pbOrder.SetItems),
         BowChili:       pbOrder.BowChili,
         BowNoChili:     pbOrder.BowNoChili,
+        TakeAway:       pbOrder.TakeAway,
+        ChiliNumber:    pbOrder.ChiliNumber,
+        TableToken:     pbOrder.TableToken,
     }
 }
 

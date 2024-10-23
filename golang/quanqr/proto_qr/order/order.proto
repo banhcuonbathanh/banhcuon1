@@ -24,6 +24,12 @@ message Order {
   repeated SetOrderItem set_items = 12;
   int64 bow_chili = 13;
   int64 bow_no_chili = 14;
+
+  // gjhgjhg
+
+  bool take_away = 15;
+  int64 chili_number = 16;
+  string table_token = 17;
 }
 
 // Order items
@@ -78,6 +84,12 @@ message CreateOrderRequest {
   repeated SetOrderItem set_items = 11;
   int64 bow_chili = 12;
   int64 bow_no_chili = 13;
+
+  //aksdjhfklasdhfkj
+
+  bool take_away = 15;
+  int64 chili_number = 16;
+  string table_token = 17;
 }
 
 message UpdateOrderRequest {
@@ -93,6 +105,12 @@ message UpdateOrderRequest {
   bool is_guest = 10;
   int64 bow_chili = 11;
   int64 bow_no_chili = 12;
+
+  // asdkfkjasdkfjsa
+
+  bool takeAway = 15;
+  int64 chiliNumber = 16;
+  string table_token = 17;
 }
 
 message GetOrdersRequest {

@@ -1,3 +1,5 @@
+http://localhost:3000/table/1?token=MTp0YWJsZTo0ODgzMjY5NTcx.xKeajWuEoeA
+
 docker compose up
 
 cd quananqr1
@@ -23,8 +25,9 @@ psql -U myuser -d mydatabase
 # psql -U myuser -d mydatabase
 
 DROP DATABASE mydatabase;
-TRUNCATE TABLE schema*migrations, users; delete all data
+TRUNCATE TABLE schema\*migrations, users; delete all data
 \dt : list all table
+\d guests
 \d users
 \d comments
 \d sessions
@@ -32,13 +35,13 @@ TRUNCATE TABLE schema*migrations, users; delete all data
 
 \d orders
 
-SELECT * FROM tables;
-SELECT * FROM set_dishes;
-SELECT * FROM sets;
-SELECT * FROM dishes;
+SELECT _ FROM tables;
+SELECT _ FROM set_dishes;
+SELECT _ FROM sets;
+SELECT _ FROM dishes;
 SELECT * FROM orders;
-SELECT * FROM users;
-SELECT \* FROM sessions;
+SELECT _ FROM users;
+SELECT * FROM sessions;
 DELETE FROM sessions;
 \d order_items
 mydatabase=# \d users
@@ -192,8 +195,6 @@ python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. python_proto/
 ------------------------------------- quan an qr ------------
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/set/set.proto
 
-
-
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/account/account.proto
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/dish/dish.proto
@@ -230,90 +231,84 @@ This merge is necessary to integrate the latest changes from the 'test_isadmin' 
 
 git checkout -b testferetur---set--add--database
 
-
-
-
-
-
-
 {
-  "guest_id": null,
-  "user_id": 1,
-  "is_guest": false,
-  "table_number": 5,
-  "order_handler_id": 1,
-  "status": "pending",
-  "created_at": "2024-10-19T10:00:00Z",
-  "updated_at": "2024-10-19T10:00:00Z",
-  "total_price": 63,
-  "dish_items": [
-    {
-      "id": 1,
-      "quantity": 2,
-      "dish": {
-        "id": 1,
-        "name": "trung",
-        "price": 9,
-        "description": "Classic Italian pasta dish with eggs, cheese, pancetta, and black pepper",
-        "image": "https://example.com/spaghetti-carbonara.jpg",
-        "status": "available",
-        "created_at": "2024-10-17T08:50:27.304909Z",
-        "updated_at": "2024-10-17T08:50:27.304909Z"
-      }
-    },
-    {
-      "id": 2,
-      "quantity": 1,
-      "dish": {
-        "id": 2,
-        "name": "do",
-        "price": 9,
-        "description": "Classic Italian pasta dish with eggs, cheese, pancetta, and black pepper",
-        "image": "https://example.com/spaghetti-carbonara.jpg",
-        "status": "available",
-        "created_at": "2024-10-17T08:50:32.470107Z",
-        "updated_at": "2024-10-17T08:50:32.470107Z"
-      }
-    }
-  ],
-  "set_items": [
-    {
-      "id": 1,
-      "quantity": 1,
-      "set": {
-        "id": 1,
-        "name": "My New Set 1212",
-        "description": "A delicious combination of dishes",
-        "dishes": [
-          {
-            "id": 1,
-            "name": "trung",
-            "price": 9,
-            "description": "Classic Italian pasta dish with eggs, cheese, pancetta, and black pepper",
-            "image": "https://example.com/spaghetti-carbonara.jpg",
-            "status": "available",
-            "created_at": "2024-10-17T08:50:27.304909Z",
-            "updated_at": "2024-10-17T08:50:27.304909Z"
-          },
-          {
-            "id": 2,
-            "name": "do",
-            "price": 9,
-            "description": "Classic Italian pasta dish with eggs, cheese, pancetta, and black pepper",
-            "image": "https://example.com/spaghetti-carbonara.jpg",
-            "status": "available",
-            "created_at": "2024-10-17T08:50:32.470107Z",
-            "updated_at": "2024-10-17T08:50:32.470107Z"
-          }
-        ],
-        "user_id": 1,
-        "created_at": "2024-10-17T08:50:48.249115Z",
-        "updated_at": "2024-10-17T08:50:48.249115Z",
-        "is_favourite": false,
-        "like_by": [],
-        "is_public": true,
-        "image": "asdfasdfasdgfasdg"
-      }
-    }
-  ]
+"guest_id": null,
+"user_id": 1,
+"is_guest": false,
+"table_number": 5,
+"order_handler_id": 1,
+"status": "pending",
+"created_at": "2024-10-19T10:00:00Z",
+"updated_at": "2024-10-19T10:00:00Z",
+"total_price": 63,
+"dish_items": [
+{
+"id": 1,
+"quantity": 2,
+"dish": {
+"id": 1,
+"name": "trung",
+"price": 9,
+"description": "Classic Italian pasta dish with eggs, cheese, pancetta, and black pepper",
+"image": "https://example.com/spaghetti-carbonara.jpg",
+"status": "available",
+"created_at": "2024-10-17T08:50:27.304909Z",
+"updated_at": "2024-10-17T08:50:27.304909Z"
+}
+},
+{
+"id": 2,
+"quantity": 1,
+"dish": {
+"id": 2,
+"name": "do",
+"price": 9,
+"description": "Classic Italian pasta dish with eggs, cheese, pancetta, and black pepper",
+"image": "https://example.com/spaghetti-carbonara.jpg",
+"status": "available",
+"created_at": "2024-10-17T08:50:32.470107Z",
+"updated_at": "2024-10-17T08:50:32.470107Z"
+}
+}
+],
+"set_items": [
+{
+"id": 1,
+"quantity": 1,
+"set": {
+"id": 1,
+"name": "My New Set 1212",
+"description": "A delicious combination of dishes",
+"dishes": [
+{
+"id": 1,
+"name": "trung",
+"price": 9,
+"description": "Classic Italian pasta dish with eggs, cheese, pancetta, and black pepper",
+"image": "https://example.com/spaghetti-carbonara.jpg",
+"status": "available",
+"created_at": "2024-10-17T08:50:27.304909Z",
+"updated_at": "2024-10-17T08:50:27.304909Z"
+},
+{
+"id": 2,
+"name": "do",
+"price": 9,
+"description": "Classic Italian pasta dish with eggs, cheese, pancetta, and black pepper",
+"image": "https://example.com/spaghetti-carbonara.jpg",
+"status": "available",
+"created_at": "2024-10-17T08:50:32.470107Z",
+"updated_at": "2024-10-17T08:50:32.470107Z"
+}
+],
+"user_id": 1,
+"created_at": "2024-10-17T08:50:48.249115Z",
+"updated_at": "2024-10-17T08:50:48.249115Z",
+"is_favourite": false,
+"like_by": [],
+"is_public": true,
+"image": "asdfasdfasdgfasdg"
+}
+}
+]
 }

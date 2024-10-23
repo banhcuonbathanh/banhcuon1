@@ -6,7 +6,7 @@ const get_Sets = async (): Promise<SetInterface[]> => {
   try {
     const baseUrl =
       envConfig.NEXT_PUBLIC_URL + envConfig.NEXT_PUBLIC_Get_set_intenal;
-    console.log("quananqr1/zusstand/server/set-controller.ts baseUrl", baseUrl);
+    // console.log("quananqr1/zusstand/server/set-controller.ts baseUrl", baseUrl);
     const response = await fetch(baseUrl, {
       method: "GET",
       cache: "no-store"

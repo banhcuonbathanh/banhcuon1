@@ -1,12 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import useOrderStore from "@/zusstand/order/order_zustand";
-const OrderSummary = () => {
+import OrderCreationComponent from "./add_order_button";
+
+interface OrderProps {
+  number: string;
+  token: string;
+}
+export default function OrderSummary({ number, token }: OrderProps) {
+  console.log(
+    "quananqr1/app/table/[number]/component/order/order.tsx number,  token",
+    number
+  );
+  console.log(
+    "quananqr1/app/table/[number]/component/order/order.tsx token,  ",
+    token
+  );
   const {
+    addTableNumber,
+    addTableToken,
     getFormattedSets,
     getFormattedDishes,
     getFormattedTotals,
@@ -17,11 +33,22 @@ const OrderSummary = () => {
     dishItems,
     setItems
   } = useOrderStore();
+  useEffect(() => {
+    if (token) {
+      addTableToken(token);
+    }
+    if (number) {
+      const tablenumber = addTableNumberconvert(number);
+      addTableNumber(tablenumber);
+    }
+  }, [token, addTableToken, number]);
 
+  // const tablenumber = addTableNumberconvert(number);
+  // addTableNumber(tablenumber);
   const [showSets, setShowSets] = useState(true);
   const [showDishes, setShowDishes] = useState(true);
-  const [bowlChili, setBowlChili] = useState(1);
-  const [bowlNoChili, setBowlNoChili] = useState(2);
+  const [bowlChili, setBowlChili] = useState(0);
+  const [bowlNoChili, setBowlNoChili] = useState(0);
 
   const formattedSets = getFormattedSets();
   const formattedDishes = getFormattedDishes();
@@ -214,14 +241,25 @@ const OrderSummary = () => {
           </div>
         </CardContent>
       </Card>
-
-      <div className="mt-4">
-        <Button className="w-full" onClick={() => {}}>
-          Add Order
-        </Button>
-      </div>
+      <OrderCreationComponent bowlChili={bowlChili} bowlNoChili={bowlNoChili} />
     </div>
   );
-};
+}
 
-export default OrderSummary;
+function addTableNumberconvert(value: string): number {
+  let tableNumber: number;
+
+  if (typeof value === "string") {
+    if (/^\d+$/.test(value)) {
+      tableNumber = parseInt(value, 10);
+    } else {
+      throw new Error("Invalid input: expected a string of digits.");
+    }
+  } else if (typeof value === "number") {
+    tableNumber = value;
+  } else {
+    throw new Error("Invalid input: expected a string or number.");
+  }
+
+  return tableNumber;
+}

@@ -235,20 +235,39 @@ func (tr *TableRepository) DeleteTable(ctx context.Context, number int32) (*tabl
 	return &t, nil
 }
 
-func (tr *TableRepository) generateToken(tableNumber int32) (string, error) {
-	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Generating token for table number: %d", tableNumber))
+// func (tr *TableRepository) generateToken(tableNumber int32) (string, error) {
+// 	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Generating token for table number: %d", tableNumber))
 
-	tokenString, _, err := tr.jwtMaker.CreateToken(
+// 	tokenString, _, err := tr.jwtMaker.CreateToken(
+// 		int64(tableNumber),
+// 		fmt.Sprintf("table_%d@example.com", tableNumber),
+// 		"table",
+// 		100*365*24*time.Hour,
+// 	)
+// 	if err != nil {
+// 		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Error creating token: %v", err))
+// 		return "", fmt.Errorf("error creating token: %w", err)
+// 	}
+
+// 	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Successfully generated token for table number: %d", tableNumber))
+// 	return tokenString, nil
+// }
+
+func (tr *TableRepository) generateToken(tableNumber int32) (string, error) {
+	tr.logger.Info(fmt.Sprintf("Generating token for table number: %d", tableNumber))
+
+	// Generate a short token instead of the full JWT
+	shortToken, err := tr.jwtMaker.CreateShortToken(
 		int64(tableNumber),
 		fmt.Sprintf("table_%d@example.com", tableNumber),
 		"table",
 		100*365*24*time.Hour,
 	)
 	if err != nil {
-		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Error creating token: %v", err))
-		return "", fmt.Errorf("error creating token: %w", err)
+		tr.logger.Error(fmt.Sprintf("Error creating short token: %v", err))
+		return "", fmt.Errorf("error creating short token: %w", err)
 	}
 
-	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Successfully generated token for table number: %d", tableNumber))
-	return tokenString, nil
+	tr.logger.Info(fmt.Sprintf("Successfully generated token for table number: %d", tableNumber))
+	return shortToken, nil
 }

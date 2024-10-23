@@ -13,7 +13,6 @@ export interface DishOrderItem {
 export interface SetOrderItem {
   set_id: number;
   quantity: number;
-  set: SetInterface;
 }
 
 // Main order interface
@@ -32,26 +31,14 @@ export interface Order {
   set_items: SetOrderItem[];
   bow_chili: number;
   bow_no_chili: number;
+
+  // new
+  takeAway: boolean;
+  chiliNumber: number
 }
 
-// Interface for creating a new order
-// export interface CreateOrderBody {
-//   guestId: number;
-
-//   tableNumber: number;
-//   dishSnapshotId: number;
-
-//   orderHandlerId: number;
-//   status: "pending" | "processing" | "completed" | "cancelled";
-//   createdAt: string;
-//   updatedAt: string;
-//   totalPrice: number;
-//   dishOrderItems: DishOrderItem[];
-
-//   setOrderItems: SetOrderItem[];
-// }
 export interface CreateOrderRequest {
-  guest_id: number;
+  guest_id?: number | null;
   user_id: number;
   is_guest: boolean;
   table_number: number;
@@ -64,6 +51,9 @@ export interface CreateOrderRequest {
   set_items: SetOrderItem[];
   bow_chili: number;
   bow_no_chili: number;
+//
+  takeAway: boolean;
+  chiliNumber: number
 }
 
 export interface UpdateOrderRequest {

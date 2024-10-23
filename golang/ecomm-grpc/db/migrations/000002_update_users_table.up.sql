@@ -208,6 +208,9 @@ CREATE TABLE orders (
     total_price INTEGER,
     bow_chili BIGINT DEFAULT 0,
     bow_no_chili BIGINT DEFAULT 0,
+    take_away BOOLEAN NOT NULL DEFAULT false,
+    chili_number BIGINT DEFAULT 0,
+    table_token VARCHAR(255) NOT NULL,
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
@@ -217,7 +220,6 @@ CREATE TABLE orders (
         (is_guest = FALSE AND user_id IS NOT NULL AND guest_id IS NULL)
     )
 );
-
 
 CREATE TABLE dish_order_items (
     id BIGSERIAL PRIMARY KEY,

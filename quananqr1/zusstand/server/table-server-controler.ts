@@ -5,15 +5,15 @@ import { z } from "zod";
 import { TableListResType, TableSchema } from "../table/table.schema";
 
 const get_tables = async (): Promise<TableListResType> => {
-  console.log(
-    "Starting get_tables function quananqr1/zusstand/server/table-server-controler.ts"
-  );
+  // console.log(
+  //   "Starting get_tables function quananqr1/zusstand/server/table-server-controler.ts"
+  // );
   try {
     const baseUrl =
       envConfig.NEXT_PUBLIC_URL + envConfig.NEXT_PUBLIC_intern_table_end_point;
-    console.log(
-      `Fetching tables from: quananqr1/zusstand/server/table-server-controler.ts ${baseUrl}`
-    );
+    // console.log(
+    //   `Fetching tables from: quananqr1/zusstand/server/table-server-controler.ts ${baseUrl}`
+    // );
 
     const response = await fetch(baseUrl, {
       method: "GET",
@@ -32,10 +32,10 @@ const get_tables = async (): Promise<TableListResType> => {
     }
 
     const data = await response.json();
-    console.log(
-      "Received raw data: quananqr1/zusstand/server/table-server-controler.ts",
-      JSON.stringify(data, null, 2)
-    );
+    // console.log(
+    //   "Received raw data: quananqr1/zusstand/server/table-server-controler.ts",
+    //   JSON.stringify(data, null, 2)
+    // );
 
     // Create a more lenient schema for parsing
     const LenientTableSchema = TableSchema.extend({
@@ -52,15 +52,15 @@ const get_tables = async (): Promise<TableListResType> => {
       updatedAt: table.updatedAt ? new Date(table.updatedAt) : new Date()
     }));
 
-    console.log(
-      "Validating data against schema quananqr1/zusstand/server/table-server-controler.ts"
-    );
+    // console.log(
+    //   "Validating data against schema quananqr1/zusstand/server/table-server-controler.ts"
+    // );
     // Validate the response data against the lenient schema
     const validatedData = z.array(LenientTableSchema).parse(data.data || data);
 
-    console.log(
-      `Successfully validated ${validatedData.length} tables quananqr1/zusstand/server/table-server-controler.ts`
-    );
+    // console.log(
+    //   `Successfully validated ${validatedData.length} tables quananqr1/zusstand/server/table-server-controler.ts`
+    // );
 
     return {
       data: validatedData,
@@ -79,9 +79,9 @@ const get_tables = async (): Promise<TableListResType> => {
     }
     throw error;
   } finally {
-    console.log(
-      "Finished get_tables function quananqr1/zusstand/server/table-server-controler.ts"
-    );
+    // console.log(
+    //   "Finished get_tables function quananqr1/zusstand/server/table-server-controler.ts"
+    // );
   }
 };
 

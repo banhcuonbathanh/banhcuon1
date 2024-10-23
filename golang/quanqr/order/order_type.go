@@ -31,6 +31,12 @@ type OrderType struct {
     SetItems       []OrderSet  `json:"set_items"`
     BowChili       int64           `json:"bow_chili"`
     BowNoChili     int64           `json:"bow_no_chili"`
+
+    //asdfasdfasdf
+
+    TakeAway       bool           `json:"take_away"`
+    ChiliNumber     int64           `json:"chili_number"`
+    TableToken     string           `json:"Table_token"`
 }
 
 // CreateOrderRequest struct
@@ -48,6 +54,12 @@ type CreateOrderRequestType struct {
     SetItems       []OrderSet  `json:"set_items"`
     BowChili       int64           `json:"bow_chili"`
     BowNoChili     int64           `json:"bow_no_chili"`
+
+        //asdfasdfasdf
+
+        TakeAway       bool           `json:"take_away"`
+        ChiliNumber     int64           `json:"chili_number"`
+            TableToken     string           `json:"Table_token"`
 }
 
 // UpdateOrderRequest struct
@@ -64,6 +76,13 @@ type UpdateOrderRequestType struct {
     IsGuest        bool            `json:"is_guest"`
     BowChili       int64           `json:"bow_chili"`
     BowNoChili     int64           `json:"bow_no_chili"`
+
+
+        //asdfasdfasdf
+
+        TakeAway       bool           `json:"take_away"`
+        ChiliNumber     int64           `json:"chili_number"`
+            TableToken     string           `json:"Table_token"`
 }
 
 

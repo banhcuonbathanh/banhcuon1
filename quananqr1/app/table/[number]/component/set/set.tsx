@@ -16,7 +16,7 @@ interface SetSelectionProps {
 }
 
 const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
-  // console.log("quananqr1/app/(guest)/component/set/set.tsx set ", set);
+  console.log("quananqr1/app/(guest)/component/set/set.tsx set ", set);
   const orderStore = useOrderStore();
 
   const {
@@ -32,6 +32,12 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
   const [dishQuantities, setDishQuantities] = React.useState<
     Record<number, number>
   >(() => {
+    if (setOrderItem) {
+      return setOrderItem.modifiedDishes.reduce(
+        (acc, dish) => ({ ...acc, [dish.dish_id]: dish.quantity }),
+        {}
+      );
+    }
     return set.dishes.reduce(
       (acc, dish) => ({ ...acc, [dish.dish_id]: dish.quantity }),
       {}
@@ -62,6 +68,7 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
         image: dish.image,
         status: dish.status
       }));
+      addSetItem(set, 1, modifiedDishes);
     }
   }, [set, setOrderItem, dishQuantities, addSetItem, updateSetQuantity]);
 

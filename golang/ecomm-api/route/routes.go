@@ -26,7 +26,7 @@ func RegisterRoutes(r *chi.Mux,handler *handler.Handlercontroller) *chi.Mux {
 		r.Post("/login", handler.Login)
 
 		r.Group(func(r chi.Router) {
-			// r.Use(middleware.GetRoleMiddlewareFunc(tokenMaker))
+			r.Use(middleware.GetRoleMiddlewareFunc(tokenMaker))
 			r.Get("/", handler.ListUsers)
 			r.Route("/{id}", func(r chi.Router) {
 				r.Delete("/", handler.DeleteUser)

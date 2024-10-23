@@ -6,10 +6,17 @@ import { SetInterface } from "@/schemaValidations/interface/types_set";
 import { get_Sets } from "@/zusstand/server/set-controller";
 import { SetCardList } from "./component/set/sets_list";
 import OrderSummary from "./component/order/order";
+interface TableProps {
+  params: { number: string };
+  searchParams: { token: string };
+}
+// This is a server component
+export default async function TablePage({ params, searchParams }: TableProps) {
+  const number = params.number;
+  console.log(" quananqr1/app/test/[number]/page.tsx number", number);
+  const token = searchParams.token;
 
-
-export default async function GuestPage() {
-  // Fetch dishes on the server side
+  console.log(" quananqr1/app/test/[number]/page.tsx token", token);
   const dishesData: DishInterface[] = await get_dishes();
 
   const setsData: SetInterface[] = await get_Sets();
@@ -27,9 +34,7 @@ export default async function GuestPage() {
 
       <DishSelection dishes={dishesData} />
 
-      <OrderSummary />
-{/* 
-            <OrderCreationComponent /> */}
+      <OrderSummary number={number} token={token} />
     </div>
   );
 }
