@@ -4,6 +4,29 @@ import (
 	"time"
 )
 
+// new 
+// GetOrdersRequest struct
+type GetOrdersRequestType struct {
+    Page     int32 `json:"page"`
+    PageSize int32 `json:"page_size"`
+}
+
+// PaginationInfo struct
+type PaginationInfo struct {
+    CurrentPage int32 `json:"current_page"`
+    TotalPages  int32 `json:"total_pages"`
+    TotalItems  int64 `json:"total_items"`
+    PageSize    int32 `json:"page_size"`
+}
+
+// OrderListResponse struct
+type OrderListResponse struct {
+    Data       []OrderType    `json:"data"`
+    Pagination PaginationInfo `json:"pagination"`
+}
+
+////-------
+
 type OrderDish struct {
     DishID   int64 `json:"dish_id"`
     Quantity int64 `json:"quantity"`
@@ -89,12 +112,7 @@ type UpdateOrderRequestType struct {
 
 
 // GetOrdersRequest struct
-type GetOrdersRequestType struct {
-	FromDate time.Time `json:"from_date"`
-	ToDate   time.Time `json:"to_date"`
-	UserID   *int64    `json:"user_id,omitempty"`
-	GuestID  *int64    `json:"guest_id,omitempty"`
-}
+
 
 // PayOrdersRequest struct
 type PayOrdersRequestType struct {
@@ -107,10 +125,7 @@ type OrderResponse struct {
 	Data OrderType `json:"data"`
 }
 
-// OrderListResponse struct
-type OrderListResponse struct {
-	Data []OrderType `json:"data"`
-}
+
 
 // OrderIDParam struct
 type OrderIDParam struct {

@@ -113,12 +113,6 @@ message UpdateOrderRequest {
   string table_token = 17;
 }
 
-message GetOrdersRequest {
-  google.protobuf.Timestamp from_date = 1;
-  google.protobuf.Timestamp to_date = 2;
-  optional int64 user_id = 3;
-  optional int64 guest_id = 4;
-}
 
 message PayOrdersRequest {
   oneof identifier {
@@ -141,9 +135,7 @@ message OrderResponse {
   Order data = 1;
 }
 
-message OrderListResponse {
-  repeated Order data = 1;
-}
+
 
 message OrderDetailedListResponse {
   repeated OrderSetDetailed data = 1;
@@ -156,6 +148,25 @@ message Guest {
   int32 table_number = 3;
   google.protobuf.Timestamp created_at = 4;
   google.protobuf.Timestamp updated_at = 5;
+}
+
+
+// ----------- new
+
+message GetOrdersRequest {
+  int32 page = 1;  // Page number (1-based)
+  int32 page_size = 2;  // Number of items per page
+}
+message OrderListResponse {
+  repeated Order data = 1;
+  PaginationInfo pagination = 2;
+}
+
+message PaginationInfo {
+  int32 current_page = 1;
+  int32 total_pages = 2;
+  int64 total_items = 3;
+  int32 page_size = 4;
 }
 
 // Service definition

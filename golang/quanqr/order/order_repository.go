@@ -152,29 +152,48 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
 
     return &o, nil
 }
-func (or *OrderRepository) GetOrders(ctx context.Context, req *order.GetOrdersRequest) ([]*order.Order, error) {
-    or.logger.Info("Fetching orders with filters")
+func (or *OrderRepository) GetOrders(ctx context.Context, page, pageSize int32) ([]*order.Order, int64, error) {
+    or.logger.Info("Fetching orders with pagination")
+    
+    // Get total count for pagination
+    countQuery := `SELECT COUNT(*) FROM orders`
+    
+    var totalItems int64
+    err := or.db.QueryRow(ctx, countQuery).Scan(&totalItems)
+    if err != nil {
+        or.logger.Error("Error counting orders: " + err.Error())
+        return nil, 0, fmt.Errorf("error counting orders: %w", err)
+    }
+
+    // Calculate offset
+    offset := (page - 1) * pageSize
     
     query := `
         SELECT 
-            id, guest_id, user_id, is_guest, table_number, order_handler_id,
-            status, created_at, updated_at, total_price, bow_chili, bow_no_chili,
-            take_away, chili_number, table_token
+            id, 
+            guest_id, 
+            user_id, 
+            is_guest, 
+            table_number, 
+            order_handler_id,
+            COALESCE(status, 'Pending') as status, 
+            created_at, 
+            updated_at, 
+            total_price, 
+            COALESCE(bow_chili, 0) as bow_chili, 
+            COALESCE(bow_no_chili, 0) as bow_no_chili,
+            COALESCE(take_away, false) as take_away, 
+            COALESCE(chili_number, 0) as chili_number,
+            table_token
         FROM orders
-        WHERE ($1::timestamp IS NULL OR created_at >= $1)
-        AND ($2::timestamp IS NULL OR created_at <= $2)
-        AND ($3::bigint IS NULL OR user_id = $3)
-        AND ($4::bigint IS NULL OR guest_id = $4)
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2
     `
 
-    rows, err := or.db.Query(ctx, query, 
-        req.FromDate.AsTime(),
-        req.ToDate.AsTime(),
-        req.UserId,
-        req.GuestId)
+    rows, err := or.db.Query(ctx, query, pageSize, offset)
     if err != nil {
         or.logger.Error("Error fetching orders: " + err.Error())
-        return nil, fmt.Errorf("error fetching orders: %w", err)
+        return nil, 0, fmt.Errorf("error fetching orders: %w", err)
     }
     defer rows.Close()
 
@@ -183,40 +202,63 @@ func (or *OrderRepository) GetOrders(ctx context.Context, req *order.GetOrdersRe
         var o order.Order
         var createdAt, updatedAt time.Time
 
+        // Create nullable variables for fields that can be NULL in the database
+        var (
+            guestId       sql.NullInt64
+            userId        sql.NullInt64
+            tableNumber   sql.NullInt64
+            orderHandlerId sql.NullInt64
+            totalPrice    sql.NullInt32  // Changed to int32 to match proto definition
+            status        sql.NullString
+            bowChili      sql.NullInt64
+            bowNoChili    sql.NullInt64
+            chiliNumber   sql.NullInt64
+        )
+
         err := rows.Scan(
             &o.Id,
-            &o.GuestId,
-            &o.UserId,
+            &guestId,
+            &userId,
             &o.IsGuest,
-            &o.TableNumber,
-            &o.OrderHandlerId,
-            &o.Status,
+            &tableNumber,
+            &orderHandlerId,
+            &status,
             &createdAt,
             &updatedAt,
-            &o.TotalPrice,
-            &o.BowChili,
-            &o.BowNoChili,
+            &totalPrice,
+            &bowChili,
+            &bowNoChili,
             &o.TakeAway,
-            &o.ChiliNumber,
+            &chiliNumber,
             &o.TableToken,
         )
         if err != nil {
             or.logger.Error("Error scanning order: " + err.Error())
-            return nil, fmt.Errorf("error scanning order: %w", err)
+            return nil, 0, fmt.Errorf("error scanning order: %w", err)
         }
 
+        // Convert nullable fields to protobuf message fields with correct types
+        o.GuestId = guestId.Int64
+        o.UserId = userId.Int64
+        if tableNumber.Valid {
+            o.TableNumber = tableNumber.Int64
+        }
+        o.OrderHandlerId = orderHandlerId.Int64
+        o.Status = status.String
+        o.TotalPrice = totalPrice.Int32  // Now correctly assigning int32
+        o.BowChili = bowChili.Int64
+        o.BowNoChili = bowNoChili.Int64
+        o.ChiliNumber = chiliNumber.Int64
+
+        // Handle timestamps
         o.CreatedAt = timestamppb.New(createdAt)
         o.UpdatedAt = timestamppb.New(updatedAt)
-
-        // Get dish items and set items (unchanged)
-        // [Previous get items code remains the same]
 
         orders = append(orders, &o)
     }
 
-    return orders, nil
+    return orders, totalItems, nil
 }
-
 func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order.Order, error) {
     or.logger.Info(fmt.Sprintf("Fetching order detail for ID: %d", id))
     

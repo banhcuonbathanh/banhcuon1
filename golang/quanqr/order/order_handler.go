@@ -78,14 +78,44 @@ func (h *OrderHandlerController) GetOrderDetail(w http.ResponseWriter, r *http.R
 }
 
 func (h *OrderHandlerController) GetOrders(w http.ResponseWriter, r *http.Request) {
-    var req GetOrdersRequestType
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, "error decoding request body", http.StatusBadRequest)
+    // Only accept GET requests
+    if r.Method != http.MethodGet {
+        http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
         return
     }
 
+    // Parse query parameters
+    query := r.URL.Query()
+    
+    // Get page parameter with default value 1
+    page := int32(1)
+    if pageStr := query.Get("page"); pageStr != "" {
+        if pageInt, err := strconv.ParseInt(pageStr, 10, 32); err == nil {
+            page = int32(pageInt)
+        }
+    }
+
+    // Get page_size parameter with default value 10
+    pageSize := int32(10)
+    if pageSizeStr := query.Get("page_size"); pageSizeStr != "" {
+        if pageSizeInt, err := strconv.ParseInt(pageSizeStr, 10, 32); err == nil {
+            pageSize = int32(pageSizeInt)
+        }
+    }
+
+    // Validate pagination parameters
+    if page < 1 {
+        page = 1
+    }
+    if pageSize < 1 {
+        pageSize = 10
+    }
+
     h.logger.Info("Fetching orders list")
-    ordersResponse, err := h.client.GetOrders(h.ctx, ToPBGetOrdersRequest(req))
+    ordersResponse, err := h.client.GetOrders(h.ctx, &order.GetOrdersRequest{
+        Page:     page,
+        PageSize: pageSize,
+    })
     if err != nil {
         h.logger.Error("Error fetching orders list: " + err.Error())
         http.Error(w, "failed to fetch orders: "+err.Error(), http.StatusInternalServerError)
@@ -95,7 +125,11 @@ func (h *OrderHandlerController) GetOrders(w http.ResponseWriter, r *http.Reques
     res := ToOrderListResFromPbOrderListResponse(ordersResponse)
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(res)
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        h.logger.Error("Error encoding response: " + err.Error())
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        return
+    }
 }
 
 func (h *OrderHandlerController) UpdateOrder(w http.ResponseWriter, r *http.Request) {
@@ -199,14 +233,14 @@ func ToPBUpdateOrderRequest(req UpdateOrderRequestType) *order.UpdateOrderReques
 }
 
 
-func ToPBGetOrdersRequest(req GetOrdersRequestType) *order.GetOrdersRequest {
-    return &order.GetOrdersRequest{
-        FromDate: timestamppb.New(req.FromDate),
-        ToDate:   timestamppb.New(req.ToDate),
-        UserId:   req.UserID,
-        GuestId:  req.GuestID,
-    }
-}
+// func ToPBGetOrdersRequest(req GetOrdersRequestType) *order.GetOrdersRequest {
+//     return &order.GetOrdersRequest{
+//         FromDate: timestamppb.New(req.FromDate),
+//         ToDate:   timestamppb.New(req.ToDate),
+//         UserId:   req.UserID,
+//         GuestId:  req.GuestID,
+//     }
+// }
 
 func ToPBPayOrdersRequest(req PayOrdersRequestType) *order.PayOrdersRequest {
     pbReq := &order.PayOrdersRequest{}
@@ -255,6 +289,12 @@ func ToOrderListResFromPbOrderListResponse(pbRes *order.OrderListResponse) Order
     }
     return OrderListResponse{
         Data: orders,
+        Pagination: PaginationInfo{
+            CurrentPage: pbRes.Pagination.CurrentPage,
+            TotalPages:  pbRes.Pagination.TotalPages,
+            TotalItems: pbRes.Pagination.TotalItems,
+            PageSize:   pbRes.Pagination.PageSize,
+        },
     }
 }
 

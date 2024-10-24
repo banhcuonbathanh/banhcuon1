@@ -1,46 +1,57 @@
 import { NextResponse } from "next/server";
-import {
-  CreateDishBody,
-  DishListRes,
-  DishRes
-} from "@/schemaValidations/dish.schema"; // Adjust the import based on your project structure
+import { DishRes } from "@/schemaValidations/dish.schema"; // Adjust the import based on your project structure
 import envConfig from "@/config";
 import { CreateTableBody } from "@/zusstand/table/table.schema";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const page = searchParams.get("page") || "1";
+  const page_size = searchParams.get("page_size") || "10";
+
   const link_order = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.Order_External_End_Point}`;
-  console.log("quananqr1/app/api/order/route.ts link_order", link_order);
-  // console.log("quananqr1/app/api/sets/route.ts link_set", link_set);
+  const queryParams = new URLSearchParams({
+    page,
+    page_size
+  });
+
+  const requestUrl = `${link_order}?${queryParams}`;
+  console.log("Request URL:", requestUrl);
+
   try {
-    const response = await fetch(link_order, {
+    const response = await fetch(requestUrl, {
       method: "GET",
-      cache: "no-store"
+      cache: "no-store",
+      headers: {
+        Accept: "application/json"
+      }
     });
 
-    // Check for response.ok before parsing JSON
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error("API Error Response:", errorText);
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
     }
 
-    const tables = await response.json(); // Parse response once
-    console.log("quananqr1/app/api/order/route.ts orders", tables.data);
+    const data = await response.json();
 
     return NextResponse.json({
-      data: tables.data,
-      message: "set retrieved successfully"
+      data: data.data,
+      pagination: data.pagination,
+      message: "Orders retrieved successfully"
     });
   } catch (error) {
-    console.error(
-      "Error fetching set: quananqr1/app/api/sets/route.ts set",
-      error
-    );
+    console.error("Error fetching orders:", error);
     return NextResponse.json(
-      { message: "Failed to fetch quananqr1/app/api/sets/route.ts set" },
+      {
+        message: "Failed to fetch orders",
+        error: "error at quananqr1/app/api/order/route.ts"
+      },
       { status: 500 }
     );
   }
 }
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();

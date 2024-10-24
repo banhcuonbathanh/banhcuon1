@@ -36,16 +36,33 @@ func (os *OrderServiceStruct) CreateOrder(ctx context.Context, req *order.Create
 }
 
 func (os *OrderServiceStruct) GetOrders(ctx context.Context, req *order.GetOrdersRequest) (*order.OrderListResponse, error) {
-    os.logger.Info("Fetching orders list")
+    os.logger.Info("Fetching orders list with pagination")
     
-    orders, err := os.orderRepo.GetOrders(ctx, req)
+    // Validate pagination parameters
+    if req.Page < 1 {
+        req.Page = 1
+    }
+    if req.PageSize < 1 {
+        req.PageSize = 10 // Default page size
+    }
+    
+    orders, totalItems, err := os.orderRepo.GetOrders(ctx, req.Page, req.PageSize)
     if err != nil {
         os.logger.Error("Error fetching orders: " + err.Error())
         return nil, err
     }
     
+    // Calculate total pages
+    totalPages := (totalItems + int64(req.PageSize) - 1) / int64(req.PageSize)
+    
     return &order.OrderListResponse{
         Data: orders,
+        Pagination: &order.PaginationInfo{
+            CurrentPage: req.Page,
+            TotalPages: int32(totalPages),
+            TotalItems: totalItems,
+            PageSize:   req.PageSize,
+        },
     }, nil
 }
 

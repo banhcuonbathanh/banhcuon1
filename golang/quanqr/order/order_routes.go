@@ -18,7 +18,7 @@ func RegisterOrderRoutes(r *chi.Mux, handler *OrderHandlerController) *chi.Mux {
 			// r.Use(middleware.GetAuthMiddlewareFunc(handler.TokenMaker))
 
 			r.Post("/", handler.CreateOrder)
-			r.Get("/", handler.GetOrderProtoListDetail)
+			r.Get("/", handler.GetOrders)
 
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/", handler.GetOrderDetail)

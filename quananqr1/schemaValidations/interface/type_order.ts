@@ -73,11 +73,10 @@ export interface UpdateOrderRequest {
 }
 
 export interface GetOrdersRequest {
-  from_date: string;
-  to_date: string;
-  user_id?: number;
-  guest_id?: number;
+  page: number;
+  page_size: number;
 }
+
 
 export interface PayOrdersRequest {
   guest_id?: number;

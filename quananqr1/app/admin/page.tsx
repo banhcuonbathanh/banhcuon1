@@ -1,6 +1,4 @@
-import accountApiRequest from "@/apiRequests/account";
-import { get_Account } from "../../../auth/server/server-auth-controler";
-import { cookies } from "next/headers";
+
 
 export default async function ManageHomePage() {
   // const cookieStore = cookies();

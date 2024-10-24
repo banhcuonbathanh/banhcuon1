@@ -34,6 +34,12 @@ const menuItems = [
     Icon: Group,
     href: "/admin/set"
   },
+
+  {
+    title: "Order",
+    Icon: Group,
+    href: "/admin/orders"
+  },
   {
     title: "Phân tích",
     Icon: LineChart,
