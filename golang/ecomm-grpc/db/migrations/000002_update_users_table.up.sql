@@ -255,3 +255,17 @@ CREATE INDEX idx_orders_user_id ON orders(user_id) WHERE user_id IS NOT NULL;
 CREATE INDEX idx_orders_order_handler_id ON orders(order_handler_id) WHERE order_handler_id IS NOT NULL;
 CREATE INDEX idx_orders_table_number ON orders(table_number) WHERE table_number IS NOT NULL;
 CREATE INDEX idx_orders_is_guest ON orders(is_guest);
+
+
+CREATE TABLE IF NOT EXISTS guest_sessions (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    refresh_token TEXT NOT NULL,
+    is_revoked BOOLEAN NOT NULL DEFAULT false,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Optional: Create an index on the refresh_token for faster lookups
+CREATE INDEX IF NOT EXISTS idx_guest_sessions_refresh_token ON guest_sessions(refresh_token);

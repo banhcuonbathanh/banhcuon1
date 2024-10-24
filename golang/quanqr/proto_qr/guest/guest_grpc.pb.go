@@ -20,11 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GuestService_GuestLoginGRPC_FullMethodName        = "/guest.GuestService/guestLoginGRPC"
-	GuestService_GuestLogoutGRPC_FullMethodName       = "/guest.GuestService/guestLogoutGRPC"
-	GuestService_GuestRefreshTokenGRPC_FullMethodName = "/guest.GuestService/guestRefreshTokenGRPC"
-	GuestService_GuestCreateOrdersGRPC_FullMethodName = "/guest.GuestService/guestCreateOrdersGRPC"
-	GuestService_GuestGetOrdersGRPC_FullMethodName    = "/guest.GuestService/guestGetOrdersGRPC"
+	GuestService_GuestLoginGRPC_FullMethodName        = "/guest.GuestService/GuestLoginGRPC"
+	GuestService_GuestLogoutGRPC_FullMethodName       = "/guest.GuestService/GuestLogoutGRPC"
+	GuestService_GuestRefreshTokenGRPC_FullMethodName = "/guest.GuestService/GuestRefreshTokenGRPC"
+	GuestService_GuestCreateOrdersGRPC_FullMethodName = "/guest.GuestService/GuestCreateOrdersGRPC"
+	GuestService_GuestGetOrdersGRPC_FullMethodName    = "/guest.GuestService/GuestGetOrdersGRPC"
+	GuestService_GuestCreateSession_FullMethodName    = "/guest.GuestService/GuestCreateSession"
+	GuestService_GuestGetSession_FullMethodName       = "/guest.GuestService/GuestGetSession"
+	GuestService_GuestRevokeSession_FullMethodName    = "/guest.GuestService/GuestRevokeSession"
+	GuestService_GuestDeleteSession_FullMethodName    = "/guest.GuestService/GuestDeleteSession"
 )
 
 // GuestServiceClient is the client API for GuestService service.
@@ -36,6 +40,10 @@ type GuestServiceClient interface {
 	GuestRefreshTokenGRPC(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
 	GuestCreateOrdersGRPC(ctx context.Context, in *GuestCreateOrderRequest, opts ...grpc.CallOption) (*OrdersResponse, error)
 	GuestGetOrdersGRPC(ctx context.Context, in *GuestGetOrdersGRPCRequest, opts ...grpc.CallOption) (*ListOrdersResponse, error)
+	GuestCreateSession(ctx context.Context, in *GuestSessionReq, opts ...grpc.CallOption) (*GuestSessionRes, error)
+	GuestGetSession(ctx context.Context, in *GuestSessionReq, opts ...grpc.CallOption) (*GuestSessionRes, error)
+	GuestRevokeSession(ctx context.Context, in *GuestSessionReq, opts ...grpc.CallOption) (*GuestSessionRes, error)
+	GuestDeleteSession(ctx context.Context, in *GuestSessionReq, opts ...grpc.CallOption) (*GuestSessionRes, error)
 }
 
 type guestServiceClient struct {
@@ -96,6 +104,46 @@ func (c *guestServiceClient) GuestGetOrdersGRPC(ctx context.Context, in *GuestGe
 	return out, nil
 }
 
+func (c *guestServiceClient) GuestCreateSession(ctx context.Context, in *GuestSessionReq, opts ...grpc.CallOption) (*GuestSessionRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GuestSessionRes)
+	err := c.cc.Invoke(ctx, GuestService_GuestCreateSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *guestServiceClient) GuestGetSession(ctx context.Context, in *GuestSessionReq, opts ...grpc.CallOption) (*GuestSessionRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GuestSessionRes)
+	err := c.cc.Invoke(ctx, GuestService_GuestGetSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *guestServiceClient) GuestRevokeSession(ctx context.Context, in *GuestSessionReq, opts ...grpc.CallOption) (*GuestSessionRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GuestSessionRes)
+	err := c.cc.Invoke(ctx, GuestService_GuestRevokeSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *guestServiceClient) GuestDeleteSession(ctx context.Context, in *GuestSessionReq, opts ...grpc.CallOption) (*GuestSessionRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GuestSessionRes)
+	err := c.cc.Invoke(ctx, GuestService_GuestDeleteSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GuestServiceServer is the server API for GuestService service.
 // All implementations must embed UnimplementedGuestServiceServer
 // for forward compatibility.
@@ -105,6 +153,10 @@ type GuestServiceServer interface {
 	GuestRefreshTokenGRPC(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
 	GuestCreateOrdersGRPC(context.Context, *GuestCreateOrderRequest) (*OrdersResponse, error)
 	GuestGetOrdersGRPC(context.Context, *GuestGetOrdersGRPCRequest) (*ListOrdersResponse, error)
+	GuestCreateSession(context.Context, *GuestSessionReq) (*GuestSessionRes, error)
+	GuestGetSession(context.Context, *GuestSessionReq) (*GuestSessionRes, error)
+	GuestRevokeSession(context.Context, *GuestSessionReq) (*GuestSessionRes, error)
+	GuestDeleteSession(context.Context, *GuestSessionReq) (*GuestSessionRes, error)
 	mustEmbedUnimplementedGuestServiceServer()
 }
 
@@ -129,6 +181,18 @@ func (UnimplementedGuestServiceServer) GuestCreateOrdersGRPC(context.Context, *G
 }
 func (UnimplementedGuestServiceServer) GuestGetOrdersGRPC(context.Context, *GuestGetOrdersGRPCRequest) (*ListOrdersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GuestGetOrdersGRPC not implemented")
+}
+func (UnimplementedGuestServiceServer) GuestCreateSession(context.Context, *GuestSessionReq) (*GuestSessionRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GuestCreateSession not implemented")
+}
+func (UnimplementedGuestServiceServer) GuestGetSession(context.Context, *GuestSessionReq) (*GuestSessionRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GuestGetSession not implemented")
+}
+func (UnimplementedGuestServiceServer) GuestRevokeSession(context.Context, *GuestSessionReq) (*GuestSessionRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GuestRevokeSession not implemented")
+}
+func (UnimplementedGuestServiceServer) GuestDeleteSession(context.Context, *GuestSessionReq) (*GuestSessionRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GuestDeleteSession not implemented")
 }
 func (UnimplementedGuestServiceServer) mustEmbedUnimplementedGuestServiceServer() {}
 func (UnimplementedGuestServiceServer) testEmbeddedByValue()                      {}
@@ -241,6 +305,78 @@ func _GuestService_GuestGetOrdersGRPC_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GuestService_GuestCreateSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GuestSessionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GuestServiceServer).GuestCreateSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GuestService_GuestCreateSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GuestServiceServer).GuestCreateSession(ctx, req.(*GuestSessionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GuestService_GuestGetSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GuestSessionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GuestServiceServer).GuestGetSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GuestService_GuestGetSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GuestServiceServer).GuestGetSession(ctx, req.(*GuestSessionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GuestService_GuestRevokeSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GuestSessionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GuestServiceServer).GuestRevokeSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GuestService_GuestRevokeSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GuestServiceServer).GuestRevokeSession(ctx, req.(*GuestSessionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GuestService_GuestDeleteSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GuestSessionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GuestServiceServer).GuestDeleteSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GuestService_GuestDeleteSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GuestServiceServer).GuestDeleteSession(ctx, req.(*GuestSessionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GuestService_ServiceDesc is the grpc.ServiceDesc for GuestService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -249,24 +385,40 @@ var GuestService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*GuestServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "guestLoginGRPC",
+			MethodName: "GuestLoginGRPC",
 			Handler:    _GuestService_GuestLoginGRPC_Handler,
 		},
 		{
-			MethodName: "guestLogoutGRPC",
+			MethodName: "GuestLogoutGRPC",
 			Handler:    _GuestService_GuestLogoutGRPC_Handler,
 		},
 		{
-			MethodName: "guestRefreshTokenGRPC",
+			MethodName: "GuestRefreshTokenGRPC",
 			Handler:    _GuestService_GuestRefreshTokenGRPC_Handler,
 		},
 		{
-			MethodName: "guestCreateOrdersGRPC",
+			MethodName: "GuestCreateOrdersGRPC",
 			Handler:    _GuestService_GuestCreateOrdersGRPC_Handler,
 		},
 		{
-			MethodName: "guestGetOrdersGRPC",
+			MethodName: "GuestGetOrdersGRPC",
 			Handler:    _GuestService_GuestGetOrdersGRPC_Handler,
+		},
+		{
+			MethodName: "GuestCreateSession",
+			Handler:    _GuestService_GuestCreateSession_Handler,
+		},
+		{
+			MethodName: "GuestGetSession",
+			Handler:    _GuestService_GuestGetSession_Handler,
+		},
+		{
+			MethodName: "GuestRevokeSession",
+			Handler:    _GuestService_GuestRevokeSession_Handler,
+		},
+		{
+			MethodName: "GuestDeleteSession",
+			Handler:    _GuestService_GuestDeleteSession_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

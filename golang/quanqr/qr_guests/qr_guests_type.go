@@ -1,10 +1,24 @@
 package qr_guests
 
-
 import (
 	"time"
 )
-
+// type GuestInfo struct {
+//     ID          int64     `json:"id"`
+//     Name        string    `json:"name"`
+//     Role        string    `json:"role"`
+//     TableNumber int32     `json:"table_number"`
+//     CreatedAt   time.Time `json:"created_at"`
+//     UpdatedAt   time.Time `json:"updated_at"`
+// }
+type GuestInfo struct {
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	Role        string    `json:"role"`
+	TableNumber int32     `json:"table_number"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
 type Guest struct {
 	ID                   int64     `json:"id"`
 	Name                 string    `json:"name"`
@@ -20,22 +34,29 @@ type GuestLoginRequest struct {
 	TableNumber int32  `json:"table_number"`
 	Token       string `json:"token"`
 }
-
+// new 
 type GuestLoginResponse struct {
-	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token"`
-	Guest        GuestInfo `json:"guest"`
-	Message      string    `json:"message"`
+
+    AccessToken          string    `json:"access_token"`
+    RefreshToken         string    `json:"refresh_token"`
+    Guest                GuestInfo `json:"guest"`
+
+    AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
+    RefreshTokenExpiresAt time.Time `json:"refresh_token_expires_at"`
+
+
+		    SessionID             string    `json:"session_id"`
 }
 
-type GuestInfo struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	Role        string    `json:"role"`
-	TableNumber int32     `json:"table_number"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
+//------------------------
+// type GuestLoginResponse struct {
+// 	AccessToken  string    `json:"access_token"`
+// 	RefreshToken string    `json:"refresh_token"`
+// 	Guest        GuestInfo `json:"guest"`
+// 	Message      string    `json:"message"`
+// }
+
+
 
 type LogoutRequest struct {
 	RefreshToken string `json:"refresh_token"`

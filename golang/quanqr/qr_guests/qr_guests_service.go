@@ -105,8 +105,43 @@ func (gs *GuestServiceStruct) GuestGetOrdersGRPC(ctx context.Context, req *guest
 }
 
 
-// func getGuestIDFromContext(ctx context.Context) int64 {
-// 	// Implement your logic to extract guest ID from context
-// 	// This might involve parsing a JWT token or fetching from a session store
-// 	return 0 // Placeholder return
-// }
+// Add these methods to your GuestServiceStruct
+
+func (gs *GuestServiceStruct) GuestCreateSession(ctx context.Context, req *guest.GuestSessionReq) (*guest.GuestSessionRes, error) {
+	log.Print("golang/quanqr/qr_guests/qr_guests_service.go GuestCreateSession")
+	return gs.guestRepo.GuestCreateSession(ctx, req)
+}
+
+func (gs *GuestServiceStruct) GuestGetSession(ctx context.Context, req *guest.GuestSessionReq) (*guest.GuestSessionRes, error) {
+	return gs.guestRepo.GuestGetSession(ctx, req.GetId())
+}
+
+func (gs *GuestServiceStruct) GuestRevokeSession(ctx context.Context, req *guest.GuestSessionReq) (*guest.GuestSessionRes, error) {
+	err := gs.guestRepo.GuestRevokeSession(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the session info after revocation
+	session, err := gs.guestRepo.GuestGetSession(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	return session, nil
+}
+
+func (gs *GuestServiceStruct) GuestDeleteSession(ctx context.Context, req *guest.GuestSessionReq) (*guest.GuestSessionRes, error) {
+	// Get the session info before deletion for the response
+	session, err := gs.guestRepo.GuestGetSession(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	err = gs.guestRepo.GuestDeleteSession(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	return session, nil
+}

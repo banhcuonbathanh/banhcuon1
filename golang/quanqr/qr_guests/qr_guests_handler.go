@@ -3,22 +3,26 @@ package qr_guests
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
+
+	"english-ai-full/logger"
+	"english-ai-full/quanqr/proto_qr/guest"
+	"english-ai-full/token"
 
 	"github.com/go-chi/chi"
 	"google.golang.org/grpc/status"
-
-
-	"english-ai-full/quanqr/proto_qr/guest"
-	"english-ai-full/token"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type GuestHandlerController struct {
 	ctx        context.Context
 	client     guest.GuestServiceClient
 	TokenMaker *token.JWTMaker
+	logger     *logger.Logger
 }
 
 func NewGuestHandler(client guest.GuestServiceClient, secretKey string) *GuestHandlerController {
@@ -26,32 +30,112 @@ func NewGuestHandler(client guest.GuestServiceClient, secretKey string) *GuestHa
 		ctx:        context.Background(),
 		client:     client,
 		TokenMaker: token.NewJWTMaker(secretKey),
+		logger:     logger.NewLogger(),
 	}
 }
+//---------------
 
 func (h *GuestHandlerController) GuestLogin(w http.ResponseWriter, r *http.Request) {
-	var loginReq GuestLoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
-		http.Error(w, "error decoding request body", http.StatusBadRequest)
-		return
-	}
+    h.logger.Info("Guest login handler started")
+    var loginReq GuestLoginRequest
+    if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
+        h.logger.Error(fmt.Sprintf("error decoding request body: %v", err))
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
 
-	log.Println("Guest login attempt:", "Name:", loginReq.Name, "Table Number:", loginReq.TableNumber)
+	h.logger.Error(fmt.Sprintf("golang/quanqr/qr_guests/qr_guests_handler.go loginReq: %v", loginReq))
 
-	response, err := h.client.GuestLoginGRPC(h.ctx, ToPBGuestLoginRequest(loginReq))
-	if err != nil {
-		log.Println("Error during guest login:", err)
-		http.Error(w, "error logging in guest", http.StatusInternalServerError)
-		return
-	}
+    // Create guest through gRPC service
+    guestResponse, err := h.client.GuestLoginGRPC(h.ctx, ToPBGuestLoginRequest(loginReq))
 
-	log.Println("Guest logged in successfully. Guest ID:", response.Guest.Id)
+    if err != nil {
+        h.logger.Error(fmt.Sprintf("error during guest login: %v", err))
+        http.Error(w, "error logging in guest", http.StatusInternalServerError)
+        return
+    }
 
-	res := ToGuestLoginResponseFromPB(response)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(res)
+    // Create access token (short-lived)
+    accessToken, accessClaims, err := h.TokenMaker.CreateToken(
+        guestResponse.Guest.Id,
+        guestResponse.Guest.Name,
+        "guest",
+        15*time.Minute,
+    )
+    if err != nil {
+        h.logger.Error(fmt.Sprintf("error creating access token: %v", err))
+        http.Error(w, "error creating token", http.StatusInternalServerError)
+        return
+    }
+
+    // Create refresh token (long-lived)
+    refreshToken, refreshClaims, err := h.TokenMaker.CreateToken(
+        guestResponse.Guest.Id,
+        guestResponse.Guest.Name,
+        "guest",
+        24*time.Hour,
+    )
+    if err != nil {
+        h.logger.Error(fmt.Sprintf("error creating refresh token: %v", err))
+        http.Error(w, "error creating token", http.StatusInternalServerError)
+        return
+    }
+
+    // Create session for refresh token
+    session, err := h.client.GuestCreateSession(h.ctx, &guest.GuestSessionReq{
+        Id:           refreshClaims.RegisteredClaims.ID,
+        Name:    guestResponse.Guest.Name, // Using name as identifier for guests
+        RefreshToken: refreshToken,
+        IsRevoked:    false,
+        ExpiresAt:    timestamppb.New(refreshClaims.RegisteredClaims.ExpiresAt.Time),
+    })
+    if err != nil {
+        h.logger.Error(fmt.Sprintf("error creating session: %v", err))
+        http.Error(w, "error creating session", http.StatusInternalServerError)
+        return
+    }
+
+    // Prepare response
+    res := GuestLoginResponse{
+        SessionID:             session.GetId(),
+        AccessToken:           accessToken,
+        RefreshToken:          refreshToken,
+        AccessTokenExpiresAt:  accessClaims.RegisteredClaims.ExpiresAt.Time,
+        RefreshTokenExpiresAt: refreshClaims.RegisteredClaims.ExpiresAt.Time,
+        Guest:                 ToGuestInfoFromPB(guestResponse.Guest),
+    }
+
+    h.logger.Info("Guest logged in successfully. Guest ID:", )
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(res)
 }
+//---------------
+// func (h *GuestHandlerController) GuestLogin(w http.ResponseWriter, r *http.Request) {
+// 	log.Println("golang/quanqr/qr_guests/qr_guests_handler.go",)
+// 	var loginReq GuestLoginRequest
+// 	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
+// 		http.Error(w, "error decoding request body", http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	log.Println("Guest login attempt:", "Name:", loginReq.Name, "Table Number:", loginReq.TableNumber)
+
+// 	response, err := h.client.GuestLoginGRPC(h.ctx, ToPBGuestLoginRequest(loginReq))
+// 	if err != nil {
+// 		log.Println("Error during guest login:", err)
+// 		http.Error(w, "error logging in guest", http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	log.Println("Guest logged in successfully. Guest ID:", response.Guest.Id)
+
+// 	res := ToGuestLoginResponseFromPB(response)
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusOK)
+// 	json.NewEncoder(w).Encode(res)
+// }
 
 func (h *GuestHandlerController) GuestLogout(w http.ResponseWriter, r *http.Request) {
 	var logoutReq LogoutRequest
@@ -166,7 +250,7 @@ func ToGuestLoginResponseFromPB(resp *guest.GuestLoginResponse) GuestLoginRespon
 		AccessToken:  resp.AccessToken,
 		RefreshToken: resp.RefreshToken,
 		Guest:        ToGuestInfoFromPB(resp.Guest),
-		Message:      resp.Message,
+	
 	}
 }
 

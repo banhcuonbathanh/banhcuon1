@@ -203,3 +203,92 @@ func (gr *GuestRepository) GuestGetOrders(ctx context.Context, req *proto.GuestG
 		Message: "Orders fetched successfully",
 	}, nil
 }
+
+
+// ----------------
+
+
+func (gr *GuestRepository) GuestCreateSession(ctx context.Context, req *proto.GuestSessionReq) (*proto.GuestSessionRes, error) {
+
+	log.Print("golang/quanqr/qr_guests/qr_guests_repository.go GuestCreateSession")
+	query := `
+		INSERT INTO guest_sessions (id, name, refresh_token, is_revoked, expires_at)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`
+
+	var id string
+	err := gr.db.QueryRow(ctx, query,
+		req.Id,
+		req.Name,
+		req.RefreshToken,
+		req.IsRevoked,
+		req.ExpiresAt.AsTime(),
+	).Scan(&id)
+	
+	if err != nil {
+		return nil, fmt.Errorf("error creating guest session: %w", err)
+	}
+
+	return &proto.GuestSessionRes{
+		Id:           id,
+		Name:         req.Name,
+		RefreshToken: req.RefreshToken,
+		IsRevoked:    req.IsRevoked,
+		ExpiresAt:    req.ExpiresAt,
+	}, nil
+}
+
+func (gr *GuestRepository) GuestGetSession(ctx context.Context, sessionID string) (*proto.GuestSessionRes, error) {
+	query := `
+		SELECT id, name, refresh_token, is_revoked, expires_at
+		FROM guest_sessions
+		WHERE id = $1
+	`
+
+	var session proto.GuestSessionRes
+	var expiresAt time.Time
+
+	err := gr.db.QueryRow(ctx, query, sessionID).Scan(
+		&session.Id,
+		&session.Name,
+		&session.RefreshToken,
+		&session.IsRevoked,
+		&expiresAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error getting guest session: %w", err)
+	}
+
+	session.ExpiresAt = timestamppb.New(expiresAt)
+	return &session, nil
+}
+
+func (gr *GuestRepository) GuestRevokeSession(ctx context.Context, sessionID string) error {
+	query := `
+		UPDATE guest_sessions
+		SET is_revoked = true
+		WHERE id = $1
+	`
+
+	_, err := gr.db.Exec(ctx, query, sessionID)
+	if err != nil {
+		return fmt.Errorf("error revoking guest session: %w", err)
+	}
+
+	return nil
+}
+
+func (gr *GuestRepository) GuestDeleteSession(ctx context.Context, sessionID string) error {
+	query := `
+		DELETE FROM guest_sessions
+		WHERE id = $1
+	`
+
+	_, err := gr.db.Exec(ctx, query, sessionID)
+	if err != nil {
+		return fmt.Errorf("error deleting guest session: %w", err)
+	}
+
+	return nil
+}

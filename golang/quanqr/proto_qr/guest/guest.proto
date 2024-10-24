@@ -27,7 +27,12 @@ message GuestLoginResponse {
   string access_token = 1;
   string refresh_token = 2;
   GuestInfo guest = 3;
-  string message = 4;
+
+  google.protobuf.Timestamp access_token_expires_at = 4;
+  google.protobuf.Timestamp refresh_token_expires_at = 5;
+  string message = 6;
+  string session_id = 7;
+
 }
 
 message GuestInfo {
@@ -37,6 +42,8 @@ message GuestInfo {
   int32 table_number = 4;
   google.protobuf.Timestamp created_at = 5;
   google.protobuf.Timestamp updated_at = 6;
+
+
 }
 
 message LogoutRequest {
@@ -91,11 +98,44 @@ message ListOrdersResponse {
   repeated Order orders = 1;
   string message = 2;
 }
+message GuestSessionReq {
+  string id = 1;
+  string name = 2;
+  string refresh_token = 3;
+  bool is_revoked = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+message GuestSessionRes {
+  string id = 1;
+  string name = 2;
+  string refresh_token = 3;
+  bool is_revoked = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+// service GuestService {
+//   rpc guestLoginGRPC(GuestLoginRequest) returns (GuestLoginResponse);
+//   rpc guestLogoutGRPC(LogoutRequest) returns (google.protobuf.Empty);
+//   rpc guestRefreshTokenGRPC(RefreshTokenRequest) returns (RefreshTokenResponse);
+//   rpc guestCreateOrdersGRPC(GuestCreateOrderRequest) returns (OrdersResponse);
+//   rpc guestGetOrdersGRPC(GuestGetOrdersGRPCRequest) returns (ListOrdersResponse);
+
+
+
+//   rpc CreateSession(GuestSessionReq) returns (GuestSessionRes) {}
+//   rpc GetSession(GuestSessionReq) returns (GuestSessionRes) {}
+//   rpc RevokeSession(GuestSessionReq) returns (GuestSessionRes) {}
+//   rpc DeleteSession(GuestSessionReq) returns (GuestSessionRes) {}
+// }
 
 service GuestService {
-  rpc guestLoginGRPC(GuestLoginRequest) returns (GuestLoginResponse);
-  rpc guestLogoutGRPC(LogoutRequest) returns (google.protobuf.Empty);
-  rpc guestRefreshTokenGRPC(RefreshTokenRequest) returns (RefreshTokenResponse);
-  rpc guestCreateOrdersGRPC(GuestCreateOrderRequest) returns (OrdersResponse);
-  rpc guestGetOrdersGRPC(GuestGetOrdersGRPCRequest) returns (ListOrdersResponse);
+  rpc GuestLoginGRPC(GuestLoginRequest) returns (GuestLoginResponse);
+  rpc GuestLogoutGRPC(LogoutRequest) returns (google.protobuf.Empty);
+  rpc GuestRefreshTokenGRPC(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc GuestCreateOrdersGRPC(GuestCreateOrderRequest) returns (OrdersResponse);
+  rpc GuestGetOrdersGRPC(GuestGetOrdersGRPCRequest) returns (ListOrdersResponse);
+
+  rpc GuestCreateSession(GuestSessionReq) returns (GuestSessionRes);
+  rpc GuestGetSession(GuestSessionReq) returns (GuestSessionRes);
+  rpc GuestRevokeSession(GuestSessionReq) returns (GuestSessionRes);
+  rpc GuestDeleteSession(GuestSessionReq) returns (GuestSessionRes);
 }
