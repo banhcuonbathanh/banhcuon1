@@ -20,8 +20,8 @@ const OrderSummary = () => {
 
   const [showSets, setShowSets] = useState(true);
   const [showDishes, setShowDishes] = useState(true);
-  const [bowlChili, setBowlChili] = useState(1);
-  const [bowlNoChili, setBowlNoChili] = useState(2);
+  const [bowlChili, setBowlChili] = useState(0);
+  const [bowlNoChili, setBowlNoChili] = useState(0);
 
   const formattedSets = getFormattedSets();
   const formattedDishes = getFormattedDishes();

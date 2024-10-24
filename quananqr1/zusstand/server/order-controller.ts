@@ -1,15 +1,13 @@
 import envConfig from "@/config";
-import { DishInterface } from "@/schemaValidations/interface/type_dish";
+
+import { Order } from "@/schemaValidations/interface/type_order";
 import { SetInterface } from "@/schemaValidations/interface/types_set";
 
-const get_Sets = async (): Promise<SetInterface[]> => {
+const get_Orders = async (): Promise<Order[]> => {
   try {
     const baseUrl =
-      envConfig.NEXT_PUBLIC_URL + envConfig.NEXT_PUBLIC_Get_set_intenal;
-    console.log(
-      "quananqr1/zusstand/server/order-controller.ts baseUrl",
-      baseUrl
-    );
+      envConfig.NEXT_PUBLIC_URL + envConfig.Order_External_End_Point;
+    // console.log("quananqr1/zusstand/server/set-controller.ts baseUrl", baseUrl);
     const response = await fetch(baseUrl, {
       method: "GET",
       cache: "no-store"
@@ -18,11 +16,11 @@ const get_Sets = async (): Promise<SetInterface[]> => {
     const data = await response.json();
 
     console.log(
-      "quananqr1/zusstand/server/order-controller.ts baseUrl",
+      "quananqr1/zusstand/server/order-controller.ts data",
       data.data
     );
 
-    const validatedData: SetInterface[] = data.data.map((set: any) => ({
+    const validatedData: Order[] = data.data.map((set: any) => ({
       id: set.id,
       name: set.name,
       description: set.description,
@@ -50,4 +48,4 @@ const get_Sets = async (): Promise<SetInterface[]> => {
   }
 };
 
-export { get_Sets };
+export { get_Orders };

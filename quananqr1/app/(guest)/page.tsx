@@ -7,14 +7,13 @@ import { get_Sets } from "@/zusstand/server/set-controller";
 import { SetCardList } from "./component/set/sets_list";
 import OrderSummary from "./component/order/order";
 
-
 export default async function GuestPage() {
   // Fetch dishes on the server side
   const dishesData: DishInterface[] = await get_dishes();
 
   const setsData: SetInterface[] = await get_Sets();
   // const dishes: Dish[] = dishesData;
-  // console.log("quananqr1/app/guest/page.tsx dishes.data asdf", setsData);
+  console.log("quananqr1/app/guest/page.tsx dishes.data asdf", setsData);
   return (
     <div className="guest-page">
       <div className="container mx-auto px-4 py-8">
@@ -28,7 +27,7 @@ export default async function GuestPage() {
       <DishSelection dishes={dishesData} />
 
       <OrderSummary />
-{/* 
+      {/* 
             <OrderCreationComponent /> */}
     </div>
   );

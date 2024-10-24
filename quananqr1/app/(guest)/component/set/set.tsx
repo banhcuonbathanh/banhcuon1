@@ -62,10 +62,20 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
         image: dish.image,
         status: dish.status
       }));
+
+      // Create a new set with the modified dishes and add it to the order
+      const modifiedSet = {
+        ...set,
+        dishes: modifiedDishes
+      };
+      addSetItem(modifiedSet, 1);
     }
   }, [set, setOrderItem, dishQuantities, addSetItem, updateSetQuantity]);
 
   const handleDecrease = React.useCallback(() => {
+    console.log(
+      "quananqr1/app/(guest)/component/set/set.tsx handleDecrease set"
+    );
     if (setOrderItem) {
       if (setOrderItem.quantity > 1) {
         updateSetQuantity(set.id, setOrderItem.quantity - 1);

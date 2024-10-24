@@ -24,10 +24,15 @@ const configSchema = z.object({
   NEXT_PUBLIC_Table_End_Point: z.string(),
   NEXT_PUBLIC_Set_End_Point: z.string(),
 
-  NEXT_PUBLIC_Get_set_intenal: z.string()
+  NEXT_PUBLIC_Get_set_intenal: z.string(),
+
+  Order_Internal_End_Point: z.string(),
+  Order_External_End_Point: z.string()
 });
 // /users/email
 const configProject = configSchema.safeParse({
+  Order_Internal_End_Point: "api/order",
+  Order_External_End_Point: "orders",
   NEXT_PUBLIC_Get_set_intenal: process.env.NEXT_PUBLIC_Get_set_intenal,
 
   NEXT_PUBLIC_Set_End_Point: process.env.NEXT_PUBLIC_Set_End_Point,
@@ -59,6 +64,10 @@ if (!configProject.success) {
   console.error(configProject.error.errors);
   throw new Error("Các khai báo biến môi trường không hợp lệ");
 }
+
+const customConfig = {
+  NEXT_PUBLIC_Get_set_intenal: process.env.NEXT_PUBLIC_Get_set_intenal
+};
 
 const envConfig = configProject.data;
 
