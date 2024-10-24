@@ -4,7 +4,8 @@ import { toast } from "@/components/ui/use-toast";
 import { CreateOrderRequest } from "@/schemaValidations/interface/type_order";
 import { useApiStore } from "@/zusstand/api/api-controller";
 import useOrderStore from "@/zusstand/order/order_zustand";
-
+import envConfig from "@/config";
+import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 interface OrderCreationComponentProps {
   bowlChili: number;
   bowlNoChili: number;
@@ -14,17 +15,19 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   bowlChili,
   bowlNoChili
 }) => {
+  const link_order = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.Order_External_End_Point}`;
   const { http } = useApiStore();
   const [isLoading, setIsLoading] = useState(false);
 
   const { tableNumber, tabletoken, getOrderSummary, clearOrder } =
     useOrderStore();
+  const { guest, user, isGuest } = useAuthStore();
 
   const createOrder = useCallback(
     (orderData: CreateOrderRequest) => {
       return new Promise((resolve, reject) => {
         http
-          .post("http://localhost:8888/orders", orderData)
+          .post(link_order, orderData)
           .then((response) => {
             resolve(response.data);
           })
@@ -55,10 +58,24 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       quantity: set.quantity
     }));
 
+    // Determine user_id and guest_id based on authentication state
+    let user_id: number | null = null;
+    let guest_id: number | null = null;
+
+    if (isGuest) {
+      // User is logged in
+      user_id = user?.id ?? null;
+      guest_id = null;
+    } else {
+      // Guest is logged in
+      user_id = null;
+      guest_id = guest?.id ?? null;
+    }
+
     const orderData: CreateOrderRequest = {
-      guest_id: null,
-      user_id: 1,
-      is_guest: false,
+      guest_id,
+      user_id,
+      is_guest: isGuest,
       table_number: tableNumber,
       order_handler_id: 1,
       status: "pending",
@@ -69,8 +86,6 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       set_items,
       bow_chili: bowlChili,
       bow_no_chili: bowlNoChili,
-
-      // asokdjfjasdlfjlasdkjflkasjdlf;jasdlkfjlasdjfl;asjdlf;jsa;l
       takeAway: false,
       chiliNumber: 0
     };
@@ -104,7 +119,10 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     getOrderSummary,
     clearOrder,
     bowlChili,
-    bowlNoChili
+    bowlNoChili,
+    user,
+    guest,
+    isGuest
   ]);
 
   const orderSummary = getOrderSummary();

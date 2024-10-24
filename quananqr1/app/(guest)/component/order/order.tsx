@@ -215,11 +215,11 @@ const OrderSummary = () => {
         </CardContent>
       </Card>
 
-      <div className="mt-4">
+      {/* <div className="mt-4">
         <Button className="w-full" onClick={() => {}}>
           Add Order
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

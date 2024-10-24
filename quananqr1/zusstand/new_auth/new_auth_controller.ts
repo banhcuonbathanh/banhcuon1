@@ -6,16 +6,26 @@ import envConfig from "@/config";
 
 import { User } from "@/schemaValidations/user.schema";
 import { useApiStore } from "../api/api-controller";
-import { RegisterBodyType, LoginBodyType, LoginResType } from "@/schemaValidations/auth.schema";
-
-// AuthStore interface and implementation
+import {
+  RegisterBodyType,
+  LoginBodyType,
+  LoginResType
+} from "@/schemaValidations/auth.schema";
+import {
+  GuestInfo,
+  GuestLoginRequest,
+  GuestLoginResponse,
+  LogoutRequest
+} from "@/schemaValidations/interface/type_guest";
 interface AuthState {
   user: User | null;
+  guest: GuestInfo | null;
   accessToken: string | null;
   refreshToken: string | null;
   loading: boolean;
   error: string | null;
   isLoginDialogOpen: boolean;
+  isGuest: boolean;
 }
 
 interface AuthActions {
@@ -23,7 +33,8 @@ interface AuthActions {
   login: (body: LoginBodyType) => Promise<void>;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<void>;
-
+  guestLogin: (body: GuestLoginRequest) => Promise<void>;
+  guestLogout: (body: LogoutRequest) => Promise<void>;
   clearError: () => void;
   openLoginDialog: () => void;
   closeLoginDialog: () => void;
@@ -35,11 +46,13 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
+      guest: null,
       accessToken: null,
       refreshToken: null,
       loading: false,
       error: null,
       isLoginDialogOpen: false,
+      isGuest: false,
 
       register: async (body: RegisterBodyType) => {
         set({ loading: true, error: null });
@@ -51,7 +64,9 @@ export const useAuthStore = create<AuthStore>()(
             user: response.data,
             error: null,
             isLoginDialogOpen: false,
-            loading: false
+            loading: false,
+            isGuest: true, // Set isGuest to true when user is not null
+            guest: null
           });
         } catch (error) {
           set({
@@ -61,6 +76,7 @@ export const useAuthStore = create<AuthStore>()(
           });
         }
       },
+
       login: async (body: LoginBodyType) => {
         set({ loading: true, error: null });
         try {
@@ -75,6 +91,8 @@ export const useAuthStore = create<AuthStore>()(
               ...response.data.user,
               password: body.password
             },
+            guest: null,
+            isGuest: true, // Set isGuest to true when user is not null
             accessToken: response.data.access_token,
             refreshToken: response.data.refresh_token,
             error: null,
@@ -98,6 +116,43 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
+      guestLogin: async (body: GuestLoginRequest) => {
+        set({ loading: true, error: null });
+        try {
+          const guest_login_link =
+            envConfig.NEXT_PUBLIC_API_ENDPOINT +
+            envConfig.NEXT_PUBLIC_API_Guest_Login;
+          const response = await useApiStore
+            .getState()
+            .http.post<GuestLoginResponse>(`${guest_login_link}`, body);
+          set({
+            user: null,
+            guest: response.data.guest,
+            isGuest: false, // Set isGuest to false when user is null and guest is not null
+            accessToken: response.data.access_token,
+            refreshToken: response.data.refresh_token,
+            error: null,
+            isLoginDialogOpen: false,
+            loading: false
+          });
+          useApiStore.getState().setAccessToken(response.data.access_token);
+          Cookies.set("accessToken", response.data.access_token, {
+            secure: true,
+            sameSite: "strict"
+          });
+          Cookies.set("refreshToken", response.data.refresh_token, {
+            secure: true,
+            sameSite: "strict"
+          });
+        } catch (error) {
+          set({
+            error:
+              error instanceof Error ? error.message : "Guest login failed",
+            loading: false
+          });
+        }
+      },
+
       logout: async () => {
         set({ loading: true, error: null });
         try {
@@ -106,6 +161,8 @@ export const useAuthStore = create<AuthStore>()(
             .http.post(`${envConfig.NEXT_PUBLIC_API_Logout}`);
           set({
             user: null,
+            guest: null,
+            isGuest: false,
             accessToken: null,
             refreshToken: null,
             error: null,
@@ -117,6 +174,34 @@ export const useAuthStore = create<AuthStore>()(
         } catch (error) {
           set({
             error: error instanceof Error ? error.message : "Logout failed",
+            loading: false
+          });
+        }
+      },
+
+      guestLogout: async (body: LogoutRequest) => {
+        const guest_logout_link =
+          envConfig.NEXT_PUBLIC_API_ENDPOINT +
+          envConfig.NEXT_PUBLIC_API_Guest_Logout;
+        set({ loading: true, error: null });
+        try {
+          await useApiStore.getState().http.post(`${guest_logout_link}`, body);
+          set({
+            user: null,
+            guest: null,
+            isGuest: false,
+            accessToken: null,
+            refreshToken: null,
+            error: null,
+            loading: false
+          });
+          useApiStore.getState().setAccessToken(null);
+          Cookies.remove("accessToken");
+          Cookies.remove("refreshToken");
+        } catch (error) {
+          set({
+            error:
+              error instanceof Error ? error.message : "Guest logout failed",
             loading: false
           });
         }
@@ -151,24 +236,3 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 );
-
-// Custom hooks for each operation
-export const useRegisterMutation = () => {
-  const { register, loading, error } = useAuthStore();
-  return { mutateAsync: register, isPending: loading, error };
-};
-
-export const useLoginMutation = () => {
-  const { login, loading, error } = useAuthStore();
-  return { mutateAsync: login, isPending: loading, error };
-};
-
-export const useLogoutMutation = () => {
-  const { logout, loading, error } = useAuthStore();
-  return { mutateAsync: logout, isPending: loading, error };
-};
-
-export const useRefreshTokenMutation = () => {
-  const { refreshAccessToken, loading, error } = useAuthStore();
-  return { mutateAsync: refreshAccessToken, isPending: loading, error };
-};

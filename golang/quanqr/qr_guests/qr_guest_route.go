@@ -38,8 +38,8 @@ func RegisterGuestRoutes(r *chi.Mux, handler *GuestHandlerController) *chi.Mux {
 			// r.Use(middleware.GetAuthMiddlewareFunc(tokenMaker))
 
 			r.Post("/logout", handler.GuestLogout)
-			r.Post("/orders", handler.CreateOrders)
-			r.Get("/orders/{guestId}", handler.GetOrders)
+			// r.Post("/orders", handler.CreateOrders)
+			// r.Get("/orders/{guestId}", handler.GetOrders)
 		})
 	})
 

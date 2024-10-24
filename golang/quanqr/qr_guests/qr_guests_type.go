@@ -48,13 +48,6 @@ type GuestLoginResponse struct {
 		    SessionID             string    `json:"session_id"`
 }
 
-//------------------------
-// type GuestLoginResponse struct {
-// 	AccessToken  string    `json:"access_token"`
-// 	RefreshToken string    `json:"refresh_token"`
-// 	Guest        GuestInfo `json:"guest"`
-// 	Message      string    `json:"message"`
-// }
 
 
 
@@ -71,38 +64,40 @@ type RefreshTokenResponse struct {
 	RefreshToken string `json:"refresh_token"`
 	Message      string `json:"message"`
 }
-
-type CreateOrderItem struct {
-	DishID   int64 `json:"dish_id"`
-	Quantity int32 `json:"quantity"`
-	GuestID  int64 `json:"guest_id"`
-}
-
-type CreateOrdersRequest struct {
-	Items []CreateOrderItem `json:"items"`
-}
-
-type Order struct {
-	ID          int64     `json:"id"`
-	GuestID     int64     `json:"guest_id"`
-	TableNumber int32     `json:"table_number"`
-	DishID      int64     `json:"dish_id"`
-	Quantity    int32     `json:"quantity"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-type OrdersResponse struct {
-	Data    []Order `json:"data"`
-	Message string  `json:"message"`
-}
-
 type GuestGetOrdersGRPCRequest struct {
 	GuestID int64 `json:"guestId"`
 }
 
-type ListOrdersResponse struct {
-	Orders  []Order `json:"orders"`
-	Message string  `json:"message"`
-}
+
+// type CreateOrderItem struct {
+// 	DishID   int64 `json:"dish_id"`
+// 	Quantity int32 `json:"quantity"`
+// 	GuestID  int64 `json:"guest_id"`
+// }
+
+// type CreateOrdersRequest struct {
+// 	Items []CreateOrderItem `json:"items"`
+// }
+
+// type Order struct {
+// 	ID          int64     `json:"id"`
+// 	GuestID     int64     `json:"guest_id"`
+// 	TableNumber int32     `json:"table_number"`
+// 	DishID      int64     `json:"dish_id"`
+// 	Quantity    int32     `json:"quantity"`
+// 	Status      string    `json:"status"`
+// 	CreatedAt   time.Time `json:"created_at"`
+// 	UpdatedAt   time.Time `json:"updated_at"`
+// }
+
+// type OrdersResponse struct {
+// 	Data    []Order `json:"data"`
+// 	Message string  `json:"message"`
+// }
+
+
+
+// type ListOrdersResponse struct {
+// 	Orders  []Order `json:"orders"`
+// 	Message string  `json:"message"`
+// }

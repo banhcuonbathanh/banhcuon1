@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
+
 	"time"
 
 	"english-ai-full/logger"
 	"english-ai-full/quanqr/proto_qr/guest"
 	"english-ai-full/token"
 
-	"github.com/go-chi/chi"
-	"google.golang.org/grpc/status"
+	// "github.com/go-chi/chi"
+	// "google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -181,60 +181,60 @@ func (h *GuestHandlerController) RefreshToken(w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(res)
 }
 
-func (h *GuestHandlerController) CreateOrders(w http.ResponseWriter, r *http.Request) {
+// func (h *GuestHandlerController) CreateOrders(w http.ResponseWriter, r *http.Request) {
 
-	log.Print("golang/quanqr/qr_guests/qr_guests_handler.go")
-	var orderReq CreateOrdersRequest
-	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
-		http.Error(w, "error decoding request body", http.StatusBadRequest)
-		return
-	}
+// 	log.Print("golang/quanqr/qr_guests/qr_guests_handler.go")
+// 	var orderReq CreateOrdersRequest
+// 	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+// 		http.Error(w, "error decoding request body", http.StatusBadRequest)
+// 		return
+// 	}
 
-	log.Println("Create orders attempt:", "Number of items:", len(orderReq.Items))
+// 	log.Println("Create orders attempt:", "Number of items:", len(orderReq.Items))
 
-	response, err := h.client.GuestCreateOrdersGRPC(h.ctx, ToPBCreateOrdersRequest(orderReq))
-	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			http.Error(w, st.Message(), http.StatusBadRequest)
-		} else {
-			log.Println("Error creating orders:", err)
-			http.Error(w, "error creating orders", http.StatusInternalServerError)
-		}
-		return
-	}
+// 	response, err := h.client.GuestCreateOrdersGRPC(h.ctx, ToPBCreateOrdersRequest(orderReq))
+// 	if err != nil {
+// 		if st, ok := status.FromError(err); ok {
+// 			http.Error(w, st.Message(), http.StatusBadRequest)
+// 		} else {
+// 			log.Println("Error creating orders:", err)
+// 			http.Error(w, "error creating orders", http.StatusInternalServerError)
+// 		}
+// 		return
+// 	}
 
-	log.Println("Orders created successfully. Number of orders:", len(response.Data))
+// 	log.Println("Orders created successfully. Number of orders:", len(response.Data))
 
-	res := ToOrdersResponseFromPB(response)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(res)
-}
+// 	res := ToOrdersResponseFromPB(response)
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusCreated)
+// 	json.NewEncoder(w).Encode(res)
+// }
 
-func (h *GuestHandlerController) GetOrders(w http.ResponseWriter, r *http.Request) {
-	guestIDStr := chi.URLParam(r, "guestId")
-	guestID, err := strconv.ParseInt(guestIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, "invalid guest ID", http.StatusBadRequest)
-		return
-	}
+// func (h *GuestHandlerController) GetOrders(w http.ResponseWriter, r *http.Request) {
+// 	guestIDStr := chi.URLParam(r, "guestId")
+// 	guestID, err := strconv.ParseInt(guestIDStr, 10, 64)
+// 	if err != nil {
+// 		http.Error(w, "invalid guest ID", http.StatusBadRequest)
+// 		return
+// 	}
 
-	log.Println("Get orders attempt for guest ID:", guestID)
+// 	log.Println("Get orders attempt for guest ID:", guestID)
 
-	response, err := h.client.GuestGetOrdersGRPC(h.ctx, &guest.GuestGetOrdersGRPCRequest{GuestId: guestID})
-	if err != nil {
-		log.Println("Error fetching orders:", err)
-		http.Error(w, "error fetching orders", http.StatusInternalServerError)
-		return
-	}
+// 	response, err := h.client.GuestGetOrdersGRPC(h.ctx, &guest.GuestGetOrdersGRPCRequest{GuestId: guestID})
+// 	if err != nil {
+// 		log.Println("Error fetching orders:", err)
+// 		http.Error(w, "error fetching orders", http.StatusInternalServerError)
+// 		return
+// 	}
 
-	log.Println("Orders fetched successfully. Number of orders:", len(response.Orders))
+// 	log.Println("Orders fetched successfully. Number of orders:", len(response.Orders))
 
-	res := ToListOrdersResponseFromPB(response)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(res)
-}
+// 	res := ToListOrdersResponseFromPB(response)
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusOK)
+// 	json.NewEncoder(w).Encode(res)
+// }
 
 // Helper functions for converting between protobuf and local types
 func ToPBGuestLoginRequest(req GuestLoginRequest) *guest.GuestLoginRequest {
@@ -285,51 +285,51 @@ func ToRefreshTokenResponseFromPB(resp *guest.RefreshTokenResponse) RefreshToken
 	}
 }
 
-func ToPBCreateOrdersRequest(req CreateOrdersRequest) *guest.GuestCreateOrderRequest {
-	items := make([]*guest.GuestCreateOrderItem, len(req.Items))
-	for i, item := range req.Items {
-		items[i] = &guest.GuestCreateOrderItem{
-			DishId:   item.DishID,
-			Quantity: item.Quantity,
-			GuestId:  item.GuestID,
-		}
-	}
-	return &guest.GuestCreateOrderRequest{
-		Items: items,
-	}
-}
+// func ToPBCreateOrdersRequest(req CreateOrdersRequest) *guest.GuestCreateOrderRequest {
+// 	items := make([]*guest.GuestCreateOrderItem, len(req.Items))
+// 	for i, item := range req.Items {
+// 		items[i] = &guest.GuestCreateOrderItem{
+// 			DishId:   item.DishID,
+// 			Quantity: item.Quantity,
+// 			GuestId:  item.GuestID,
+// 		}
+// 	}
+// 	return &guest.GuestCreateOrderRequest{
+// 		Items: items,
+// 	}
+// }
 
-func ToOrdersResponseFromPB(resp *guest.OrdersResponse) OrdersResponse {
-	orders := make([]Order, len(resp.Data))
-	for i, order := range resp.Data {
-		orders[i] = ToOrderFromPB(order)
-	}
-	return OrdersResponse{
-		Data:    orders,
-		Message: resp.Message,
-	}
-}
+// func ToOrdersResponseFromPB(resp *guest.OrdersResponse) OrdersResponse {
+// 	orders := make([]Order, len(resp.Data))
+// 	for i, order := range resp.Data {
+// 		orders[i] = ToOrderFromPB(order)
+// 	}
+// 	return OrdersResponse{
+// 		Data:    orders,
+// 		Message: resp.Message,
+// 	}
+// }
 
-func ToOrderFromPB(order *guest.Order) Order {
-	return Order{
-		ID:          order.Id,
-		GuestID:     order.GuestId,
-		TableNumber: order.TableNumber,
-		DishID:      order.DishId,
-		Quantity:    order.Quantity,
-		Status:      order.Status,
-		CreatedAt:   order.CreatedAt.AsTime(),
-		UpdatedAt:   order.UpdatedAt.AsTime(),
-	}
-}
+// func ToOrderFromPB(order *guest.Order) Order {
+// 	return Order{
+// 		ID:          order.Id,
+// 		GuestID:     order.GuestId,
+// 		TableNumber: order.TableNumber,
+// 		DishID:      order.DishId,
+// 		Quantity:    order.Quantity,
+// 		Status:      order.Status,
+// 		CreatedAt:   order.CreatedAt.AsTime(),
+// 		UpdatedAt:   order.UpdatedAt.AsTime(),
+// 	}
+// }
 
-func ToListOrdersResponseFromPB(resp *guest.ListOrdersResponse) ListOrdersResponse {
-	orders := make([]Order, len(resp.Orders))
-	for i, order := range resp.Orders {
-		orders[i] = ToOrderFromPB(order)
-	}
-	return ListOrdersResponse{
-		Orders:  orders,
-		Message: resp.Message,
-	}
-}
+// func ToListOrdersResponseFromPB(resp *guest.ListOrdersResponse) ListOrdersResponse {
+// 	orders := make([]Order, len(resp.Orders))
+// 	for i, order := range resp.Orders {
+// 		orders[i] = ToOrderFromPB(order)
+// 	}
+// 	return ListOrdersResponse{
+// 		Orders:  orders,
+// 		Message: resp.Message,
+// 	}
+// }

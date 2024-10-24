@@ -1,4 +1,4 @@
-http://localhost:3000/table/1?token=MTp0YWJsZTo0ODgzMjY5NTcx.xKeajWuEoeA
+http://localhost:3000/table/1?token=MTp0YWJsZTo0ODgzMzUwOTA2.eFzcDV7lnSA
 
 docker compose up
 
@@ -36,12 +36,12 @@ TRUNCATE TABLE schema\*migrations, users; delete all data
 \d orders
 
 SELECT _ FROM tables;
-SELECT _ FROM set_dishes;
-SELECT _ FROM sets;
+SELECT _ FROM set*dishes;
+SELECT * FROM sets;
 SELECT _ FROM dishes;
-SELECT * FROM orders;
+SELECT \* FROM orders;
 SELECT _ FROM users;
-SELECT * FROM sessions;
+SELECT \* FROM sessions;
 DELETE FROM sessions;
 \d order_items
 mydatabase=# \d users

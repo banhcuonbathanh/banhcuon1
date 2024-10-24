@@ -34,12 +34,13 @@ export interface Order {
 
   // new
   takeAway: boolean;
-  chiliNumber: number
+  chiliNumber: number;
 }
 
 export interface CreateOrderRequest {
   guest_id?: number | null;
-  user_id: number;
+
+  user_id?: number | null;
   is_guest: boolean;
   table_number: number;
   order_handler_id: number;
@@ -51,9 +52,9 @@ export interface CreateOrderRequest {
   set_items: SetOrderItem[];
   bow_chili: number;
   bow_no_chili: number;
-//
+  //
   takeAway: boolean;
-  chiliNumber: number
+  chiliNumber: number;
 }
 
 export interface UpdateOrderRequest {

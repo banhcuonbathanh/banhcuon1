@@ -11,14 +11,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import {
-  useAuthStore,
-  useLogoutMutation
-} from "@/zusstand/new_auth/new_auth_controller";
+import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 
 export default function DropdownAvatar() {
-  const { user } = useAuthStore();
-  const { mutateAsync: logout, isPending: loading } = useLogoutMutation();
+  const { user, logout, loading } = useAuthStore();
 
   const handleLogout = async () => {
     try {
