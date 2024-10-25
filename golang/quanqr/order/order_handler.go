@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"english-ai-full/logger"
 	"english-ai-full/quanqr/proto_qr/order"
 	"english-ai-full/token"
 
 	"github.com/go-chi/chi"
-	"google.golang.org/protobuf/types/known/emptypb"
+
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 type OrderHandlerController struct {
@@ -122,16 +123,17 @@ func (h *OrderHandlerController) GetOrders(w http.ResponseWriter, r *http.Reques
         return
     }
 
+    // Convert protobuf response to HTTP response
     res := ToOrderListResFromPbOrderListResponse(ordersResponse)
+
+    // Set response headers and encode response
     w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
     if err := json.NewEncoder(w).Encode(res); err != nil {
         h.logger.Error("Error encoding response: " + err.Error())
         http.Error(w, "error encoding response", http.StatusInternalServerError)
         return
     }
 }
-
 func (h *OrderHandlerController) UpdateOrder(w http.ResponseWriter, r *http.Request) {
     var orderReq UpdateOrderRequestType
     if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
@@ -176,17 +178,42 @@ func (h *OrderHandlerController) PayOrders(w http.ResponseWriter, r *http.Reques
 
 func (h *OrderHandlerController) GetOrderProtoListDetail(w http.ResponseWriter, r *http.Request) {
     h.logger.Info("Fetching detailed order list")
-    ordersResponse, err := h.client.GetOrderProtoListDetail(h.ctx, &emptypb.Empty{})
+
+    // Parse query parameters for pagination
+    page, err := strconv.Atoi(r.URL.Query().Get("page"))
+    if err != nil || page < 1 {
+        page = 1 // Default to first page if invalid
+    }
+    
+    pageSize, err := strconv.Atoi(r.URL.Query().Get("page_size"))
+    if err != nil || pageSize < 1 {
+        pageSize = 10 // Default page size if invalid
+    }
+
+    // Create the request with pagination parameters
+    req := &order.GetOrdersRequest{
+        Page:     int32(page),
+        PageSize: int32(pageSize),
+    }
+
+    // Call the service
+    ordersResponse, err := h.client.GetOrderProtoListDetail(h.ctx, req)
     if err != nil {
         h.logger.Error("Error fetching detailed order list: " + err.Error())
         http.Error(w, "failed to fetch detailed orders: "+err.Error(), http.StatusInternalServerError)
         return
     }
 
-    res := ToOrderDetailedResListFromPbOrderDetailedListResponse(ordersResponse)
+    // Convert the response
+    res := ToOrderDetailedListResponseFromProto(ordersResponse)
+
+    // Send response
     w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(res)
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        h.logger.Error("Error encoding response: " + err.Error())
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        return
+    }
 }
 
 // Conversion functions
@@ -282,94 +309,255 @@ func ToOrderResFromPbOrderResponse(pbRes *order.OrderResponse) OrderResponse {
     }
 }
 
-func ToOrderListResFromPbOrderListResponse(pbRes *order.OrderListResponse) OrderListResponse {
-    orders := make([]OrderType, len(pbRes.Data))
-    for i, pbOrder := range pbRes.Data {
-        orders[i] = ToOrderFromPbOrder(pbOrder)
+func ToOrderListResFromPbOrderListResponse(pbRes *order.OrderListResponse) *OrderListResponse {
+    if pbRes == nil {
+        return nil
     }
-    return OrderListResponse{
+
+    // Initialize response with proper capacity
+    orders := make([]OrderType, 0, len(pbRes.Data))
+    
+    // Convert each order
+    for _, pbOrder := range pbRes.Data {
+        if pbOrder != nil {
+            orders = append(orders, ToOrderFromPbOrder(pbOrder))
+        }
+    }
+
+    return &OrderListResponse{
         Data: orders,
         Pagination: PaginationInfo{
-            CurrentPage: pbRes.Pagination.CurrentPage,
-            TotalPages:  pbRes.Pagination.TotalPages,
-            TotalItems: pbRes.Pagination.TotalItems,
-            PageSize:   pbRes.Pagination.PageSize,
+            CurrentPage: pbRes.GetPagination().GetCurrentPage(),
+            TotalPages: pbRes.GetPagination().GetTotalPages(),
+            TotalItems: pbRes.GetPagination().GetTotalItems(),
+            PageSize:   pbRes.GetPagination().GetPageSize(),
         },
     }
 }
-
 func ToOrderFromPbOrder(pbOrder *order.Order) OrderType {
+    if pbOrder == nil {
+        return OrderType{}
+    }
+
+    var createdAt, updatedAt time.Time
+    if pbOrder.CreatedAt != nil {
+        createdAt = pbOrder.CreatedAt.AsTime()
+    }
+    if pbOrder.UpdatedAt != nil {
+        updatedAt = pbOrder.UpdatedAt.AsTime()
+    }
+
     return OrderType{
-        ID:             pbOrder.Id,
-        GuestID:        pbOrder.GuestId,
-        UserID:         pbOrder.UserId,
-        IsGuest:        pbOrder.IsGuest,
-        TableNumber:    pbOrder.TableNumber,
-        OrderHandlerID: pbOrder.OrderHandlerId,
-        Status:         pbOrder.Status,
-        CreatedAt:      pbOrder.CreatedAt.AsTime(),
-        UpdatedAt:      pbOrder.UpdatedAt.AsTime(),
-        TotalPrice:     pbOrder.TotalPrice,
+        ID:             pbOrder.GetId(),
+        GuestID:        pbOrder.GetGuestId(),
+        UserID:         pbOrder.GetUserId(),
+        IsGuest:        pbOrder.GetIsGuest(),
+        TableNumber:    pbOrder.GetTableNumber(),
+        OrderHandlerID: pbOrder.GetOrderHandlerId(),
+        Status:         pbOrder.GetStatus(),
+        CreatedAt:      createdAt,
+        UpdatedAt:      updatedAt,
+        TotalPrice:     pbOrder.GetTotalPrice(),
         DishItems:      ToOrderDishesFromPbDishOrderItems(pbOrder.DishItems),
         SetItems:       ToOrderSetsFromPbSetOrderItems(pbOrder.SetItems),
-        BowChili:       pbOrder.BowChili,
-        BowNoChili:     pbOrder.BowNoChili,
-        TakeAway:       pbOrder.TakeAway,
-        ChiliNumber:    pbOrder.ChiliNumber,
-        TableToken:     pbOrder.TableToken,
+        BowChili:       pbOrder.GetBowChili(),
+        BowNoChili:     pbOrder.GetBowNoChili(),
+        TakeAway:       pbOrder.GetTakeAway(),
+        ChiliNumber:    pbOrder.GetChiliNumber(),
+        TableToken:     pbOrder.GetTableToken(),
     }
 }
 
 func ToOrderDishesFromPbDishOrderItems(pbItems []*order.DishOrderItem) []OrderDish {
-    items := make([]OrderDish, len(pbItems))
-    for i, pbItem := range pbItems {
-        items[i] = OrderDish{
-            DishID:   pbItem.DishId,
-            Quantity: pbItem.Quantity,
+    if pbItems == nil {
+        return nil
+    }
+
+    items := make([]OrderDish, 0, len(pbItems))
+    for _, pbItem := range pbItems {
+        if pbItem != nil {
+            items = append(items, OrderDish{
+                DishID:   pbItem.GetDishId(),
+                Quantity: pbItem.GetQuantity(),
+            })
         }
     }
     return items
 }
 
 func ToOrderSetsFromPbSetOrderItems(pbItems []*order.SetOrderItem) []OrderSet {
-    items := make([]OrderSet, len(pbItems))
-    for i, pbItem := range pbItems {
-        items[i] = OrderSet{
-            SetID:    pbItem.SetId,
-            Quantity: pbItem.Quantity,
+    if pbItems == nil {
+        return nil
+    }
+
+    items := make([]OrderSet, 0, len(pbItems))
+    for _, pbItem := range pbItems {
+        if pbItem != nil {
+            items = append(items, OrderSet{
+                SetID:    pbItem.GetSetId(),
+                Quantity: pbItem.GetQuantity(),
+            })
         }
     }
     return items
 }
 
-func ToOrderDetailedResListFromPbOrderDetailedListResponse(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
-    sets := make([]OrderSetDetailed, len(pbRes.Data))
-    for i, pbSet := range pbRes.Data {
-        sets[i] = ToOrderSetDetailedFromPbOrderSetDetailed(pbSet)
+// func ToOrderDetailedResListFromPbOrderDetailedListResponse(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
+//     sets := make([]OrderSetDetailed, len(pbRes.Data))
+//     for i, pbSet := range pbRes.Data {
+//         sets[i] = ToOrderSetDetailedFromPbOrderSetDetailed(pbSet)
+//     }
+//     return OrderDetailedListResponse{
+//         Data: sets,
+//     }
+// }
+
+
+func ToOrderDetailedDishesFromPbOrderDetailedDishes(pbDishes []*order.OrderDetailedDish) []OrderDetailedDish {
+    dishes := make([]OrderDetailedDish, len(pbDishes))
+    for i, pbDish := range pbDishes {
+        dishes[i] = OrderDetailedDish{
+            DishID:      pbDish.DishId,
+            Quantity:    pbDish.Quantity,
+            Name:        pbDish.Name,
+            Price:       pbDish.Price,
+            Description: pbDish.Description,
+            Image:       pbDish.Image,
+            Status:      pbDish.Status,
+        }
     }
-    return OrderDetailedListResponse{
-        Data: sets,
+    return dishes
+}
+
+
+
+func ToOrderDetailedDishFromPbOrderDetailedDish(pbDish *order.OrderDetailedDish) OrderDetailedDish {
+    if pbDish == nil {
+        return OrderDetailedDish{}
+    }
+
+    return OrderDetailedDish{
+        DishID:      pbDish.DishId,
+        Quantity:    pbDish.Quantity,
+        Name:        pbDish.Name,
+        Price:       pbDish.Price,
+        Description: pbDish.Description,
+        Image:       pbDish.Image,
+        Status:      pbDish.Status,
     }
 }
 
+
 func ToOrderSetDetailedFromPbOrderSetDetailed(pbSet *order.OrderSetDetailed) OrderSetDetailed {
+    if pbSet == nil {
+        return OrderSetDetailed{}
+    }
+
+    dishes := make([]OrderDetailedDish, len(pbSet.Dishes))
+    for i, pbDish := range pbSet.Dishes {
+        dishes[i] = ToOrderDetailedDishFromPbOrderDetailedDish(pbDish)
+    }
+
+    var createdAt, updatedAt time.Time
+    if pbSet.CreatedAt != nil {
+        createdAt = pbSet.CreatedAt.AsTime()
+    }
+    if pbSet.UpdatedAt != nil {
+        updatedAt = pbSet.UpdatedAt.AsTime()
+    }
+
     return OrderSetDetailed{
         ID:          pbSet.Id,
         Name:        pbSet.Name,
         Description: pbSet.Description,
-        Dishes:      ToOrderDetailedDishesFromPbOrderDetailedDishes(pbSet.Dishes),
-        UserID:      int32(pbSet.UserId),
-        CreatedAt:   pbSet.CreatedAt.AsTime(),
-        UpdatedAt:   pbSet.UpdatedAt.AsTime(),
+        Dishes:      dishes,
+        UserID:      pbSet.UserId,
+        CreatedAt:   createdAt,
+        UpdatedAt:   updatedAt,
         IsFavourite: pbSet.IsFavourite,
         LikeBy:      pbSet.LikeBy,
         IsPublic:    pbSet.IsPublic,
         Image:       pbSet.Image,
         Price:       pbSet.Price,
+        Quantity:    pbSet.Quantity,
     }
 }
 
-func ToOrderDetailedDishesFromPbOrderDetailedDishes(pbDishes []*order.OrderDetailedDish) []OrderDetailedDish {
+
+// -------------
+
+
+
+// Handler conversion function update
+func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
+    if pbRes == nil {
+        return OrderDetailedListResponse{}
+    }
+
+    detailedResponses := make([]OrderDetailedResponse, len(pbRes.Data))
+    for i, pbDetailedRes := range pbRes.Data {
+        detailedResponses[i] = OrderDetailedResponse{
+            ID:             pbDetailedRes.Id,
+            GuestID:        pbDetailedRes.GuestId,
+            UserID:         pbDetailedRes.UserId,
+            TableNumber:    pbDetailedRes.TableNumber,
+            OrderHandlerID: pbDetailedRes.OrderHandlerId,
+            Status:         pbDetailedRes.Status,
+            TotalPrice:     pbDetailedRes.TotalPrice,
+            IsGuest:        pbDetailedRes.IsGuest,
+            BowChili:       pbDetailedRes.BowChili,
+            BowNoChili:     pbDetailedRes.BowNoChili,
+            TakeAway:       pbDetailedRes.TakeAway,
+            ChiliNumber:    pbDetailedRes.ChiliNumber,
+            TableToken:     pbDetailedRes.TableToken,
+            DataSet:        ToOrderSetsDetailedFromProto(pbDetailedRes.DataSet),
+            DataDish:       ToOrderDetailedDishesFromProto(pbDetailedRes.DataDish),
+        }
+    }
+
+    return OrderDetailedListResponse{
+        Data: detailedResponses,
+        Pagination: PaginationInfo{
+            CurrentPage: pbRes.Pagination.CurrentPage,
+            TotalPages: pbRes.Pagination.TotalPages,
+            TotalItems: pbRes.Pagination.TotalItems,
+            PageSize:   pbRes.Pagination.PageSize,
+        },
+    }
+}
+
+// Helper functions for conversion
+func ToOrderSetsDetailedFromProto(pbSets []*order.OrderSetDetailed) []OrderSetDetailed {
+    if pbSets == nil {
+        return nil
+    }
+
+    sets := make([]OrderSetDetailed, len(pbSets))
+    for i, pbSet := range pbSets {
+        sets[i] = OrderSetDetailed{
+            ID:          pbSet.Id,
+            Name:        pbSet.Name,
+            Description: pbSet.Description,
+            Dishes:      ToOrderDetailedDishesFromProto(pbSet.Dishes),
+            UserID:      pbSet.UserId,
+            CreatedAt:   pbSet.CreatedAt.AsTime(),
+            UpdatedAt:   pbSet.UpdatedAt.AsTime(),
+            IsFavourite: pbSet.IsFavourite,
+            LikeBy:      pbSet.LikeBy,
+            IsPublic:    pbSet.IsPublic,
+            Image:       pbSet.Image,
+            Price:       pbSet.Price,
+            Quantity:    pbSet.Quantity,
+        }
+    }
+    return sets
+}
+
+func ToOrderDetailedDishesFromProto(pbDishes []*order.OrderDetailedDish) []OrderDetailedDish {
+    if pbDishes == nil {
+        return nil
+    }
+
     dishes := make([]OrderDetailedDish, len(pbDishes))
     for i, pbDish := range pbDishes {
         dishes[i] = OrderDetailedDish{

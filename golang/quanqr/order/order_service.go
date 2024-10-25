@@ -49,7 +49,7 @@ func (os *OrderServiceStruct) GetOrders(ctx context.Context, req *order.GetOrder
     orders, totalItems, err := os.orderRepo.GetOrders(ctx, req.Page, req.PageSize)
     if err != nil {
         os.logger.Error("Error fetching orders: " + err.Error())
-        return nil, err
+        return nil, fmt.Errorf("failed to fetch orders: %w", err)
     }
     
     // Calculate total pages
@@ -65,6 +65,7 @@ func (os *OrderServiceStruct) GetOrders(ctx context.Context, req *order.GetOrder
         },
     }, nil
 }
+
 
 func (os *OrderServiceStruct) GetOrderDetail(ctx context.Context, req *order.OrderIdParam) (*order.OrderResponse, error) {
     os.logger.Info("Fetching order detail for ID: " + fmt.Sprint(req.Id))
@@ -106,4 +107,27 @@ func (os *OrderServiceStruct) PayOrders(ctx context.Context, req *order.PayOrder
     return &order.OrderListResponse{
         Data: paidOrders,
     }, nil
+}
+
+
+// Add GetOrderProtoListDetail to OrderServiceStruct
+func (os *OrderServiceStruct) GetOrderProtoListDetail(ctx context.Context, req *order.GetOrdersRequest) (*order.OrderDetailedListResponse, error) {
+    os.logger.Info("Fetching detailed order list with pagination")
+
+    // Validate pagination parameters
+    if req.Page < 1 {
+        req.Page = 1
+    }
+    if req.PageSize < 1 {
+        req.PageSize = 10 // Default page size
+    }
+
+    // Call repository method
+    detailedList, err := os.orderRepo.GetOrderProtoListDetail(ctx, req.Page, req.PageSize)
+    if err != nil {
+        os.logger.Error("Error fetching detailed order list: " + err.Error())
+        return nil, fmt.Errorf("failed to fetch detailed order list: %w", err)
+    }
+
+    return detailedList, nil
 }

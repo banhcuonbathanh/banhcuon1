@@ -39,7 +39,7 @@ SELECT _ FROM tables;
 SELECT _ FROM set*dishes;
 SELECT * FROM sets;
 SELECT _ FROM dishes;
-SELECT \* FROM orders;
+SELECT * FROM orders;
 SELECT _ FROM users;
 SELECT \* FROM sessions;
 DELETE FROM sessions;

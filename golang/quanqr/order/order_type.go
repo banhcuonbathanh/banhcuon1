@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// new 
+// new
 // GetOrdersRequest struct
 type GetOrdersRequestType struct {
     Page     int32 `json:"page"`
@@ -170,8 +170,37 @@ type OrderSetDetailed struct {
     IsPublic    bool             `json:"is_public"`
     Image       string           `json:"image"`
     Price       int32            `json:"price"`
+      Quantity       int64            `json:"quantity"`
 }
 
-type OrderDetailedListResponse struct {
-    Data []OrderSetDetailed `json:"data"`
+type OrderDetailedResponse struct {
+    DataSet []OrderSetDetailed `json:"data_set"`
+      DataDish []OrderDetailedDish `json:"data_dish"`
+
+
+      ID             int64           `json:"id"`
+      GuestID        int64           `json:"guest_id"`
+      UserID         int64           `json:"user_id"`
+      TableNumber    int64           `json:"table_number"`
+      OrderHandlerID int64           `json:"order_handler_id"`
+      Status         string          `json:"status"`
+      TotalPrice     int32           `json:"total_price"`
+ 
+      IsGuest        bool            `json:"is_guest"`
+      BowChili       int64           `json:"bow_chili"`
+      BowNoChili     int64           `json:"bow_no_chili"`
+  
+  
+          //asdfasdfasdf
+  
+          TakeAway       bool           `json:"take_away"`
+          ChiliNumber     int64           `json:"chili_number"`
+              TableToken     string           `json:"Table_token"`
 }
+
+
+type OrderDetailedListResponse struct {
+     Data      []OrderDetailedResponse `json:"data"`
+      Pagination PaginationInfo `json:"pagination"`
+}
+

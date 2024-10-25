@@ -77,7 +77,6 @@ export interface GetOrdersRequest {
   page_size: number;
 }
 
-
 export interface PayOrdersRequest {
   guest_id?: number;
   user_id?: number;
@@ -93,17 +92,43 @@ export interface OrderListResponse {
 }
 
 export interface OrderDetailedListResponse {
-  data: OrderSetDetailed[];
+  data: OrderDetailedResponse[];
+  Pagination: PaginationInfo;
+}
+
+export interface OrderDetailedResponse {
+  data_set: OrderSetDetailed[];
+  data_dish: OrderDetailedDish[];
+
+  id: number;
+  guest_id: number;
+  user_id: number;
+  is_guest: boolean;
+  table_number: number;
+  order_handler_id: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  total_price: number;
+
+  bow_chili: number;
+  bow_no_chili: number;
+
+  // new
+  takeAway: boolean;
+  chiliNumber: number;
+
+
 }
 
 // Parameter interfaces
-export interface OrderIDParam {
-  id: number;
-}
+// export interface OrderIDParam {
+//   id: number;
+// }
 
-export interface OrderDetailIDParam {
-  id: number;
-}
+// export interface OrderDetailIDParam {
+//   id: number;
+// }
 
 // Guest interface
 export interface Guest {
@@ -118,7 +143,7 @@ export interface OrderSetDetailed {
   id: number;
   name: string;
   description: string;
-  dishes: DishOrderItem[];
+  dishes: OrderDetailedDish[];
   userId: number;
   created_at: string;
   updated_at: string;
@@ -127,4 +152,21 @@ export interface OrderSetDetailed {
   is_public: boolean;
   image: string;
   price: number;
+}
+
+export interface OrderDetailedDish {
+  dish_id: number;
+  quantity: number;
+  name: string;
+  price: number;
+  description: string;
+  iamge: string;
+  status: string;
+}
+
+export interface PaginationInfo {
+  current_page: number;
+  total_pages: number;
+  total_items: number;
+  page_size: number;
 }

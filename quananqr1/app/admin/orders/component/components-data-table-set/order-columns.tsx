@@ -1,157 +1,201 @@
+import {
+  OrderDetailedResponse,
+  OrderSetDetailed,
+  OrderDetailedDish
+} from "@/schemaValidations/interface/type_order";
 import { ColumnDef } from "@tanstack/react-table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { useState } from "react";
 
-import { Order } from "@/schemaValidations/interface/type_order";
+const ORDER_STATUSES = ["ORDERING", "SERVING", "WAITING", "DONE"] as const;
+type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-import React from "react";
+const PAYMENT_METHODS = ["CASH", "TRANSFER"] as const;
+type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
-export const columns: ColumnDef<Order>[] = [
+export const columns: ColumnDef<OrderDetailedResponse>[] = [
+  {
+    accessorKey: "id",
+    header: "Order ID",
+    cell: ({ row }) => <div className="font-medium">#{row.getValue("id")}</div>
+  },
   {
     accessorKey: "table_number",
-    header: "Table"
-  },
-  {
-    accessorKey: "dish_items",
-    header: "Dishes",
-    cell: ({ row }) => {
-      return (
-        <div className="space-y-1">
-          {row.original.dish_items.map((item, index) => (
-            <div
-              key={`${item.dish_id}-${index}`}
-              className="flex items-center gap-2"
-            >
-              <span className="font-medium">Dish #{item.dish_id}</span>
-              <span className="text-sm text-gray-500">× {item.quantity}</span>
-            </div>
-          ))}
-          {row.original.dish_items.length === 0 && (
-            <span className="text-sm text-gray-500">No dishes ordered</span>
-          )}
-        </div>
-      );
-    }
-  },
-  {
-    accessorKey: "set_items",
-    header: "Sets",
-    cell: ({ row }) => {
-      return (
-        <div className="space-y-1">
-          {row.original.set_items.map((item, index) => (
-            <div
-              key={`${item.set_id}-${index}`}
-              className="flex items-center gap-2"
-            >
-              <span className="font-medium">Set #{item.set_id}</span>
-              <span className="text-sm text-gray-500">× {item.quantity}</span>
-            </div>
-          ))}
-          {row.original.set_items.length === 0 && (
-            <span className="text-sm text-gray-500">No sets ordered</span>
-          )}
-        </div>
-      );
-    }
-  },
-  {
-    accessorKey: "total_price",
-    header: "Total Price",
-    cell: ({ row }) => {
-      return (
-        <div className="font-medium">
-          ${row.original.total_price.toFixed(2)}
-        </div>
-      );
-    }
-  },
-  {
-    accessorKey: "bowls",
-    header: "Bowls",
-    cell: ({ row }) => {
-      return (
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm">With Chili:</span>
-            <span className="font-medium">{row.original.bow_chili}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm">No Chili:</span>
-            <span className="font-medium">{row.original.bow_no_chili}</span>
-          </div>
-          <div className="text-sm text-gray-500">
-            Total: {row.original.bow_chili + row.original.bow_no_chili}
-          </div>
-        </div>
-      );
-    }
-  },
-  {
-    accessorKey: "takeAway",
-    header: "Take Away",
-    cell: ({ row }) => {
-      return (
-        <div
-          className={`inline-flex px-2 py-1 rounded-full text-sm ${
-            row.original.takeAway
-              ? "bg-blue-100 text-blue-800"
-              : "bg-gray-100 text-gray-800"
-          }`}
-        >
-          {row.original.takeAway ? "Take Away" : "Dine In"}
-        </div>
-      );
-    }
+    header: "Table",
+    cell: ({ row }) => (
+      <div className="text-center">{row.getValue("table_number")}</div>
+    )
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const statusStyles = {
-        pending: "bg-yellow-100 text-yellow-800",
-        processing: "bg-blue-100 text-blue-800",
-        completed: "bg-green-100 text-green-800",
-        cancelled: "bg-red-100 text-red-800"
+      const [selectedStatus, setSelectedStatus] = useState<OrderStatus>(
+        row.getValue("status") as OrderStatus
+      );
+
+      const statusStyles: Record<OrderStatus, string> = {
+        ORDERING: "bg-blue-100 text-blue-800",
+        SERVING: "bg-yellow-100 text-yellow-800",
+        WAITING: "bg-orange-100 text-orange-800",
+        DONE: "bg-green-100 text-green-800"
       };
 
-      const status = row.original.status.toLowerCase();
-      const styleClass =
-        statusStyles[status as keyof typeof statusStyles] ||
-        "bg-gray-100 text-gray-800";
+      return (
+        <Select
+          value={selectedStatus}
+          onValueChange={(newStatus: OrderStatus) => {
+            setSelectedStatus(newStatus);
+            // Handle status update here
+            console.log(
+              `Updating status to ${newStatus} for order ${row.getValue("id")}`
+            );
+          }}
+        >
+          <SelectTrigger
+            className={`w-[120px] h-8 ${statusStyles[selectedStatus]}`}
+          >
+            <SelectValue>{selectedStatus}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {ORDER_STATUSES.map((orderStatus) => (
+              <SelectItem
+                key={orderStatus}
+                value={orderStatus}
+                className={statusStyles[orderStatus]}
+              >
+                {orderStatus}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+  },
+  {
+    accessorKey: "payment_method",
+    header: "Payment",
+    cell: ({ row }) => {
+      const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>(
+        (row.getValue("payment_method") as PaymentMethod) || "CASH" // Set default to CASH
+      );
+
+      const paymentStyles: Record<PaymentMethod, string> = {
+        CASH: "bg-emerald-50 text-emerald-700",
+        TRANSFER: "bg-indigo-50 text-indigo-700"
+      };
 
       return (
-        <div
-          className={`inline-flex px-2 py-1 rounded-full text-sm ${styleClass}`}
+        <Select
+          value={selectedPayment}
+          onValueChange={(newMethod: PaymentMethod) => {
+            setSelectedPayment(newMethod);
+            // Handle payment method update here
+            console.log(
+              `Updating payment method to ${newMethod} for order ${row.getValue(
+                "id"
+              )}`
+            );
+          }}
         >
-          {row.original.status}
+          <SelectTrigger
+            className={`w-[120px] h-8 ${paymentStyles[selectedPayment]}`}
+          >
+            <SelectValue>
+              {selectedPayment === "CASH" ? "Cash" : "Transfer"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {PAYMENT_METHODS.map((method) => (
+              <SelectItem
+                key={method}
+                value={method}
+                className={paymentStyles[method]}
+              >
+                {method === "CASH" ? "Cash" : "Transfer"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+  },
+  {
+    accessorKey: "data_set",
+    header: "Sets",
+    cell: ({ row }) => {
+      const sets = row.getValue("data_set") as OrderSetDetailed[];
+      return (
+        <div className="space-y-1">
+          {sets.map((set) => (
+            <div key={set.id} className="text-sm">
+              {set.name} (${set.price})
+            </div>
+          ))}
         </div>
       );
     }
+  },
+  {
+    accessorKey: "data_dish",
+    header: "Individual Dishes",
+    cell: ({ row }) => {
+      const dishes = row.getValue("data_dish") as OrderDetailedDish[];
+      return (
+        <div className="space-y-1">
+          {dishes.map((dish, index) => (
+            <div key={`${dish.dish_id}-${index}`} className="text-sm">
+              {dish.quantity}x {dish.name} (${dish.price})
+            </div>
+          ))}
+        </div>
+      );
+    }
+  },
+  {
+    accessorKey: "bow_details",
+    header: "Bowl Details",
+    cell: ({ row }) => {
+      const withChili = row.original.bow_chili;
+      const noChili = row.original.bow_no_chili;
+      const total = withChili + noChili;
+      const isTakeAway = row.original.takeAway;
+      const chiliNumber = row.original.chiliNumber;
+
+      return total > 0 || (isTakeAway && chiliNumber > 0) ? (
+        <div className="space-y-1 text-sm">
+          {withChili > 0 && <div>With Chili: {withChili}</div>}
+          {noChili > 0 && <div>No Chili: {noChili}</div>}
+          {isTakeAway && chiliNumber > 0 && (
+            <div className="font-medium">Takeaway Chili: {chiliNumber}</div>
+          )}
+        </div>
+      ) : null;
+    }
+  },
+  {
+    accessorKey: "total_price",
+    header: "Total",
+    cell: ({ row }) => (
+      <div className="font-medium text-right">
+        ${row.getValue("total_price")}
+      </div>
+    )
   }
 ];
 
-export default columns;
+// Add row styling for takeaway orders
+export const getRowStyles = (row: any) => {
+  if (row.original.take_away) {
+    return "bg-orange-50";
+  }
+  return "";
+};
 
-// {
-//   accessorKey: "id",
-//   header: "Order ID"
-// },
-// {
-//   accessorKey: "guest_id",
-//   header: "Guest ID"
-// },
-// {
-//   accessorKey: "user_id",
-//   header: "User ID"
-// },
-// {
-//   accessorKey: "table_number",
-//   header: "Table"
-// },
-// {
-//   accessorKey: "order_handler_id",
-//   header: "Handler ID"
-// },
-// {
-//   accessorKey: "status",
-//   header: "Status"
-// },
+export default columns;

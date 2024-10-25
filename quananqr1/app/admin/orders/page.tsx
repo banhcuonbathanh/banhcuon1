@@ -15,7 +15,8 @@ export default async function SetPage() {
     page: 1,
     page_size: 10
   });
-  console.log("quananqr1/app/admin/orders/page.tsx order", order);
+
+  console.log("quananqr1/app/admin/orders/page.tsx order", order.data);
   // console.log("quananqr1/app/admin/set/page.tsx set", set[0].dishes);
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -26,7 +27,7 @@ export default async function SetPage() {
             <CardDescription>Quản lý set món ăn</CardDescription>
           </CardHeader>
           <CardContent>
-            <OrderClient data={order} />
+            <OrderClient data={order.data} />
           </CardContent>
         </Card>
       </div>

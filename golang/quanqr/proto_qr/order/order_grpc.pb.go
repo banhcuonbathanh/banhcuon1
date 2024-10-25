@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -39,7 +38,7 @@ type OrderServiceClient interface {
 	GetOrderDetail(ctx context.Context, in *OrderIdParam, opts ...grpc.CallOption) (*OrderResponse, error)
 	UpdateOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderResponse, error)
 	PayOrders(ctx context.Context, in *PayOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error)
-	GetOrderProtoListDetail(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
+	GetOrderProtoListDetail(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 }
 
 type orderServiceClient struct {
@@ -100,7 +99,7 @@ func (c *orderServiceClient) PayOrders(ctx context.Context, in *PayOrdersRequest
 	return out, nil
 }
 
-func (c *orderServiceClient) GetOrderProtoListDetail(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*OrderDetailedListResponse, error) {
+func (c *orderServiceClient) GetOrderProtoListDetail(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(OrderDetailedListResponse)
 	err := c.cc.Invoke(ctx, OrderService_GetOrderProtoListDetail_FullMethodName, in, out, cOpts...)
@@ -121,7 +120,7 @@ type OrderServiceServer interface {
 	GetOrderDetail(context.Context, *OrderIdParam) (*OrderResponse, error)
 	UpdateOrder(context.Context, *UpdateOrderRequest) (*OrderResponse, error)
 	PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error)
-	GetOrderProtoListDetail(context.Context, *emptypb.Empty) (*OrderDetailedListResponse, error)
+	GetOrderProtoListDetail(context.Context, *GetOrdersRequest) (*OrderDetailedListResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -147,7 +146,7 @@ func (UnimplementedOrderServiceServer) UpdateOrder(context.Context, *UpdateOrder
 func (UnimplementedOrderServiceServer) PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PayOrders not implemented")
 }
-func (UnimplementedOrderServiceServer) GetOrderProtoListDetail(context.Context, *emptypb.Empty) (*OrderDetailedListResponse, error) {
+func (UnimplementedOrderServiceServer) GetOrderProtoListDetail(context.Context, *GetOrdersRequest) (*OrderDetailedListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrderProtoListDetail not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
@@ -262,7 +261,7 @@ func _OrderService_PayOrders_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _OrderService_GetOrderProtoListDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(GetOrdersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -274,7 +273,7 @@ func _OrderService_GetOrderProtoListDetail_Handler(srv interface{}, ctx context.
 		FullMethod: OrderService_GetOrderProtoListDetail_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrderServiceServer).GetOrderProtoListDetail(ctx, req.(*emptypb.Empty))
+		return srv.(OrderServiceServer).GetOrderProtoListDetail(ctx, req.(*GetOrdersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
