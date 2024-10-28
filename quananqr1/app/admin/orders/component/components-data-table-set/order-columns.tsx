@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-
 const ORDER_STATUSES = ["ORDERING", "SERVING", "WAITING", "DONE"] as const;
 type OrderStatus = (typeof ORDER_STATUSES)[number];
 
@@ -142,7 +141,7 @@ export const columns: ColumnDef<OrderDetailedResponse>[] = [
         <div className="space-y-1">
           {sets.map((set) => (
             <div key={set.id} className="text-sm">
-              {set.name} (${set.price})
+              {set.quantity}x {set.name} (${set.price})
             </div>
           ))}
         </div>
@@ -228,13 +227,3 @@ export const columns: ColumnDef<OrderDetailedResponse>[] = [
     }
   }
 ];
-
-// // Add row styling for takeaway orders
-// export const getRowStyles = (row: any) => {
-//   if (row.original.take_away) {
-//     return "bg-orange-50";
-//   }
-//   return "";
-// };
-
-export default columns;

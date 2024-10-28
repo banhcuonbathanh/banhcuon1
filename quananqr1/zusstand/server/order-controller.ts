@@ -1,12 +1,9 @@
 import envConfig from "@/config";
 import {
   GetOrdersRequest,
-  OrderDetailedDish,
   OrderDetailedListResponse,
-  OrderDetailedResponse,
   PaginationInfo
 } from "@/schemaValidations/interface/type_order";
-
 export const get_Orders = async (
   params: GetOrdersRequest
 ): Promise<OrderDetailedListResponse> => {
@@ -23,17 +20,11 @@ export const get_Orders = async (
     });
 
     const rawData = await response.json();
-    console.log(
-      "quananqr1/zusstand/server/order-controller.ts rawData",
-      rawData
-    );
 
-    // Check if request was successful
     if (!response.ok) {
       throw new Error(rawData.message || "Failed to fetch orders");
     }
 
-    // Define the expected response type from the database
     interface ApiResponse {
       data: Array<{
         data_set: Array<{
@@ -58,7 +49,7 @@ export const get_Orders = async (
           image: string;
           price: number;
           quantity: number;
-        }>;
+        }> | null;
         data_dish: Array<{
           dish_id: number;
           quantity: number;
@@ -86,14 +77,12 @@ export const get_Orders = async (
       message: string;
     }
 
-    // Type assertion for rawData
     const typedData = rawData as ApiResponse;
 
     if (!typedData.data) {
       throw new Error("Invalid response format: missing data");
     }
 
-    // Use the pagination info directly from the response
     const pagination: PaginationInfo = {
       current_page: typedData.pagination.current_page,
       total_pages: typedData.pagination.total_pages,
@@ -101,7 +90,6 @@ export const get_Orders = async (
       page_size: typedData.pagination.page_size
     };
 
-    // Transform the data to match OrderDetailedListResponse interface
     const validatedData: OrderDetailedListResponse = {
       data: typedData.data.map((item) => ({
         id: item.id,
@@ -111,14 +99,15 @@ export const get_Orders = async (
         table_number: item.table_number,
         order_handler_id: item.order_handler_id,
         status: item.status,
-        created_at: "asdf", // Corrected: Matches OrderDetailedResponse
-        updated_at: "asdf", // Corrected: Matches OrderDetailedResponse
+        created_at: "asdf",
+        updated_at: "asdf",
         total_price: item.total_price,
         bow_chili: item.bow_chili,
         bow_no_chili: item.bow_no_chili,
-        takeAway: item.take_away, // Corrected: Renamed to match OrderDetailedResponse
-        chiliNumber: item.chili_number, // Corrected: Renamed to match OrderDetailedResponse
-        data_set: item.data_set.map((set) => ({
+        takeAway: item.take_away,
+        chiliNumber: item.chili_number,
+        // Add null check for data_set
+        data_set: (item.data_set || []).map((set) => ({
           id: set.id,
           name: set.name,
           description: set.description,
@@ -128,7 +117,7 @@ export const get_Orders = async (
             name: dish.name,
             price: dish.price,
             description: dish.description,
-            iamge: dish.image, // Note: mapped to typo in interface
+            iamge: dish.image,
             status: dish.status
           })),
           userId: set.userId,
@@ -142,16 +131,15 @@ export const get_Orders = async (
           quantity: set.quantity
         })),
         // Handle null data_dish by providing an empty array
-        data_dish:
-          item.data_dish?.map((dish) => ({
-            dish_id: dish.dish_id,
-            quantity: dish.quantity,
-            name: dish.name,
-            price: dish.price,
-            description: dish.description,
-            iamge: dish.image, // Note: mapped to typo in interface
-            status: dish.status
-          })) || []
+        data_dish: (item.data_dish || []).map((dish) => ({
+          dish_id: dish.dish_id,
+          quantity: dish.quantity,
+          name: dish.name,
+          price: dish.price,
+          description: dish.description,
+          iamge: dish.image,
+          status: dish.status
+        }))
       })),
       Pagination: pagination
     };

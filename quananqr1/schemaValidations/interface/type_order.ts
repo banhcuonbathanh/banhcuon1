@@ -1,9 +1,4 @@
-import { DishInterface } from "./type_dish";
-import { SetInterface, SetProtoDish } from "./types_set";
 
-// Base interface for order items
-
-// Order item for a dish
 export interface DishOrderItem {
   dish_id: number;
   quantity: number;
@@ -117,10 +112,7 @@ export interface OrderDetailedResponse {
   // new
   takeAway: boolean;
   chiliNumber: number;
-
-
 }
-
 
 export interface Guest {
   id: number;
@@ -143,6 +135,8 @@ export interface OrderSetDetailed {
   is_public: boolean;
   image: string;
   price: number;
+
+  quantity: number;
 }
 
 export interface OrderDetailedDish {

@@ -12,14 +12,14 @@ interface OrderProps {
   token: string;
 }
 export default function OrderSummary({ number, token }: OrderProps) {
-  console.log(
-    "quananqr1/app/table/[number]/component/order/order.tsx number,  token",
-    number
-  );
-  console.log(
-    "quananqr1/app/table/[number]/component/order/order.tsx token,  ",
-    token
-  );
+  // console.log(
+  //   "quananqr1/app/table/[number]/component/order/order.tsx number,  token",
+  //   number
+  // );
+  // console.log(
+  //   "quananqr1/app/table/[number]/component/order/order.tsx token,  ",
+  //   token
+  // );
   const {
     addTableNumber,
     addTableToken,

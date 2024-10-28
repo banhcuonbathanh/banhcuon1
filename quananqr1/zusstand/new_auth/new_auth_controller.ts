@@ -86,13 +86,17 @@ export const useAuthStore = create<AuthStore>()(
               `${envConfig.NEXT_PUBLIC_API_Login}`,
               body
             );
+          // console.log(
+          //   "quananqr1/zusstand/new_auth/new_auth_controller.ts login asdkfjhaskdjf",
+          //   response.data.user
+          // );
           set({
             user: {
               ...response.data.user,
               password: body.password
             },
             guest: null,
-            isGuest: true, // Set isGuest to true when user is not null
+            isGuest: false, // Set isGuest to true when user is not null
             accessToken: response.data.access_token,
             refreshToken: response.data.refresh_token,
             error: null,
@@ -128,7 +132,7 @@ export const useAuthStore = create<AuthStore>()(
           set({
             user: null,
             guest: response.data.guest,
-            isGuest: false, // Set isGuest to false when user is null and guest is not null
+            isGuest: true, // Set isGuest to false when user is null and guest is not null
             accessToken: response.data.access_token,
             refreshToken: response.data.refresh_token,
             error: null,
