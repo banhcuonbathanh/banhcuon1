@@ -121,16 +121,7 @@ export interface OrderDetailedResponse {
 
 }
 
-// Parameter interfaces
-// export interface OrderIDParam {
-//   id: number;
-// }
 
-// export interface OrderDetailIDParam {
-//   id: number;
-// }
-
-// Guest interface
 export interface Guest {
   id: number;
   name: string;

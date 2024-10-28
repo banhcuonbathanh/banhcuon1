@@ -12,6 +12,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 const ORDER_STATUSES = ["ORDERING", "SERVING", "WAITING", "DONE"] as const;
 type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -27,9 +28,15 @@ export const columns: ColumnDef<OrderDetailedResponse>[] = [
   },
   {
     accessorKey: "table_number",
-    header: "Table",
+    header: "Table/away",
     cell: ({ row }) => (
-      <div className="text-center">{row.getValue("table_number")}</div>
+      <div
+        className={`text-center ${
+          row.original.takeAway ? "bg-orange-600 rounded-md px-2 py-1" : ""
+        }`}
+      >
+        {row.getValue("table_number")}
+      </div>
     )
   },
   {
@@ -181,21 +188,53 @@ export const columns: ColumnDef<OrderDetailedResponse>[] = [
   },
   {
     accessorKey: "total_price",
-    header: "Total",
-    cell: ({ row }) => (
-      <div className="font-medium text-right">
-        ${row.getValue("total_price")}
-      </div>
-    )
+    header: "Total & Payment",
+    cell: ({ row }) => {
+      const totalPrice = row.getValue("total_price") as number;
+      const [amountPaid, setAmountPaid] = useState<string>("");
+      const [change, setChange] = useState<number | null>(null);
+
+      const handlePaymentInput = (value: string) => {
+        setAmountPaid(value);
+        const numericValue = parseFloat(value) || 0;
+        const changeAmount = numericValue - totalPrice;
+        setChange(changeAmount >= 0 ? changeAmount : null);
+      };
+
+      return (
+        <div className="space-y-2">
+          <div className="font-medium text-right">Total: ${totalPrice}</div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              placeholder="Amount paid"
+              value={amountPaid}
+              onChange={(e) => handlePaymentInput(e.target.value)}
+              className="w-24 h-8 text-right"
+            />
+            <span className="text-sm">$</span>
+          </div>
+          {change !== null && (
+            <div
+              className={`text-right text-sm ${
+                change >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              Change: ${change.toFixed(2)}
+            </div>
+          )}
+        </div>
+      );
+    }
   }
 ];
 
-// Add row styling for takeaway orders
-export const getRowStyles = (row: any) => {
-  if (row.original.take_away) {
-    return "bg-orange-50";
-  }
-  return "";
-};
+// // Add row styling for takeaway orders
+// export const getRowStyles = (row: any) => {
+//   if (row.original.take_away) {
+//     return "bg-orange-50";
+//   }
+//   return "";
+// };
 
 export default columns;

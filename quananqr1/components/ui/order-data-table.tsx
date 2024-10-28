@@ -94,7 +94,7 @@ export function OrderDataTable<TData extends OrderDetailedResponse, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={row.original.takeAway ? "bg-orange-600" : ""}
+                  // className={row.original.takeAway ? "bg-orange-600" : ""}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -119,54 +119,6 @@ export function OrderDataTable<TData extends OrderDetailedResponse, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} order(s) total.
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
-      </div>
     </div>
   );
 }
-
-// import { DataTable } from "./data-table";
-// import { columns } from "./columns";
-
-// export default function OrdersPage() {
-//   const handleStatusChange = (orderId: number, newStatus: string) => {
-//     // Implement your status update logic here
-//     console.log(`Updating order ${orderId} status to ${newStatus}`);
-//   };
-
-//   const handlePaymentMethodChange = (orderId: number, newMethod: string) => {
-//     // Implement your payment method update logic here
-//     console.log(`Updating order ${orderId} payment method to ${newMethod}`);
-//   };
-
-//   return (
-//     <div className="container mx-auto py-10">
-//       <DataTable
-//         columns={columns}
-//         data={yourOrdersData}
-//         searchKey="id"
-//         onStatusChange={handleStatusChange}
-//         onPaymentMethodChange={handlePaymentMethodChange}
-//       />
-//     </div>
-//   );
-// }
