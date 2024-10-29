@@ -16,6 +16,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+
 type OrderHandlerController struct {
     ctx        context.Context
     client     order.OrderServiceClient
@@ -216,58 +218,13 @@ func (h *OrderHandlerController) GetOrderProtoListDetail(w http.ResponseWriter, 
     }
 }
 
-// Conversion functions
-func ToPBCreateOrderRequest(req CreateOrderRequestType) *order.CreateOrderRequest {
-    return &order.CreateOrderRequest{
-        GuestId:        req.GuestID,
-        UserId:         req.UserID,
-        IsGuest:        req.IsGuest,
-        TableNumber:    req.TableNumber,
-        OrderHandlerId: req.OrderHandlerID,
-        Status:         req.Status,
-        CreatedAt:      timestamppb.New(req.CreatedAt),
-        UpdatedAt:      timestamppb.New(req.UpdatedAt),
-        TotalPrice:     req.TotalPrice,
-        DishItems:      ToPBDishOrderItems(req.DishItems),
-        SetItems:       ToPBSetOrderItems(req.SetItems),
-        BowChili:       req.BowChili,
-        BowNoChili:     req.BowNoChili,
-        TakeAway:       req.TakeAway,
-        ChiliNumber:    req.ChiliNumber,
-        TableToken:     req.TableToken,
-    }
-}
 
 
-func ToPBUpdateOrderRequest(req UpdateOrderRequestType) *order.UpdateOrderRequest {
-    return &order.UpdateOrderRequest{
-        Id:             req.ID,
-        GuestId:        req.GuestID,
-        UserId:         req.UserID,
-        TableNumber:    req.TableNumber,
-        OrderHandlerId: req.OrderHandlerID,
-        Status:         req.Status,
-        TotalPrice:     req.TotalPrice,
-        DishItems:      ToPBDishOrderItems(req.DishItems),
-        SetItems:       ToPBSetOrderItems(req.SetItems),
-        IsGuest:        req.IsGuest,
-        BowChili:       req.BowChili,
-        BowNoChili:     req.BowNoChili,
-        TakeAway:       req.TakeAway,
-        ChiliNumber:    req.ChiliNumber,
-        TableToken:     req.TableToken,
-    }
-}
 
 
-// func ToPBGetOrdersRequest(req GetOrdersRequestType) *order.GetOrdersRequest {
-//     return &order.GetOrdersRequest{
-//         FromDate: timestamppb.New(req.FromDate),
-//         ToDate:   timestamppb.New(req.ToDate),
-//         UserId:   req.UserID,
-//         GuestId:  req.GuestID,
-//     }
-// }
+
+
+
 
 func ToPBPayOrdersRequest(req PayOrdersRequestType) *order.PayOrdersRequest {
     pbReq := &order.PayOrdersRequest{}
@@ -334,39 +291,7 @@ func ToOrderListResFromPbOrderListResponse(pbRes *order.OrderListResponse) *Orde
         },
     }
 }
-func ToOrderFromPbOrder(pbOrder *order.Order) OrderType {
-    if pbOrder == nil {
-        return OrderType{}
-    }
 
-    var createdAt, updatedAt time.Time
-    if pbOrder.CreatedAt != nil {
-        createdAt = pbOrder.CreatedAt.AsTime()
-    }
-    if pbOrder.UpdatedAt != nil {
-        updatedAt = pbOrder.UpdatedAt.AsTime()
-    }
-
-    return OrderType{
-        ID:             pbOrder.GetId(),
-        GuestID:        pbOrder.GetGuestId(),
-        UserID:         pbOrder.GetUserId(),
-        IsGuest:        pbOrder.GetIsGuest(),
-        TableNumber:    pbOrder.GetTableNumber(),
-        OrderHandlerID: pbOrder.GetOrderHandlerId(),
-        Status:         pbOrder.GetStatus(),
-        CreatedAt:      createdAt,
-        UpdatedAt:      updatedAt,
-        TotalPrice:     pbOrder.GetTotalPrice(),
-        DishItems:      ToOrderDishesFromPbDishOrderItems(pbOrder.DishItems),
-        SetItems:       ToOrderSetsFromPbSetOrderItems(pbOrder.SetItems),
-        BowChili:       pbOrder.GetBowChili(),
-        BowNoChili:     pbOrder.GetBowNoChili(),
-        TakeAway:       pbOrder.GetTakeAway(),
-        ChiliNumber:    pbOrder.GetChiliNumber(),
-        TableToken:     pbOrder.GetTableToken(),
-    }
-}
 
 func ToOrderDishesFromPbDishOrderItems(pbItems []*order.DishOrderItem) []OrderDish {
     if pbItems == nil {
@@ -402,15 +327,6 @@ func ToOrderSetsFromPbSetOrderItems(pbItems []*order.SetOrderItem) []OrderSet {
     return items
 }
 
-// func ToOrderDetailedResListFromPbOrderDetailedListResponse(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
-//     sets := make([]OrderSetDetailed, len(pbRes.Data))
-//     for i, pbSet := range pbRes.Data {
-//         sets[i] = ToOrderSetDetailedFromPbOrderSetDetailed(pbSet)
-//     }
-//     return OrderDetailedListResponse{
-//         Data: sets,
-//     }
-// }
 
 
 func ToOrderDetailedDishesFromPbOrderDetailedDishes(pbDishes []*order.OrderDetailedDish) []OrderDetailedDish {
@@ -488,43 +404,6 @@ func ToOrderSetDetailedFromPbOrderSetDetailed(pbSet *order.OrderSetDetailed) Ord
 
 
 
-// Handler conversion function update
-func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
-    if pbRes == nil {
-        return OrderDetailedListResponse{}
-    }
-
-    detailedResponses := make([]OrderDetailedResponse, len(pbRes.Data))
-    for i, pbDetailedRes := range pbRes.Data {
-        detailedResponses[i] = OrderDetailedResponse{
-            ID:             pbDetailedRes.Id,
-            GuestID:        pbDetailedRes.GuestId,
-            UserID:         pbDetailedRes.UserId,
-            TableNumber:    pbDetailedRes.TableNumber,
-            OrderHandlerID: pbDetailedRes.OrderHandlerId,
-            Status:         pbDetailedRes.Status,
-            TotalPrice:     pbDetailedRes.TotalPrice,
-            IsGuest:        pbDetailedRes.IsGuest,
-            BowChili:       pbDetailedRes.BowChili,
-            BowNoChili:     pbDetailedRes.BowNoChili,
-            TakeAway:       pbDetailedRes.TakeAway,
-            ChiliNumber:    pbDetailedRes.ChiliNumber,
-            TableToken:     pbDetailedRes.TableToken,
-            DataSet:        ToOrderSetsDetailedFromProto(pbDetailedRes.DataSet),
-            DataDish:       ToOrderDetailedDishesFromProto(pbDetailedRes.DataDish),
-        }
-    }
-
-    return OrderDetailedListResponse{
-        Data: detailedResponses,
-        Pagination: PaginationInfo{
-            CurrentPage: pbRes.Pagination.CurrentPage,
-            TotalPages: pbRes.Pagination.TotalPages,
-            TotalItems: pbRes.Pagination.TotalItems,
-            PageSize:   pbRes.Pagination.PageSize,
-        },
-    }
-}
 
 // Helper functions for conversion
 func ToOrderSetsDetailedFromProto(pbSets []*order.OrderSetDetailed) []OrderSetDetailed {
@@ -571,4 +450,127 @@ func ToOrderDetailedDishesFromProto(pbDishes []*order.OrderDetailedDish) []Order
         }
     }
     return dishes
+}
+
+
+
+
+
+// -------------------
+
+// Conversion functions
+func ToPBCreateOrderRequest(req CreateOrderRequestType) *order.CreateOrderRequest {
+    return &order.CreateOrderRequest{
+        GuestId:        req.GuestID,
+        UserId:         req.UserID,
+        IsGuest:        req.IsGuest,
+        TableNumber:    req.TableNumber,
+        OrderHandlerId: req.OrderHandlerID,
+        Status:         req.Status,
+        CreatedAt:      timestamppb.New(req.CreatedAt),
+        UpdatedAt:      timestamppb.New(req.UpdatedAt),
+        TotalPrice:     req.TotalPrice,
+        DishItems:      ToPBDishOrderItems(req.DishItems),
+        SetItems:       ToPBSetOrderItems(req.SetItems),
+        BowChili:       req.BowChili,
+        BowNoChili:     req.BowNoChili,
+        TakeAway:       req.TakeAway,
+        ChiliNumber:    req.ChiliNumber,
+        TableToken:     req.TableToken,
+        OrderName:      req.OrderName,  // Added new field
+    }
+}
+
+func ToPBUpdateOrderRequest(req UpdateOrderRequestType) *order.UpdateOrderRequest {
+    return &order.UpdateOrderRequest{
+        Id:             req.ID,
+        GuestId:        req.GuestID,
+        UserId:         req.UserID,
+        TableNumber:    req.TableNumber,
+        OrderHandlerId: req.OrderHandlerID,
+        Status:         req.Status,
+        TotalPrice:     req.TotalPrice,
+        DishItems:      ToPBDishOrderItems(req.DishItems),
+        SetItems:       ToPBSetOrderItems(req.SetItems),
+        IsGuest:        req.IsGuest,
+        BowChili:       req.BowChili,
+        BowNoChili:     req.BowNoChili,
+        TakeAway:       req.TakeAway,
+        ChiliNumber:    req.ChiliNumber,
+        TableToken:     req.TableToken,
+        OrderName:      req.OrderName,  // Added new field
+    }
+}
+
+func ToOrderFromPbOrder(pbOrder *order.Order) OrderType {
+    if pbOrder == nil {
+        return OrderType{}
+    }
+
+    var createdAt, updatedAt time.Time
+    if pbOrder.CreatedAt != nil {
+        createdAt = pbOrder.CreatedAt.AsTime()
+    }
+    if pbOrder.UpdatedAt != nil {
+        updatedAt = pbOrder.UpdatedAt.AsTime()
+    }
+
+    return OrderType{
+        ID:             pbOrder.GetId(),
+        GuestID:        pbOrder.GetGuestId(),
+        UserID:         pbOrder.GetUserId(),
+        IsGuest:        pbOrder.GetIsGuest(),
+        TableNumber:    pbOrder.GetTableNumber(),
+        OrderHandlerID: pbOrder.GetOrderHandlerId(),
+        Status:         pbOrder.GetStatus(),
+        CreatedAt:      createdAt,
+        UpdatedAt:      updatedAt,
+        TotalPrice:     pbOrder.GetTotalPrice(),
+        DishItems:      ToOrderDishesFromPbDishOrderItems(pbOrder.DishItems),
+        SetItems:       ToOrderSetsFromPbSetOrderItems(pbOrder.SetItems),
+        BowChili:       pbOrder.GetBowChili(),
+        BowNoChili:     pbOrder.GetBowNoChili(),
+        TakeAway:       pbOrder.GetTakeAway(),
+        ChiliNumber:    pbOrder.GetChiliNumber(),
+        TableToken:     pbOrder.GetTableToken(),
+        OrderName:      pbOrder.GetOrderName(),  // Added new field
+    }
+}
+
+func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
+    if pbRes == nil {
+        return OrderDetailedListResponse{}
+    }
+
+    detailedResponses := make([]OrderDetailedResponse, len(pbRes.Data))
+    for i, pbDetailedRes := range pbRes.Data {
+        detailedResponses[i] = OrderDetailedResponse{
+            ID:             pbDetailedRes.Id,
+            GuestID:        pbDetailedRes.GuestId,
+            UserID:         pbDetailedRes.UserId,
+            TableNumber:    pbDetailedRes.TableNumber,
+            OrderHandlerID: pbDetailedRes.OrderHandlerId,
+            Status:         pbDetailedRes.Status,
+            TotalPrice:     pbDetailedRes.TotalPrice,
+            IsGuest:        pbDetailedRes.IsGuest,
+            BowChili:       pbDetailedRes.BowChili,
+            BowNoChili:     pbDetailedRes.BowNoChili,
+            TakeAway:       pbDetailedRes.TakeAway,
+            ChiliNumber:    pbDetailedRes.ChiliNumber,
+            TableToken:     pbDetailedRes.TableToken,
+            OrderName:      pbDetailedRes.OrderName,  // Added new field
+            DataSet:        ToOrderSetsDetailedFromProto(pbDetailedRes.DataSet),
+            DataDish:       ToOrderDetailedDishesFromProto(pbDetailedRes.DataDish),
+        }
+    }
+
+    return OrderDetailedListResponse{
+        Data: detailedResponses,
+        Pagination: PaginationInfo{
+            CurrentPage: pbRes.Pagination.CurrentPage,
+            TotalPages: pbRes.Pagination.TotalPages,
+            TotalItems: pbRes.Pagination.TotalItems,
+            PageSize:   pbRes.Pagination.PageSize,
+        },
+    }
 }

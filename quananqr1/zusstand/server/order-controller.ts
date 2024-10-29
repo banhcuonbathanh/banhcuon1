@@ -4,6 +4,7 @@ import {
   OrderDetailedListResponse,
   PaginationInfo
 } from "@/schemaValidations/interface/type_order";
+
 export const get_Orders = async (
   params: GetOrdersRequest
 ): Promise<OrderDetailedListResponse> => {
@@ -71,7 +72,8 @@ export const get_Orders = async (
         bow_no_chili: number;
         take_away: boolean;
         chili_number: number;
-        Table_token: string;
+        table_token: string; // Updated casing to match interface
+        order_name: string; // Added new field
       }>;
       pagination: PaginationInfo;
       message: string;
@@ -99,13 +101,15 @@ export const get_Orders = async (
         table_number: item.table_number,
         order_handler_id: item.order_handler_id,
         status: item.status,
-        created_at: "asdf",
-        updated_at: "asdf",
+        created_at: "asdf", // Consider getting actual timestamps
+        updated_at: "asdf", // Consider getting actual timestamps
         total_price: item.total_price,
         bow_chili: item.bow_chili,
         bow_no_chili: item.bow_no_chili,
         takeAway: item.take_away,
         chiliNumber: item.chili_number,
+        table_token: item.table_token, // Added missing field
+        order_name: item.order_name, // Added new field
         // Add null check for data_set
         data_set: (item.data_set || []).map((set) => ({
           id: set.id,
@@ -117,7 +121,7 @@ export const get_Orders = async (
             name: dish.name,
             price: dish.price,
             description: dish.description,
-            iamge: dish.image,
+            iamge: dish.image, // Note: This is still using the typo from the interface
             status: dish.status
           })),
           userId: set.userId,
@@ -137,13 +141,16 @@ export const get_Orders = async (
           name: dish.name,
           price: dish.price,
           description: dish.description,
-          iamge: dish.image,
+          iamge: dish.image, // Note: This is still using the typo from the interface
           status: dish.status
         }))
       })),
-      Pagination: pagination
+      pagination: pagination // Fixed casing to match interface
     };
-
+    console.log(
+      "quananqr1/zusstand/server/order-controller.ts validatedData",
+      validatedData
+    );
     return validatedData;
   } catch (error) {
     console.error("Error fetching or parsing orders:", error);

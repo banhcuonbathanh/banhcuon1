@@ -1,4 +1,4 @@
-http://localhost:3000/table/1?token=MTp0YWJsZTo0ODgzMzUwOTA2.eFzcDV7lnSA
+http://localhost:3000/table/1?token=MTp0YWJsZTo0ODgzNzk4NTY1.mI7st71i-AQ
 
 docker compose up
 

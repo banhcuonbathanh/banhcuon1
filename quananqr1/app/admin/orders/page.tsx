@@ -1,10 +1,3 @@
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent
-} from "@/components/ui/card";
 import React from "react";
 
 import { OrderClient } from "./component/components-data-table-set/order-client";
@@ -19,7 +12,7 @@ export default async function OrdersPage() {
   return (
     <OrderClient
       initialData={initialOrders.data}
-      initialPagination={initialOrders.Pagination}
+      initialPagination={initialOrders.pagination}
     />
   );
 }

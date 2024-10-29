@@ -1,28 +1,38 @@
 "use client";
 
-
 import { Heading } from "@/components/ui/heading";
 
 import { Separator } from "@/components/ui/separator";
 
-import { OrderDetailedResponse, PaginationInfo } from "@/schemaValidations/interface/type_order";
+import {
+  OrderDetailedResponse,
+  PaginationInfo
+} from "@/schemaValidations/interface/type_order";
 import { columns } from "./order-columns";
 import { OrderDataTable } from "@/components/ui/order-data-table";
 import { useState } from "react";
 import { get_Orders } from "@/zusstand/server/order-controller";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent
+} from "@/components/ui/card";
 //   const { data: sets, isLoading: setsLoading, error: setsError, refetch: refetchSets } = useSetListQuery();
 interface OrderClientProps {
   initialData: OrderDetailedResponse[];
   initialPagination: PaginationInfo;
 }
 
-export const OrderClient: React.FC<OrderClientProps> = ({ 
-  initialData, 
-  initialPagination 
+export const OrderClient: React.FC<OrderClientProps> = ({
+  initialData,
+  initialPagination
 }) => {
-  const [currentPage, setCurrentPage] = useState(initialPagination.current_page);
+  const [currentPage, setCurrentPage] = useState(
+    initialPagination.current_page
+  );
   const [data, setData] = useState(initialData);
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,12 +52,12 @@ export const OrderClient: React.FC<OrderClientProps> = ({
         page: newPage,
         page_size: pagination.page_size
       });
-      
+
       setData(orders.data);
-      setPagination(orders.Pagination);
+      setPagination(orders.pagination);
       setCurrentPage(newPage);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error("Error fetching orders:", error);
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +81,7 @@ export const OrderClient: React.FC<OrderClientProps> = ({
               </div>
 
               <Separator className="my-4" />
-              
+
               <OrderDataTable
                 columns={columns}
                 data={data}
@@ -94,26 +104,32 @@ export const OrderClient: React.FC<OrderClientProps> = ({
                     Previous
                   </Button>
                   <div className="flex items-center space-x-2">
-                    {[...Array(Math.min(5, pagination.total_pages))].map((_, idx) => {
-                      const pageNum = idx + 1;
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={pageNum === currentPage ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handlePageChange(pageNum)}
-                          disabled={isLoading}
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
+                    {[...Array(Math.min(5, pagination.total_pages))].map(
+                      (_, idx) => {
+                        const pageNum = idx + 1;
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={
+                              pageNum === currentPage ? "default" : "outline"
+                            }
+                            size="sm"
+                            onClick={() => handlePageChange(pageNum)}
+                            disabled={isLoading}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      }
+                    )}
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === pagination.total_pages || isLoading}
+                    disabled={
+                      currentPage === pagination.total_pages || isLoading
+                    }
                   >
                     Next
                   </Button>

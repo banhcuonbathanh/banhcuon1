@@ -1,16 +1,13 @@
-
 export interface DishOrderItem {
   dish_id: number;
   quantity: number;
 }
 
-// Order item for a set
 export interface SetOrderItem {
   set_id: number;
   quantity: number;
 }
 
-// Main order interface
 export interface Order {
   id: number;
   guest_id: number;
@@ -26,15 +23,14 @@ export interface Order {
   set_items: SetOrderItem[];
   bow_chili: number;
   bow_no_chili: number;
-
-  // new
   takeAway: boolean;
   chiliNumber: number;
+  table_token: string; // Added to match Go struct
+  order_name: string; // Added new field
 }
 
 export interface CreateOrderRequest {
   guest_id?: number | null;
-
   user_id?: number | null;
   is_guest: boolean;
   table_number: number;
@@ -47,10 +43,10 @@ export interface CreateOrderRequest {
   set_items: SetOrderItem[];
   bow_chili: number;
   bow_no_chili: number;
-  //
   takeAway: boolean;
   chiliNumber: number;
-  Table_token: string;
+  table_token: string; // Fixed casing to match Go naming convention
+  order_name: string; // Added new field
 }
 
 export interface UpdateOrderRequest {
@@ -66,6 +62,10 @@ export interface UpdateOrderRequest {
   is_guest: boolean;
   bow_chili: number;
   bow_no_chili: number;
+  takeAway: boolean; // Added missing field
+  chiliNumber: number; // Added missing field
+  table_token: string; // Added missing field
+  order_name: string; // Added new field
 }
 
 export interface GetOrdersRequest {
@@ -78,24 +78,23 @@ export interface PayOrdersRequest {
   user_id?: number;
 }
 
-// Response interfaces
 export interface OrderResponse {
   data: Order;
 }
 
 export interface OrderListResponse {
   data: Order[];
+  pagination: PaginationInfo; // Added to match Go struct
 }
 
 export interface OrderDetailedListResponse {
   data: OrderDetailedResponse[];
-  Pagination: PaginationInfo;
+  pagination: PaginationInfo; // Fixed casing to match Go naming convention
 }
 
 export interface OrderDetailedResponse {
   data_set: OrderSetDetailed[];
   data_dish: OrderDetailedDish[];
-
   id: number;
   guest_id: number;
   user_id: number;
@@ -106,13 +105,12 @@ export interface OrderDetailedResponse {
   created_at: string;
   updated_at: string;
   total_price: number;
-
   bow_chili: number;
   bow_no_chili: number;
-
-  // new
   takeAway: boolean;
   chiliNumber: number;
+  table_token: string; // Added missing field
+  order_name: string; // Added new field
 }
 
 export interface Guest {
@@ -136,7 +134,6 @@ export interface OrderSetDetailed {
   is_public: boolean;
   image: string;
   price: number;
-
   quantity: number;
 }
 
@@ -146,7 +143,7 @@ export interface OrderDetailedDish {
   name: string;
   price: number;
   description: string;
-  iamge: string;
+  iamge: string; // Note: This appears to be a typo in the original ("iamge")
   status: string;
 }
 

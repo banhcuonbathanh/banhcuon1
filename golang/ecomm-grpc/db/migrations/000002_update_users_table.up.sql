@@ -13,7 +13,8 @@ CREATE TABLE users (
     address TEXT,
     favorite_food INTEGER[] DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT check_valid_role CHECK (role IN ('Admin', 'Employee', 'Manager', 'Guest'))
 );
 
 CREATE TABLE tables (
@@ -34,6 +35,16 @@ CREATE TABLE guests (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL
+);
+
+CREATE TABLE guest_sessions (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    refresh_token TEXT NOT NULL,
+    is_revoked BOOLEAN NOT NULL DEFAULT false,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE sessions (
@@ -100,7 +111,8 @@ CREATE TABLE accounts (
     owner_id BIGINT,
     favorite_sets BIGINT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES accounts(id) ON DELETE SET NULL
 );
 
 CREATE TABLE dishes (
@@ -148,7 +160,7 @@ CREATE TABLE sets (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     user_id BIGINT,
-        price INTEGER NOT NULL DEFAULT 0,
+    price INTEGER NOT NULL DEFAULT 0,
     is_favourite BOOLEAN DEFAULT FALSE,
     like_by BIGINT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -172,7 +184,7 @@ CREATE TABLE set_snapshots (
     id BIGSERIAL PRIMARY KEY,
     original_set_id BIGINT,
     set_id BIGINT,
-           price INTEGER NOT NULL DEFAULT 0,
+    price INTEGER NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     user_id BIGINT,
@@ -211,6 +223,7 @@ CREATE TABLE orders (
     take_away BOOLEAN NOT NULL DEFAULT false,
     chili_number BIGINT DEFAULT 0,
     table_token VARCHAR(255) NOT NULL,
+    order_name VARCHAR(255),
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
@@ -239,12 +252,7 @@ CREATE TABLE set_order_items (
     FOREIGN KEY (set_id) REFERENCES sets(id) ON DELETE CASCADE
 );
 
--- Add constraints and create indexes
-ALTER TABLE users ADD CONSTRAINT check_valid_role CHECK (role IN ('Admin', 'Employee', 'Manager', 'Guest'));
-ALTER TABLE accounts ADD CONSTRAINT fk_owner FOREIGN KEY (owner_id) REFERENCES accounts(id) ON DELETE SET NULL;
-
-
-
+-- Create indexes
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_sets_user_id ON sets(user_id) WHERE user_id IS NOT NULL;
 CREATE INDEX idx_sets_is_favourite ON sets(is_favourite);
@@ -255,17 +263,4 @@ CREATE INDEX idx_orders_user_id ON orders(user_id) WHERE user_id IS NOT NULL;
 CREATE INDEX idx_orders_order_handler_id ON orders(order_handler_id) WHERE order_handler_id IS NOT NULL;
 CREATE INDEX idx_orders_table_number ON orders(table_number) WHERE table_number IS NOT NULL;
 CREATE INDEX idx_orders_is_guest ON orders(is_guest);
-
-
-CREATE TABLE IF NOT EXISTS guest_sessions (
-    id VARCHAR(255) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    refresh_token TEXT NOT NULL,
-    is_revoked BOOLEAN NOT NULL DEFAULT false,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Optional: Create an index on the refresh_token for faster lookups
-CREATE INDEX IF NOT EXISTS idx_guest_sessions_refresh_token ON guest_sessions(refresh_token);
+CREATE INDEX idx_guest_sessions_refresh_token ON guest_sessions(refresh_token);

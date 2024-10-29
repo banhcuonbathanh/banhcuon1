@@ -21,9 +21,11 @@ type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const columns: ColumnDef<OrderDetailedResponse>[] = [
   {
-    accessorKey: "id",
-    header: "Order ID",
-    cell: ({ row }) => <div className="font-medium">#{row.getValue("id")}</div>
+    accessorKey: "order_name",
+    header: "Name",
+    cell: ({ row }) => (
+      <div className="font-medium">#{row.getValue("order_name")}</div>
+    )
   },
   {
     accessorKey: "table_number",

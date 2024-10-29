@@ -3,7 +3,84 @@ package order_grpc
 import (
 	"time"
 )
+type OrderType struct {
+    ID             int64           `json:"id"`
+    GuestID        int64           `json:"guest_id"`
+    UserID         int64           `json:"user_id"`
+    IsGuest        bool            `json:"is_guest"`
+    TableNumber    int64           `json:"table_number"`
+    OrderHandlerID int64           `json:"order_handler_id"`
+    Status         string          `json:"status"`
+    CreatedAt      time.Time       `json:"created_at"`
+    UpdatedAt      time.Time       `json:"updated_at"`
+    TotalPrice     int32           `json:"total_price"`
+    DishItems      []OrderDish     `json:"dish_items"`
+    SetItems       []OrderSet      `json:"set_items"`
+    BowChili       int64           `json:"bow_chili"`
+    BowNoChili     int64           `json:"bow_no_chili"`
+    TakeAway       bool            `json:"take_away"`
+    ChiliNumber    int64           `json:"chili_number"`
+    TableToken     string          `json:"table_token"`
+    OrderName      string          `json:"order_name"`  // New field
+}
 
+type CreateOrderRequestType struct {
+    GuestID        int64           `json:"guest_id"`
+    UserID         int64           `json:"user_id"`
+    IsGuest        bool            `json:"is_guest"`
+    TableNumber    int64           `json:"table_number"`
+    OrderHandlerID int64           `json:"order_handler_id"`
+    Status         string          `json:"status"`
+    CreatedAt      time.Time       `json:"created_at"`
+    UpdatedAt      time.Time       `json:"updated_at"`
+    TotalPrice     int32           `json:"total_price"`
+    DishItems      []OrderDish     `json:"dish_items"`
+    SetItems       []OrderSet      `json:"set_items"`
+    BowChili       int64           `json:"bow_chili"`
+    BowNoChili     int64           `json:"bow_no_chili"`
+    TakeAway       bool            `json:"take_away"`
+    ChiliNumber    int64           `json:"chili_number"`
+    TableToken     string          `json:"table_token"`
+    OrderName      string          `json:"order_name"`  // New field
+}
+
+type UpdateOrderRequestType struct {
+    ID             int64           `json:"id"`
+    GuestID        int64           `json:"guest_id"`
+    UserID         int64           `json:"user_id"`
+    TableNumber    int64           `json:"table_number"`
+    OrderHandlerID int64           `json:"order_handler_id"`
+    Status         string          `json:"status"`
+    TotalPrice     int32           `json:"total_price"`
+    DishItems      []OrderDish     `json:"dish_items"`
+    SetItems       []OrderSet      `json:"set_items"`
+    IsGuest        bool            `json:"is_guest"`
+    BowChili       int64           `json:"bow_chili"`
+    BowNoChili     int64           `json:"bow_no_chili"`
+    TakeAway       bool            `json:"take_away"`
+    ChiliNumber    int64           `json:"chili_number"`
+    TableToken     string          `json:"table_token"`
+    OrderName      string          `json:"order_name"`  // New field
+}
+
+type OrderDetailedResponse struct {
+    DataSet         []OrderSetDetailed    `json:"data_set"`
+    DataDish        []OrderDetailedDish   `json:"data_dish"`
+    ID              int64                 `json:"id"`
+    GuestID         int64                 `json:"guest_id"`
+    UserID          int64                 `json:"user_id"`
+    TableNumber     int64                 `json:"table_number"`
+    OrderHandlerID  int64                 `json:"order_handler_id"`
+    Status          string                `json:"status"`
+    TotalPrice      int32                 `json:"total_price"`
+    IsGuest         bool                  `json:"is_guest"`
+    BowChili        int64                 `json:"bow_chili"`
+    BowNoChili      int64                 `json:"bow_no_chili"`
+    TakeAway        bool                  `json:"take_away"`
+    ChiliNumber     int64                 `json:"chili_number"`
+    TableToken      string                `json:"table_token"`
+    OrderName       string                `json:"order_name"`  // New field
+}
 // new
 // GetOrdersRequest struct
 type GetOrdersRequestType struct {
@@ -39,74 +116,11 @@ type OrderSet struct {
 }
 
 
-type OrderType struct {
-    ID             int64           `json:"id"`
-    GuestID        int64           `json:"guest_id"`
-    UserID         int64           `json:"user_id"`
-    IsGuest        bool            `json:"is_guest"`
-    TableNumber    int64           `json:"table_number"`
-    OrderHandlerID int64           `json:"order_handler_id"`
-    Status         string          `json:"status"`
-    CreatedAt      time.Time       `json:"created_at"`
-    UpdatedAt      time.Time       `json:"updated_at"`
-    TotalPrice     int32           `json:"total_price"`
-    DishItems      []OrderDish `json:"dish_items"`
-    SetItems       []OrderSet  `json:"set_items"`
-    BowChili       int64           `json:"bow_chili"`
-    BowNoChili     int64           `json:"bow_no_chili"`
 
-    //asdfasdfasdf
-
-    TakeAway       bool           `json:"take_away"`
-    ChiliNumber     int64           `json:"chili_number"`
-    TableToken     string           `json:"Table_token"`
-}
 
 // CreateOrderRequest struct
-type CreateOrderRequestType struct {
-    GuestID        int64           `json:"guest_id"`
-    UserID         int64           `json:"user_id"`
-    IsGuest        bool            `json:"is_guest"`
-    TableNumber    int64           `json:"table_number"`
-    OrderHandlerID int64           `json:"order_handler_id"`
-    Status         string          `json:"status"`
-    CreatedAt      time.Time       `json:"created_at"`
-    UpdatedAt      time.Time       `json:"updated_at"`
-    TotalPrice     int32           `json:"total_price"`
-    DishItems      []OrderDish `json:"dish_items"`
-    SetItems       []OrderSet  `json:"set_items"`
-    BowChili       int64           `json:"bow_chili"`
-    BowNoChili     int64           `json:"bow_no_chili"`
-
-        //asdfasdfasdf
-
-        TakeAway       bool           `json:"take_away"`
-        ChiliNumber     int64           `json:"chili_number"`
-            TableToken     string           `json:"Table_token"`
-}
-
-// UpdateOrderRequest struct
-type UpdateOrderRequestType struct {
-    ID             int64           `json:"id"`
-    GuestID        int64           `json:"guest_id"`
-    UserID         int64           `json:"user_id"`
-    TableNumber    int64           `json:"table_number"`
-    OrderHandlerID int64           `json:"order_handler_id"`
-    Status         string          `json:"status"`
-    TotalPrice     int32           `json:"total_price"`
-    DishItems      []OrderDish `json:"dish_items"`
-    SetItems       []OrderSet  `json:"set_items"`
-    IsGuest        bool            `json:"is_guest"`
-    BowChili       int64           `json:"bow_chili"`
-    BowNoChili     int64           `json:"bow_no_chili"`
 
 
-        //asdfasdfasdf
-
-        TakeAway       bool           `json:"take_away"`
-        ChiliNumber     int64           `json:"chili_number"`
-            TableToken     string           `json:"Table_token"`
-}
 
 
 
@@ -173,30 +187,6 @@ type OrderSetDetailed struct {
       Quantity       int64            `json:"quantity"`
 }
 
-type OrderDetailedResponse struct {
-    DataSet []OrderSetDetailed `json:"data_set"`
-      DataDish []OrderDetailedDish `json:"data_dish"`
-
-
-      ID             int64           `json:"id"`
-      GuestID        int64           `json:"guest_id"`
-      UserID         int64           `json:"user_id"`
-      TableNumber    int64           `json:"table_number"`
-      OrderHandlerID int64           `json:"order_handler_id"`
-      Status         string          `json:"status"`
-      TotalPrice     int32           `json:"total_price"`
- 
-      IsGuest        bool            `json:"is_guest"`
-      BowChili       int64           `json:"bow_chili"`
-      BowNoChili     int64           `json:"bow_no_chili"`
-  
-  
-          //asdfasdfasdf
-  
-          TakeAway       bool           `json:"take_away"`
-          ChiliNumber     int64           `json:"chili_number"`
-              TableToken     string           `json:"Table_token"`
-}
 
 
 type OrderDetailedListResponse struct {
