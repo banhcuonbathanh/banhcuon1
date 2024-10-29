@@ -14,16 +14,40 @@ import Link from "next/link";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 
 export default function DropdownAvatar() {
-  const { user, logout, loading } = useAuthStore();
+  const { user, guest, logout, guestLogout, loading, isGuest } = useAuthStore();
 
   const handleLogout = async () => {
     try {
-      await logout();
-      // Handle successful logout (e.g., redirect to login page)
+      // if (isGuest && guest) {
+      //   // Handle guest logout with required data
+      //   await guestLogout({
+      //     body: {
+      //       refresh_token: Cookies.get("refreshToken") || ""
+      //     }
+      //   });
+      // } else {
+      //   // Handle regular user logout
+      //   await logout();
+      // }
     } catch (error) {
-      // Handle logout error
       console.error("Logout failed:", error);
     }
+  };
+
+  // Get display name based on whether it's a guest or regular user
+  const getDisplayName = () => {
+    if (isGuest && guest) {
+      return `Khách ${guest.name} - Bàn ${guest.table_number}`;
+    }
+    return user?.name || "User";
+  };
+
+  // Get avatar initials
+  const getAvatarInitials = () => {
+    if (isGuest && guest) {
+      return `K${guest.table_number}`;
+    }
+    return user?.name ? user.name.slice(0, 2).toUpperCase() : "U";
   };
 
   return (
@@ -35,21 +59,27 @@ export default function DropdownAvatar() {
           className="overflow-hidden rounded-full"
         >
           <Avatar>
-            <AvatarImage src={user?.image ?? undefined} alt={user?.name} />
-            <AvatarFallback>
-              {user?.name ? user.name.slice(0, 2).toUpperCase() : "U"}
-            </AvatarFallback>
+            <AvatarImage
+              src={isGuest ? undefined : user?.image ?? undefined}
+              alt={getDisplayName()}
+            />
+            <AvatarFallback>{getAvatarInitials()}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>{user?.name || "User"}</DropdownMenuLabel>
+        <DropdownMenuLabel>{getDisplayName()}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/manage/setting" className="cursor-pointer">
-            Cài đặt
-          </Link>
-        </DropdownMenuItem>
+
+        {/* Only show settings for regular users */}
+        {!isGuest && (
+          <DropdownMenuItem asChild>
+            <Link href="/manage/setting" className="cursor-pointer">
+              Cài đặt
+            </Link>
+          </DropdownMenuItem>
+        )}
+
         <DropdownMenuItem>Hỗ trợ</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} disabled={loading}>
