@@ -1,8 +1,10 @@
 import DarkModeToggle from "@/components/dark-mode-toggle";
-import NavLinks from "../../admin/admin_component/nav-links";
+
 import DropdownAvatar from "../../admin/admin_component/dropdown-avatar";
-import LoginDialog from "../../employee/guest-component/login-dialog";
-import RegisterDialog from "../../employee/guest-component/register-dialog";
+import LoginDialog from "../../../components/form/login-dialog";
+import RegisterDialog from "../../../components/form/register-dialog";
+import GuestLoginDialog from "@/app/public/tables/[number]/guest-login-form";
+import AuthDialogs from "@/components/form/auth-dialog";
 
 // import NavLinks from './admin_component/nav-links'
 // import DropdownAvatar from './admin_component/dropdown-avatar'
@@ -23,8 +25,7 @@ export default function Layout({
             </div>
           </div>
           <DropdownAvatar />
-          <LoginDialog />
-          <RegisterDialog />
+          <AuthDialogs />
         </header>
         {children}
       </div>

@@ -17,6 +17,7 @@ import {
   GuestLoginResponse,
   LogoutRequest
 } from "@/schemaValidations/interface/type_guest";
+import { GuestLoginBodyType } from "@/schemaValidations/guest.schema";
 interface AuthState {
   user: User | null;
   guest: GuestInfo | null;
@@ -25,6 +26,8 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   isLoginDialogOpen: boolean;
+  isGuestDialogOpen: boolean; // New state
+  isRegisterDialogOpen: boolean; // New state
   isGuest: boolean;
 }
 
@@ -33,18 +36,22 @@ interface AuthActions {
   login: (body: LoginBodyType) => Promise<void>;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<void>;
-  guestLogin: (body: GuestLoginRequest) => Promise<void>;
+  guestLogin: (body: GuestLoginBodyType) => Promise<void>;
   guestLogout: (body: LogoutRequest) => Promise<void>;
   clearError: () => void;
   openLoginDialog: () => void;
   closeLoginDialog: () => void;
+  openGuestDialog: () => void; // New action
+  closeGuestDialog: () => void; // New action
+  openRegisterDialog: () => void; // New action
+  closeRegisterDialog: () => void; // New action
 }
 
 type AuthStore = AuthState & AuthActions;
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       guest: null,
       accessToken: null,
@@ -52,6 +59,8 @@ export const useAuthStore = create<AuthStore>()(
       loading: false,
       error: null,
       isLoginDialogOpen: false,
+      isGuestDialogOpen: false, // New initial state
+      isRegisterDialogOpen: false, // New initial state
       isGuest: false,
 
       register: async (body: RegisterBodyType) => {
@@ -64,8 +73,9 @@ export const useAuthStore = create<AuthStore>()(
             user: response.data,
             error: null,
             isLoginDialogOpen: false,
+            isRegisterDialogOpen: false, // Close register dialog on success
             loading: false,
-            isGuest: true, // Set isGuest to true when user is not null
+            isGuest: true,
             guest: null
           });
         } catch (error) {
@@ -86,17 +96,13 @@ export const useAuthStore = create<AuthStore>()(
               `${envConfig.NEXT_PUBLIC_API_Login}`,
               body
             );
-          // console.log(
-          //   "quananqr1/zusstand/new_auth/new_auth_controller.ts login asdkfjhaskdjf",
-          //   response.data.user
-          // );
           set({
             user: {
               ...response.data.user,
               password: body.password
             },
             guest: null,
-            isGuest: false, // Set isGuest to true when user is not null
+            isGuest: false,
             accessToken: response.data.access_token,
             refreshToken: response.data.refresh_token,
             error: null,
@@ -120,25 +126,51 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      guestLogin: async (body: GuestLoginRequest) => {
+      guestLogin: async (body: GuestLoginBodyType) => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts GuestLoginBodyType",
+          body
+        );
         set({ loading: true, error: null });
         try {
+          // Set the table token before making the request
+          useApiStore.getState().setTableToken(body.token);
+
           const guest_login_link =
             envConfig.NEXT_PUBLIC_API_ENDPOINT +
             envConfig.NEXT_PUBLIC_API_Guest_Login;
+
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts guest_login_link",
+            guest_login_link
+          );
+
           const response = await useApiStore
             .getState()
-            .http.post<GuestLoginResponse>(`${guest_login_link}`, body);
+            .http.post<GuestLoginResponse>(`${guest_login_link}`, {
+              name: body.name,
+              table_number: body.tableNumber,
+              token: body.token
+            });
+
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts response.data",
+            response.data
+          );
+
           set({
             user: null,
             guest: response.data.guest,
-            isGuest: true, // Set isGuest to false when user is null and guest is not null
+            isGuest: true,
             accessToken: response.data.access_token,
             refreshToken: response.data.refresh_token,
             error: null,
             isLoginDialogOpen: false,
-            loading: false
+            isGuestDialogOpen: false,
+            loading: false,
+            isRegisterDialogOpen: false
           });
+
           useApiStore.getState().setAccessToken(response.data.access_token);
           Cookies.set("accessToken", response.data.access_token, {
             secure: true,
@@ -156,7 +188,6 @@ export const useAuthStore = create<AuthStore>()(
           });
         }
       },
-
       logout: async () => {
         set({ loading: true, error: null });
         try {
@@ -231,8 +262,29 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       clearError: () => set({ error: null }),
-      openLoginDialog: () => set({ isLoginDialogOpen: true }),
-      closeLoginDialog: () => set({ isLoginDialogOpen: false })
+      openLoginDialog: () =>
+        set({
+          isLoginDialogOpen: true,
+          isGuestDialogOpen: false,
+          isRegisterDialogOpen: false
+        }),
+      closeLoginDialog: () => set({ isLoginDialogOpen: false }),
+
+      openGuestDialog: () =>
+        set({
+          isGuestDialogOpen: true,
+          isLoginDialogOpen: false,
+          isRegisterDialogOpen: false
+        }),
+      closeGuestDialog: () => set({ isGuestDialogOpen: false }),
+
+      openRegisterDialog: () =>
+        set({
+          isRegisterDialogOpen: true,
+          isLoginDialogOpen: false,
+          isGuestDialogOpen: false
+        }),
+      closeRegisterDialog: () => set({ isRegisterDialogOpen: false })
     }),
     {
       name: "auth-storage",
@@ -240,3 +292,12 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 );
+
+// // Example usage
+// const { openGuestDialog, closeGuestDialog, openRegisterDialog, closeRegisterDialog } = useAuthStore();
+
+// // Open guest dialog
+// openGuestDialog();
+
+// // Close register dialog
+// closeRegisterDialog();

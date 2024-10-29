@@ -81,13 +81,27 @@ func main() {
 r := chi.NewRouter()
 
 r.Use(cors.Handler(cors.Options{
-    AllowedOrigins:   []string{"*"},  // Allow all origins for development
-    AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-    AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-    ExposedHeaders:   []string{"Link"},
-    AllowCredentials: true,
-    MaxAge:           300,
+	AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:*"},
+	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"},
+	AllowedHeaders:   []string{
+		"Accept",
+		"Authorization",
+		"Content-Type", 
+		"X-CSRF-Token",
+		"X-Table-Token",
+		"X-Requested-With",
+	},
+	ExposedHeaders:   []string{"Link"},
+	AllowCredentials: true,
+	MaxAge:           300,
 }))
+
+// Use environment variable with a default value
+if getEnvWithDefault("GO_ENV", "development") == "development" {
+	r.Use(debugMiddleware)
+}
+
+setupGlobalMiddleware(r)
 // python server ---------------------
 python_conn, err := grpc.NewClient(":50052", opts...)
 if err != nil {
@@ -243,3 +257,39 @@ func setupWebSocketService(r *chi.Mux) {
     r.Get("/ws", websocketHandler.HandleWebSocket)
 }
 
+
+
+func setupGlobalMiddleware(r *chi.Mux) {
+    r.Use(func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            // Set CORS headers for every response
+            w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+            w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+            w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token, X-Table-Token")
+            w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+            if r.Method == "OPTIONS" {
+                w.WriteHeader(http.StatusOK)
+                return
+            }
+
+            next.ServeHTTP(w, r)
+        })
+    })
+}
+
+func debugMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        log.Printf("Incoming request: %s %s", r.Method, r.URL.Path)
+        log.Printf("Headers: %v", r.Header)
+        next.ServeHTTP(w, r)
+    })
+}
+
+func getEnvWithDefault(key, defaultValue string) string {
+    value := os.Getenv(key)
+    if value == "" {
+        return defaultValue
+    }
+    return value
+}

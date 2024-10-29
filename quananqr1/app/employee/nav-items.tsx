@@ -19,8 +19,8 @@ import { Role } from "@/constants/type";
 import { RoleType } from "@/types/jwt.types";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../auth/useauth";
-import LoginDialog from "./guest-component/login-dialog";
-import RegisterDialog from "./guest-component/register-dialog";
+import LoginDialog from "../../components/form/login-dialog";
+import RegisterDialog from "../../components/form/register-dialog";
 
 const menuItems: {
   title: string;

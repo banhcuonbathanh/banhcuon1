@@ -1,39 +1,35 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { Info } from "lucide-react";
 import {
   Dialog,
   DialogContent,
-  DialogTrigger,
-  DialogTitle,
-  DialogHeader
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { handleErrorApi } from "@/lib/utils";
-import { RegisterBodyType, RegisterBody } from "@/schemaValidations/auth.schema";
+import {
+  RegisterBodyType,
+  RegisterBody
+} from "@/schemaValidations/auth.schema";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
-
-
+import { handleErrorApi } from "@/lib/utils";
 
 const RegisterDialog = () => {
-  const [open, setOpen] = useState(false);
+  const {
+    register,
+    isRegisterDialogOpen,
+    closeRegisterDialog,
+    openLoginDialog,
+    openGuestDialog
+  } = useAuthStore();
 
-  const renderCount = useRef(0);
-  renderCount.current += 1;
-  if (renderCount.current === 1) {
-    setOpen(true);
-    setOpen(false);
-  }
-
-  const { register, openLoginDialog } = useAuthStore();
   const form = useForm<RegisterBodyType>({
     resolver: zodResolver(RegisterBody),
     defaultValues: {
@@ -51,11 +47,6 @@ const RegisterDialog = () => {
 
   const onSubmit = async (data: RegisterBodyType) => {
     try {
-      console.log(
-        "onSubmit register form quananqr1/app/(public)/public-component/register-dialog.tsx data",
-        data
-      );
-
       await register({
         name: data.name,
         email: data.email,
@@ -67,10 +58,7 @@ const RegisterDialog = () => {
         created_at: data.created_at,
         updated_at: data.updated_at
       });
-      // setOpen(false);
-      // openLoginDialog();
     } catch (error: any) {
-      console.log("Error during registration: ", error);
       handleErrorApi({
         error,
         setError: form.setError
@@ -78,28 +66,33 @@ const RegisterDialog = () => {
     }
   };
 
+  const handleLoginClick = () => {
+    closeRegisterDialog();
+    openLoginDialog();
+  };
+
+  const handleGuestClick = () => {
+    closeRegisterDialog();
+    openGuestDialog();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>Đăng ký ewrt</Button>
-      </DialogTrigger>
+    <Dialog
+      open={isRegisterDialogOpen}
+      onOpenChange={(open) => !open && closeRegisterDialog()}
+    >
       <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800 shadow-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold">Đăng ký</DialogTitle>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Điền thông tin của bạn để tạo tài khoản mới
+          </p>
         </DialogHeader>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Điền thông tin của bạn để tạo tài khoản mới
-        </p>
         <Form {...form}>
           <form
             className="space-y-4 w-full"
             noValidate
-            onSubmit={form.handleSubmit(onSubmit, (err) => {
-              console.log(
-                "Registration err onSubmit: quananqr1/app/(public)/public-component/register-dialog.tsx",
-                err
-              );
-            })}
+            onSubmit={form.handleSubmit(onSubmit)}
           >
             <div className="grid gap-4">
               <FormField
@@ -169,7 +162,6 @@ const RegisterDialog = () => {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="phone"
@@ -184,7 +176,6 @@ const RegisterDialog = () => {
                         required
                         className="border-2 border-gray-300 dark:border-gray-600"
                         {...field}
-                        onChange={(e) => field.onChange(e.target.value)}
                       />
                       <FormMessage />
                     </div>
@@ -214,6 +205,24 @@ const RegisterDialog = () => {
               <Button type="submit" className="w-full">
                 Đăng ký
               </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleLoginClick}
+                  className="w-full"
+                >
+                  Đã có tài khoản? Đăng nhập
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGuestClick}
+                  className="w-full"
+                >
+                  Đăng nhập với tư cách khách
+                </Button>
+              </div>
             </div>
           </form>
         </Form>

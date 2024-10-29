@@ -13,7 +13,7 @@ import {
 } from "react";
 import { DishListResType } from "./data-guest/public-dish/dish.schema";
 import dishController from "./data-guest/public-dish/dish-controller";
-import LoginDialog from "./guest-component/login-dialog";
+import LoginDialog from "../../components/form/login-dialog";
 
 export default async function Home() {
   // let dishList: DishListResType["data"] = [];

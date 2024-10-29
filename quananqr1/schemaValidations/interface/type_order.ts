@@ -50,6 +50,7 @@ export interface CreateOrderRequest {
   //
   takeAway: boolean;
   chiliNumber: number;
+  Table_token: string;
 }
 
 export interface UpdateOrderRequest {

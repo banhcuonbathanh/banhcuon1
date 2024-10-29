@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +22,7 @@ import {
   GuestLoginBodyType,
   GuestLoginBody
 } from "@/schemaValidations/guest.schema";
-import { useAuthStore } from "../../../../../auth/controller/auth-controller";
+import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 
 const GuestLoginDialog: React.FC = () => {
   const [open, setOpen] = useState(false);

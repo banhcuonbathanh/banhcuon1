@@ -6,11 +6,13 @@ import { useOrderCreationStore } from "./logic";
 interface OrderCreationComponentProps {
   bowlChili: number;
   bowlNoChili: number;
+  table_token: string;
 }
 
 const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   bowlChili,
-  bowlNoChili
+  bowlNoChili,
+  table_token
 }) => {
   const { isLoading, createOrder } = useOrderCreationStore();
   const { tableNumber, getOrderSummary } = useOrderStore();
@@ -19,7 +21,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   const isDisabled = isLoading || !tableNumber || orderSummary.totalItems === 0;
 
   const handleCreateOrder = () => {
-    createOrder(bowlChili, bowlNoChili);
+    createOrder(bowlChili, bowlNoChili, table_token);
   };
 
   return (

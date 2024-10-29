@@ -9,13 +9,21 @@ import useOrderStore from "@/zusstand/order/order_zustand";
 
 interface OrderCreationState {
   isLoading: boolean;
-  createOrder: (bowlChili: number, bowlNoChili: number) => Promise<void>;
+  createOrder: (
+    bowlChili: number,
+    bowlNoChili: number,
+    Table_token: string
+  ) => Promise<void>;
 }
 
-export const useOrderCreationStore = create<OrderCreationState>((set, get) => ({
+export const useOrderCreationStore = create<OrderCreationState>((set) => ({
   isLoading: false,
 
-  createOrder: async (bowlChili: number, bowlNoChili: number) => {
+  createOrder: async (
+    bowlChili: number,
+    bowlNoChili: number,
+    Table_token: string
+  ) => {
     const { http } = useApiStore.getState();
     const { guest, user, isGuest, openLoginDialog } = useAuthStore.getState();
     const { tableNumber, getOrderSummary, clearOrder } =
@@ -43,20 +51,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set, get) => ({
     // Determine IDs based on auth state
     const user_id = isGuest ? null : user?.id ?? null;
     const guest_id = isGuest ? guest?.id ?? null : null;
-    console.log(
-      "quananqr1/app/table/[number]/component/order/logic.ts user",
-      user
-    );
 
-    console.log(
-      "quananqr1/app/table/[number]/component/order/logic.ts user_id",
-      user_id
-    );
-
-    console.log(
-      "quananqr1/app/table/[number]/component/order/logic.ts isGuest",
-      isGuest
-    );
     const orderData: CreateOrderRequest = {
       guest_id,
       user_id,
@@ -72,7 +67,8 @@ export const useOrderCreationStore = create<OrderCreationState>((set, get) => ({
       bow_chili: bowlChili,
       bow_no_chili: bowlNoChili,
       takeAway: false,
-      chiliNumber: 0
+      chiliNumber: 0,
+      Table_token: Table_token
     };
 
     set({ isLoading: true });

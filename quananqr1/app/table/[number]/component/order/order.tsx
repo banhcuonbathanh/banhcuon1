@@ -241,7 +241,11 @@ export default function OrderSummary({ number, token }: OrderProps) {
           </div>
         </CardContent>
       </Card>
-      <OrderCreationComponent bowlChili={bowlChili} bowlNoChili={bowlNoChili} />
+      <OrderCreationComponent
+        bowlChili={bowlChili}
+        bowlNoChili={bowlNoChili}
+        table_token={token}
+      />
     </div>
   );
 }

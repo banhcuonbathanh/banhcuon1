@@ -1,26 +1,18 @@
 import envConfig from "@/config";
-import { DishInterface } from "@/schemaValidations/interface/type_dish";
+
 import { SetInterface } from "@/schemaValidations/interface/types_set";
 
 const get_Sets = async (): Promise<SetInterface[]> => {
   try {
     const baseUrl =
       envConfig.NEXT_PUBLIC_URL + envConfig.NEXT_PUBLIC_Get_set_intenal;
-    console.log(
-      "quananqr1/zusstand/server/order-controller.ts baseUrl",
-      baseUrl
-    );
+
     const response = await fetch(baseUrl, {
       method: "GET",
       cache: "no-store"
     });
 
     const data = await response.json();
-
-    console.log(
-      "quananqr1/zusstand/server/order-controller.ts baseUrl",
-      data.data
-    );
 
     const validatedData: SetInterface[] = data.data.map((set: any) => ({
       id: set.id,

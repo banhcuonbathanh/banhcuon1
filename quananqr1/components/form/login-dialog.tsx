@@ -2,8 +2,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Info } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,21 +11,21 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { Info } from "lucide-react";
-
+import { LoginBodyType, LoginBody } from "@/schemaValidations/auth.schema";
+import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { handleErrorApi } from "@/lib/utils";
 
-import { LoginBody, LoginBodyType } from "@/schemaValidations/auth.schema";
-import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
-
-const LoginDialog: React.FC = () => {
-  const { login, isLoginDialogOpen, openLoginDialog, closeLoginDialog } =
-    useAuthStore();
-  const searchParams = useSearchParams();
-  const clearTokens = searchParams.get("clearTokens");
+const LoginDialog = () => {
+  const {
+    login,
+    isLoginDialogOpen,
+    closeLoginDialog,
+    openRegisterDialog,
+    openGuestDialog
+  } = useAuthStore();
 
   const form = useForm<LoginBodyType>({
     resolver: zodResolver(LoginBody),
@@ -36,17 +35,9 @@ const LoginDialog: React.FC = () => {
     }
   });
 
-  const router = useRouter();
-
   const onSubmit = async (data: LoginBodyType) => {
     try {
-      const response = await login(data);
-
-      console.log(
-        "quananqr1/app/(public)/public-component/login-dialog.tsx response",
-        response
-      );
-      // router.push("/manage/dashboard");
+      await login(data);
     } catch (error: any) {
       handleErrorApi({
         error,
@@ -55,20 +46,21 @@ const LoginDialog: React.FC = () => {
     }
   };
 
+  const handleRegisterClick = () => {
+    closeLoginDialog();
+    openRegisterDialog();
+  };
+
+  const handleGuestClick = () => {
+    closeLoginDialog();
+    openGuestDialog();
+  };
+
   return (
     <Dialog
       open={isLoginDialogOpen}
-      onOpenChange={(open) => (open ? openLoginDialog() : closeLoginDialog())}
+      onOpenChange={(open) => !open && closeLoginDialog()}
     >
-      <DialogTrigger asChild>
-        <Button
-          onClick={() => {
-            openLoginDialog();
-          }}
-        >
-          Đăng nhập
-        </Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800 shadow-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl">Đăng nhập</DialogTitle>
@@ -80,9 +72,7 @@ const LoginDialog: React.FC = () => {
           <form
             className="space-y-4 w-full"
             noValidate
-            onSubmit={form.handleSubmit(onSubmit, (err) => {
-              console.log(err);
-            })}
+            onSubmit={form.handleSubmit(onSubmit)}
           >
             <div className="grid gap-4">
               <FormField
@@ -113,9 +103,9 @@ const LoginDialog: React.FC = () => {
                     <div className="grid gap-2">
                       <Label htmlFor="password">Password</Label>
                       <Input
-                        placeholder="password"
                         id="password"
                         type="password"
+                        placeholder="••••••••"
                         required
                         className="border-2 border-gray-300 dark:border-gray-600"
                         {...field}
@@ -135,9 +125,24 @@ const LoginDialog: React.FC = () => {
               <Button type="submit" className="w-full">
                 Đăng nhập
               </Button>
-              <Button variant="outline" className="w-full" type="button">
-                Đăng nhập bằng Google
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleRegisterClick}
+                  className="w-full"
+                >
+                  Đăng ký tài khoản mới
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGuestClick}
+                  className="w-full"
+                >
+                  Đăng nhập với tư cách khách
+                </Button>
+              </div>
             </div>
           </form>
         </Form>
