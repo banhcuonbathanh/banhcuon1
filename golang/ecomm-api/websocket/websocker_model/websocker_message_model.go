@@ -1,7 +1,21 @@
 package websocket_model
 
+import "time"
+
 type Message struct {
-	Type    string `json:"type"`
-	Content string `json:"content"`
-	Sender  string `json:"sender"`
+    Type      string      `json:"type"`
+    Content   interface{} `json:"content"`    // Changed to interface{} to handle various content types
+    Sender    string      `json:"sender"`
+    Timestamp time.Time   `json:"timestamp"`
+    TableID   string      `json:"table_id,omitempty"`
+    OrderID   string      `json:"order_id,omitempty"`
+}
+
+// Order-specific message type
+type OrderMessage struct {
+    OrderID      string    `json:"order_id"`
+    TableNumber  string    `json:"table_number"`
+    Status       string    `json:"status"`
+    Timestamp    time.Time `json:"timestamp"`
+    OrderData    interface{} `json:"order_data"`
 }

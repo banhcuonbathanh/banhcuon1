@@ -4,7 +4,8 @@ import (
 	"log"
 	"time"
 
-	 "english-ai-full/ecomm-api/websocket/websocker_model"
+	websocket_model "english-ai-full/ecomm-api/websocket/websocker_model"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -52,31 +53,68 @@ func (c *Client) ReadPump() {
 	}
 }
 
+// func (c *Client) WritePump() {
+// 	ticker := time.NewTicker(pingPeriod)
+// 	defer func() {
+// 		ticker.Stop()
+// 		c.conn.Close()
+// 	}()
+
+// 	for {
+// 		select {
+// 		case message, ok := <-c.send:
+// 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+// 			if !ok {
+// 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+// 				return
+// 			}
+
+// 			err := c.conn.WriteJSON(message)
+// 			if err != nil {
+// 				return
+// 			}
+// 		case <-ticker.C:
+// 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+// 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+// 				return
+// 			}
+// 		}
+// 	}
+// }
+
+
 func (c *Client) WritePump() {
-	ticker := time.NewTicker(pingPeriod)
-	defer func() {
-		ticker.Stop()
-		c.conn.Close()
-	}()
+    ticker := time.NewTicker(pingPeriod)
+    defer func() {
+        ticker.Stop()
+        c.conn.Close()
+    }()
 
-	for {
-		select {
-		case message, ok := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
+    for {
+        select {
+        case message, ok := <-c.send:
+            c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+            if !ok {
+                c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+                return
+            }
 
-			err := c.conn.WriteJSON(message)
-			if err != nil {
-				return
-			}
-		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
-		}
-	}
+            // Add timestamp if not present
+            if message.Timestamp.IsZero() {
+                message.Timestamp = time.Now()
+            }
+
+            err := c.conn.WriteJSON(message)
+            if err != nil {
+                log.Printf("Error writing message to client: %v", err)
+                return
+            }
+
+        case <-ticker.C:
+            c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+            if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+                return
+            }
+        }
+    }
 }

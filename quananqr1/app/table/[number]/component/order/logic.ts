@@ -6,6 +6,7 @@ import { CreateOrderRequest } from "@/schemaValidations/interface/type_order";
 import { useApiStore } from "@/zusstand/api/api-controller";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import useOrderStore from "@/zusstand/order/order_zustand";
+import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 
 interface OrderCreationState {
   isLoading: boolean;
@@ -28,7 +29,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     const { guest, user, isGuest, openLoginDialog } = useAuthStore.getState();
     const { tableNumber, getOrderSummary, clearOrder } =
       useOrderStore.getState();
-
+    const { sendMessage, isConnected } = useWebSocketStore.getState();
     // Check authentication
     if (!user && !guest) {
       openLoginDialog();
@@ -81,8 +82,21 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
 
     try {
       const link_order = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.Order_External_End_Point}`;
-      await http.post(link_order, orderData);
+      const response = await http.post(link_order, orderData);
 
+      // Send WebSocket message if connected
+      if (isConnected) {
+        sendMessage({
+          type: "NEW_ORDER",
+          payload: {
+            orderId: response.data.id,
+            tableNumber,
+            status: "pending",
+            timestamp: new Date().toISOString(),
+            orderData
+          }
+        });
+      }
       toast({
         title: "Success",
         description: "Order has been created successfully"

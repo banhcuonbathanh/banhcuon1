@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 import useOrderStore from "@/zusstand/order/order_zustand";
 import { useOrderCreationStore } from "./logic";
+import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
+
+
 interface OrderCreationComponentProps {
   bowlChili: number;
   bowlNoChili: number;
@@ -16,6 +19,12 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
 }) => {
   const { isLoading, createOrder } = useOrderCreationStore();
   const { tableNumber, getOrderSummary } = useOrderStore();
+  const { connect } = useWebSocketStore();
+
+  // Connect to WebSocket when component mounts
+  useEffect(() => {
+    connect();
+  }, [connect]);
 
   const orderSummary = getOrderSummary();
   const isDisabled = isLoading || !tableNumber || orderSummary.totalItems === 0;

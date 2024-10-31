@@ -123,8 +123,8 @@ make stop-server
 go test -v test/test-api/test-api.go
 golang/
 ============================================== git hub ================================
-git branch make_order
-git checkout make_order
+git branch web-sokcert
+git checkout web-sokcert
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/python_proto/claude/claude.proto
 
