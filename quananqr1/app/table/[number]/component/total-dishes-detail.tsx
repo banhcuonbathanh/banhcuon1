@@ -91,7 +91,7 @@ export default function OrderDetails({
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>Order Summary - Table {tableNumber}</span>
-          <span className="text-base font-bold">${totalPrice.toFixed(2)}</span>
+          <span className="text-base font-bold">{totalPrice} K</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -100,7 +100,7 @@ export default function OrderDetails({
           <div>
             <h3 className="font-semibold mb-2 flex justify-between">
               <span>Sets</span>
-              <span className="text-primary">${setsTotalPrice.toFixed(2)}</span>
+              <span className="text-primary">{setsTotalPrice} K</span>
             </h3>
             <div className="space-y-2">
               {sets.map((set) => (
@@ -113,9 +113,9 @@ export default function OrderDetails({
                       {set.name}
                     </span>
                     <div className="flex items-center space-x-4">
-                      <span className="text-sm text-gray-400">
-                        {set.quantity} x ${set.price.toFixed(2)} = $
-                        {(set.quantity * set.price).toFixed(2)}
+                      <span className="text-sm text-primary">
+                        {set.quantity} x {set.price} K =
+                        {set.quantity * set.price} K
                       </span>
                       {expandedSets[set.id] ? (
                         <ChevronUp className="h-4 w-4" />
@@ -127,11 +127,14 @@ export default function OrderDetails({
                   {expandedSets[set.id] && (
                     <div className="mt-2 ml-4 text-sm text-gray-400 space-y-1">
                       {set.dishes.map((dish, idx) => (
-                        <div key={idx} className="flex justify-between">
+                        <div
+                          key={idx}
+                          className="flex justify-between text-primary"
+                        >
                           <span>{dish.name}</span>
                           <span>
-                            {dish.quantity} x ${dish.price.toFixed(2)} = $
-                            {(dish.quantity * dish.price).toFixed(2)}
+                            {dish.quantity} x {dish.price} K =
+                            {dish.quantity * dish.price} K
                           </span>
                         </div>
                       ))}
@@ -148,18 +151,16 @@ export default function OrderDetails({
           <div>
             <h3 className="font-semibold mb-2 flex justify-between">
               <span>Individual Dishes</span>
-              <span className="text-primary">
-                ${dishesTotalPrice.toFixed(2)}
-              </span>
+              <span className="text-primary">{dishesTotalPrice} K</span>
             </h3>
             <div className="space-y-2">
               {dishes.map((dish) => (
                 <div key={dish.id} className="border rounded-lg p-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">{dish.name}</span>
-                    <span className="text-sm text-gray-400">
-                      {dish.quantity} x ${dish.price.toFixed(2)} = $
-                      {(dish.quantity * dish.price).toFixed(2)}
+                    <span className="text-sm text-primary">
+                      {dish.quantity} x {dish.price} K =
+                      {dish.quantity * dish.price} K
                     </span>
                   </div>
                 </div>
@@ -169,8 +170,10 @@ export default function OrderDetails({
         )}
 
         {/* Total Items Breakdown */}
+        <h3 className="font-semibold mb-2 flex justify-between">
+          <span>Total Items Breakdown</span>
+        </h3>
         <div className="border rounded-lg p-4">
-          <h3 className="font-semibold mb-3">Total Items Breakdown</h3>
           <div className="space-y-2">
             {Array.from(dishTotals.entries()).map(([dishName, details]) => (
               <div
@@ -181,21 +184,11 @@ export default function OrderDetails({
                   <span className="text-gray-400 font-medium">{dishName}</span>
                   <span className="text-gray-400">x {details.quantity}</span>
                 </div>
-                <span className="font-medium">
-                  ${details.totalPrice.toFixed(2)}
+                <span className="font-medium text-primary">
+                  {details.totalPrice} K
                 </span>
               </div>
             ))}
-            <div className="pt-3 mt-2">
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total Items</span>
-                <span>{totalItems}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg text-primary mt-2">
-                <span>Grand Total</span>
-                <span>${totalPrice.toFixed(2)}</span>
-              </div>
-            </div>
           </div>
         </div>
       </CardContent>
