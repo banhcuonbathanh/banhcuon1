@@ -165,14 +165,7 @@ user_api.RegisterRoutesUser(r, hdl_NewUser)
 
 setupWebSocketService(r, )
 
-// websockrepo := websocket_repository.NewInMemoryMessageRepository()
-// websocketService := websocket_service.NewWebSocketService(websockrepo)
-// go websocketService.Run()
 
-// websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
-
-// r.Get("/ws", websocketHandler.HandleWebSocket)
-// set
 
 set_client := pb_set.NewSetServiceClient(conn)
 set_hdl := set.NewSetHandler(set_client, *secretKey)

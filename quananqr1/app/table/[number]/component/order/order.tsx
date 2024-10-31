@@ -58,27 +58,6 @@ export default function OrderSummary({ number, token }: OrderProps) {
     }
   };
 
-  const handleSetQuantityChange = (id: number, change: number) => {
-    const set = setItems.find((s) => s.id === id);
-    if (set) {
-      const newQuantity = set.quantity + change;
-      if (newQuantity > 0) {
-        updateSetQuantity(id, newQuantity);
-      } else {
-        removeSetItem(id);
-      }
-    }
-  };
-
-  const handleBowlChange = (type: "chili" | "noChili", change: number) => {
-    if (type === "chili") {
-      const newValue = bowlChili + change;
-      if (newValue >= 0) setBowlChili(newValue);
-    } else {
-      const newValue = bowlNoChili + change;
-      if (newValue >= 0) setBowlNoChili(newValue);
-    }
-  };
 
   return (
     <div className="container mx-auto px-4 py-5 space-y-5">
