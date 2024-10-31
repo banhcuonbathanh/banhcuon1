@@ -6,20 +6,13 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import useOrderStore from "@/zusstand/order/order_zustand";
 import OrderCreationComponent from "./add_order_button";
+import OrderDetails from "../total-dishes-detail";
 
 interface OrderProps {
   number: string;
   token: string;
 }
 export default function OrderSummary({ number, token }: OrderProps) {
-  // console.log(
-  //   "quananqr1/app/table/[number]/component/order/order.tsx number,  token",
-  //   number
-  // );
-  // console.log(
-  //   "quananqr1/app/table/[number]/component/order/order.tsx token,  ",
-  //   token
-  // );
   const {
     addTableNumber,
     addTableToken,
@@ -43,8 +36,6 @@ export default function OrderSummary({ number, token }: OrderProps) {
     }
   }, [token, addTableToken, number]);
 
-  // const tablenumber = addTableNumberconvert(number);
-  // addTableNumber(tablenumber);
   const [showSets, setShowSets] = useState(true);
   const [showDishes, setShowDishes] = useState(true);
   const [bowlChili, setBowlChili] = useState(0);
@@ -53,7 +44,8 @@ export default function OrderSummary({ number, token }: OrderProps) {
   const formattedSets = getFormattedSets();
   const formattedDishes = getFormattedDishes();
   const totals = getFormattedTotals();
-
+  const { getOrderSummary } = useOrderStore();
+  const orderSummary = getOrderSummary();
   const handleDishQuantityChange = (id: number, change: number) => {
     const dish = dishItems.find((d) => d.id === id);
     if (dish) {
@@ -90,7 +82,7 @@ export default function OrderSummary({ number, token }: OrderProps) {
 
   return (
     <div className="container mx-auto px-4 py-5 space-y-5">
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>canh banh cuon</CardTitle>
         </CardHeader>
@@ -240,7 +232,14 @@ export default function OrderSummary({ number, token }: OrderProps) {
               ))}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
+
+      <OrderDetails
+        dishes={orderSummary.dishes}
+        sets={orderSummary.sets}
+        totalPrice={orderSummary.totalPrice}
+        totalItems={orderSummary.totalItems}
+      />
       <OrderCreationComponent
         bowlChili={bowlChili}
         bowlNoChili={bowlNoChili}

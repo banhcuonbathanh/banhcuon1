@@ -51,7 +51,12 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     // Determine IDs based on auth state
     const user_id = isGuest ? null : user?.id ?? null;
     const guest_id = isGuest ? guest?.id ?? null : null;
-
+    let order_name = "";
+    if (isGuest && guest) {
+      order_name = guest.name;
+    } else if (!isGuest && user) {
+      order_name = user.name;
+    }
     const orderData: CreateOrderRequest = {
       guest_id,
       user_id,
@@ -68,7 +73,8 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
       bow_no_chili: bowlNoChili,
       takeAway: false,
       chiliNumber: 0,
-      Table_token: Table_token
+      table_token: Table_token,
+      order_name
     };
 
     set({ isLoading: true });

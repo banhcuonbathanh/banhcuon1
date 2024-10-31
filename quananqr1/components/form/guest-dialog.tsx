@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
-import { useRouter, useSearchParams, useParams } from "next/navigation";
+import {  useSearchParams, useParams } from "next/navigation";
 import {
   GuestLoginBody,
   GuestLoginBodyType
@@ -33,7 +33,6 @@ const GuestLoginDialog = () => {
   const params = useParams();
   const tableNumber = Number(params.number);
   const token = searchParams.get("token");
-  const router = useRouter();
 
   const form = useForm<GuestLoginBodyType>({
     resolver: zodResolver(GuestLoginBody),
@@ -45,6 +44,7 @@ const GuestLoginDialog = () => {
   });
 
   const onSubmit = async (data: GuestLoginBodyType) => {
+    console.log("quananqr1/components/form/guest-dialog.tsx data", data);
     try {
       await guestLogin(data);
     } catch (error: any) {

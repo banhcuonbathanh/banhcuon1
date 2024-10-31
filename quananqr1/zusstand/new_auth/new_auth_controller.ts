@@ -13,7 +13,7 @@ import {
 } from "@/schemaValidations/auth.schema";
 import {
   GuestInfo,
-  GuestLoginRequest,
+
   GuestLoginResponse,
   LogoutRequest
 } from "@/schemaValidations/interface/type_guest";

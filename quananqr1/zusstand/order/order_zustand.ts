@@ -1,19 +1,16 @@
 import { DishInterface } from "@/schemaValidations/interface/type_dish";
-import {
-  DishOrderItem,
-  SetOrderItem
-} from "@/schemaValidations/interface/type_order";
+
 import {
   SetInterface,
   SetProtoDish
 } from "@/schemaValidations/interface/types_set";
 import { create } from "zustand";
 // Keep existing interfaces
-interface DishOrderItemustand extends DishInterface {
+export interface DishOrderItemustand extends DishInterface {
   quantity: number;
 }
 
-interface SetOrderItemustand extends SetInterface {
+export interface SetOrderItemustand extends SetInterface {
   quantity: number;
 }
 interface FormattedSetItem {

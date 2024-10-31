@@ -119,6 +119,9 @@ func (h *OrderHandlerController) GetOrders(w http.ResponseWriter, r *http.Reques
         Page:     page,
         PageSize: pageSize,
     })
+
+
+    fmt.Printf("golang/quanqr/order/order_handler.go ordersResponse %v\n", ordersResponse)
     if err != nil {
         h.logger.Error("Error fetching orders list: " + err.Error())
         http.Error(w, "failed to fetch orders: "+err.Error(), http.StatusInternalServerError)
@@ -205,10 +208,10 @@ func (h *OrderHandlerController) GetOrderProtoListDetail(w http.ResponseWriter, 
         http.Error(w, "failed to fetch detailed orders: "+err.Error(), http.StatusInternalServerError)
         return
     }
-
+  
     // Convert the response
     res := ToOrderDetailedListResponseFromProto(ordersResponse)
-
+    fmt.Printf("golang/quanqr/order/order_handler.go GetOrderProtoListDetail res %v\n", res)
     // Send response
     w.Header().Set("Content-Type", "application/json")
     if err := json.NewEncoder(w).Encode(res); err != nil {
