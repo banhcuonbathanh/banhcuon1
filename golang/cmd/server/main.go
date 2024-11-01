@@ -241,16 +241,6 @@ func setupReadingService(r *chi.Mux, conn *grpc.ClientConn, secretKey *string) {
 
 
 
-// func setupWebSocketService(r *chi.Mux) {
-//     websockrepo := websocket_repository.NewInMemoryMessageRepository()
-//     websocketService := websocket_service.NewWebSocketService(websockrepo)
-//     go websocketService.Run()
-
-//     websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
-//     r.Handle("/ws", websocketHandler.HandleWebSocket)
-    
-//     log.Println("WebSocket service initialized on /ws endpoint")
-// }
 
 func setupWebSocketService(r *chi.Mux) {
     websockrepo := websocket_repository.NewInMemoryMessageRepository()
@@ -298,3 +288,13 @@ func getEnvWithDefault(key, defaultValue string) string {
     }
     return value
 }
+// func setupWebSocketService(r *chi.Mux) {
+//     websockrepo := websocket_repository.NewInMemoryMessageRepository()
+//     websocketService := websocket_service.NewWebSocketService(websockrepo)
+//     go websocketService.Run()
+
+//     websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
+//     r.Handle("/ws", websocketHandler.HandleWebSocket)
+    
+//     log.Println("WebSocket service initialized on /ws endpoint")
+// }

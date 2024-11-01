@@ -10,7 +10,7 @@ import {
 } from "@/schemaValidations/interface/type_order";
 import { columns } from "./order-columns";
 import { OrderDataTable } from "@/components/ui/order-data-table";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { get_Orders } from "@/zusstand/server/order-controller";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ import {
   CardDescription,
   CardContent
 } from "@/components/ui/card";
+import { WebSocketMessage21 } from "@/schemaValidations/interface/type_websocker";
 //   const { data: sets, isLoading: setsLoading, error: setsError, refetch: refetchSets } = useSetListQuery();
 interface OrderClientProps {
   initialData: OrderDetailedResponse[];
@@ -37,11 +38,140 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(false);
 
+  // const handleStatusChange = (orderId: number, newStatus: string) => {
+  //   console.log(`Updating order ${orderId} status to ${newStatus}`);
+  // };
+
+  // const handlePaymentMethodChange = (orderId: number, newMethod: string) => {
+  //   console.log(`Updating order ${orderId} payment method to ${newMethod}`);
+  // };
+
+  console.log(
+    "quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx initialData",
+    initialData
+  );
+
+  // --------------------
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  // WebSocket connection setup
+  useEffect(() => {
+    const ws = new WebSocket("ws://localhost:8888/ws");
+    // ws://localhost:8888/ws
+    ws.onopen = () => {
+      console.log(
+        "WebSocket Connected quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx"
+      );
+      setIsConnected(true);
+      setSocket(ws);
+    };
+    ws.onclose = () => {
+      console.log(
+        "WebSocket Disconnected quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx"
+      );
+      setIsConnected(false);
+      // Attempt to reconnect after 3 seconds
+      setTimeout(() => {
+        console.log("Attempting to reconnect...");
+        setSocket(null);
+      }, 3000);
+    };
+
+    ws.onerror = (error: Event) => {
+      console.error(
+        "WebSocket Error: quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx",
+        error
+      );
+    };
+
+    ws.onmessage = (event: MessageEvent) => {
+      console.log(
+        "quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx     ws.onmessage"
+      );
+      try {
+        const message: WebSocketMessage21 = JSON.parse(event.data);
+        handleWebSocketMessage(message);
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+      }
+    };
+
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, []);
+
+  // Handle incoming WebSocket messages
+  const handleWebSocketMessage = useCallback(
+    (message: WebSocketMessage21) => {
+      if (message.type === "NEW_ORDER") {
+        setData((prevData) => {
+          if (currentPage === 1) {
+            const newOrder: OrderDetailedResponse = {
+              id: message.content.orderID,
+              table_number: Number(message.content.tableNumber),
+              status: message.content.status,
+              created_at: message.content.timestamp,
+              data_set: [],
+              data_dish: [],
+              guest_id: 0,
+              user_id: 0,
+              is_guest: false,
+              order_handler_id: 0,
+              updated_at: "",
+              total_price: 0,
+              bow_chili: 0,
+              bow_no_chili: 0,
+              takeAway: false,
+              chiliNumber: 0,
+              table_token: "",
+              order_name: ""
+            };
+            return [newOrder, ...prevData.slice(0, -1)];
+          }
+          return prevData;
+        });
+
+        setPagination((prev) => ({
+          ...prev,
+          total_items: prev.total_items + 1
+        }));
+      }
+    },
+    [currentPage]
+  );
+
   const handleStatusChange = (orderId: number, newStatus: string) => {
+    if (socket && isConnected) {
+      const message = {
+        type: "UPDATE_ORDER_STATUS",
+        content: {
+          orderID: orderId,
+          status: newStatus,
+          timestamp: new Date().toISOString()
+        },
+        sender: "admin"
+      };
+      socket.send(JSON.stringify(message));
+    }
     console.log(`Updating order ${orderId} status to ${newStatus}`);
   };
 
   const handlePaymentMethodChange = (orderId: number, newMethod: string) => {
+    if (socket && isConnected) {
+      const message = {
+        type: "UPDATE_PAYMENT_METHOD",
+        content: {
+          orderID: orderId,
+          paymentMethod: newMethod,
+          timestamp: new Date().toISOString()
+        },
+        sender: "admin"
+      };
+      socket.send(JSON.stringify(message));
+    }
     console.log(`Updating order ${orderId} payment method to ${newMethod}`);
   };
 
@@ -62,10 +192,7 @@ export const OrderClient: React.FC<OrderClientProps> = ({
       setIsLoading(false);
     }
   };
-  console.log(
-    "quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx initialData",
-    initialData
-  );
+  // ---------------------
   return (
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <div className="space-y-2">

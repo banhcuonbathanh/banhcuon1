@@ -1,10 +1,11 @@
 package websocket_service
 
 import (
+	"encoding/json"
 	"log"
 	"sync"
 
-	 "english-ai-full/ecomm-api/websocket/websocker_model"
+	websocket_model "english-ai-full/ecomm-api/websocket/websocker_model"
 	"english-ai-full/ecomm-api/websocket/websocket_repository"
 )
 
@@ -43,39 +44,50 @@ func (s *webSocketService) UnregisterClient(client *Client) {
 }
 
 func (s *webSocketService) BroadcastMessage(message *websocket_model.Message) {
-	s.broadcast <- message
+    // Log the incoming message
+    messageBytes, _ := json.Marshal(message)
+    log.Printf("Broadcasting message: golang/ecomm-api/websocket/websocket_service/websocket_service.go %s", string(messageBytes))
+    
+    s.broadcast <- message
 }
 
 func (s *webSocketService) Run() {
-	for {
-		select {
-		case client := <-s.register:
-			s.mutex.Lock()
-			s.clients[client] = true
-			s.mutex.Unlock()
-		case client := <-s.unregister:
-			s.mutex.Lock()
-			if _, ok := s.clients[client]; ok {
-				delete(s.clients, client)
-				close(client.send)
-			}
-			s.mutex.Unlock()
-		case message := <-s.broadcast:
-			s.mutex.Lock()
-			for client := range s.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(s.clients, client)
-				}
-			}
-			s.mutex.Unlock()
+	log.Printf("funcation run golang/ecomm-api/websocket/websocket_service/websocket_service.go")
+    for {
+        select {
+        case client := <-s.register:
+            log.Printf("New client registered: %p", client)
+            s.mutex.Lock()
+            s.clients[client] = true
+            s.mutex.Unlock()
+            
+        case client := <-s.unregister:
+            log.Printf("Client unregistered: %p", client)
+            s.mutex.Lock()
+            if _, ok := s.clients[client]; ok {
+                delete(s.clients, client)
+                close(client.send)
+            }
+            s.mutex.Unlock()
+            
+        case message := <-s.broadcast:
+            log.Printf("Broadcasting to %d clients", len(s.clients))
+            s.mutex.Lock()
+            for client := range s.clients {
+                select {
+                case client.send <- message:
+                    log.Printf("Message sent to client: %p", client)
+                default:
+                    log.Printf("Failed to send message to client: %p", client)
+                    close(client.send)
+                    delete(s.clients, client)
+                }
+            }
+            s.mutex.Unlock()
 
-			// Save message to repository
-			if err := s.repo.SaveMessage(message); err != nil {
-				log.Printf("Error saving message: %v", err)
-			}
-		}
-	}
+            if err := s.repo.SaveMessage(message); err != nil {
+                log.Printf("Error saving message: %v", err)
+            }
+        }
+    }
 }

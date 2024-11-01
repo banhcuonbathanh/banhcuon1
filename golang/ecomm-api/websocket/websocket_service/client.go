@@ -31,6 +31,8 @@ func NewClient(conn *websocket.Conn, service WebSocketService) *Client {
 }
 
 func (c *Client) ReadPump() {
+	log.Printf("golang/ecomm-api/websocket/websocket_service/client.go ReadPump")
+	
 	defer func() {
 		c.service.UnregisterClient(c)
 		c.conn.Close()
@@ -53,37 +55,11 @@ func (c *Client) ReadPump() {
 	}
 }
 
-// func (c *Client) WritePump() {
-// 	ticker := time.NewTicker(pingPeriod)
-// 	defer func() {
-// 		ticker.Stop()
-// 		c.conn.Close()
-// 	}()
-
-// 	for {
-// 		select {
-// 		case message, ok := <-c.send:
-// 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-// 			if !ok {
-// 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-// 				return
-// 			}
-
-// 			err := c.conn.WriteJSON(message)
-// 			if err != nil {
-// 				return
-// 			}
-// 		case <-ticker.C:
-// 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-// 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-// 				return
-// 			}
-// 		}
-// 	}
-// }
 
 
 func (c *Client) WritePump() {
+	log.Printf("golang/ecomm-api/websocket/websocket_service/client.go WritePump")
+	
     ticker := time.NewTicker(pingPeriod)
     defer func() {
         ticker.Stop()
@@ -118,3 +94,33 @@ func (c *Client) WritePump() {
         }
     }
 }
+
+
+// func (c *Client) WritePump() {
+// 	ticker := time.NewTicker(pingPeriod)
+// 	defer func() {
+// 		ticker.Stop()
+// 		c.conn.Close()
+// 	}()
+
+// 	for {
+// 		select {
+// 		case message, ok := <-c.send:
+// 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+// 			if !ok {
+// 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+// 				return
+// 			}
+
+// 			err := c.conn.WriteJSON(message)
+// 			if err != nil {
+// 				return
+// 			}
+// 		case <-ticker.C:
+// 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+// 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+// 				return
+// 			}
+// 		}
+// 	}
+// }
