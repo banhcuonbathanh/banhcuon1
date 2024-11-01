@@ -112,7 +112,7 @@ func (os *OrderServiceStruct) PayOrders(ctx context.Context, req *order.PayOrder
 
 // Add GetOrderProtoListDetail to OrderServiceStruct
 func (os *OrderServiceStruct) GetOrderProtoListDetail(ctx context.Context, req *order.GetOrdersRequest) (*order.OrderDetailedListResponse, error) {
-    os.logger.Info("Fetching detailed order list with pagination")
+    // os.logger.Info("Fetching detailed order list with pagination")
 
     // Validate pagination parameters
     if req.Page < 1 {

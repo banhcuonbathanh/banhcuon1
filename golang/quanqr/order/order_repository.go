@@ -199,7 +199,7 @@ func (or *OrderRepository) GetOrderSetItems(ctx context.Context, orderID int64) 
 // ----------------------------------
 
 func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pageSize int32) (*order.OrderDetailedListResponse, error) {
-    or.logger.Info("Fetching detailed order list with pagination")
+    // or.logger.Info("Fetching detailed order list with pagination")
     
     // Get total count for pagination
     countQuery := `SELECT COUNT(*) FROM orders`
@@ -802,7 +802,7 @@ func (or *OrderRepository) GetOrders(ctx context.Context, page, pageSize int32) 
 
 
 func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order.Order, error) {
-    or.logger.Info(fmt.Sprintf("Fetching order detail for ID: %d", id))
+    // or.logger.Info(fmt.Sprintf("Fetching order detail for ID: %d", id))
     
     query := `
         SELECT 

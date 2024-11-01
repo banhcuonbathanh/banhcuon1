@@ -211,7 +211,7 @@ func (h *OrderHandlerController) GetOrderProtoListDetail(w http.ResponseWriter, 
   
     // Convert the response
     res := ToOrderDetailedListResponseFromProto(ordersResponse)
-    fmt.Printf("golang/quanqr/order/order_handler.go GetOrderProtoListDetail res %v\n", res)
+    // fmt.Printf("golang/quanqr/order/order_handler.go GetOrderProtoListDetail res %v\n", res)
     // Send response
     w.Header().Set("Content-Type", "application/json")
     if err := json.NewEncoder(w).Encode(res); err != nil {

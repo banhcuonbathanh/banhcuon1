@@ -36,6 +36,8 @@ func NewWebSocketService(repo websocket_repository.MessageRepository) WebSocketS
 }
 
 func (s *webSocketService) RegisterClient(client *Client) {
+    log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go RegisterClient %v", client)
+
 	s.register <- client
 }
 
@@ -52,7 +54,7 @@ func (s *webSocketService) BroadcastMessage(message *websocket_model.Message) {
 }
 
 func (s *webSocketService) Run() {
-	log.Printf("funcation run golang/ecomm-api/websocket/websocket_service/websocket_service.go")
+    log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go Run %v", s.clients)
     for {
         select {
         case client := <-s.register:
