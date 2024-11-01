@@ -75,7 +75,7 @@ func NewWebSocketHandler(websocketService service.WebSocketService) *WebSocketHa
 
 // In your WebSocket handler
 func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-    // Get user information from the request
+    log.Printf("golang/ecomm-api/websocket/websocket_handler/websocket_handler.go")
     userID := r.URL.Query().Get("userId")    // or from your auth middleware
     userName := r.URL.Query().Get("userName") // optional
 

@@ -56,11 +56,14 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   const [isConnected, setIsConnected] = useState(false);
   // WebSocket connection setup
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8888/ws");
+    const ws = new WebSocket(
+      "ws://localhost:8888/ws?userId=user2&userName=Jane"
+    );
     // ws://localhost:8888/ws
     ws.onopen = () => {
       console.log(
-        "WebSocket Connected quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx"
+        "WebSocket Connected quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx",
+        ws
       );
       setIsConnected(true);
       setSocket(ws);
@@ -85,12 +88,14 @@ export const OrderClient: React.FC<OrderClientProps> = ({
     };
 
     ws.onmessage = (event: MessageEvent) => {
-      console.log(
-        "quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx     ws.onmessage"
-      );
       try {
         const message: WebSocketMessage21 = JSON.parse(event.data);
-        handleWebSocketMessage(message);
+
+        console.log(
+          "quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx     ws.onmessage",
+          message
+        );
+        // handleWebSocketMessage(message);
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
       }

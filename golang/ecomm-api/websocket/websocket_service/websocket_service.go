@@ -46,6 +46,7 @@ func (s *webSocketService) RegisterClient(client *Client) {
     s.register <- client
 }
 func (s *webSocketService) SendToUser(userID string, message *websocket_model.Message) error {
+    log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go SendToUser")
     s.mutex.Lock()
     defer s.mutex.Unlock()
 
