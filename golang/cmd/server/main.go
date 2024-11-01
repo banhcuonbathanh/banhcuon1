@@ -249,9 +249,9 @@ func setupWebSocketService(r *chi.Mux) {
 
     websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
     r.Get("/ws", websocketHandler.HandleWebSocket)
-	log.Println("WebSocket service initialized on /ws endpoint")
+    r.Post("/api/messages", websocketHandler.HandleSendMessage) // Changed to use chi router syntax
+    log.Println("WebSocket service initialized on /ws endpoint")
 }
-
 
 
 func setupGlobalMiddleware(r *chi.Mux) {

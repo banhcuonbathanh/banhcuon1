@@ -16,19 +16,27 @@ const (
 	maxMessageSize = 512
 )
 
+
 type Client struct {
-	conn    *websocket.Conn
-	send    chan *websocket_model.Message
-	service WebSocketService
+    conn     *websocket.Conn
+    send     chan *websocket_model.Message
+    service  WebSocketService
+    userID   string        // Add user identification
+    userName string        // Optional: Add user name for logging
 }
 
-func NewClient(conn *websocket.Conn, service WebSocketService) *Client {
-	return &Client{
-		conn:    conn,
-		send:    make(chan *websocket_model.Message, 256),
-		service: service,
-	}
+
+func NewClient(conn *websocket.Conn, service WebSocketService, userID string, userName string) *Client {
+    return &Client{
+        conn:     conn,
+        send:     make(chan *websocket_model.Message, 256),
+        service:  service,
+        userID:   userID,
+        userName: userName,
+    }
 }
+
+
 
 func (c *Client) ReadPump() {
 	log.Printf("golang/ecomm-api/websocket/websocket_service/client.go ReadPump")
@@ -95,32 +103,3 @@ func (c *Client) WritePump() {
     }
 }
 
-
-// func (c *Client) WritePump() {
-// 	ticker := time.NewTicker(pingPeriod)
-// 	defer func() {
-// 		ticker.Stop()
-// 		c.conn.Close()
-// 	}()
-
-// 	for {
-// 		select {
-// 		case message, ok := <-c.send:
-// 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-// 			if !ok {
-// 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-// 				return
-// 			}
-
-// 			err := c.conn.WriteJSON(message)
-// 			if err != nil {
-// 				return
-// 			}
-// 		case <-ticker.C:
-// 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-// 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-// 				return
-// 			}
-// 		}
-// 	}
-// }

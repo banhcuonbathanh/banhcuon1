@@ -9,9 +9,13 @@ type Message struct {
     Timestamp time.Time   `json:"timestamp"`
     TableID   string      `json:"table_id,omitempty"`
     OrderID   string      `json:"order_id,omitempty"`
+
+    ID        string    `json:"id,omitempty"`
+    FromUser  string    `json:"fromUser"`     // Sender's userID
+    ToUser    string    `json:"toUser"`       // Recipient's userID
 }
 
-// Order-specific message type
+
 type OrderMessage struct {
     OrderID      string    `json:"order_id"`
     TableNumber  string    `json:"table_number"`
