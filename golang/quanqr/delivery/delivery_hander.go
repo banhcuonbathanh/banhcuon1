@@ -76,25 +76,25 @@ func (h *DeliveryHandlerController) GetDeliveryDetail(w http.ResponseWriter, r *
     json.NewEncoder(w).Encode(res)
 }
 
-func (h *DeliveryHandlerController) GetDeliveryByClientName(w http.ResponseWriter, r *http.Request) {
-    clientName := chi.URLParam(r, "name")
-    if clientName == "" {
-        http.Error(w, "client name is required", http.StatusBadRequest)
-        return
-    }
+// func (h *DeliveryHandlerController) GetDeliveryByClientName(w http.ResponseWriter, r *http.Request) {
+//     clientName := chi.URLParam(r, "name")
+//     if clientName == "" {
+//         http.Error(w, "client name is required", http.StatusBadRequest)
+//         return
+//     }
 
-    h.logger.Info(fmt.Sprintf("Fetching delivery for client: %s", clientName))
-    deliveryResponse, err := h.client.GetDeliveryDetailByClientName(h.ctx, &delivery.DeliveryClientNameParam{Name: clientName})
-    if err != nil {
-        h.logger.Error("Error fetching delivery by client name: " + err.Error())
-        http.Error(w, "error getting delivery", http.StatusInternalServerError)
-        return
-    }
+//     h.logger.Info(fmt.Sprintf("Fetching delivery for client: %s", clientName))
+//     deliveryResponse, err := h.client.GetDeliveryDetailByClientName(h.ctx, &delivery.DeliveryClientNameParam{Name: clientName})
+//     if err != nil {
+//         h.logger.Error("Error fetching delivery by client name: " + err.Error())
+//         http.Error(w, "error getting delivery", http.StatusInternalServerError)
+//         return
+//     }
 
-    res := ToDeliveryResFromPbDeliveryResponse(deliveryResponse)
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(res)
-}
+//     res := ToDeliveryResFromPbDeliveryResponse(deliveryResponse)
+//     w.Header().Set("Content-Type", "application/json")
+//     json.NewEncoder(w).Encode(res)
+// }
 
 func (h *DeliveryHandlerController) GetDeliveriesListDetail(w http.ResponseWriter, r *http.Request) {
     // Parse query parameters
@@ -114,15 +114,15 @@ func (h *DeliveryHandlerController) GetDeliveriesListDetail(w http.ResponseWrite
         }
     }
 
-    h.logger.Info("Fetching deliveries list")
+    h.logger.Info("Fetching deliveries list hander")
     deliveriesResponse, err := h.client.GetDeliveriesListDetail(h.ctx, &delivery.GetDeliveriesRequest{
         Page:     page,
         PageSize: pageSize,
     })
 
     if err != nil {
-        h.logger.Error("Error fetching deliveries list: " + err.Error())
-        http.Error(w, "failed to fetch deliveries: "+err.Error(), http.StatusInternalServerError)
+        h.logger.Error("Error fetching deliveries list: hander" + err.Error())
+        http.Error(w, "failed to fetch deliveries:hander "+err.Error(), http.StatusInternalServerError)
         return
     }
 
@@ -266,6 +266,98 @@ func ToDeliveryDishItemsFromProto(pbItems []*delivery.DishDeliveryItem) []DishDe
     return items
 }
 
+// func ToDeliveryDetailedListResponseFromProto(pbRes *delivery.DeliveryDetailedListResponse) DeliveryDetailedListResponse {
+//     if pbRes == nil {
+//         return DeliveryDetailedListResponse{}
+//     }
+
+//     detailedResponses := make([]DeliveryDetailedResponse, len(pbRes.Data))
+//     for i, pbDetailedRes := range pbRes.Data {
+//         detailedResponses[i] = DeliveryDetailedResponse{
+//             ID:             pbDetailedRes.Id,
+//             GuestID:        pbDetailedRes.GuestId,
+//             UserID:         pbDetailedRes.UserId,
+//             TableNumber:    pbDetailedRes.TableNumber,
+//             OrderHandlerID: pbDetailedRes.OrderHandlerId,
+//             Status:         pbDetailedRes.Status,
+//             TotalPrice:     pbDetailedRes.TotalPrice,
+//             DataDish:       ToDeliveryDetailedDishFromProto(pbDetailedRes.DishItems),
+//             IsGuest:        pbDetailedRes.IsGuest,
+//             BowChili:       pbDetailedRes.BowChili,
+//             BowNoChili:     pbDetailedRes.BowNoChili,
+//             TakeAway:       pbDetailedRes.TakeAway,
+//             ChiliNumber:    pbDetailedRes.ChiliNumber,
+//             TableToken:     pbDetailedRes.TableToken,
+//             ClientName:     pbDetailedRes.ClientName,
+//             DeliveryStatus: pbDetailedRes.DeliveryStatus,
+//             DeliveryAddress: pbDetailedRes.DeliveryAddress,
+//             DeliveryContact: pbDetailedRes.DeliveryContact,
+//             DeliveryNotes:   pbDetailedRes.DeliveryNotes,
+//         }
+//     }
+
+//     return DeliveryDetailedListResponse{
+//         Data: detailedResponses,
+//         Pagination: PaginationInfo{
+//             CurrentPage: pbRes.Pagination.CurrentPage,
+//             TotalPages:  pbRes.Pagination.TotalPages,
+//             TotalItems:  pbRes.Pagination.TotalItems,
+//             PageSize:    pbRes.Pagination.PageSize,
+//         },
+//     }
+// }
+
+// func ToDeliveryDetailedDishFromProto(pbDishes []*delivery.DeliveryDetailedDish) []DeliveryDetailedDish {
+//     if pbDishes == nil {
+//         return nil
+//     }
+
+//     dishes := make([]DeliveryDetailedDish, len(pbDishes))
+//     for i, pbDish := range pbDishes {
+//         dishes[i] = DeliveryDetailedDish{
+//             DishID:      pbDish.DishId,
+//             Quantity:    pbDish.Quantity,
+//             Name:        pbDish.Name,
+//             Price:       pbDish.Price,
+//             Description: pbDish.Description,
+//             Image:       pbDish.Image,
+//             Status:      pbDish.Status,
+//         }
+//     }
+//     return dishes
+// }
+
+
+
+
+
+
+// -----------------------
+
+
+
+func (h *DeliveryHandlerController) GetDeliveryByClientName(w http.ResponseWriter, r *http.Request) {
+    clientName := chi.URLParam(r, "name")
+    if clientName == "" {
+        http.Error(w, "client name is required", http.StatusBadRequest)
+        return
+    }
+
+    h.logger.Info(fmt.Sprintf("Fetching delivery for client: hander layer  %s", clientName))
+    deliveryResponse, err := h.client.GetDeliveryDetailByClientName(h.ctx, &delivery.DeliveryClientNameParam{Name: clientName})
+    if err != nil {
+        h.logger.Error("Error fetching delivery by client name: " + err.Error())
+        http.Error(w, "error getting delivery", http.StatusInternalServerError)
+        return
+    }
+
+    // Convert the response to the appropriate type
+    res := ToDeliveryDetailedListResponseFromProto(deliveryResponse)
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(res)
+}
+
+// Update the converter function to handle the detailed list response
 func ToDeliveryDetailedListResponseFromProto(pbRes *delivery.DeliveryDetailedListResponse) DeliveryDetailedListResponse {
     if pbRes == nil {
         return DeliveryDetailedListResponse{}
@@ -274,25 +366,26 @@ func ToDeliveryDetailedListResponseFromProto(pbRes *delivery.DeliveryDetailedLis
     detailedResponses := make([]DeliveryDetailedResponse, len(pbRes.Data))
     for i, pbDetailedRes := range pbRes.Data {
         detailedResponses[i] = DeliveryDetailedResponse{
-            ID:             pbDetailedRes.Id,
-            GuestID:        pbDetailedRes.GuestId,
-            UserID:         pbDetailedRes.UserId,
-            TableNumber:    pbDetailedRes.TableNumber,
-            OrderHandlerID: pbDetailedRes.OrderHandlerId,
-            Status:         pbDetailedRes.Status,
-            TotalPrice:     pbDetailedRes.TotalPrice,
-            DataDish:       ToDeliveryDetailedDishFromProto(pbDetailedRes.DishItems),
-            IsGuest:        pbDetailedRes.IsGuest,
-            BowChili:       pbDetailedRes.BowChili,
-            BowNoChili:     pbDetailedRes.BowNoChili,
-            TakeAway:       pbDetailedRes.TakeAway,
-            ChiliNumber:    pbDetailedRes.ChiliNumber,
-            TableToken:     pbDetailedRes.TableToken,
-            ClientName:     pbDetailedRes.ClientName,
-            DeliveryStatus: pbDetailedRes.DeliveryStatus,
-            DeliveryAddress: pbDetailedRes.DeliveryAddress,
-            DeliveryContact: pbDetailedRes.DeliveryContact,
-            DeliveryNotes:   pbDetailedRes.DeliveryNotes,
+            ID:                   pbDetailedRes.Id,
+            GuestID:             pbDetailedRes.GuestId,
+            UserID:              pbDetailedRes.UserId,
+            TableNumber:         pbDetailedRes.TableNumber,
+            OrderHandlerID:      pbDetailedRes.OrderHandlerId,
+            Status:              pbDetailedRes.Status,
+            TotalPrice:          pbDetailedRes.TotalPrice,
+            DataDish:            ToDeliveryDetailedDishFromProto(pbDetailedRes.DishItems),
+            IsGuest:            pbDetailedRes.IsGuest,
+            BowChili:           pbDetailedRes.BowChili,
+            BowNoChili:         pbDetailedRes.BowNoChili,
+            TakeAway:           pbDetailedRes.TakeAway,
+            ChiliNumber:        pbDetailedRes.ChiliNumber,
+            TableToken:         pbDetailedRes.TableToken,
+            ClientName:         pbDetailedRes.ClientName,
+            DeliveryStatus:     pbDetailedRes.DeliveryStatus,
+            DeliveryAddress:    pbDetailedRes.DeliveryAddress,
+            DeliveryContact:    pbDetailedRes.DeliveryContact,
+            DeliveryNotes:      pbDetailedRes.DeliveryNotes,
+            EstimatedDeliveryTime: pbDetailedRes.EstimatedDeliveryTime.AsTime(),
         }
     }
 
@@ -307,6 +400,7 @@ func ToDeliveryDetailedListResponseFromProto(pbRes *delivery.DeliveryDetailedLis
     }
 }
 
+// Helper function to convert detailed dish items
 func ToDeliveryDetailedDishFromProto(pbDishes []*delivery.DeliveryDetailedDish) []DeliveryDetailedDish {
     if pbDishes == nil {
         return nil

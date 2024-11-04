@@ -147,7 +147,7 @@ func (dr *DeliveryRepository) CreateDelivery(ctx context.Context, req *delivery.
 
 func (dr *DeliveryRepository) GetDeliveriesList(ctx context.Context, req *delivery.GetDeliveriesRequest) (*delivery.DeliveryDetailedListResponse, error) {
 	countQuery := `SELECT COUNT(*) FROM deliveries`
-	
+	dr.logger.Info("Fetching deliveries list handler repository")
 	var totalItems int64
 	err := dr.db.QueryRow(ctx, countQuery).Scan(&totalItems)
 	if err != nil {
@@ -183,10 +183,11 @@ func (dr *DeliveryRepository) GetDeliveriesList(ctx context.Context, req *delive
 	for rows.Next() {
 		var d delivery.DeliveryDetailedResponse
 		var createdAt, updatedAt time.Time
+		var guestIdNull sql.NullInt64
 		var scheduledTimeNull, estimatedTimeNull, actualTimeNull sql.NullTime
 
 		err := rows.Scan(
-			&d.Id, &d.GuestId, &d.UserId, &d.IsGuest, &d.TableNumber,
+			&d.Id, &guestIdNull, &d.UserId, &d.IsGuest, &d.TableNumber,
 			&d.OrderHandlerId, &d.Status, &createdAt, &updatedAt,
 			&d.TotalPrice, &d.BowChili, &d.BowNoChili, &d.TakeAway,
 			&d.ChiliNumber, &d.TableToken, &d.ClientName, &d.DeliveryAddress,
@@ -201,7 +202,11 @@ func (dr *DeliveryRepository) GetDeliveriesList(ctx context.Context, req *delive
 
 		d.CreatedAt = timestamppb.New(createdAt)
 		d.UpdatedAt = timestamppb.New(updatedAt)
-		
+
+		// Handle nullable fields
+		if guestIdNull.Valid {
+			d.GuestId = guestIdNull.Int64
+		}
 		if scheduledTimeNull.Valid {
 			d.ScheduledTime = timestamppb.New(scheduledTimeNull.Time)
 		}
@@ -226,12 +231,100 @@ func (dr *DeliveryRepository) GetDeliveriesList(ctx context.Context, req *delive
 		Data: deliveries,
 		Pagination: &delivery.PaginationInfo{
 			CurrentPage: req.Page,
-			TotalPages: totalPages,
-			TotalItems: totalItems,
-			PageSize:   req.PageSize,
+			TotalPages:  totalPages,
+			TotalItems:  totalItems,
+			PageSize:    req.PageSize,
 		},
 	}, nil
 }
+
+// func (dr *DeliveryRepository) GetDeliveriesList(ctx context.Context, req *delivery.GetDeliveriesRequest) (*delivery.DeliveryDetailedListResponse, error) {
+// 	countQuery := `SELECT COUNT(*) FROM deliveries`
+// 	dr.logger.Info("Fetching deliveries list hander repository")
+// 	var totalItems int64
+// 	err := dr.db.QueryRow(ctx, countQuery).Scan(&totalItems)
+// 	if err != nil {
+// 		dr.logger.Error("Error counting deliveries: " + err.Error())
+// 		return nil, fmt.Errorf("error counting deliveries: %w", err)
+// 	}
+// 	dr.logger.Info("Fetching deliveries list hander repository")
+// 	totalPages := int32(math.Ceil(float64(totalItems) / float64(req.PageSize)))
+// 	offset := (req.Page - 1) * req.PageSize
+
+// 	query := `
+// 		SELECT 
+// 			d.id, d.guest_id, d.user_id, d.is_guest, d.table_number, 
+// 			d.order_handler_id, d.status, d.created_at, d.updated_at, 
+// 			d.total_price, d.bow_chili, d.bow_no_chili, d.take_away, 
+// 			d.chili_number, d.table_token, d.client_name, d.delivery_address,
+// 			d.delivery_contact, d.delivery_notes, d.scheduled_time, 
+// 			d.delivery_fee, d.delivery_status, d.estimated_delivery_time,
+// 			d.actual_delivery_time
+// 		FROM deliveries d
+// 		ORDER BY d.created_at DESC
+// 		LIMIT $1 OFFSET $2
+// 	`
+
+// 	rows, err := dr.db.Query(ctx, query, req.PageSize, offset)
+// 	if err != nil {
+// 		dr.logger.Error("Error fetching deliveries: " + err.Error())
+// 		return nil, fmt.Errorf("error fetching deliveries: %w", err)
+// 	}
+// 	defer rows.Close()
+// 	dr.logger.Info("Fetching deliveries list hander repository")
+// 	var deliveries []*delivery.DeliveryDetailedResponse
+// 	for rows.Next() {
+// 		var d delivery.DeliveryDetailedResponse
+// 		var createdAt, updatedAt time.Time
+// 		var scheduledTimeNull, estimatedTimeNull, actualTimeNull sql.NullTime
+
+// 		err := rows.Scan(
+// 			&d.Id, &d.GuestId, &d.UserId, &d.IsGuest, &d.TableNumber,
+// 			&d.OrderHandlerId, &d.Status, &createdAt, &updatedAt,
+// 			&d.TotalPrice, &d.BowChili, &d.BowNoChili, &d.TakeAway,
+// 			&d.ChiliNumber, &d.TableToken, &d.ClientName, &d.DeliveryAddress,
+// 			&d.DeliveryContact, &d.DeliveryNotes, &scheduledTimeNull,
+// 			&d.DeliveryFee, &d.DeliveryStatus, &estimatedTimeNull,
+// 			&actualTimeNull,
+// 		)
+// 		if err != nil {
+// 			dr.logger.Error("Error scanning delivery: " + err.Error())
+// 			return nil, fmt.Errorf("error scanning delivery: %w", err)
+// 		}
+// 		dr.logger.Info("Fetching deliveries list hander repository")
+// 		d.CreatedAt = timestamppb.New(createdAt)
+// 		d.UpdatedAt = timestamppb.New(updatedAt)
+		
+// 		if scheduledTimeNull.Valid {
+// 			d.ScheduledTime = timestamppb.New(scheduledTimeNull.Time)
+// 		}
+// 		if estimatedTimeNull.Valid {
+// 			d.EstimatedDeliveryTime = timestamppb.New(estimatedTimeNull.Time)
+// 		}
+// 		if actualTimeNull.Valid {
+// 			d.ActualDeliveryTime = timestamppb.New(actualTimeNull.Time)
+// 		}
+
+// 		// Fetch dish items
+// 		dishItems, err := dr.getDeliveryDishItems(ctx, d.Id)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		d.DishItems = dishItems
+
+// 		deliveries = append(deliveries, &d)
+// 	}
+
+// 	return &delivery.DeliveryDetailedListResponse{
+// 		Data: deliveries,
+// 		Pagination: &delivery.PaginationInfo{
+// 			CurrentPage: req.Page,
+// 			TotalPages: totalPages,
+// 			TotalItems: totalItems,
+// 			PageSize:   req.PageSize,
+// 		},
+// 	}, nil
+// }
 
 func (dr *DeliveryRepository) getDeliveryDishItems(ctx context.Context, deliveryId int64) ([]*delivery.DeliveryDetailedDish, error) {
 	query := `
@@ -365,63 +458,151 @@ func (dr *DeliveryRepository) getDishItems(ctx context.Context, deliveryId int64
 
 
 
-		func (dr *DeliveryRepository) GetDeliveryByClientName(ctx context.Context, clientName string) (*delivery.DeliverResponse, error) {
-			query := `
-				SELECT 
-					id, guest_id, user_id, is_guest, table_number, order_handler_id,
-					status, created_at, updated_at, total_price, bow_chili, bow_no_chili,
-					take_away, chili_number, table_token, client_name, delivery_address,
-					delivery_contact, delivery_notes, scheduled_time, delivery_fee,
-					delivery_status, estimated_delivery_time, actual_delivery_time
-				FROM deliveries
-				WHERE client_name = $1
-				ORDER BY created_at DESC
-				LIMIT 1
-			`
-		
-			var d delivery.DeliverResponse
-			var createdAt, updatedAt time.Time
-			var scheduledTimeNull, estimatedTimeNull, actualTimeNull sql.NullTime
-		
-			err := dr.db.QueryRow(ctx, query, clientName).Scan(
-				&d.Id, &d.GuestId, &d.UserId, &d.IsGuest, &d.TableNumber,
-				&d.OrderHandlerId, &d.Status, &createdAt, &updatedAt,
-				&d.TotalPrice, &d.BowChili, &d.BowNoChili, &d.TakeAway,
-				&d.ChiliNumber, &d.TableToken, &d.ClientName, &d.DeliveryAddress,
-				&d.DeliveryContact, &d.DeliveryNotes, &scheduledTimeNull,
-				&d.DeliveryFee, &d.DeliveryStatus, &estimatedTimeNull,
-				&actualTimeNull,
-			)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					return nil, fmt.Errorf("no delivery found for client: %s", clientName)
-				}
-				dr.logger.Error(fmt.Sprintf("Error fetching delivery by client name: %s", err.Error()))
-				return nil, fmt.Errorf("error fetching delivery by client name: %w", err)
-			}
-		
-			d.CreatedAt = timestamppb.New(createdAt)
-			d.UpdatedAt = timestamppb.New(updatedAt)
-		
-			if scheduledTimeNull.Valid {
-				d.ScheduledTime = timestamppb.New(scheduledTimeNull.Time)
-			}
-			if estimatedTimeNull.Valid {
-				d.EstimatedDeliveryTime = timestamppb.New(estimatedTimeNull.Time)
-			}
-			if actualTimeNull.Valid {
-				d.ActualDeliveryTime = timestamppb.New(actualTimeNull.Time)
-			}
-		
-			// Get dish items
-			dishItems, err := dr.getDishItems(ctx, d.Id)
-			if err != nil {
-				return nil, err
-			}
-			d.DishItems = dishItems
-		
-			return &d, nil
-		}
+func (dr *DeliveryRepository) GetDeliveryByClientName(ctx context.Context, clientName string) (*delivery.DeliveryDetailedListResponse, error) {
+    dr.logger.Info("Fetching deliveries repository GetDeliveryByClientName")
+    query := `
+        SELECT 
+            id, guest_id, user_id, is_guest, table_number, order_handler_id,
+            status, created_at, updated_at, total_price, bow_chili, bow_no_chili,
+            take_away, chili_number, table_token, client_name, delivery_address,
+            delivery_contact, delivery_notes, scheduled_time, delivery_fee,
+            delivery_status, estimated_delivery_time, actual_delivery_time
+        FROM deliveries
+        WHERE client_name = $1
+        ORDER BY created_at DESC
+    `
+
+    rows, err := dr.db.Query(ctx, query, clientName)
+    if err != nil {
+        dr.logger.Error(fmt.Sprintf("Error querying deliveries: %s", err.Error()))
+        return nil, fmt.Errorf("error querying deliveries: %w", err)
+    }
+    defer rows.Close()
+
+    var deliveries []*delivery.DeliveryDetailedResponse
+
+    for rows.Next() {
+        var d delivery.DeliveryDetailedResponse
+        var createdAt, updatedAt time.Time
+        
+        // Create nullable variables for fields that can be NULL
+        var (
+            nullGuestID        sql.NullInt64
+            nullUserID         sql.NullInt64
+            nullTableNumber    sql.NullInt64
+            nullOrderHandlerID sql.NullInt64
+            nullBowChili      sql.NullInt64
+            nullBowNoChili    sql.NullInt64
+            nullChiliNumber   sql.NullInt64
+            scheduledTimeNull  sql.NullTime
+            estimatedTimeNull sql.NullTime
+            actualTimeNull    sql.NullTime
+            nullDeliveryFee   sql.NullInt32
+        )
+
+        err := rows.Scan(
+            &d.Id,
+            &nullGuestID,
+            &nullUserID,
+            &d.IsGuest,
+            &nullTableNumber,
+            &nullOrderHandlerID,
+            &d.Status,
+            &createdAt,
+            &updatedAt,
+            &d.TotalPrice,
+            &nullBowChili,
+            &nullBowNoChili,
+            &d.TakeAway,
+            &nullChiliNumber,
+            &d.TableToken,
+            &d.ClientName,
+            &d.DeliveryAddress,
+            &d.DeliveryContact,
+            &d.DeliveryNotes,
+            &scheduledTimeNull,
+            &nullDeliveryFee,
+            &d.DeliveryStatus,
+            &estimatedTimeNull,
+            &actualTimeNull,
+        )
+
+        if err != nil {
+            dr.logger.Error(fmt.Sprintf("Error scanning delivery row: %s", err.Error()))
+            return nil, fmt.Errorf("error scanning delivery row: %w", err)
+        }
+
+        // Convert NULL values to their appropriate types
+        if nullGuestID.Valid {
+            d.GuestId = nullGuestID.Int64
+        }
+        if nullUserID.Valid {
+            d.UserId = nullUserID.Int64
+        }
+        if nullTableNumber.Valid {
+            d.TableNumber = nullTableNumber.Int64
+        }
+        if nullOrderHandlerID.Valid {
+            d.OrderHandlerId = nullOrderHandlerID.Int64
+        }
+        if nullBowChili.Valid {
+            d.BowChili = nullBowChili.Int64
+        }
+        if nullBowNoChili.Valid {
+            d.BowNoChili = nullBowNoChili.Int64
+        }
+        if nullChiliNumber.Valid {
+            d.ChiliNumber = nullChiliNumber.Int64
+        }
+        if nullDeliveryFee.Valid {
+            d.DeliveryFee = nullDeliveryFee.Int32
+        }
+
+        // Convert timestamps
+        d.CreatedAt = timestamppb.New(createdAt)
+        d.UpdatedAt = timestamppb.New(updatedAt)
+
+        if scheduledTimeNull.Valid {
+            d.ScheduledTime = timestamppb.New(scheduledTimeNull.Time)
+        }
+        if estimatedTimeNull.Valid {
+            d.EstimatedDeliveryTime = timestamppb.New(estimatedTimeNull.Time)
+        }
+        if actualTimeNull.Valid {
+            d.ActualDeliveryTime = timestamppb.New(actualTimeNull.Time)
+        }
+
+        // Get detailed dish items
+        detailedDishItems, err := dr.getDetailedDishItems(ctx, d.Id)
+        if err != nil {
+            return nil, fmt.Errorf("error fetching detailed dish items: %w", err)
+        }
+        d.DishItems = detailedDishItems
+
+        deliveries = append(deliveries, &d)
+    }
+
+    if err = rows.Err(); err != nil {
+        dr.logger.Error(fmt.Sprintf("Error iterating over rows: %s", err.Error()))
+        return nil, fmt.Errorf("error iterating over rows: %w", err)
+    }
+
+    if len(deliveries) == 0 {
+        return nil, fmt.Errorf("no deliveries found for client: %s", clientName)
+    }
+
+    response := &delivery.DeliveryDetailedListResponse{
+        Data: deliveries,
+        Pagination: &delivery.PaginationInfo{
+            CurrentPage: 1,
+            TotalPages: 1,
+            TotalItems: int64(len(deliveries)),
+            PageSize:   int32(len(deliveries)),
+        },
+    }
+
+    return response, nil
+}
 		
 		func (dr *DeliveryRepository) UpdateDelivery(ctx context.Context, req *delivery.UpdateDeliverRequest) (*delivery.DeliverResponse, error) {
 			dr.logger.Info(fmt.Sprintf("Updating delivery: %+v", req))
@@ -572,4 +753,53 @@ func (dr *DeliveryRepository) getDishItems(ctx context.Context, deliveryId int64
 			}
 		
 			return nil
+		}
+
+
+		func (dr *DeliveryRepository) getDetailedDishItems(ctx context.Context, deliveryID int64) ([]*delivery.DeliveryDetailedDish, error) {
+			// Updated table name from delivery_items to dish_delivery_items
+			query := `
+				SELECT 
+					di.dish_id,
+					di.quantity,
+					d.name,
+					d.price,
+					d.description,
+					d.image,
+					d.status
+				FROM dish_delivery_items di  -- Changed from delivery_items to dish_delivery_items
+				JOIN dishes d ON di.dish_id = d.id
+				WHERE di.delivery_id = $1
+			`
+		
+			rows, err := dr.db.Query(ctx, query, deliveryID)
+			if err != nil {
+				return nil, fmt.Errorf("error querying dish items: %w", err)
+			}
+			defer rows.Close()
+		
+			var items []*delivery.DeliveryDetailedDish
+		
+			for rows.Next() {
+				var item delivery.DeliveryDetailedDish
+				err := rows.Scan(
+					&item.DishId,
+					&item.Quantity,
+					&item.Name,
+					&item.Price,
+					&item.Description,
+					&item.Image,
+					&item.Status,
+				)
+				if err != nil {
+					return nil, fmt.Errorf("error scanning dish item: %w", err)
+				}
+				items = append(items, &item)
+			}
+		
+			if err = rows.Err(); err != nil {
+				return nil, fmt.Errorf("error iterating over dish items: %w", err)
+			}
+		
+			return items, nil
 		}

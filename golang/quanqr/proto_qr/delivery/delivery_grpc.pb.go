@@ -33,7 +33,7 @@ const (
 type DeliveryServiceClient interface {
 	CreateOrder(ctx context.Context, in *CreateDeliverRequest, opts ...grpc.CallOption) (*DeliverResponse, error)
 	GetDeliveryDetailById(ctx context.Context, in *DeliveryIdParam, opts ...grpc.CallOption) (*DeliverResponse, error)
-	GetDeliveryDetailByClientName(ctx context.Context, in *DeliveryClientNameParam, opts ...grpc.CallOption) (*DeliverResponse, error)
+	GetDeliveryDetailByClientName(ctx context.Context, in *DeliveryClientNameParam, opts ...grpc.CallOption) (*DeliveryDetailedListResponse, error)
 	UpdateDelivery(ctx context.Context, in *UpdateDeliverRequest, opts ...grpc.CallOption) (*DeliverResponse, error)
 	GetDeliveriesListDetail(ctx context.Context, in *GetDeliveriesRequest, opts ...grpc.CallOption) (*DeliveryDetailedListResponse, error)
 	DeleteDeliveryDetailById(ctx context.Context, in *DeliveryIdParam, opts ...grpc.CallOption) (*DeliveryIdParam, error)
@@ -67,9 +67,9 @@ func (c *deliveryServiceClient) GetDeliveryDetailById(ctx context.Context, in *D
 	return out, nil
 }
 
-func (c *deliveryServiceClient) GetDeliveryDetailByClientName(ctx context.Context, in *DeliveryClientNameParam, opts ...grpc.CallOption) (*DeliverResponse, error) {
+func (c *deliveryServiceClient) GetDeliveryDetailByClientName(ctx context.Context, in *DeliveryClientNameParam, opts ...grpc.CallOption) (*DeliveryDetailedListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeliverResponse)
+	out := new(DeliveryDetailedListResponse)
 	err := c.cc.Invoke(ctx, DeliveryService_GetDeliveryDetailByClientName_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func (c *deliveryServiceClient) DeleteDeliveryDetailById(ctx context.Context, in
 type DeliveryServiceServer interface {
 	CreateOrder(context.Context, *CreateDeliverRequest) (*DeliverResponse, error)
 	GetDeliveryDetailById(context.Context, *DeliveryIdParam) (*DeliverResponse, error)
-	GetDeliveryDetailByClientName(context.Context, *DeliveryClientNameParam) (*DeliverResponse, error)
+	GetDeliveryDetailByClientName(context.Context, *DeliveryClientNameParam) (*DeliveryDetailedListResponse, error)
 	UpdateDelivery(context.Context, *UpdateDeliverRequest) (*DeliverResponse, error)
 	GetDeliveriesListDetail(context.Context, *GetDeliveriesRequest) (*DeliveryDetailedListResponse, error)
 	DeleteDeliveryDetailById(context.Context, *DeliveryIdParam) (*DeliveryIdParam, error)
@@ -133,7 +133,7 @@ func (UnimplementedDeliveryServiceServer) CreateOrder(context.Context, *CreateDe
 func (UnimplementedDeliveryServiceServer) GetDeliveryDetailById(context.Context, *DeliveryIdParam) (*DeliverResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeliveryDetailById not implemented")
 }
-func (UnimplementedDeliveryServiceServer) GetDeliveryDetailByClientName(context.Context, *DeliveryClientNameParam) (*DeliverResponse, error) {
+func (UnimplementedDeliveryServiceServer) GetDeliveryDetailByClientName(context.Context, *DeliveryClientNameParam) (*DeliveryDetailedListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeliveryDetailByClientName not implemented")
 }
 func (UnimplementedDeliveryServiceServer) UpdateDelivery(context.Context, *UpdateDeliverRequest) (*DeliverResponse, error) {

@@ -199,7 +199,7 @@ message GetDeliveriesRequest {
 service DeliveryService {
     rpc CreateOrder(CreateDeliverRequest) returns (DeliverResponse);
     rpc GetDeliveryDetailById(DeliveryIdParam) returns (DeliverResponse);
-    rpc GetDeliveryDetailByClientName(DeliveryClientNameParam) returns (DeliverResponse);
+    rpc GetDeliveryDetailByClientName(DeliveryClientNameParam) returns (DeliveryDetailedListResponse);
     rpc UpdateDelivery(UpdateDeliverRequest) returns (DeliverResponse);
     rpc GetDeliveriesListDetail(GetDeliveriesRequest) returns (DeliveryDetailedListResponse);
 

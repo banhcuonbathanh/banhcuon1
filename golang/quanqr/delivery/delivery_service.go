@@ -2,9 +2,9 @@ package delivery_grpc
 
 import (
 	"context"
-	"fmt"
 	"english-ai-full/logger"
 	"english-ai-full/quanqr/proto_qr/delivery"
+	"fmt"
 )
 
 type DeliveryServiceStruct struct {
@@ -45,8 +45,8 @@ func (ds *DeliveryServiceStruct) GetDeliveryDetailById(ctx context.Context, req 
 	return deliveryDetail, nil
 }
 
-func (ds *DeliveryServiceStruct) GetDeliveryDetailByClientName(ctx context.Context, req *delivery.DeliveryClientNameParam) (*delivery.DeliverResponse, error) {
-	ds.logger.Info("Fetching delivery detail for client name: " + req.Name)
+func (ds *DeliveryServiceStruct) GetDeliveryDetailByClientName(ctx context.Context, req *delivery.DeliveryClientNameParam) (*delivery.DeliveryDetailedListResponse, error) {
+	ds.logger.Info("Fetching delivery detail for client name: service layer" + req.Name)
 
 	deliveryDetail, err := ds.deliveryRepo.GetDeliveryByClientName(ctx, req.Name)
 	if err != nil {
@@ -70,7 +70,7 @@ func (ds *DeliveryServiceStruct) UpdateDelivery(ctx context.Context, req *delive
 }
 
 func (ds *DeliveryServiceStruct) GetDeliveriesListDetail(ctx context.Context, req *delivery.GetDeliveriesRequest) (*delivery.DeliveryDetailedListResponse, error) {
-	ds.logger.Info("Fetching detailed delivery list with pagination")
+	ds.logger.Info("Fetching detailed delivery list with pagination service ")
 
 	// Validate pagination parameters
 	if req.Page < 1 {
