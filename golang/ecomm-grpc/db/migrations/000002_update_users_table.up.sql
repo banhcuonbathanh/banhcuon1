@@ -264,3 +264,65 @@ CREATE INDEX idx_orders_order_handler_id ON orders(order_handler_id) WHERE order
 CREATE INDEX idx_orders_table_number ON orders(table_number) WHERE table_number IS NOT NULL;
 CREATE INDEX idx_orders_is_guest ON orders(is_guest);
 CREATE INDEX idx_guest_sessions_refresh_token ON guest_sessions(refresh_token);
+
+
+
+
+-- Create tables delivery order
+
+CREATE TABLE deliveries (
+    id BIGSERIAL PRIMARY KEY,
+    guest_id BIGINT,
+    user_id BIGINT,
+    is_guest BOOLEAN NOT NULL,
+    table_number BIGINT,
+    order_handler_id BIGINT,
+    status VARCHAR(50) DEFAULT 'Pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    total_price INTEGER,
+    bow_chili BIGINT DEFAULT 0,
+    bow_no_chili BIGINT DEFAULT 0,
+    take_away BOOLEAN NOT NULL DEFAULT false,
+    chili_number BIGINT DEFAULT 0,
+    table_token VARCHAR(255) NOT NULL,
+    client_name VARCHAR(255),
+    -- Suggested additional fields
+    delivery_address TEXT,
+    delivery_contact VARCHAR(100),
+    delivery_notes TEXT,
+    scheduled_time TIMESTAMP WITH TIME ZONE,
+    delivery_fee INTEGER DEFAULT 0,
+    driver_id BIGINT,
+    delivery_status VARCHAR(50) DEFAULT 'Pending',
+    estimated_delivery_time TIMESTAMP WITH TIME ZONE,
+    actual_delivery_time TIMESTAMP WITH TIME ZONE,
+    
+    FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
+    FOREIGN KEY (order_handler_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (driver_id) REFERENCES users(id) ON DELETE SET NULL,
+    
+    CONSTRAINT guest_or_user_check CHECK (
+        (is_guest = TRUE AND guest_id IS NOT NULL AND user_id IS NULL) OR
+        (is_guest = FALSE AND user_id IS NOT NULL AND guest_id IS NULL)
+    ),
+    CONSTRAINT valid_delivery_status CHECK (
+        delivery_status IN ('Pending', 'Assigned', 'Picked Up', 'In Transit', 'Delivered', 'Failed', 'Cancelled')
+    )
+);
+
+CREATE TABLE dish_delivery_items (
+    id BIGSERIAL PRIMARY KEY,
+    delivery_id BIGINT NOT NULL,
+    dish_id BIGINT NOT NULL,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (delivery_id) REFERENCES deliveries(id) ON DELETE CASCADE,
+    FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE CASCADE
+);
+
+-- Index for faster lookups
+CREATE INDEX idx_deliveries_client_name ON deliveries(client_name);
+CREATE INDEX idx_deliveries_status ON deliveries(status);
+CREATE INDEX idx_deliveries_delivery_status ON deliveries(delivery_status);
