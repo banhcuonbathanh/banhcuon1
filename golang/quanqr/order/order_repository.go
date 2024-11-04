@@ -28,51 +28,6 @@ func NewOrderRepository(db *pgxpool.Pool) *OrderRepository {
 
 
 
-// func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order.Order, error) {
-//     or.logger.Info(fmt.Sprintf("Fetching order detail for ID: %d", id))
-    
-//     query := `
-//         SELECT 
-//             id, guest_id, user_id, is_guest, table_number, order_handler_id,
-//             status, created_at, updated_at, total_price, bow_chili, bow_no_chili,
-//             take_away, chili_number, table_token
-//         FROM orders
-//         WHERE id = $1
-//     `
-
-//     var o order.Order
-//     var createdAt, updatedAt time.Time
-
-//     err := or.db.QueryRow(ctx, query, id).Scan(
-//         &o.Id,
-//         &o.GuestId,
-//         &o.UserId,
-//         &o.IsGuest,
-//         &o.TableNumber,
-//         &o.OrderHandlerId,
-//         &o.Status,
-//         &createdAt,
-//         &updatedAt,
-//         &o.TotalPrice,
-//         &o.BowChili,
-//         &o.BowNoChili,
-//         &o.TakeAway,
-//         &o.ChiliNumber,
-//         &o.TableToken,
-//     )
-//     if err != nil {
-//         or.logger.Error(fmt.Sprintf("Error fetching order detail: %s", err.Error()))
-//         return nil, fmt.Errorf("error fetching order detail: %w", err)
-//     }
-
-//     o.CreatedAt = timestamppb.New(createdAt)
-//     o.UpdatedAt = timestamppb.New(updatedAt)
-
-//     // Get dish items and set items (unchanged)
-//     // [Previous get items code remains the same]
-
-//     return &o, nil
-// }
 
 
 func (or *OrderRepository) PayOrders(ctx context.Context, req *order.PayOrdersRequest) ([]*order.Order, error) {
@@ -986,4 +941,51 @@ func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order
 //     }
 
 //     return response, nil
+// }
+
+
+// func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order.Order, error) {
+//     or.logger.Info(fmt.Sprintf("Fetching order detail for ID: %d", id))
+    
+//     query := `
+//         SELECT 
+//             id, guest_id, user_id, is_guest, table_number, order_handler_id,
+//             status, created_at, updated_at, total_price, bow_chili, bow_no_chili,
+//             take_away, chili_number, table_token
+//         FROM orders
+//         WHERE id = $1
+//     `
+
+//     var o order.Order
+//     var createdAt, updatedAt time.Time
+
+//     err := or.db.QueryRow(ctx, query, id).Scan(
+//         &o.Id,
+//         &o.GuestId,
+//         &o.UserId,
+//         &o.IsGuest,
+//         &o.TableNumber,
+//         &o.OrderHandlerId,
+//         &o.Status,
+//         &createdAt,
+//         &updatedAt,
+//         &o.TotalPrice,
+//         &o.BowChili,
+//         &o.BowNoChili,
+//         &o.TakeAway,
+//         &o.ChiliNumber,
+//         &o.TableToken,
+//     )
+//     if err != nil {
+//         or.logger.Error(fmt.Sprintf("Error fetching order detail: %s", err.Error()))
+//         return nil, fmt.Errorf("error fetching order detail: %w", err)
+//     }
+
+//     o.CreatedAt = timestamppb.New(createdAt)
+//     o.UpdatedAt = timestamppb.New(updatedAt)
+
+//     // Get dish items and set items (unchanged)
+//     // [Previous get items code remains the same]
+
+//     return &o, nil
 // }

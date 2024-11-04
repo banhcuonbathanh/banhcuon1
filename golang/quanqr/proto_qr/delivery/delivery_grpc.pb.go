@@ -24,6 +24,7 @@ const (
 	DeliveryService_GetDeliveryDetailByClientName_FullMethodName = "/delivery_proto.DeliveryService/GetDeliveryDetailByClientName"
 	DeliveryService_UpdateDelivery_FullMethodName                = "/delivery_proto.DeliveryService/UpdateDelivery"
 	DeliveryService_GetDeliveriesListDetail_FullMethodName       = "/delivery_proto.DeliveryService/GetDeliveriesListDetail"
+	DeliveryService_DeleteDeliveryDetailById_FullMethodName      = "/delivery_proto.DeliveryService/DeleteDeliveryDetailById"
 )
 
 // DeliveryServiceClient is the client API for DeliveryService service.
@@ -35,6 +36,7 @@ type DeliveryServiceClient interface {
 	GetDeliveryDetailByClientName(ctx context.Context, in *DeliveryClientNameParam, opts ...grpc.CallOption) (*DeliverResponse, error)
 	UpdateDelivery(ctx context.Context, in *UpdateDeliverRequest, opts ...grpc.CallOption) (*DeliverResponse, error)
 	GetDeliveriesListDetail(ctx context.Context, in *GetDeliveriesRequest, opts ...grpc.CallOption) (*DeliveryDetailedListResponse, error)
+	DeleteDeliveryDetailById(ctx context.Context, in *DeliveryIdParam, opts ...grpc.CallOption) (*DeliveryIdParam, error)
 }
 
 type deliveryServiceClient struct {
@@ -95,6 +97,16 @@ func (c *deliveryServiceClient) GetDeliveriesListDetail(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *deliveryServiceClient) DeleteDeliveryDetailById(ctx context.Context, in *DeliveryIdParam, opts ...grpc.CallOption) (*DeliveryIdParam, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeliveryIdParam)
+	err := c.cc.Invoke(ctx, DeliveryService_DeleteDeliveryDetailById_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DeliveryServiceServer is the server API for DeliveryService service.
 // All implementations must embed UnimplementedDeliveryServiceServer
 // for forward compatibility.
@@ -104,6 +116,7 @@ type DeliveryServiceServer interface {
 	GetDeliveryDetailByClientName(context.Context, *DeliveryClientNameParam) (*DeliverResponse, error)
 	UpdateDelivery(context.Context, *UpdateDeliverRequest) (*DeliverResponse, error)
 	GetDeliveriesListDetail(context.Context, *GetDeliveriesRequest) (*DeliveryDetailedListResponse, error)
+	DeleteDeliveryDetailById(context.Context, *DeliveryIdParam) (*DeliveryIdParam, error)
 	mustEmbedUnimplementedDeliveryServiceServer()
 }
 
@@ -128,6 +141,9 @@ func (UnimplementedDeliveryServiceServer) UpdateDelivery(context.Context, *Updat
 }
 func (UnimplementedDeliveryServiceServer) GetDeliveriesListDetail(context.Context, *GetDeliveriesRequest) (*DeliveryDetailedListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeliveriesListDetail not implemented")
+}
+func (UnimplementedDeliveryServiceServer) DeleteDeliveryDetailById(context.Context, *DeliveryIdParam) (*DeliveryIdParam, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDeliveryDetailById not implemented")
 }
 func (UnimplementedDeliveryServiceServer) mustEmbedUnimplementedDeliveryServiceServer() {}
 func (UnimplementedDeliveryServiceServer) testEmbeddedByValue()                         {}
@@ -240,6 +256,24 @@ func _DeliveryService_GetDeliveriesListDetail_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DeliveryService_DeleteDeliveryDetailById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeliveryIdParam)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeliveryServiceServer).DeleteDeliveryDetailById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeliveryService_DeleteDeliveryDetailById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeliveryServiceServer).DeleteDeliveryDetailById(ctx, req.(*DeliveryIdParam))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DeliveryService_ServiceDesc is the grpc.ServiceDesc for DeliveryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +300,10 @@ var DeliveryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDeliveriesListDetail",
 			Handler:    _DeliveryService_GetDeliveriesListDetail_Handler,
+		},
+		{
+			MethodName: "DeleteDeliveryDetailById",
+			Handler:    _DeliveryService_DeleteDeliveryDetailById_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

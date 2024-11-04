@@ -13,6 +13,10 @@ import (
 	pb_table "english-ai-full/quanqr/proto_qr/table"
 	tables "english-ai-full/quanqr/tables"
 
+	//----- delivery
+	delivery "english-ai-full/quanqr/delivery"
+	pb_delivery "english-ai-full/quanqr/proto_qr/delivery"
+
 	//-----
 
 	pb_set "english-ai-full/quanqr/proto_qr/set"
@@ -100,6 +104,11 @@ tableService := tables.NewTableService(tablerepo)
 
 setrepo := set.NewSetRepository(dbConn,)
 setService := set.NewSetService(setrepo)
+
+//
+
+deliveryrepo := delivery.NewDeliveryRepository(dbConn,)
+deliveryService := delivery.NewDeliveryService(deliveryrepo)
 //
 
 	lis, err := net.Listen("tcp", cfg.GRPCAddress)
@@ -108,6 +117,11 @@ setService := set.NewSetService(setrepo)
 	}
 
 	grpcServer := grpc.NewServer()
+
+	// 
+
+	pb_delivery.RegisterDeliveryServiceServer(grpcServer,deliveryService)
+	// 
 
 	pb_set.RegisterSetServiceServer(grpcServer,setService)
 	pb_table.RegisterTableServiceServer(grpcServer,tableService)

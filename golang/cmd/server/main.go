@@ -38,6 +38,10 @@ import (
 	order "english-ai-full/quanqr/order"
 	pb_order "english-ai-full/quanqr/proto_qr/order"
 
+	// delivery
+	delivery "english-ai-full/quanqr/delivery"
+	pb_delivery "english-ai-full/quanqr/proto_qr/delivery"
+
 	// "github.com/go-chi/chi"
 
 	pb_tables "english-ai-full/quanqr/proto_qr/table"
@@ -198,6 +202,12 @@ order_client := pb_order.NewOrderServiceClient(conn)
 order_hdl := order.NewOrderHandler(order_client, *secretKey)
 
 order.RegisterOrderRoutes(r, order_hdl)
+// delivery
+
+delivery_client := pb_delivery.NewDeliveryServiceClient(conn)
+delivery_hdl := delivery.NewDeliveryHandler(delivery_client, *secretKey)
+
+delivery.RegisterDeliveryRoutes(r, delivery_hdl)
 	//
     r.Get("/image", func(w http.ResponseWriter, r *http.Request) {
 
