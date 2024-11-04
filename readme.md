@@ -1,4 +1,4 @@
-http://localhost:3000/table/1?token=MTp0YWJsZTo0ODgzNzk4NTY1.mI7st71i-AQ
+http://localhost:3000/table/1?token=MTp0YWJsZTo0ODg0Mjk0Mjk0.666YJoUIKKI
 fmt.Printf("golang/quanqr/order/order_handler.go ordersResponse %v\n", ordersResponse)
 docker compose up
 
@@ -195,7 +195,6 @@ python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. python_proto/
 ------------------------------------- quan an qr ------------
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/delivery/delivery.proto
 
-
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/set/set.proto
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative quanqr/proto_qr/account/account.proto
@@ -241,12 +240,11 @@ const ws1 = new WebSocket('ws://your-server/ws?userId=user1&userName=John');
 // For User 2
 const ws2 = new WebSocket('ws://your-server/ws?userId=user2&userName=Jane');
 
-
 Connect first user: ws://your-server/ws?userId=user1&userName=John
 Connect second user: ws://your-server/ws?userId=user2&userName=Jane
 
 {
-  "fromUser": "user1",
-  "toUser": "user2",
-  "content": "Test direct message"
+"fromUser": "user1",
+"toUser": "user2",
+"content": "Test direct message"
 }

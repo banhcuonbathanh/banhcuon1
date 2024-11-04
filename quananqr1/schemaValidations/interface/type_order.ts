@@ -111,6 +111,8 @@ export interface OrderDetailedResponse {
   chiliNumber: number;
   table_token: string; // Added missing field
   order_name: string; // Added new field
+
+  deliveryData?: Record<string, number>; // Add this line
 }
 
 export interface Guest {
@@ -153,3 +155,5 @@ export interface PaginationInfo {
   total_items: number;
   page_size: number;
 }
+
+// -------

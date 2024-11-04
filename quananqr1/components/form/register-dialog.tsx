@@ -20,6 +20,7 @@ import {
 } from "@/schemaValidations/auth.schema";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { handleErrorApi } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 const RegisterDialog = () => {
   const {
@@ -58,6 +59,12 @@ const RegisterDialog = () => {
         created_at: data.created_at,
         updated_at: data.updated_at
       });
+      toast({
+        title: "dang ki thanh cong",
+        description: "Friday, February 10, 2023 at 5:57 PM"
+      });
+      closeRegisterDialog();
+      openLoginDialog();
     } catch (error: any) {
       handleErrorApi({
         error,

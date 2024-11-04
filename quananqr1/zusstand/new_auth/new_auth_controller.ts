@@ -13,11 +13,11 @@ import {
 } from "@/schemaValidations/auth.schema";
 import {
   GuestInfo,
-
   GuestLoginResponse,
   LogoutRequest
 } from "@/schemaValidations/interface/type_guest";
 import { GuestLoginBodyType } from "@/schemaValidations/guest.schema";
+import { generateFormattedName } from "@/lib/utils";
 interface AuthState {
   user: User | null;
   guest: GuestInfo | null;
@@ -65,10 +65,18 @@ export const useAuthStore = create<AuthStore>()(
 
       register: async (body: RegisterBodyType) => {
         set({ loading: true, error: null });
+
+        // Generate the formatted name before making the API call
+        const formattedName = generateFormattedName(body.name);
+
         try {
           const response = await useApiStore
             .getState()
-            .http.post<User>(`${envConfig.NEXT_PUBLIC_API_Create_User}`, body);
+            .http.post<User>(`${envConfig.NEXT_PUBLIC_API_Create_User}`, {
+              ...body,
+              name: formattedName // Use the generated formatted name here
+            });
+
           set({
             user: response.data,
             error: null,
@@ -86,7 +94,6 @@ export const useAuthStore = create<AuthStore>()(
           });
         }
       },
-
       login: async (body: LoginBodyType) => {
         set({ loading: true, error: null });
         try {
@@ -148,7 +155,7 @@ export const useAuthStore = create<AuthStore>()(
           const response = await useApiStore
             .getState()
             .http.post<GuestLoginResponse>(`${guest_login_link}`, {
-              name: body.name,
+              name: generateFormattedName(body.name), // Add generated name here
               table_number: body.tableNumber,
               token: body.token
             });

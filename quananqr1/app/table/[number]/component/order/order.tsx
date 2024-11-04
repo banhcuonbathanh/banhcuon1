@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+
 import useOrderStore from "@/zusstand/order/order_zustand";
 import OrderCreationComponent from "./add_order_button";
 import OrderDetails from "../total-dishes-detail";
@@ -57,7 +55,6 @@ export default function OrderSummary({ number, token }: OrderProps) {
       }
     }
   };
-
 
   return (
     <div className="container mx-auto px-4 py-5 space-y-5">

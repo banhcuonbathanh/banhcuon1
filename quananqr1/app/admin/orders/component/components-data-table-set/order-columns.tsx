@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +15,7 @@ import {
   OrderDetailedResponse,
   OrderSetDetailed
 } from "@/schemaValidations/interface/type_order";
+import { Button } from "@/components/ui/button";
 
 const ORDER_STATUSES = ["ORDERING", "SERVING", "WAITING", "DONE"] as const;
 type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -23,36 +26,28 @@ type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 interface TableMeta {
   onStatusChange?: (orderId: number, newStatus: string) => void;
   onPaymentMethodChange?: (orderId: number, newMethod: string) => void;
+  onDeliveryUpdate?: (
+    orderId: number,
+    dishName: string,
+    deliveredQuantity: number
+  ) => void;
 }
 
 export const columns: ColumnDef<OrderDetailedResponse, any>[] = [
   {
-    accessorKey: "order_name",
-    header: "Name",
-    cell: ({ row }) => (
-      <div className="font-medium">#{row.getValue("order_name")}</div>
-    )
-  },
-  {
-    accessorKey: "table_number",
-    header: "Table/away",
-    cell: ({ row }) => (
-      <div
-        className={`text-center ${
-          row.original.takeAway ? "bg-orange-600 rounded-md px-2 py-1" : ""
-        }`}
-      >
-        {row.getValue("table_number")}
-      </div>
-    )
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: "order_info",
+    header: "Order Information",
     cell: ({ row, table }) => {
+      const orderName = row.original.order_name.split("_")[0];
+      const tableNumber = row.original.table_number;
       const [selectedStatus, setSelectedStatus] = useState<OrderStatus>(
-        row.getValue("status") as OrderStatus
+        row.original.status as OrderStatus
       );
+      const withChili = row.original.bow_chili;
+      const noChili = row.original.bow_no_chili;
+      const total = withChili + noChili;
+      const isTakeAway = row.original.takeAway;
+      const chiliNumber = row.original.chiliNumber;
 
       const statusStyles: Record<OrderStatus, string> = {
         ORDERING: "bg-blue-100 text-blue-800",
@@ -64,170 +59,231 @@ export const columns: ColumnDef<OrderDetailedResponse, any>[] = [
       const meta = table.options.meta as TableMeta;
 
       return (
-        <Select
-          value={selectedStatus}
-          onValueChange={(newStatus: OrderStatus) => {
-            setSelectedStatus(newStatus);
-            meta?.onStatusChange?.(row.original.id, newStatus);
-          }}
-        >
-          <SelectTrigger
-            className={`w-[120px] h-8 ${statusStyles[selectedStatus]}`}
-          >
-            <SelectValue>{selectedStatus}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {ORDER_STATUSES.map((orderStatus) => (
-              <SelectItem
-                key={orderStatus}
-                value={orderStatus}
-                className={statusStyles[orderStatus]}
-              >
-                {orderStatus}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      );
-    }
-  },
-  {
-    accessorKey: "payment_method",
-    header: "Payment",
-    cell: ({ row, table }) => {
-      const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>(
-        (row.getValue("payment_method") as PaymentMethod) || "CASH"
-      );
+        <div className="space-y-3">
+          {/* Name Section */}
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-600">Name</span>
+            <span className="font-medium mt-1">{orderName}</span>
+          </div>
 
-      const paymentStyles: Record<PaymentMethod, string> = {
-        CASH: "bg-emerald-50 text-emerald-700",
-        TRANSFER: "bg-indigo-50 text-indigo-700"
-      };
-
-      const meta = table.options.meta as TableMeta;
-
-      return (
-        <Select
-          value={selectedPayment}
-          onValueChange={(newMethod: PaymentMethod) => {
-            setSelectedPayment(newMethod);
-            meta?.onPaymentMethodChange?.(row.original.id, newMethod);
-          }}
-        >
-          <SelectTrigger
-            className={`w-[120px] h-8 ${paymentStyles[selectedPayment]}`}
-          >
-            <SelectValue>
-              {selectedPayment === "CASH" ? "Cash" : "Transfer"}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {PAYMENT_METHODS.map((method) => (
-              <SelectItem
-                key={method}
-                value={method}
-                className={paymentStyles[method]}
-              >
-                {method === "CASH" ? "Cash" : "Transfer"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      );
-    }
-  },
-  {
-    accessorKey: "data_set",
-    header: "Sets",
-    cell: ({ row }) => {
-      const sets = row.getValue("data_set") as OrderSetDetailed[];
-      return (
-        <div className="space-y-2">
-          {sets.map((set) => (
+          {/* Table Section */}
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-600">Table</span>
             <div
-              key={set.id}
-              className="border-b border-gray-100 pb-2 last:border-0"
+              className={`mt-1 ${
+                isTakeAway
+                  ? "bg-orange-600 text-white rounded-md px-2 py-1 inline-block"
+                  : ""
+              }`}
             >
-              <div className="text-sm font-medium">
-                {set.quantity}x {set.name} (${set.price})
+              {tableNumber}
+            </div>
+          </div>
+
+          {/* Status Section */}
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-600">Status</span>
+            <div className="mt-1">
+              <Select
+                value={selectedStatus}
+                onValueChange={(newStatus: OrderStatus) => {
+                  setSelectedStatus(newStatus);
+                  meta?.onStatusChange?.(row.original.id, newStatus);
+                }}
+              >
+                <SelectTrigger
+                  className={`w-[120px] h-8 ${statusStyles[selectedStatus]}`}
+                >
+                  <SelectValue>{selectedStatus}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {ORDER_STATUSES.map((orderStatus) => (
+                    <SelectItem
+                      key={orderStatus}
+                      value={orderStatus}
+                      className={statusStyles[orderStatus]}
+                    >
+                      {orderStatus}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  },
+
+  {
+    accessorKey: "combined_orders",
+    header: "Order Details",
+    cell: ({ row }) => {
+      const sets = row.original.data_set as OrderSetDetailed[];
+      const dishes = row.original.data_dish as OrderDetailedDish[];
+
+      return (
+        <div className="space-y-4">
+          {/* Sets Section */}
+          {sets && sets.length > 0 && (
+            <div>
+              <div className="text-sm font-semibold text-gray-700 mb-2">
+                Sets
               </div>
-              <div className="pl-4 text-sm text-gray-600">
-                {set.dishes.map((dish, index) => (
-                  <div key={`${dish.dish_id}-${index}`}>
-                    {/* Show total quantity for each dish in the set */}
-                    {set.quantity * dish.quantity}x {dish.name}
+              <div className="space-y-2">
+                {sets.map((set) => (
+                  <div
+                    key={set.id}
+                    className="border-b border-gray-100 pb-2 last:border-0"
+                  >
+                    <div className="text-sm font-medium">
+                      {set.quantity}x {set.name} (${set.price})
+                    </div>
+                    <div className="pl-4 text-sm text-gray-600">
+                      {set.dishes.map((dish, index) => (
+                        <div key={`${dish.dish_id}-${index}`}>
+                          {set.quantity} x {dish.quantity} ={" "}
+                          {set.quantity * dish.quantity} {dish.name}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-      );
-    }
-  },
-  {
-    accessorKey: "data_dish",
-    header: "Individual Dishes",
-    cell: ({ row }) => {
-      const dishes = row.getValue("data_dish") as OrderDetailedDish[];
-      return (
-        <div className="space-y-1">
-          {dishes.map((dish, index) => (
-            <div key={`${dish.dish_id}-${index}`} className="text-sm">
-              {dish.quantity}x {dish.name} (${dish.price})
+          )}
+
+          {/* Individual Dishes Section */}
+          {dishes && dishes.length > 0 && (
+            <div>
+              <div className="text-sm font-semibold text-gray-700 mb-2">
+                Individual Dishes
+              </div>
+              <div className="space-y-1">
+                {dishes.map((dish, index) => (
+                  <div key={`${dish.dish_id}-${index}`} className="text-sm">
+                    {dish.quantity}x {dish.name} (${dish.price})
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
         </div>
       );
     }
   },
+
   {
-    accessorKey: "total_dishes",
-    header: "Total Dishes Breakdown",
-    cell: ({ row }) => {
-      const sets = row.original.data_set;
-      const individualDishes = row.original.data_dish;
-
-      // Create a map to store total quantities for each dish type
-      const dishTotals = new Map<string, number>();
-
-      // Calculate totals from sets
-      sets.forEach((set) => {
-        set.dishes.forEach((dish) => {
-          const totalQuantity = set.quantity * dish.quantity;
-          const currentTotal = dishTotals.get(dish.name) || 0;
-          dishTotals.set(dish.name, currentTotal + totalQuantity);
-        });
-      });
-
-      // Add individual dishes to totals
-      individualDishes.forEach((dish) => {
-        const currentTotal = dishTotals.get(dish.name) || 0;
-        dishTotals.set(dish.name, currentTotal + dish.quantity);
-      });
-
-      // Calculate grand total
-      const grandTotal = Array.from(dishTotals.values()).reduce(
-        (sum, qty) => sum + qty,
-        0
+    accessorKey: "order_tracking",
+    header: "Order Tracking",
+    cell: ({ row, table }) => {
+      const meta = table.options.meta as TableMeta;
+      const [deliveryState, setDeliveryState] = useState<Map<string, number>>(
+        new Map()
       );
+
+      useEffect(() => {
+        if (row.original.deliveryData) {
+          setDeliveryState(new Map(Object.entries(row.original.deliveryData)));
+        }
+      }, [row.original.deliveryData]);
+
+      // Calculate totals from sets and individual dishes
+      const calculateDishTotals = () => {
+        const dishTotals = new Map<string, number>();
+
+        // Calculate totals from sets
+        row.original.data_set?.forEach((set) => {
+          set.dishes.forEach((dish) => {
+            const totalQuantity = set.quantity * dish.quantity;
+            const currentTotal = dishTotals.get(dish.name) || 0;
+            dishTotals.set(dish.name, currentTotal + totalQuantity);
+          });
+        });
+
+        // Add individual dishes to totals
+        row.original.data_dish?.forEach((dish) => {
+          const currentTotal = dishTotals.get(dish.name) || 0;
+          dishTotals.set(dish.name, currentTotal + dish.quantity);
+        });
+
+        return dishTotals;
+      };
+
+      const handleDeliveryUpdate =
+        (dishName: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+          const dishTotals = calculateDishTotals();
+          const totalQuantity = dishTotals.get(dishName) || 0;
+          const newDelivered = Math.min(
+            parseInt(e.target.value) || 0,
+            totalQuantity
+          );
+
+          const newState = new Map(deliveryState);
+          newState.set(dishName, newDelivered);
+          setDeliveryState(newState);
+
+          if (meta?.onDeliveryUpdate) {
+            meta.onDeliveryUpdate(row.original.id, dishName, newDelivered);
+          }
+        };
+
+      const dishTotals = calculateDishTotals();
 
       return (
         <div className="space-y-2">
-          {/* Display individual dish totals */}
-          <div className="text-sm space-y-1">
-            {Array.from(dishTotals.entries()).map(([dishName, quantity]) => (
-              <div key={dishName} className="flex justify-between">
-                <span>
-                  {dishName}: {quantity}
-                </span>
+          {/* Header */}
+          <div className="grid grid-cols-4 gap-2 px-2 py-1  rounded-t text-sm font-medium">
+            <div className="col-span-1">Dish</div>
+            <div className="text-center">Total</div>
+            <div className="text-center text-green-600">Delivered</div>
+            <div className="text-center text-orange-600">Remaining</div>
+          </div>
+
+          {/* Dish Rows */}
+          {Array.from(dishTotals.entries()).map(([dishName, totalQuantity]) => {
+            const delivered = deliveryState.get(dishName) || 0;
+            const remaining = totalQuantity - delivered;
+            const isComplete = remaining === 0;
+
+            return (
+              <div
+                key={dishName}
+                className={`grid grid-cols-4 gap-2 items-center py-1 border-b border-gray-100 last:border-0 ${
+                  isComplete ? "bg-green-50" : ""
+                }`}
+              >
+                {/* Dish Name */}
+                <div className="col-span-1 text-sm font-medium">{dishName}</div>
+
+                {/* Total */}
+                <div className="text-center font-medium">{totalQuantity}</div>
+
+                {/* Delivered */}
+                <div className="flex justify-center">
+                  <Input
+                    type="number"
+                    value={delivered}
+                    onChange={handleDeliveryUpdate(dishName)}
+                    className="w-16 h-7 text-center text-green-600 font-medium"
+                    min="0"
+                    max={totalQuantity}
+                  />
+                </div>
+
+                {/* Remaining */}
+                <div className="text-center">
+                  <span
+                    className={`font-medium ${
+                      isComplete ? "text-green-600" : "text-orange-600"
+                    }`}
+                  >
+                    {remaining}
+                  </span>
+                </div>
               </div>
-            ))}
-          </div>
-          {/* Display grand total */}
-          <div className="text-sm font-bold border-t pt-1">
-            Total Items: {grandTotal}
-          </div>
+            );
+          })}
         </div>
       );
     }
@@ -253,13 +309,25 @@ export const columns: ColumnDef<OrderDetailedResponse, any>[] = [
       ) : null;
     }
   },
+
+  //--------
+
   {
-    accessorKey: "total_price",
-    header: "Total & Payment",
-    cell: ({ row }) => {
-      const totalPrice = row.getValue("total_price") as number;
+    accessorKey: "payment_info",
+    header: "Payment Information",
+    cell: ({ row, table }) => {
+      const [selectedPayment, setSelectedPayment] =
+        useState<PaymentMethod>("CASH");
+      const totalPrice = row.original.total_price as number;
       const [amountPaid, setAmountPaid] = useState<string>("");
       const [change, setChange] = useState<number | null>(null);
+
+      const paymentStyles: Record<PaymentMethod, string> = {
+        CASH: "bg-emerald-50 text-emerald-700",
+        TRANSFER: "bg-indigo-50 text-indigo-700"
+      };
+
+      const meta = table.options.meta as TableMeta;
 
       const handlePaymentInput = (value: string) => {
         setAmountPaid(value);
@@ -269,29 +337,85 @@ export const columns: ColumnDef<OrderDetailedResponse, any>[] = [
       };
 
       return (
-        <div className="space-y-2">
-          <div className="font-medium text-right">Total: ${totalPrice}</div>
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              placeholder="Amount paid"
-              value={amountPaid}
-              onChange={(e) => handlePaymentInput(e.target.value)}
-              className="w-24 h-8 text-right"
-            />
-            <span className="text-sm">$</span>
-          </div>
-          {change !== null && (
-            <div
-              className={`text-right text-sm ${
-                change >= 0 ? "text-green-600" : "text-red-600"
-              }`}
-            >
-              Change: ${change.toFixed(2)}
+        <div className="space-y-3">
+          {/* Payment Method Section */}
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-600">
+              Payment Method
+            </span>
+            <div className="mt-1">
+              <Select
+                value={selectedPayment}
+                onValueChange={(newMethod: PaymentMethod) => {
+                  setSelectedPayment(newMethod);
+                  meta?.onPaymentMethodChange?.(row.original.id, newMethod);
+                }}
+              >
+                <SelectTrigger
+                  className={`w-[120px] h-8 ${paymentStyles[selectedPayment]}`}
+                >
+                  <SelectValue>
+                    {selectedPayment === "CASH" ? "Cash" : "Transfer"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map((method) => (
+                    <SelectItem
+                      key={method}
+                      value={method}
+                      className={paymentStyles[method]}
+                    >
+                      {method === "CASH" ? "Cash" : "Transfer"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+          </div>
+
+          {/* Total Amount Section */}
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-600">
+              Total Amount
+            </span>
+            <span className="font-medium mt-1">${totalPrice}</span>
+          </div>
+
+          {/* Payment Details Section */}
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-600">
+              Amount Paid
+            </span>
+            <div className="mt-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  placeholder="Amount paid"
+                  value={amountPaid}
+                  onChange={(e) => handlePaymentInput(e.target.value)}
+                  className="w-24 h-8 text-right"
+                />
+                <span className="text-sm">$</span>
+              </div>
+              {change !== null && (
+                <div className="flex flex-col">
+                  <div
+                    className={`text-sm ${
+                      change >= 0 ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    Change: ${change.toFixed(2)}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       );
     }
   }
+
+  // ---------------
+
+  // ------
 ];

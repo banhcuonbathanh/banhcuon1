@@ -27,6 +27,13 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
   ) => {
     const { http } = useApiStore.getState();
     const { guest, user, isGuest, openLoginDialog } = useAuthStore.getState();
+
+    console.log(
+      "quananqr1/app/table/[number]/component/order/logic.ts  guest, user, isGuest ",
+      guest,
+      user,
+      isGuest
+    );
     const { tableNumber, getOrderSummary, clearOrder } =
       useOrderStore.getState();
     const { sendMessage, isConnected } = useWebSocketStore.getState();
@@ -85,18 +92,18 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
       const response = await http.post(link_order, orderData);
 
       // Send WebSocket message if connected
-      if (isConnected) {
-        sendMessage({
-          type: "NEW_ORDER",
-          payload: {
-            orderId: response.data.id,
-            tableNumber,
-            status: "pending",
-            timestamp: new Date().toISOString(),
-            orderData
-          }
-        });
-      }
+      // if (isConnected) {
+      //   sendMessage({
+      //     type: "NEW_ORDER",
+      //     payload: {
+      //       orderId: response.data.id,
+      //       tableNumber,
+      //       status: "pending",
+      //       timestamp: new Date().toISOString(),
+      //       orderData
+      //     }
+      //   });
+      // }
       toast({
         title: "Success",
         description: "Order has been created successfully"

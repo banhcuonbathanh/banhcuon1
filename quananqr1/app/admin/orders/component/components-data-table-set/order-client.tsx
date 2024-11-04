@@ -21,10 +21,12 @@ import {
   CardContent
 } from "@/components/ui/card";
 import { WebSocketMessage21 } from "@/schemaValidations/interface/type_websocker";
+import { DeliveryInterface } from "@/schemaValidations/interface/type_delivery";
 //   const { data: sets, isLoading: setsLoading, error: setsError, refetch: refetchSets } = useSetListQuery();
 interface OrderClientProps {
   initialData: OrderDetailedResponse[];
   initialPagination: PaginationInfo;
+  deliveryData: DeliveryInterface[];
 }
 
 export const OrderClient: React.FC<OrderClientProps> = ({
@@ -38,20 +40,7 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(false);
 
-  // const handleStatusChange = (orderId: number, newStatus: string) => {
-  //   console.log(`Updating order ${orderId} status to ${newStatus}`);
-  // };
-
-  // const handlePaymentMethodChange = (orderId: number, newMethod: string) => {
-  //   console.log(`Updating order ${orderId} payment method to ${newMethod}`);
-  // };
-
-  console.log(
-    "quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx initialData",
-    initialData
-  );
-
-  // --------------------
+ 
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   // WebSocket connection setup

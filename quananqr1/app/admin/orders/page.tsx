@@ -12,7 +12,6 @@ export default async function OrdersPage() {
   return (
     <OrderClient
       initialData={initialOrders.data}
-      initialPagination={initialOrders.pagination}
-    />
+      initialPagination={initialOrders.pagination} deliveryData={[]}    />
   );
 }
