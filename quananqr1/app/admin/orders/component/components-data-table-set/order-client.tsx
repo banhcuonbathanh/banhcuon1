@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/card";
 import { WebSocketMessage21 } from "@/schemaValidations/interface/type_websocker";
 import { DeliveryInterface } from "@/schemaValidations/interface/type_delivery";
+import { YourComponent1 } from "../admin-table";
+
 //   const { data: sets, isLoading: setsLoading, error: setsError, refetch: refetchSets } = useSetListQuery();
 interface OrderClientProps {
   initialData: OrderDetailedResponse[];
@@ -40,7 +42,6 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(false);
 
- 
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   // WebSocket connection setup
@@ -206,13 +207,14 @@ export const OrderClient: React.FC<OrderClientProps> = ({
 
               <Separator className="my-4" />
 
-              <OrderDataTable
+              <YourComponent1 initialData={initialData} />
+              {/* <OrderDataTable
                 columns={columns}
                 data={data}
                 searchKey="id"
                 onStatusChange={handleStatusChange}
                 onPaymentMethodChange={handlePaymentMethodChange}
-              />
+              /> */}
 
               <div className="flex items-center justify-between space-x-2 py-4">
                 <div className="flex-1 text-sm text-muted-foreground">
