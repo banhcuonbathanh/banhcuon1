@@ -553,14 +553,14 @@ const OrderTracking = ({ row, meta }: { row: any; meta: TableMeta }) => {
     }
   }, [row.original.deliveryData]);
 
+  // ... [previous helper functions remain the same]
   const calculateDishTotals = () => {
     const dishTotals = new Map<string, { quantity: number; price: number }>();
 
-    // Calculate totals from sets
     row.original.data_set?.forEach((set: OrderSetDetailed) => {
       set.dishes.forEach((dish) => {
         const totalQuantity = set.quantity * dish.quantity;
-        const dishPrice = (set.price / set.dishes.length) * dish.quantity;
+        const dishPrice = dish.price * dish.quantity;
         const current = dishTotals.get(dish.name) || { quantity: 0, price: 0 };
         dishTotals.set(dish.name, {
           quantity: current.quantity + totalQuantity,
@@ -569,7 +569,6 @@ const OrderTracking = ({ row, meta }: { row: any; meta: TableMeta }) => {
       });
     });
 
-    // Calculate totals from individual dishes
     row.original.data_dish?.forEach((dish: OrderDetailedDish) => {
       const current = dishTotals.get(dish.name) || { quantity: 0, price: 0 };
       dishTotals.set(dish.name, {
@@ -583,14 +582,10 @@ const OrderTracking = ({ row, meta }: { row: any; meta: TableMeta }) => {
 
   const calculateTotals = () => {
     const dishTotals = calculateDishTotals();
-
-    // Calculate total order value
     const totalOrderValue = Array.from(dishTotals.values()).reduce(
       (sum, total) => sum + total.price,
       0
     );
-
-    // Calculate delivered value
     const deliveredValue = Array.from(dishTotals.entries()).reduce(
       (sum, [dishName, totals]) => {
         const delivered = deliveryState.get(dishName) || 0;
@@ -599,8 +594,6 @@ const OrderTracking = ({ row, meta }: { row: any; meta: TableMeta }) => {
       },
       0
     );
-
-    // Calculate remaining value
     const remainingValue = totalOrderValue - deliveredValue;
 
     return {
@@ -610,22 +603,6 @@ const OrderTracking = ({ row, meta }: { row: any; meta: TableMeta }) => {
     };
   };
 
-  const handleDeliveryUpdate =
-    (dishName: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const dishTotals = calculateDishTotals();
-      const totalQuantity = dishTotals.get(dishName)?.quantity || 0;
-      const newDelivered = Math.min(
-        parseInt(e.target.value) || 0,
-        totalQuantity
-      );
-
-      const newState = new Map(deliveryState);
-      newState.set(dishName, newDelivered);
-      setDeliveryState(newState);
-
-      meta?.onDeliveryUpdate?.(row.original.id, dishName, newDelivered);
-    };
-
   const handlePaymentInput = (value: string) => {
     setAmountPaid(value);
     const numericValue = parseFloat(value) || 0;
@@ -634,17 +611,38 @@ const OrderTracking = ({ row, meta }: { row: any; meta: TableMeta }) => {
     setChange(changeAmount >= 0 ? changeAmount : null);
   };
 
+  const handleDeliveryUpdate =
+    (dishName: string) => async (newValue: number) => {
+      const dishTotals = calculateDishTotals();
+      const totalQuantity = dishTotals.get(dishName)?.quantity || 0;
+      const newDelivered = Math.min(newValue, totalQuantity);
+
+      try {
+        const response = await meta?.onDeliveryUpdate?.(
+          row.original.id,
+          dishName,
+          newDelivered
+        );
+
+        const newState = new Map(deliveryState);
+        newState.set(dishName, newDelivered);
+        setDeliveryState(newState);
+      } catch (error) {
+        console.error("Failed to update delivery:", error);
+      }
+    };
+
   const dishTotals = calculateDishTotals();
   const { totalOrderValue, deliveredValue, remainingValue } = calculateTotals();
 
   return (
-    <div className="space-y-4 w-full overflow-x-auto">
-      <div className="min-w-[320px]">
-        <div className="grid grid-cols-4 gap-2 px-2 py-1 rounded-t text-sm font-medium bg-gray-50">
+    <div className="space-y-2 w-full overflow-x-auto">
+      <div className="min-w-[280px] sm:min-w-[320px]">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 px-1 sm:px-2 py-1 rounded-t text-xs sm:text-sm font-medium">
           <div className="col-span-1">Dish</div>
           <div className="text-center">Total($)</div>
-          <div className="text-center text-green-600">Delivered($)</div>
-          <div className="text-center text-orange-600">Remaining($)</div>
+          <div className="text-center text-green-600">Del($)</div>
+          <div className="text-center text-orange-600">Rem($)</div>
         </div>
 
         {Array.from(dishTotals.entries()).map(([dishName, totals]) => {
@@ -657,30 +655,29 @@ const OrderTracking = ({ row, meta }: { row: any; meta: TableMeta }) => {
           return (
             <div
               key={dishName}
-              className={`grid grid-cols-4 gap-2 items-center py-1 border-b border-gray-100 last:border-0 ${
+              className={`grid grid-cols-4 gap-1 sm:gap-2 items-center py-1 border-b border-gray-100 last:border-0 ${
                 isComplete ? "bg-green-50" : ""
               }`}
             >
-              <div className="col-span-1 text-sm font-medium truncate">
+              <div className="col-span-1 text-xs sm:text-sm font-medium truncate">
                 {dishName}
               </div>
-              <div className="text-center text-sm">
-                ${totals.price.toFixed(2)}
+              <div className="text-center text-xs sm:text-sm">
+                {totals.quantity}x${pricePerUnit.toFixed(2)}
               </div>
-              <div className="flex items-center gap-1 justify-center">
-                <Input
-                  type="number"
+              <div className="flex items-center gap-0.5 sm:gap-1 justify-center">
+                <NumericKeypadInput
                   value={delivered}
-                  onChange={handleDeliveryUpdate(dishName)}
-                  className="w-12 h-7 text-center text-green-600 text-sm"
-                  min="0"
+                  onChange={() => {}}
+                  onSubmit={handleDeliveryUpdate(dishName)}
                   max={totals.quantity}
+                  className="w-8 sm:w-12 h-6 sm:h-7 text-center text-green-600 text-xs sm:text-sm"
                 />
-                <span className="text-xs text-green-600">
+                <span className="text-[10px] sm:text-xs text-green-600">
                   ${deliveredValue.toFixed(2)}
                 </span>
               </div>
-              <div className="text-center text-sm">
+              <div className="text-center text-xs sm:text-sm">
                 <span
                   className={isComplete ? "text-green-600" : "text-orange-600"}
                 >
@@ -691,43 +688,41 @@ const OrderTracking = ({ row, meta }: { row: any; meta: TableMeta }) => {
           );
         })}
 
-        {/* Totals row */}
-        <div className="grid grid-cols-4 gap-2 items-center py-2 font-medium bg-gray-100">
-          <div className="col-span-1 text-sm">Total</div>
-          <div className="text-center text-gray-900 text-sm">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 items-center py-2 font-medium">
+          <div className="col-span-1 text-xs sm:text-sm">Total</div>
+          <div className="text-center text-xs sm:text-sm">
             ${totalOrderValue.toFixed(2)}
           </div>
-          <div className="text-center text-green-600 text-sm">
+          <div className="text-center text-green-600 text-xs sm:text-sm">
             ${deliveredValue.toFixed(2)}
           </div>
-          <div className="text-center text-orange-600 text-sm">
+          <div className="text-center text-orange-600 text-xs sm:text-sm">
             ${remainingValue.toFixed(2)}
           </div>
         </div>
 
-        {/* Payment Section */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t">
-          <div className="flex items-center gap-4">
-            <div className="text-sm font-medium">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 pt-4 border-t">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="text-xs sm:text-sm font-medium">
               Amount Due:{" "}
               <span className="text-orange-600">
                 ${remainingValue.toFixed(2)}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Input
                 type="number"
                 placeholder="0.00"
                 value={amountPaid}
                 onChange={(e) => handlePaymentInput(e.target.value)}
-                className="w-24 h-8 text-right text-sm"
+                className="w-20 sm:w-24 h-7 sm:h-8 text-right text-xs sm:text-sm"
               />
-              <span className="text-sm">$</span>
+              <span className="text-xs sm:text-sm">$</span>
             </div>
           </div>
           {change !== null && (
             <div
-              className={`text-sm font-medium ${
+              className={`text-xs sm:text-sm font-medium ${
                 change >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
@@ -870,9 +865,14 @@ export const columns: ColumnDef<OrderDetailedResponse, any>[] = [
               />
             </div> */}
 
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             <h3 className="font-semibold">Order Tracking</h3>
             <OrderTracking row={row} meta={meta} />
+          </div> */}
+
+          <div className="space-y-4">
+            <h3 className="font-semibold">Order Tracking</h3>
+            <OrderTracking12 row={row} meta={meta} />
           </div>
         </div>
       );
@@ -955,6 +955,8 @@ import {
   OrderSetDetailed
 } from "@/schemaValidations/interface/type_order";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import NumericKeypadInput from "./numberpad-dialog";
+import OrderTracking12 from "./order-tracking";
 
 // Additional types that might be needed
 interface OrderTableProps {
