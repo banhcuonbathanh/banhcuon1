@@ -15,8 +15,6 @@ import {
   OrderDetailedResponse,
   OrderSetDetailed
 } from "@/schemaValidations/interface/type_order";
-import { Button } from "@/components/ui/button";
-import { YourComponent } from "../admin-table";
 
 const ORDER_STATUSES = ["ORDERING", "SERVING", "WAITING", "DONE"] as const;
 type OrderStatus = (typeof ORDER_STATUSES)[number];
