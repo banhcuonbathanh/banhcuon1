@@ -11,7 +11,13 @@ import {
 import { TableMeta } from "./new-order-column";
 import NumericKeypadInput from "./numberpad-dialog";
 
-const OrderTracking12 = ({ row, meta }: { row: any; meta: TableMeta }) => {
+export const OrderTracking12 = ({
+  row,
+  meta
+}: {
+  row: any;
+  meta: TableMeta;
+}) => {
   const [deliveryState, setDeliveryState] = useState<Map<string, number>>(
     new Map()
   );
@@ -112,57 +118,11 @@ const OrderTracking12 = ({ row, meta }: { row: any; meta: TableMeta }) => {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Dish Items */}
-        <div className="space-y-3">
-          {Array.from(dishTotals.entries()).map(([dishName, totals]) => {
-            const delivered = deliveryState.get(dishName) || 0;
-            const pricePerUnit = totals.price / totals.quantity;
-            const deliveredValue = delivered * pricePerUnit;
-            const remainingValue = totals.price - deliveredValue;
-            const isComplete = delivered === totals.quantity;
-
-            return (
-              <div
-                key={dishName}
-                className={`p-3 rounded-lg ${isComplete ? "" : ""}`}
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <div className="font-medium text-sm">{dishName}</div>
-                  <div className="text-sm">
-                    {totals.quantity}x ${pricePerUnit.toFixed(2)}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-600">Delivered:</span>
-                    <div className="flex items-center gap-1">
-                      <NumericKeypadInput
-                        value={delivered}
-                        onChange={() => {}}
-                        onSubmit={handleDeliveryUpdate(dishName)}
-                        max={totals.quantity}
-                        className="w-16 h-8 text-center text-green-600 bg-white rounded"
-                      />
-                      <span className="text-green-600">
-                        ${deliveredValue.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-end gap-2">
-                    <span className="text-gray-600">Remaining:</span>
-                    <span
-                      className={
-                        isComplete ? "text-green-600" : "text-orange-600"
-                      }
-                    >
-                      ${remainingValue.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <DishDeliveryTable
+          dishTotals={calculateDishTotals()}
+          deliveryState={deliveryState}
+          handleDeliveryUpdate={handleDeliveryUpdate}
+        />
 
         <Separator />
 
@@ -175,12 +135,6 @@ const OrderTracking12 = ({ row, meta }: { row: any; meta: TableMeta }) => {
           <div className="flex justify-between text-sm">
             <span className="font-medium">Delivered Value:</span>
             <span className="text-green-600">${deliveredValue.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="font-medium">Remaining Value:</span>
-            <span className="text-orange-600">
-              ${remainingValue.toFixed(2)}
-            </span>
           </div>
         </div>
 
@@ -220,4 +174,75 @@ const OrderTracking12 = ({ row, meta }: { row: any; meta: TableMeta }) => {
   );
 };
 
-export default OrderTracking12;
+interface DishTotal {
+  quantity: number;
+  price: number;
+}
+
+interface DishDeliveryTableProps {
+  dishTotals: Map<string, DishTotal>;
+  deliveryState: Map<string, number>;
+  handleDeliveryUpdate: (
+    dishName: string
+  ) => (newValue: number) => Promise<void>;
+}
+
+export const DishDeliveryTable: React.FC<DishDeliveryTableProps> = ({
+  dishTotals,
+  deliveryState,
+  handleDeliveryUpdate
+}) => {
+  return (
+    <div className="w-full">
+      <div className="grid grid-cols-4 gap-4 p-4  rounded-t-lg">
+        <div className="font-medium text-gray-600">Dish Details</div>
+        <div className="font-medium text-gray-600">Delivered</div>
+        <div className="font-medium text-gray-600">Value</div>
+        <div className="font-medium text-gray-600">Remaining</div>
+      </div>
+
+      <div className="space-y-2">
+        {Array.from(dishTotals.entries()).map(
+          ([dishName, totals]: [string, DishTotal]) => {
+            const delivered = deliveryState.get(dishName) || 0;
+            const pricePerUnit = totals.price / totals.quantity;
+            const deliveredValue = delivered * pricePerUnit;
+            const remainingValue = totals.price - deliveredValue;
+            const isComplete = delivered === totals.quantity;
+
+            return (
+              <div
+                key={dishName}
+                className="grid grid-cols-4 gap-4 p-4 e border-b items-center"
+              >
+                <div className="font-medium text-sm">
+                  {dishName} ({totals.quantity} x {pricePerUnit.toFixed(2)}K)
+                </div>
+
+                <div className="flex items-center">
+                  <NumericKeypadInput
+                    value={delivered}
+                    onChange={() => {}}
+                    onSubmit={handleDeliveryUpdate(dishName)}
+                    max={totals.quantity}
+                    className="w-16 h-8 text-center text-green-600 bg-white rounded border"
+                  />
+                </div>
+
+                <div className="text-green-600">
+                  {deliveredValue.toFixed(2)}
+                </div>
+
+                <div
+                  className={isComplete ? "text-green-600" : "text-orange-600"}
+                >
+                  {remainingValue.toFixed(2)}
+                </div>
+              </div>
+            );
+          }
+        )}
+      </div>
+    </div>
+  );
+};

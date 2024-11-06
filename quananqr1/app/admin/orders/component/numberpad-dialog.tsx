@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -91,6 +91,7 @@ const NumericKeypadInput: React.FC<NumericKeypadInputProps> = ({
 
       <Dialog open={isOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="sm:max-w-[350px]">
+          <DialogTitle>Enter Number</DialogTitle>
           <div className="space-y-4">
             <Input
               type="text"
