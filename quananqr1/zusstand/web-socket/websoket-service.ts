@@ -4,12 +4,10 @@ import { CreateOrderRequest } from "@/schemaValidations/interface/type_order";
 export interface OrderPayload {
   orderId: number;
 
-
-
   orderData: CreateOrderRequest;
 }
 
-export type WebSocketMessage = 
+export type WebSocketMessage =
   | {
       type: "NEW_ORDER";
       data: OrderPayload;
@@ -21,9 +19,8 @@ export type WebSocketMessage =
         status: string;
         timestamp: string;
       };
-    }
-  // Add other message types as needed
-  ;
+    };
+// Add other message types as needed
 export class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
@@ -42,11 +39,19 @@ export class WebSocketService {
     this.isGuest = isGuest;
     this.connect();
   }
-
-  private connect() {
-    const wsUrl = `ws://${envConfig.NEXT_PUBLIC_API_ENDPOINT}/ws?userId=${
+  private createWebSocketUrl(): string {
+    const endpoint = envConfig.NEXT_PUBLIC_API_ENDPOINT.replace(
+      /^(http|https):\/\//,
+      ""
+    ).replace(/\/$/, "");
+    const wsUrl = `ws://${endpoint}/ws?userId=${
       this.userId
     }&userName=${encodeURIComponent(this.userName)}&isGuest=${this.isGuest}`;
+    return wsUrl;
+  }
+
+  private connect() {
+    const wsUrl = this.createWebSocketUrl();
     console.log("Connecting to WebSocket:", wsUrl);
 
     try {
@@ -67,8 +72,8 @@ export class WebSocketService {
         }
       };
 
-      this.ws.onclose = () => {
-        console.log("WebSocket disconnected");
+      this.ws.onclose = (event) => {
+        console.log("WebSocket disconnected:", event.code, event.reason);
         this.disconnectHandlers.forEach((handler) => handler());
         this.attemptReconnect();
       };
@@ -81,7 +86,6 @@ export class WebSocketService {
       this.attemptReconnect();
     }
   }
-
   private attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
@@ -130,3 +134,22 @@ export class WebSocketService {
     }
   }
 }
+
+const createWebSocketUrl = (
+  userId: string | number,
+  userName: string,
+  isGuest: boolean
+) => {
+  // Remove 'http://' or 'https://' from the API endpoint
+  const cleanEndpoint = envConfig.NEXT_PUBLIC_API_ENDPOINT.replace(
+    /^(http|https):\/\//,
+    ""
+  );
+
+  const wsUrl = `ws://${cleanEndpoint}/ws?userId=${userId}&userName=${encodeURIComponent(
+    userName
+  )}&isGuest=${isGuest}`;
+
+  console.log("Connecting to WebSocket:", wsUrl);
+  return wsUrl;
+};

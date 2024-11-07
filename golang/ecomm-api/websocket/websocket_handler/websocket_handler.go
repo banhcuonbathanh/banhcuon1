@@ -1,45 +1,3 @@
-// package websockethandler
-
-// import (
-// 	"log"
-// 	"net/http"
-
-// 	service "english-ai-full/ecomm-api/websocket/websocket_service"
-// 	"github.com/gorilla/websocket"
-// )
-
-// type WebSocketHandler struct {
-// 	upgrader        websocket.Upgrader
-// 	websocketService service.WebSocketService
-// }
-
-// func NewWebSocketHandler(websocketService service.WebSocketService) *WebSocketHandler {
-// 	return &WebSocketHandler{
-// 		upgrader: websocket.Upgrader{
-// 			ReadBufferSize:  1024,
-// 			WriteBufferSize: 1024,
-// 			CheckOrigin: func(r *http.Request) bool {
-// 				return true
-// 			},
-// 		},
-// 		websocketService: websocketService,
-// 	}
-// }
-
-// func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-// 	conn, err := h.upgrader.Upgrade(w, r, nil)
-// 	if err != nil {
-// 		log.Printf("Failed to upgrade connection: %v", err)
-// 		return
-// 	}
-
-// 	client := service.NewClient(conn, h.websocketService)
-// 	h.websocketService.RegisterClient(client)
-
-// 	go client.ReadPump()
-// 	go client.WritePump()
-// }
-
 package websocket_handler
 
 import (
@@ -61,46 +19,47 @@ type WebSocketHandler struct {
 func NewWebSocketHandler(websocketService service.WebSocketService) *WebSocketHandler {
     return &WebSocketHandler{
         upgrader: websocket.Upgrader{
-            ReadBufferSize:  1024,
-            WriteBufferSize: 1024,
+            ReadBufferSize:  4096,
+            WriteBufferSize: 4096,
+            EnableCompression: true,
             CheckOrigin: func(r *http.Request) bool {
-                // In production, you might want to be more restrictive
                 return true
             },
-            HandshakeTimeout: 10 * time.Second,
+            HandshakeTimeout: 30 * time.Second, // Increased timeout
         },
         websocketService: websocketService,
     }
 }
 
+
 // In your WebSocket handler
 func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-    log.Printf("golang/ecomm-api/websocket/websocket_handler/websocket_handler.go")
-    userID := r.URL.Query().Get("userId")    // or from your auth middleware
-    userName := r.URL.Query().Get("userName") // optional
+    userID := r.Context().Value("userID").(string)
+    userName := r.Context().Value("userName").(string)
+    isGuest := r.Context().Value("isGuest").(bool)
 
-    if userID == "" {
-        log.Printf("No userID provided for connection from %s", r.RemoteAddr)
-        http.Error(w, "UserID is required", http.StatusBadRequest)
-        return
-    }
+    log.Printf("WebSocket connection request from UserID: %s, UserName: %s, IsGuest: %t", userID, userName, isGuest)
 
-    conn, err := h.upgrader.Upgrade(w, r, nil)
+    // Set response headers for WebSocket
+    headers := http.Header{}
+
+    conn, err := h.upgrader.Upgrade(w, r, headers)
     if err != nil {
         log.Printf("Failed to upgrade connection from %s: %v", r.RemoteAddr, err)
         return
     }
 
-    log.Printf("New WebSocket connection established - UserID: %s, UserName: %s, Address: %s", 
-        userID, userName, r.RemoteAddr)
+    // Enable compression if available
+    conn.EnableWriteCompression(true)
 
-    client := service.NewClient(conn, h.websocketService, userID, userName)
+    client := service.NewClient(conn, h.websocketService, userID, userName, isGuest)
     h.websocketService.RegisterClient(client)
+
+    log.Printf("WebSocket client registered - UserID: %s, UserName: %s, Address: %p", userID, userName, client)
 
     go client.ReadPump()
     go client.WritePump()
 }
-
 // To send a message to a specific user
 
 

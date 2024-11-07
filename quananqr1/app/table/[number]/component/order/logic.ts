@@ -10,36 +10,44 @@ import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 
 interface OrderCreationState {
   isLoading: boolean;
-  createOrder: (
-    bowlChili: number,
-    bowlNoChili: number,
-    Table_token: string
-  ) => Promise<void>;
+  createOrder: (params: {
+    bowlChili: number;
+    bowlNoChili: number;
+    Table_token: string;
+    http: any; // Replace with proper type from your API store
+    auth: {
+      guest: any; // Replace with proper types
+      user: any;
+      isGuest: boolean;
+    };
+    orderStore: {
+      tableNumber: number;
+      getOrderSummary: () => any;
+      clearOrder: () => void;
+    };
+    websocket: {
+      connect: (user: any, isGuest: boolean) => void;
+      disconnect: () => void;
+      isConnected: boolean;
+      sendMessage: (message: any) => void;
+    };
+    openLoginDialog: () => void;
+  }) => Promise<void>;
 }
 
 export const useOrderCreationStore = create<OrderCreationState>((set) => ({
   isLoading: false,
 
-  createOrder: async (
-    bowlChili: number,
-    bowlNoChili: number,
-    Table_token: string
-  ) => {
-    const { http } = useApiStore.getState();
-    const { guest, user, isGuest, openLoginDialog } = useAuthStore.getState();
-
-    console.log(
-      "quananqr1/app/table/[number]/component/order/logic.ts  guest, user, isGuest ",
-      guest,
-      user,
-      isGuest
-    );
-    const { tableNumber, getOrderSummary, clearOrder } =
-      useOrderStore.getState();
-    const { connect, disconnect, isConnected, socket, sendMessage } =
-      useWebSocketStore();
-
-    // const { sendMessage, isConnected } = useWebSocketStore.getState();
+  createOrder: async ({
+    bowlChili,
+    bowlNoChili,
+    Table_token,
+    http,
+    auth: { guest, user, isGuest },
+    orderStore: { tableNumber, getOrderSummary, clearOrder },
+    websocket: { connect, disconnect, isConnected, sendMessage },
+    openLoginDialog
+  }) => {
     // Check authentication
     if (!user && !guest) {
       openLoginDialog();
@@ -49,17 +57,13 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     const orderSummary = getOrderSummary();
     connect(isGuest ? guest : user, isGuest);
 
-    console.log(
-      "quananqr1/app/table/[number]/component/order/logic.ts connect",
-      connect
-    );
     // Prepare order items
-    const dish_items = orderSummary.dishes.map((dish) => ({
+    const dish_items = orderSummary.dishes.map((dish:any ) => ({
       dish_id: dish.id,
       quantity: dish.quantity
     }));
 
-    const set_items = orderSummary.sets.map((set) => ({
+    const set_items = orderSummary.sets.map((set: any) => ({
       set_id: set.id,
       quantity: set.quantity
     }));
@@ -73,6 +77,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     } else if (!isGuest && user) {
       order_name = user.name;
     }
+
     const orderData: CreateOrderRequest = {
       guest_id,
       user_id,
@@ -99,14 +104,11 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
       const link_order = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.Order_External_End_Point}`;
       const response = await http.post(link_order, orderData);
 
-      // Send WebSocket message if connected
       if (isConnected) {
         sendMessage({
           type: "NEW_ORDER",
           data: {
-            // Changed from 'payload' to 'data'
             orderId: response.data.id,
-
             orderData
           }
         });

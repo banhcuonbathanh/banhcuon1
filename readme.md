@@ -211,40 +211,70 @@ protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=p
 
 http://localhost:8888/images/image?filename=Screenshot%202024-02-20%20at%2014.37.22.png&path=folder1/folder2
 
-=============================== test ========================
+=============================== ws ========================
 
-stand at python
-
-git checkout -b test_isadmin
-
-http://localhost:3000/admin/dished
-
-Exit the editor: If you’re using vim (which is the default editor for Git), you can quit by:
-Pressing Esc to ensure you’re in normal mode.
-Typing :q! and pressing Enter to quit without saving changes.
-Abort the merge: If you want to abort the merge entirely, you can run:
-git merge --abort
-
-If you need to write a proper commit message, you can edit the message above the lines starting with #. For example:
-
-Merge branch 'test_isadmin' into python
-
-This merge is necessary to integrate the latest changes from the 'test_isadmin' branch into the 'python' branch.
-
-git checkout -b testferetur---set--add--database
-
-const ws = new WebSocket(`ws://your-server/ws?userId=${userId}&userName=${userName}`);
-// For User 1
-const ws1 = new WebSocket('ws://your-server/ws?userId=user1&userName=John');
-
-// For User 2
-const ws2 = new WebSocket('ws://your-server/ws?userId=user2&userName=Jane');
-
-Connect first user: ws://your-server/ws?userId=user1&userName=John
-Connect second user: ws://your-server/ws?userId=user2&userName=Jane
+ws://localhost:8888/ws?userId=8&userName=vy1_2024_11_07_14_53_51_24e6a4af-9052-4dfd-8cc9-45fce2cc264d&isGuest=true
 
 {
-"fromUser": "user1",
-"toUser": "user2",
-"content": "Test direct message"
+"connection": {
+"url": "ws://localhost:8888/ws?userId=8&userName=vy1_2024_11_07_14_53_51_24e6a4af-9052-4dfd-8cc9-45fce2cc264d&isGuest=true"
+},
+"messages": {
+"directMessage": {
+"type": "DIRECT_MESSAGE",
+"content": "Hello, this is a test message",
+"toUser": "recipient_user_id",
+"tableId": "table_123",
+"orderId": "order_456"
+},
+"newOrder": {
+"type": "NEW_ORDER",
+"content": {
+"orderId": 123,
+"orderData": {
+"guest_id": null,
+"user_id": 8,
+"is_guest": true,
+"table_number": 1,
+"order_handler_id": 456,
+"status": "PENDING",
+"created_at": "2024-11-07T14:53:51Z",
+"updated_at": "2024-11-07T14:53:51Z",
+"total_price": 25.50,
+"dish_items": [
+{
+"dish_id": 1,
+"quantity": 2
+}
+],
+"set_items": [
+{
+"set_id": 1,
+"quantity": 1
+}
+],
+"bow_chili": 1,
+"bow_no_chili": 0,
+"takeAway": false,
+"chiliNumber": 2,
+"table_token": "table_123_token",
+"order_name": "Order #123"
+}
+},
+"toUser": "recipient_user_id",
+"tableId": "table_123",
+"orderId": "order_456"
+},
+"orderStatusUpdate": {
+"type": "ORDER_STATUS_UPDATE",
+"content": {
+"orderId": 123,
+"status": "COMPLETED",
+"timestamp": "2024-11-07T14:53:51Z"
+},
+"toUser": "recipient_user_id",
+"tableId": "table_123",
+"orderId": "order_456"
+}
+}
 }

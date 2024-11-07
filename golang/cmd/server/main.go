@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"image"
 	"image/jpeg"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	comment_api "english-ai-full/ecomm-api/comment-api"
 	python_api "english-ai-full/ecomm-api/python-api"
@@ -251,18 +254,49 @@ func setupReadingService(r *chi.Mux, conn *grpc.ClientConn, secretKey *string) {
 
 
 
-
 func setupWebSocketService(r *chi.Mux) {
     websockrepo := websocket_repository.NewInMemoryMessageRepository()
     websocketService := websocket_service.NewWebSocketService(websockrepo)
     go websocketService.Run()
 
     websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
-    r.Get("/ws", websocketHandler.HandleWebSocket)
-    r.Post("/api/messages", websocketHandler.HandleSendMessage) // Changed to use chi router syntax
+    
+    // Update WebSocket endpoint to handle query parameters
+    r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
+        // Get query parameters
+        userID := r.URL.Query().Get("userId")
+        userName := r.URL.Query().Get("userName")
+        isGuestStr := r.URL.Query().Get("isGuest")
+        
+        // Validate required parameters
+        if userID == "" {
+            log.Printf("WebSocket connection attempt without userID from %s", r.RemoteAddr)
+            http.Error(w, "UserID is required", http.StatusBadRequest)
+            return
+        }
+
+        if userName == "" {
+            userName = fmt.Sprintf("User_%s", userID) // Default username if not provided
+        }
+
+        // Parse isGuest parameter with proper default value
+        isGuest := false
+        if isGuestStr != "" {
+            isGuest = strings.ToLower(isGuestStr) == "true"
+        }
+
+        // Create context with user information
+        ctx := context.WithValue(r.Context(), "userID", userID)
+        ctx = context.WithValue(ctx, "userName", userName)
+        ctx = context.WithValue(ctx, "isGuest", isGuest)
+
+        // Pass the modified request with context to the handler
+        websocketHandler.HandleWebSocket(w, r.WithContext(ctx))
+    })
+    
+    r.Post("/api/messages", websocketHandler.HandleSendMessage)
     log.Println("WebSocket service initialized on /ws endpoint")
 }
-
 
 func setupGlobalMiddleware(r *chi.Mux) {
     r.Use(func(next http.Handler) http.Handler {

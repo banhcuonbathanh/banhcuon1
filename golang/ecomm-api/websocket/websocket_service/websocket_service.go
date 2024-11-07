@@ -144,29 +144,41 @@ func (s *webSocketService) Run() {
 }
 
 func (s *webSocketService) SendMessageToUser(fromUser, toUser string, messageType string, content interface{}, tableID, orderID string) error {
-    message := &websocket_model.Message{
-        ID:        uuid.New().String(),
-        Type:      messageType,
-        Content:   content,
-        Sender:    fromUser,
-        FromUser:  fromUser,
-        ToUser:    toUser,
-        Timestamp: time.Now(),
-        TableID:   tableID,
-        OrderID:   orderID,
+    var message *websocket_model.Message
+
+    switch messageType {
+    case "NEW_ORDER":
+        if orderPayload, ok := content.(websocket_model.OrderPayload); ok {
+            message = &websocket_model.Message{
+                Type:    messageType,
+                Content: orderPayload,
+            }
+        }
+    case "ORDER_STATUS_UPDATE":
+        if statusUpdate, ok := content.(websocket_model.OrderStatusUpdate); ok {
+            message = &websocket_model.Message{
+                Type:    messageType,
+                Content: statusUpdate,
+            }
+        }
+    default:
+        message = &websocket_model.Message{
+            Type:    messageType,
+            Content: content,
+        }
     }
-    
-    log.Printf("Attempting to send message from %s to %s of type %s", fromUser, toUser, messageType)
-    if err := s.SendToUser(toUser, message); err != nil {
-        log.Printf("Error sending message: %v", err)
-        return err
+
+    if message != nil {
+        message.ID = uuid.New().String()
+        message.Sender = fromUser
+        message.FromUser = fromUser
+        message.ToUser = toUser
+        message.Timestamp = time.Now()
+        message.TableID = tableID
+        message.OrderID = orderID
+
+        return s.SendToUser(toUser, message)
     }
-    
-    // Save message to repository
-    if err := s.repo.SaveMessage(message); err != nil {
-        log.Printf("Error saving message: %v", err)
-        return err
-    }
-    
-    return nil
+
+    return fmt.Errorf("invalid message type or content")
 }
