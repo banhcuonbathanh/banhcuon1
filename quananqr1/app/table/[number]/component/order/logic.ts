@@ -36,7 +36,10 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     );
     const { tableNumber, getOrderSummary, clearOrder } =
       useOrderStore.getState();
-    const { sendMessage, isConnected } = useWebSocketStore.getState();
+    const { connect, disconnect, isConnected, socket, sendMessage } =
+      useWebSocketStore();
+
+    // const { sendMessage, isConnected } = useWebSocketStore.getState();
     // Check authentication
     if (!user && !guest) {
       openLoginDialog();
@@ -44,7 +47,12 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     }
 
     const orderSummary = getOrderSummary();
+    connect(isGuest ? guest : user, isGuest);
 
+    console.log(
+      "quananqr1/app/table/[number]/component/order/logic.ts connect",
+      connect
+    );
     // Prepare order items
     const dish_items = orderSummary.dishes.map((dish) => ({
       dish_id: dish.id,
@@ -92,18 +100,18 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
       const response = await http.post(link_order, orderData);
 
       // Send WebSocket message if connected
-      // if (isConnected) {
-      //   sendMessage({
-      //     type: "NEW_ORDER",
-      //     payload: {
-      //       orderId: response.data.id,
-      //       tableNumber,
-      //       status: "pending",
-      //       timestamp: new Date().toISOString(),
-      //       orderData
-      //     }
-      //   });
-      // }
+      if (isConnected) {
+        sendMessage({
+          type: "NEW_ORDER",
+          data: {
+            // Changed from 'payload' to 'data'
+            orderId: response.data.id,
+
+            orderData
+          }
+        });
+      }
+
       toast({
         title: "Success",
         description: "Order has been created successfully"
@@ -120,6 +128,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
       });
     } finally {
       set({ isLoading: false });
+      disconnect();
     }
   }
 }));

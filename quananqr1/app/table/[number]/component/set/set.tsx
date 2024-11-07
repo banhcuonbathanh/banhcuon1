@@ -16,7 +16,7 @@ interface SetSelectionProps {
 }
 
 const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
-  console.log("quananqr1/app/(guest)/component/set/set.tsx set ", set);
+  // console.log("quananqr1/app/(guest)/component/set/set.tsx set ", set);
   const orderStore = useOrderStore();
 
   const {

@@ -76,10 +76,10 @@ const useOrderStore = create<OrderState>((set, get) => ({
   tabletoken: "",
   addTableToken: (token: string) =>
     set(() => {
-      console.log(
-        "quananqr1/zusstand/order/order_zustand.ts addTableToken",
-        token
-      );
+      // console.log(
+      //   "quananqr1/zusstand/order/order_zustand.ts addTableToken",
+      //   token
+      // );
       return { tabletoken: token };
     }),
   addTableNumber: (tableNumber) =>
