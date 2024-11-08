@@ -26,6 +26,7 @@ import { YourComponent1 } from "./admin-table";
 import { useApiStore } from "@/zusstand/api/api-controller";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
+import { WebSocketMessage } from "@/zusstand/web-socket/websoket-service";
 
 //   const { data: sets, isLoading: setsLoading, error: setsError, refetch: refetchSets } = useSetListQuery();
 interface OrderClientProps {
@@ -44,46 +45,6 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   const [data, setData] = useState(initialData);
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Handle incoming WebSocket messages
-  // const handleWebSocketMessage = useCallback(
-  //   (message: WebSocketMessage21) => {
-  //     if (message.type === "NEW_ORDER") {
-  //       setData((prevData) => {
-  //         if (currentPage === 1) {
-  //           const newOrder: OrderDetailedResponse = {
-  //             id: message.content.orderID,
-  //             table_number: Number(message.content.tableNumber),
-  //             status: message.content.status,
-  //             created_at: message.content.timestamp,
-  //             data_set: [],
-  //             data_dish: [],
-  //             guest_id: 0,
-  //             user_id: 0,
-  //             is_guest: false,
-  //             order_handler_id: 0,
-  //             updated_at: "",
-  //             total_price: 0,
-  //             bow_chili: 0,
-  //             bow_no_chili: 0,
-  //             takeAway: false,
-  //             chiliNumber: 0,
-  //             table_token: "",
-  //             order_name: ""
-  //           };
-  //           return [newOrder, ...prevData.slice(0, -1)];
-  //         }
-  //         return prevData;
-  //       });
-
-  //       setPagination((prev) => ({
-  //         ...prev,
-  //         total_items: prev.total_items + 1
-  //       }));
-  //     }
-  //   },
-  //   [currentPage]
-  // );
 
   const handlePageChange = async (newPage: number) => {
     setIsLoading(true);
@@ -105,8 +66,8 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   // ---------------------
   const { http } = useApiStore();
   const { guest, user, isGuest, openLoginDialog } = useAuthStore();
-  const { connect, disconnect, isConnected, sendMessage } = useWebSocketStore();
 
+  const { connect, disconnect, addMessageHandler } = useWebSocketStore();
   // connect(isGuest ? guest : user, isGuest);
 
   useEffect(() => {
@@ -120,18 +81,24 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   }, [connect, disconnect, guest, user, isGuest]);
 
   const handleWebSocketMessage = useCallback(
-    (message: WebSocketMessage21) => {
+    (message: WebSocketMessage) => {
+      console.log(
+        "quananqr1/app/admin/orders/component/order-client.tsx message: 111111",
+        message
+      );
       if (message.type === "NEW_ORDER") {
         console.log(
-          "quananqr1/app/admin/orders/component/order-client.tsx 1111"
+          "quananqr1/app/admin/orders/component/order-client.tsx message: 111111",
+          message
         );
+
         setData((prevData) => {
           if (currentPage === 1) {
             const newOrder: OrderDetailedResponse = {
-              id: message.content.orderID,
-              table_number: Number(message.content.tableNumber),
-              status: message.content.status,
-              created_at: message.content.timestamp,
+              id: 12,
+              table_number: 1,
+              status: "message.content.status",
+              created_at: " message.content.timestamp",
               data_set: [],
               data_dish: [],
               guest_id: 0,
@@ -161,8 +128,13 @@ export const OrderClient: React.FC<OrderClientProps> = ({
     },
     [currentPage]
   );
+  useEffect(() => {
+    // Register the handler on mount
+    const unsubscribe = addMessageHandler(handleWebSocketMessage);
 
-
+    // Cleanup the handler on unmount
+    return unsubscribe;
+  }, [addMessageHandler, handleWebSocketMessage]);
   return (
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <div className="space-y-2">

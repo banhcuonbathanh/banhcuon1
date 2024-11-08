@@ -10,11 +10,15 @@ interface WebSocketState {
   connect: (user: User | GuestInfo | null, isGuest: boolean) => void;
   disconnect: () => void;
   sendMessage: (message: WebSocketMessage) => void;
+  addMessageHandler: (handler: (message: WebSocketMessage) => void) => () => void;
+  messageHandlers: Array<(message: WebSocketMessage) => void>;
 }
+
 
 export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   socket: null,
   isConnected: false,
+  messageHandlers: [],
 
   connect: (user: User | GuestInfo | null, isGuest: boolean) => {
     console.log("quananqr1/zusstand/web-socket/websocketStore.ts");
@@ -25,8 +29,19 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       "dung_2024_11_08_12_43_15_0ed49e95-07c3-489f-a6f3-f6a8dcef835a",
       true
     );
+    socket.onMessage((message: WebSocketMessage) => {
+      const handlers = get().messageHandlers;
+      handlers.forEach((handler) => handler(message)); // Call each registered handler
+    });
+
     socket.onConnect(() => set({ isConnected: true }));
     socket.onDisconnect(() => set({ isConnected: false }));
+    socket.onMessage((message: WebSocketMessage) => {
+      console.log(
+        "quananqr1/zusstand/web-socket/websocketStore.ts message",
+        message
+      ); // Log message for debugging
+    });
     set({ socket });
     // if (!get().socket && user) {
     //   const userId = user.id.toString();
@@ -52,7 +67,20 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     if (socket) {
       socket.sendMessage(message);
     }
-  }
+  },
+  addMessageHandler: (handler) => {
+    set((state) => ({
+      messageHandlers: [...state.messageHandlers, handler],
+    }));
+
+    // Return a function to unsubscribe this handler
+    return () => {
+      set((state) => ({
+        messageHandlers: state.messageHandlers.filter((h) => h !== handler),
+      }));
+    };
+  },
+
 }));
 
 // how to use
