@@ -4,7 +4,6 @@ import { WebSocketMessage, WebSocketService } from "./websoket-service";
 import { User } from "@/schemaValidations/user.schema";
 import { GuestInfo } from "@/schemaValidations/interface/type_guest";
 
-
 interface WebSocketState {
   socket: WebSocketService | null;
   isConnected: boolean;
@@ -17,16 +16,26 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   socket: null,
   isConnected: false,
 
-
   connect: (user: User | GuestInfo | null, isGuest: boolean) => {
-    if (!get().socket && user) {
-      const userId = user.id.toString();
-      const userName = user.name;
-      const socket = new WebSocketService(userId, userName, isGuest);
-      socket.onConnect(() => set({ isConnected: true }));
-      socket.onDisconnect(() => set({ isConnected: false }));
-      set({ socket });
-    }
+    console.log("quananqr1/zusstand/web-socket/websocketStore.ts");
+    // const userId = user.id.toString();
+    // const userName = user.name;
+    const socket = new WebSocketService(
+      "9",
+      "dung_2024_11_08_12_43_15_0ed49e95-07c3-489f-a6f3-f6a8dcef835a",
+      true
+    );
+    socket.onConnect(() => set({ isConnected: true }));
+    socket.onDisconnect(() => set({ isConnected: false }));
+    set({ socket });
+    // if (!get().socket && user) {
+    //   const userId = user.id.toString();
+    //   const userName = user.name;
+    //   const socket = new WebSocketService(userId, userName, isGuest);
+    //   socket.onConnect(() => set({ isConnected: true }));
+    //   socket.onDisconnect(() => set({ isConnected: false }));
+    //   set({ socket });
+    // }
   },
   //
 

@@ -52,10 +52,13 @@ export class WebSocketService {
 
   private connect() {
     const wsUrl = this.createWebSocketUrl();
-    console.log("Connecting to WebSocket:", wsUrl);
 
+    const linktest =
+      "ws://localhost:8888/ws?userId=9&userName=dung_2024_11_08_12_43_15_0ed49e95-07c3-489f-a6f3-f6a8dcef835a&isGuest=true";
+    console.log("Connecting to WebSocket:", wsUrl);
+    console.log("quananqr1/zusstand/web-socket/websoket-service.ts connect");
     try {
-      this.ws = new WebSocket(wsUrl);
+      this.ws = new WebSocket(linktest);
 
       this.ws.onopen = () => {
         console.log("WebSocket connected");

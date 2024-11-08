@@ -45,46 +45,45 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(false);
 
-
   // Handle incoming WebSocket messages
-  const handleWebSocketMessage = useCallback(
-    (message: WebSocketMessage21) => {
-      if (message.type === "NEW_ORDER") {
-        setData((prevData) => {
-          if (currentPage === 1) {
-            const newOrder: OrderDetailedResponse = {
-              id: message.content.orderID,
-              table_number: Number(message.content.tableNumber),
-              status: message.content.status,
-              created_at: message.content.timestamp,
-              data_set: [],
-              data_dish: [],
-              guest_id: 0,
-              user_id: 0,
-              is_guest: false,
-              order_handler_id: 0,
-              updated_at: "",
-              total_price: 0,
-              bow_chili: 0,
-              bow_no_chili: 0,
-              takeAway: false,
-              chiliNumber: 0,
-              table_token: "",
-              order_name: ""
-            };
-            return [newOrder, ...prevData.slice(0, -1)];
-          }
-          return prevData;
-        });
+  // const handleWebSocketMessage = useCallback(
+  //   (message: WebSocketMessage21) => {
+  //     if (message.type === "NEW_ORDER") {
+  //       setData((prevData) => {
+  //         if (currentPage === 1) {
+  //           const newOrder: OrderDetailedResponse = {
+  //             id: message.content.orderID,
+  //             table_number: Number(message.content.tableNumber),
+  //             status: message.content.status,
+  //             created_at: message.content.timestamp,
+  //             data_set: [],
+  //             data_dish: [],
+  //             guest_id: 0,
+  //             user_id: 0,
+  //             is_guest: false,
+  //             order_handler_id: 0,
+  //             updated_at: "",
+  //             total_price: 0,
+  //             bow_chili: 0,
+  //             bow_no_chili: 0,
+  //             takeAway: false,
+  //             chiliNumber: 0,
+  //             table_token: "",
+  //             order_name: ""
+  //           };
+  //           return [newOrder, ...prevData.slice(0, -1)];
+  //         }
+  //         return prevData;
+  //       });
 
-        setPagination((prev) => ({
-          ...prev,
-          total_items: prev.total_items + 1
-        }));
-      }
-    },
-    [currentPage]
-  );
+  //       setPagination((prev) => ({
+  //         ...prev,
+  //         total_items: prev.total_items + 1
+  //       }));
+  //     }
+  //   },
+  //   [currentPage]
+  // );
 
   const handlePageChange = async (newPage: number) => {
     setIsLoading(true);
@@ -108,8 +107,62 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   const { guest, user, isGuest, openLoginDialog } = useAuthStore();
   const { connect, disconnect, isConnected, sendMessage } = useWebSocketStore();
 
-  connect(isGuest ? guest : user, isGuest);
-  // ------------------------------------------
+  // connect(isGuest ? guest : user, isGuest);
+
+  useEffect(() => {
+    connect(isGuest ? guest : user, isGuest);
+    console.log(
+      "quananqr1/app/admin/orders/component/order-client.tsx connect"
+    );
+    return () => {
+      disconnect();
+    };
+  }, [connect, disconnect, guest, user, isGuest]);
+
+  const handleWebSocketMessage = useCallback(
+    (message: WebSocketMessage21) => {
+      if (message.type === "NEW_ORDER") {
+        console.log(
+          "quananqr1/app/admin/orders/component/order-client.tsx 1111"
+        );
+        setData((prevData) => {
+          if (currentPage === 1) {
+            const newOrder: OrderDetailedResponse = {
+              id: message.content.orderID,
+              table_number: Number(message.content.tableNumber),
+              status: message.content.status,
+              created_at: message.content.timestamp,
+              data_set: [],
+              data_dish: [],
+              guest_id: 0,
+              user_id: 0,
+              is_guest: false,
+              order_handler_id: 0,
+              updated_at: "",
+              total_price: 0,
+              bow_chili: 0,
+              bow_no_chili: 0,
+              takeAway: false,
+              chiliNumber: 0,
+              table_token: "",
+              order_name: "",
+              deliveryData: undefined
+            };
+            return [newOrder, ...prevData.slice(0, -1)];
+          }
+          return prevData;
+        });
+
+        setPagination((prev) => ({
+          ...prev,
+          total_items: prev.total_items + 1
+        }));
+      }
+    },
+    [currentPage]
+  );
+
+
   return (
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <div className="space-y-2">
@@ -130,13 +183,6 @@ export const OrderClient: React.FC<OrderClientProps> = ({
               <Separator className="my-4" />
 
               <YourComponent1 initialData={initialData} />
-              {/* <OrderDataTable
-                columns={columns}
-                data={data}
-                searchKey="id"
-                onStatusChange={handleStatusChange}
-                onPaymentMethodChange={handlePaymentMethodChange}
-              /> */}
 
               <div className="flex items-center justify-between space-x-2 py-4">
                 <div className="flex-1 text-sm text-muted-foreground">
@@ -180,6 +226,22 @@ export const OrderClient: React.FC<OrderClientProps> = ({
                     }
                   >
                     Next
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      connect(isGuest ? guest : user, isGuest);
+                      console.log(
+                        "quananqr1/app/admin/orders/component/order-client.tsx Button "
+                      );
+                    }}
+                    disabled={
+                      currentPage === pagination.total_pages || isLoading
+                    }
+                  >
+                    connect
                   </Button>
                 </div>
               </div>

@@ -147,10 +147,10 @@ export const get_Orders = async (
       })),
       pagination: pagination // Fixed casing to match interface
     };
-    console.log(
-      "quananqr1/zusstand/server/order-controller.ts validatedData",
-      validatedData
-    );
+    // console.log(
+    //   "quananqr1/zusstand/server/order-controller.ts validatedData",
+    //   validatedData
+    // );
     return validatedData;
   } catch (error) {
     console.error("Error fetching or parsing orders:", error);
