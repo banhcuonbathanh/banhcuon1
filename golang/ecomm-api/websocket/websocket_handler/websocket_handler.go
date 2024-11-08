@@ -38,7 +38,7 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
     userName := r.Context().Value("userName").(string)
     isGuest := r.Context().Value("isGuest").(bool)
 
-    log.Printf("WebSocket connection request from UserID: %s, UserName: %s, IsGuest: %t", userID, userName, isGuest)
+    log.Printf("golang/ecomm-api/websocket/websocket_handler/websocket_handler.go 1")
 
     // Set response headers for WebSocket
     headers := http.Header{}
@@ -55,51 +55,61 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
     client := service.NewClient(conn, h.websocketService, userID, userName, isGuest)
     h.websocketService.RegisterClient(client)
 
-    log.Printf("WebSocket client registered - UserID: %s, UserName: %s, Address: %p", userID, userName, client)
+    log.Printf("golang/ecomm-api/websocket/websocket_handler/websocket_handler.go 2")
 
     go client.ReadPump()
     go client.WritePump()
 }
 // To send a message to a specific user
 
-
 func (h *WebSocketHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPost {
-        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-        return
-    }
-
     var messageRequest struct {
-        FromUser  string      `json:"fromUser"`
-        ToUser    string      `json:"toUser"`
-        Type      string      `json:"type"`
-        Content   interface{} `json:"content"`
-        TableID   string      `json:"table_id,omitempty"`
-        OrderID   string      `json:"order_id,omitempty"`
+        FromUserID string      `json:"fromUserId"`
+        ToUserID   string      `json:"toUserId"`
+        Type       string      `json:"type"`
+        Content    interface{} `json:"content"`
+        TableID    string      `json:"tableId,omitempty"`
+        OrderID    string      `json:"orderId,omitempty"`
+        IsGuest    bool        `json:"isGuest"` // Add this field to specify if sending to a guest
     }
 
     if err := json.NewDecoder(r.Body).Decode(&messageRequest); err != nil {
-        http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+        http.Error(w, "Invalid request body", http.StatusBadRequest)
+        log.Printf("Error decoding message request: %v", err)
         return
     }
 
-    err := h.websocketService.SendMessageToUser(
-        messageRequest.FromUser,
-        messageRequest.ToUser,
-        messageRequest.Type,
-        messageRequest.Content,
-        messageRequest.TableID,
-        messageRequest.OrderID,
-    )
+    var err error
+    if messageRequest.IsGuest {
+        // Send message to guest
+        err = h.websocketService.SendMessageToGuest(
+            messageRequest.FromUserID,
+            messageRequest.ToUserID,
+            messageRequest.Type,
+            messageRequest.Content,
+            messageRequest.TableID,
+            messageRequest.OrderID,
+        )
+    } else {
+        // Send message to user
+        err = h.websocketService.SendMessageToUser(
+            messageRequest.FromUserID,
+            messageRequest.ToUserID,
+            messageRequest.Type,
+            messageRequest.Content,
+            messageRequest.TableID,
+            messageRequest.OrderID,
+        )
+    }
 
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
+        log.Printf("Error sending message: %v", err)
         return
     }
 
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(map[string]string{
-        "status": "success",
-        "message": "Message sent successfully",
+        "status": "Message sent successfully",
     })
 }

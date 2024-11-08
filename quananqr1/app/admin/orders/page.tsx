@@ -1,6 +1,6 @@
 import React from "react";
 
-import { OrderClient } from "./component/components-data-table-set/order-client";
+import { OrderClient } from "./component/order-client";
 import { get_Orders } from "@/zusstand/server/order-controller";
 
 export default async function OrdersPage() {
@@ -12,6 +12,8 @@ export default async function OrdersPage() {
   return (
     <OrderClient
       initialData={initialOrders.data}
-      initialPagination={initialOrders.pagination} deliveryData={[]}    />
+      initialPagination={initialOrders.pagination}
+      deliveryData={[]}
+    />
   );
 }

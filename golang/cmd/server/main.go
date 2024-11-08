@@ -170,7 +170,7 @@ hdl_NewUser := user_api.NewHandlerUser(client, *secretKey)
 user_api.RegisterRoutesUser(r, hdl_NewUser)
 // web socket
 
-setupWebSocketService(r, )
+
 
 
 
@@ -205,6 +205,8 @@ order_client := pb_order.NewOrderServiceClient(conn)
 order_hdl := order.NewOrderHandler(order_client, *secretKey)
 
 order.RegisterOrderRoutes(r, order_hdl)
+
+setupWebSocketService(r,order_hdl )
 // delivery
 
 delivery_client := pb_delivery.NewDeliveryServiceClient(conn)
@@ -254,21 +256,22 @@ func setupReadingService(r *chi.Mux, conn *grpc.ClientConn, secretKey *string) {
 
 
 
-func setupWebSocketService(r *chi.Mux) {
+func setupWebSocketService(r *chi.Mux, orderHandler *order.OrderHandlerController) {
     websockrepo := websocket_repository.NewInMemoryMessageRepository()
-    websocketService := websocket_service.NewWebSocketService(websockrepo)
+    
+
+    
+    // Create websocket service with order handler
+    websocketService := websocket_service.NewWebSocketService(websockrepo, orderHandler)
     go websocketService.Run()
 
     websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
     
-    // Update WebSocket endpoint to handle query parameters
     r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
-        // Get query parameters
         userID := r.URL.Query().Get("userId")
         userName := r.URL.Query().Get("userName")
         isGuestStr := r.URL.Query().Get("isGuest")
         
-        // Validate required parameters
         if userID == "" {
             log.Printf("WebSocket connection attempt without userID from %s", r.RemoteAddr)
             http.Error(w, "UserID is required", http.StatusBadRequest)
@@ -276,21 +279,18 @@ func setupWebSocketService(r *chi.Mux) {
         }
 
         if userName == "" {
-            userName = fmt.Sprintf("User_%s", userID) // Default username if not provided
+            userName = fmt.Sprintf("User_%s", userID)
         }
 
-        // Parse isGuest parameter with proper default value
         isGuest := false
         if isGuestStr != "" {
             isGuest = strings.ToLower(isGuestStr) == "true"
         }
 
-        // Create context with user information
         ctx := context.WithValue(r.Context(), "userID", userID)
         ctx = context.WithValue(ctx, "userName", userName)
         ctx = context.WithValue(ctx, "isGuest", isGuest)
 
-        // Pass the modified request with context to the handler
         websocketHandler.HandleWebSocket(w, r.WithContext(ctx))
     })
     

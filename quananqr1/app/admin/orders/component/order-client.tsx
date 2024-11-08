@@ -8,7 +8,7 @@ import {
   OrderDetailedResponse,
   PaginationInfo
 } from "@/schemaValidations/interface/type_order";
-import { columns } from "./order-columns";
+import { columns } from "./components-data-table-set/order-columns";
 import { OrderDataTable } from "@/components/ui/order-data-table";
 import { useCallback, useEffect, useState } from "react";
 import { get_Orders } from "@/zusstand/server/order-controller";
@@ -22,7 +22,10 @@ import {
 } from "@/components/ui/card";
 import { WebSocketMessage21 } from "@/schemaValidations/interface/type_websocker";
 import { DeliveryInterface } from "@/schemaValidations/interface/type_delivery";
-import { YourComponent1 } from "../admin-table";
+import { YourComponent1 } from "./admin-table";
+import { useApiStore } from "@/zusstand/api/api-controller";
+import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
+import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 
 //   const { data: sets, isLoading: setsLoading, error: setsError, refetch: refetchSets } = useSetListQuery();
 interface OrderClientProps {
@@ -42,61 +45,6 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  // WebSocket connection setup
-  useEffect(() => {
-    const ws = new WebSocket(
-      "ws://localhost:8888/ws?userId=user2&userName=Jane"
-    );
-    // ws://localhost:8888/ws
-    ws.onopen = () => {
-      console.log(
-        "WebSocket Connected quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx",
-        ws
-      );
-      setIsConnected(true);
-      setSocket(ws);
-    };
-    ws.onclose = () => {
-      console.log(
-        "WebSocket Disconnected quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx"
-      );
-      setIsConnected(false);
-      // Attempt to reconnect after 3 seconds
-      setTimeout(() => {
-        console.log("Attempting to reconnect...");
-        setSocket(null);
-      }, 3000);
-    };
-
-    ws.onerror = (error: Event) => {
-      console.error(
-        "WebSocket Error: quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx",
-        error
-      );
-    };
-
-    ws.onmessage = (event: MessageEvent) => {
-      try {
-        const message: WebSocketMessage21 = JSON.parse(event.data);
-
-        console.log(
-          "quananqr1/app/admin/orders/component/components-data-table-set/order-client.tsx     ws.onmessage",
-          message
-        );
-        // handleWebSocketMessage(message);
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-      }
-    };
-
-    return () => {
-      if (ws) {
-        ws.close();
-      }
-    };
-  }, []);
 
   // Handle incoming WebSocket messages
   const handleWebSocketMessage = useCallback(
@@ -138,38 +86,6 @@ export const OrderClient: React.FC<OrderClientProps> = ({
     [currentPage]
   );
 
-  const handleStatusChange = (orderId: number, newStatus: string) => {
-    if (socket && isConnected) {
-      const message = {
-        type: "UPDATE_ORDER_STATUS",
-        content: {
-          orderID: orderId,
-          status: newStatus,
-          timestamp: new Date().toISOString()
-        },
-        sender: "admin"
-      };
-      socket.send(JSON.stringify(message));
-    }
-    console.log(`Updating order ${orderId} status to ${newStatus}`);
-  };
-
-  const handlePaymentMethodChange = (orderId: number, newMethod: string) => {
-    if (socket && isConnected) {
-      const message = {
-        type: "UPDATE_PAYMENT_METHOD",
-        content: {
-          orderID: orderId,
-          paymentMethod: newMethod,
-          timestamp: new Date().toISOString()
-        },
-        sender: "admin"
-      };
-      socket.send(JSON.stringify(message));
-    }
-    console.log(`Updating order ${orderId} payment method to ${newMethod}`);
-  };
-
   const handlePageChange = async (newPage: number) => {
     setIsLoading(true);
     try {
@@ -188,6 +104,12 @@ export const OrderClient: React.FC<OrderClientProps> = ({
     }
   };
   // ---------------------
+  const { http } = useApiStore();
+  const { guest, user, isGuest, openLoginDialog } = useAuthStore();
+  const { connect, disconnect, isConnected, sendMessage } = useWebSocketStore();
+
+  connect(isGuest ? guest : user, isGuest);
+  // ------------------------------------------
   return (
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <div className="space-y-2">

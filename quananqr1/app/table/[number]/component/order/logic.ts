@@ -3,10 +3,6 @@ import { create } from "zustand";
 import { toast } from "@/components/ui/use-toast";
 import envConfig from "@/config";
 import { CreateOrderRequest } from "@/schemaValidations/interface/type_order";
-import { useApiStore } from "@/zusstand/api/api-controller";
-import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
-import useOrderStore from "@/zusstand/order/order_zustand";
-import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 
 interface OrderCreationState {
   isLoading: boolean;
@@ -58,7 +54,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     connect(isGuest ? guest : user, isGuest);
 
     // Prepare order items
-    const dish_items = orderSummary.dishes.map((dish:any ) => ({
+    const dish_items = orderSummary.dishes.map((dish: any) => ({
       dish_id: dish.id,
       quantity: dish.quantity
     }));
@@ -134,3 +130,6 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     }
   }
 }));
+
+
+
