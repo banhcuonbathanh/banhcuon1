@@ -61,6 +61,16 @@ import (
 	"english-ai-full/ecomm-api/route"
 )
 
+// for ws
+
+type ContextKey string
+
+const (
+    ContextKeyUserID   ContextKey = "userId"
+    ContextKeyUserName ContextKey = "userName"
+    ContextKeyIsGuest  ContextKey = "isGuest"
+)
+//
 const minSecretKeySize = 32
 
 func main() {
@@ -257,21 +267,18 @@ func setupReadingService(r *chi.Mux, conn *grpc.ClientConn, secretKey *string) {
 
 
 func setupWebSocketService(r *chi.Mux, orderHandler *order.OrderHandlerController) {
+    log.Printf("golang/cmd/server/main.go start")
     websockrepo := websocket_repository.NewInMemoryMessageRepository()
-    
-
-    
-    // Create websocket service with order handler
     websocketService := websocket_service.NewWebSocketService(websockrepo, orderHandler)
     go websocketService.Run()
 
     websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
-    
+
     r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
         userID := r.URL.Query().Get("userId")
         userName := r.URL.Query().Get("userName")
         isGuestStr := r.URL.Query().Get("isGuest")
-        
+
         if userID == "" {
             log.Printf("WebSocket connection attempt without userID from %s", r.RemoteAddr)
             http.Error(w, "UserID is required", http.StatusBadRequest)
@@ -287,13 +294,13 @@ func setupWebSocketService(r *chi.Mux, orderHandler *order.OrderHandlerControlle
             isGuest = strings.ToLower(isGuestStr) == "true"
         }
 
-        ctx := context.WithValue(r.Context(), "userID", userID)
-        ctx = context.WithValue(ctx, "userName", userName)
-        ctx = context.WithValue(ctx, "isGuest", isGuest)
+        ctx := context.WithValue(r.Context(), ContextKeyUserID, userID)
+        ctx = context.WithValue(ctx, ContextKeyUserName, userName)
+        ctx = context.WithValue(ctx, ContextKeyIsGuest, isGuest)
 
         websocketHandler.HandleWebSocket(w, r.WithContext(ctx))
     })
-    
+
     r.Post("/api/messages", websocketHandler.HandleSendMessage)
     log.Println("WebSocket service initialized on /ws endpoint")
 }
