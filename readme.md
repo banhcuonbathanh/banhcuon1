@@ -123,8 +123,8 @@ make stop-server
 go test -v test/test-api/test-api.go
 golang/
 ============================================== git hub ================================
-git branch web-sokcert
-git checkout web-sokcert
+git branch web-sokcert-new-strtuchture
+git checkout web-sokcert-new-strtuchture
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/python_proto/claude/claude.proto
 
@@ -281,5 +281,20 @@ ws://localhost:8888/ws?userId=8&userName=vy1_2024_11_07_14_53_51_24e6a4af-9052-4
 
 ws://localhost:8888/ws?userId=8&userName=vy1_2024_11_07_14_53_51_24e6a4af-9052-4dfd-8cc9-45fce2cc264d&isGuest=true
 
-
 ws://localhost:8888/ws?userId=9&userName=dung_2024_11_08_12_43_15_0ed49e95-07c3-489f-a6f3-f6a8dcef835a&isGuest=true
+
+func main() {
+r := chi.NewRouter()
+
+    // Initialize your services
+    tokenMaker := auth.NewJWTMaker(secretKey)
+    orderHandler := NewOrderHandlerController(...)
+
+    // Setup WebSocket handler and routes
+    websocketHandler := NewWebSocketHandler(...)
+    wsRoutes := routes.NewWebSocketRoutes(websocketHandler, tokenMaker, orderHandler)
+    wsRoutes.RegisterWebSocketRoutes(r)
+
+}
+
+ws://your-server/ws?token=your-jwt-token&type=ORDER

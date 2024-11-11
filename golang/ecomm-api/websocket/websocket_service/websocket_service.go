@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"sync"
 	"time"
+    model "english-ai-full/ecomm-api/websocket/websocker_model"
 
-	websocket_model "english-ai-full/ecomm-api/websocket/websocker_model"
-	"english-ai-full/ecomm-api/websocket/websocket_repository"
+
 
 	"github.com/google/uuid"
 
@@ -19,7 +19,7 @@ import (
 )
 
 //
-// First, let's update the OrderContent struct to match the expected format
+
 type OrderContent struct {
     Order struct {
         GuestID        int64           `json:"guest_id"`
@@ -41,7 +41,7 @@ type OrderContent struct {
         TableToken     string          `json:"Table_token"`
     } `json:"order"`
 }
-// Update the CreateOrderRequestType to match the incoming data
+
 
 //
 type ClientType string
@@ -52,7 +52,7 @@ const (
 )
 
 type ClientIdentifier struct {
-    ID       string
+    ID       int64
     Type     ClientType
     UserName string
 }
@@ -60,35 +60,33 @@ type ClientIdentifier struct {
 type WebSocketService interface {
     RegisterClient(client *Client)
     UnregisterClient(client *Client)
-    BroadcastMessage(message *websocket_model.Message)
-    SendMessageToUser(fromUser, toUser string, messageType string, content interface{}, tableID, orderID string) error
-    SendMessageToGuest(fromUser string, guestID string, messageType string, content interface{}, tableID, orderID string) error
+    BroadcastMessage(message *model.Message)
+    SendMessageToUser(fromUser, toUser int64, messageType string, content interface{}, tableID, orderID int64) error
+    SendMessageToGuest(fromUser, guestID int64, messageType string, content interface{}, tableID, orderID int64) error
     Run()
-
-
 }
 
 type webSocketService struct {
     clients    map[ClientIdentifier]map[*Client]bool
-    broadcast  chan *websocket_model.Message
+    broadcast  chan *model.Message
     register   chan *Client
     unregister chan *Client
     mutex      sync.RWMutex
-    repo       websocket_repository.MessageRepository
-    orderHandler *order_grpc.OrderHandlerController
 }
 
-func NewWebSocketService(repo websocket_repository.MessageRepository, orderHandler *order_grpc.OrderHandlerController) WebSocketService {
+
+func NewWebSocketService() WebSocketService {
     return &webSocketService{
         clients:    make(map[ClientIdentifier]map[*Client]bool),
-        broadcast:  make(chan *websocket_model.Message),
+        broadcast:  make(chan *model.Message),
         register:   make(chan *Client),
         unregister: make(chan *Client),
-        repo:       repo,
-        orderHandler: orderHandler,
     }
 }
+func (s *webSocketService) RegisterClient(client *Client) {
 
+    s.register <- client
+}
 
 
 func (s *webSocketService) UnregisterClient(client *Client) {
@@ -96,28 +94,14 @@ func (s *webSocketService) UnregisterClient(client *Client) {
 }
 
 
-
-func (s *webSocketService) BroadcastMessage(message *websocket_model.Message) {
-    log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go BroadcastMessage")
-    messageBytes, _ := json.Marshal(message)
-    log.Printf("Broadcasting message: %s", string(messageBytes))
+func (s *webSocketService) BroadcastMessage(message *model.Message) {
     s.broadcast <- message
 }
 
-func (s *webSocketService) SendMessageToUser(fromUser, toUser string, messageType string, content interface{}, tableID, orderID string) error {
-    log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go SendMessageToUser")
-    message := s.createMessage(fromUser, toUser, messageType, content, tableID, orderID)
 
 
-
-    return s.SendToClient(ClientIdentifier{ID: toUser, Type: UserClient}, message)
-}
-
-
-
-func (s *webSocketService) createMessage(fromUser, toUser string, messageType string, content interface{}, tableID, orderID string) *websocket_model.Message {
-    log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go createMessage")
-    message := &websocket_model.Message{
+func (s *webSocketService) createMessage(fromUser, toUser int64, messageType string, content interface{}, tableID, orderID int64) *model.Message {
+    return &model.Message{
         ID:        uuid.New().String(),
         Type:      messageType,
         Content:   content,
@@ -128,7 +112,6 @@ func (s *webSocketService) createMessage(fromUser, toUser string, messageType st
         TableID:   tableID,
         OrderID:   orderID,
     }
-    return message
 }
 
 func (s *webSocketService) Run() {
@@ -182,9 +165,9 @@ func (s *webSocketService) Run() {
             }
             s.mutex.RUnlock()
 
-            if err := s.repo.SaveMessage(message); err != nil {
-                log.Printf("Error saving message: %v", err)
-            }
+            // if err := s.repo.SaveMessage(message); err != nil {
+            //     log.Printf("Error saving message: %v", err)
+            // }
         }
     }
 }
@@ -195,7 +178,7 @@ func (s *webSocketService) Run() {
 
 
 
-func (s *webSocketService) SendToClient(identifier ClientIdentifier, message *websocket_model.Message) error {
+func (s *webSocketService) SendToClient(identifier ClientIdentifier, message *model.Message) error {
     log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go SendToClient")
     s.mutex.RLock()
     defer s.mutex.RUnlock()
@@ -247,7 +230,7 @@ func (s *webSocketService) SendToClient(identifier ClientIdentifier, message *we
 
 
 
-func (s *webSocketService) SendMessageToGuest(fromUser string, guestID string, messageType string, content interface{}, tableID, orderID string) error {
+func (s *webSocketService) SendMessageToGuest(fromUser int64, guestID int64, messageType string, content interface{}, tableID, orderID int64) error {
     log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go SendMessageToGuest")
     message := s.createMessage(fromUser, guestID, messageType, content, tableID, orderID)
     
@@ -278,7 +261,7 @@ func (s *webSocketService) RegisterClient(client *Client) {
     log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go RegisterClient")
     identifier := s.getClientIdentifier(client)
     
-    // Log registration attempt
+
     log.Printf("Attempting to register client - UserID: %s, UserName: %s, IsGuest: %v", 
         client.userID, client.userName, client.isGuest)
     log.Printf("Client identifier details - ID: %s, Type: %v, UserName: %s", 
@@ -300,29 +283,12 @@ func (s *webSocketService) RegisterClient(client *Client) {
 }
 
 
-func (s *webSocketService) getClientIdentifier(client *Client) ClientIdentifier {
-    log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go getClientIdentifier")
-    clientType := UserClient
-    if client.isGuest {
-        clientType = GuestClient
-    }
-    
-    identifier := ClientIdentifier{
-        ID:       client.userID,
-        Type:     clientType,
-        UserName: client.userName,
-    }
-    
-    log.Printf("Debug - Created identifier: %+v for client: %+v", identifier, client)
-    return identifier
-}
 
 
 
 
 
-
-func ToPBDishOrderItems(items []websocket_model.DishOrderItem) []*order.DishOrderItem {
+func ToPBDishOrderItems(items []model.DishOrderItem) []*order.DishOrderItem {
     pbItems := make([]*order.DishOrderItem, len(items))
     for i, item := range items {
         pbItems[i] = &order.DishOrderItem{
@@ -333,7 +299,7 @@ func ToPBDishOrderItems(items []websocket_model.DishOrderItem) []*order.DishOrde
     return pbItems
 }
 
-func ToPBSetOrderItems(items []websocket_model.SetOrderItem) []*order.SetOrderItem {
+func ToPBSetOrderItems(items []model.SetOrderItem) []*order.SetOrderItem {
     pbItems := make([]*order.SetOrderItem, len(items))
     for i, item := range items {
         pbItems[i] = &order.SetOrderItem{
@@ -346,7 +312,7 @@ func ToPBSetOrderItems(items []websocket_model.SetOrderItem) []*order.SetOrderIt
 
 
 
-// MockResponseWriter implements http.ResponseWriter for testing
+
 type MockResponseWriter struct {
     Headers http.Header
     Body    bytes.Buffer
@@ -371,49 +337,8 @@ func (m *MockResponseWriter) WriteHeader(statusCode int) {
     m.Status = statusCode
 }
 
-// Update the type
 
-// func ToPBCreateOrderRequest(req CreateOrderRequestType) *order.CreateOrderRequest {
-//     var guestID, userID int64
-//     if req.GuestID != nil {
-//         guestID = int64(*req.GuestID)
-//     }
-//     if req.UserID != nil {
-//         userID = int64(*req.UserID)
-//     }
-
-//     return &order.CreateOrderRequest{
-//         GuestId:        guestID,
-//         UserId:         userID,
-//         IsGuest:        req.IsGuest,
-//         TableNumber:    int64(req.TableNumber),
-//         OrderHandlerId: int64(req.OrderHandlerID),
-//         Status:         req.Status,
-//         CreatedAt:      timestamppb.Now(),
-//         UpdatedAt:      timestamppb.Now(),
-//         TotalPrice:     int32(req.TotalPrice),
-//         DishItems:      ToPBDishOrderItems(req.DishItems),
-//         SetItems:       ToPBSetOrderItems(req.SetItems),
-//         BowChili:       int64(req.BowChili),
-//         BowNoChili:     int64(req.BowNoChili),
-//         TakeAway:       req.TakeAway,
-//         ChiliNumber:    int64(req.ChiliNumber),
-//         TableToken:     req.TableToken,
-//         OrderName:      req.OrderName,
-//     }
-// }
-
-
-
-
-
-// MockResponseWriter implements http.ResponseWriter
-
-
-//
-
-
-func (s *webSocketService) handleOrderMessage(message *websocket_model.Message) error {
+func (s *webSocketService) handleOrderMessage(message *model.Message) error {
     log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go")
     log.Printf("golang/ecomm-api/websocket/websocket_service/websocket_service.go %v, message: ", message.Content)
     // Convert message content to JSON bytes
@@ -463,25 +388,24 @@ func (s *webSocketService) handleOrderMessage(message *websocket_model.Message) 
     }
     req.Header.Set("Content-Type", "application/json")
 
-    // Create a mock response writer
+
     rw := NewMockResponseWriter()
 
-    // Call the CreateOrder handler
     s.orderHandler.CreateOrder(rw, req)
 
-    // Check the response status
+
     if rw.Status >= 400 {
         return fmt.Errorf("error creating order: %s", rw.Body.String())
     }
 
-    // Parse the response
+
     var orderResponse map[string]interface{}
     if err := json.NewDecoder(&rw.Body).Decode(&orderResponse); err != nil {
         return fmt.Errorf("error decoding order response: %v", err)
     }
 
-    // Create response message
-    responseMessage := &websocket_model.Message{
+
+    responseMessage := &model.Message{
         Type:      "ORDER_CREATED",
         Content:   orderResponse,
         Sender:    message.Sender,
@@ -491,9 +415,41 @@ func (s *webSocketService) handleOrderMessage(message *websocket_model.Message) 
         OrderID:   fmt.Sprintf("%v", orderResponse["order_id"]),
     }
 
-    // Send response back to the client
+
     return s.SendToClient(ClientIdentifier{
         ID:   message.ToUser,
         Type: GuestClient,
     }, responseMessage)
+}
+
+
+func (s *webSocketService) SendMessageToUser(fromUser, toUser int64, messageType string, content interface{}, tableID, orderID int64) error {
+    message := s.createMessage(fromUser, toUser, messageType, content, tableID, orderID)
+    return s.SendToClient(ClientIdentifier{
+        ID:   fmt.Sprintf("%d", toUser),
+        Type: UserClient,
+    }, message)
+}
+
+
+func (s *webSocketService) SendMessageToGuest(fromUser, guestID int64, messageType string, content interface{}, tableID, orderID int64) error {
+    message := s.createMessage(fromUser, guestID, messageType, content, tableID, orderID)
+    return s.SendToClient(ClientIdentifier{
+        ID:   fmt.Sprintf("%d", guestID),
+        Type: GuestClient,
+    }, message)
+}
+
+// Updated getClientIdentifier to handle int64 to string conversion
+func (s *webSocketService) getClientIdentifier(client *Client) ClientIdentifier {
+    clientType := UserClient
+    if client.isGuest {
+        clientType = GuestClient
+    }
+    
+    return ClientIdentifier{
+        ID:       fmt.Sprintf("%d", client.userID),
+        Type:     clientType,
+        UserName: client.userName,
+    }
 }

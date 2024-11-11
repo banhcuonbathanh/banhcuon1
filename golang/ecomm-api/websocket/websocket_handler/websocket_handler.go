@@ -9,6 +9,10 @@ import (
 	service "english-ai-full/ecomm-api/websocket/websocket_service"
 
 	"github.com/gorilla/websocket"
+
+    model "english-ai-full/ecomm-api/websocket/websocker_model"
+    order "english-ai-full/quanqr/order"
+    
 )
 
 type WebSocketHandler struct {
@@ -19,13 +23,13 @@ type WebSocketHandler struct {
 func NewWebSocketHandler(websocketService service.WebSocketService) *WebSocketHandler {
     return &WebSocketHandler{
         upgrader: websocket.Upgrader{
-            ReadBufferSize:  4096,
-            WriteBufferSize: 4096,
-            EnableCompression: true,
+            ReadBufferSize:     4096,
+            WriteBufferSize:    4096,
+            EnableCompression:  true,
             CheckOrigin: func(r *http.Request) bool {
                 return true
             },
-            HandshakeTimeout: 30 * time.Second, // Increased timeout
+            HandshakeTimeout: 30 * time.Second,
         },
         websocketService: websocketService,
     }
@@ -37,26 +41,18 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
     userID := r.Context().Value("userID").(string)
     userName := r.Context().Value("userName").(string)
     isGuest := r.Context().Value("isGuest").(bool)
-
-    log.Printf("golang/ecomm-api/websocket/websocket_handler/websocket_handler.go 1")
-
-    // Set response headers for WebSocket
-    headers := http.Header{}
-
-    conn, err := h.upgrader.Upgrade(w, r, headers)
+    
+    conn, err := h.upgrader.Upgrade(w, r, nil)
     if err != nil {
-        log.Printf("Failed to upgrade connection from %s: %v", r.RemoteAddr, err)
+        log.Printf("Failed to upgrade connection: %v", err)
         return
     }
-
-    // Enable compression if available
+    
     conn.EnableWriteCompression(true)
-
+    
     client := service.NewClient(conn, h.websocketService, userID, userName, isGuest)
     h.websocketService.RegisterClient(client)
-
-    log.Printf("golang/ecomm-api/websocket/websocket_handler/websocket_handler.go 2")
-
+    
     go client.ReadPump()
     go client.WritePump()
 }
@@ -112,4 +108,41 @@ func (h *WebSocketHandler) HandleSendMessage(w http.ResponseWriter, r *http.Requ
     json.NewEncoder(w).Encode(map[string]string{
         "status": "Message sent successfully",
     })
+}
+
+func (h *WebSocketHandler) HandleOrderMessage(w http.ResponseWriter, r *http.Request, userID string, isGuest bool) {
+    var orderContent order.CreateOrderRequestType
+    if err := json.NewDecoder(r.Body).Decode(&orderContent); err != nil {
+        http.Error(w, "Invalid order content", http.StatusBadRequest)
+        return
+    }
+
+    message := &model.Message{
+        Type:    "ORDER",
+        Content: orderContent,
+        Sender:  userID,
+        ToUser:  orderContent.GuestID,
+    }
+
+    if orderContent.GuestID != nil {
+        if isGuest {
+            err := h.websocketService.SendMessageToGuest(
+                userID,
+                string(*orderContent.GuestID),
+                "ORDER",
+                orderContent,
+                orderContent.TableToken,
+                "",
+            )
+            if err != nil {
+                http.Error(w, "Failed to send order message", http.StatusInternalServerError)
+                return
+            }
+        }
+    } else {
+        h.websocketService.BroadcastMessage(message)
+    }
+
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(map[string]string{"status": "Order message sent"})
 }

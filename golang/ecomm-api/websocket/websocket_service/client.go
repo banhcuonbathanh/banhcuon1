@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	websocket_model "english-ai-full/ecomm-api/websocket/websocker_model"
+	model "english-ai-full/ecomm-api/websocket/websocker_model"
 
 	"github.com/gorilla/websocket"
 )
@@ -19,17 +19,17 @@ const (
 
 type Client struct {
     conn     *websocket.Conn
-    send     chan *websocket_model.Message
+    send     chan *model.Message
     service  WebSocketService
-    userID   string
+    userID   int64
     userName string
     isGuest  bool
     closed   bool
 }
-func NewClient(conn *websocket.Conn, service WebSocketService, userID string, userName string, isGuest bool) *Client {
+func NewClient(conn *websocket.Conn, service WebSocketService, userID int64, userName string, isGuest bool) *Client {
     return &Client{
         conn:     conn,
-        send:     make(chan *websocket_model.Message, 256),
+        send:     make(chan *model.Message, 256),
         service:  service,
         userID:   userID,
         userName: userName,
@@ -45,7 +45,6 @@ func (c *Client) ReadPump() {
             c.closed = true
             c.service.UnregisterClient(c)
             c.conn.Close()
-            log.Printf("ReadPump closed for %s user %s", c.getClientType(), c.userID)
         }
     }()
 
@@ -57,66 +56,31 @@ func (c *Client) ReadPump() {
     })
 
     for {
-        var message websocket_model.Message
+        var message model.Message
         err := c.conn.ReadJSON(&message)
         if err != nil {
             if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-                log.Printf("ReadPump error for %s user %s: %v", c.getClientType(), c.userID, err)
+                log.Printf("ReadPump error: %v", err)
             }
             break
         }
 
-        // Set sender information
         message.Sender = c.userID
         message.FromUser = c.userID
         message.Timestamp = time.Now()
 
-        log.Printf("Received message from %s user %s to %s: %v", 
-            c.getClientType(), c.userID, message.ToUser, message.Type)
-
-        // Handle order messages
-        if message.Type == "CHAT_MESSAGE" {
-            if orderService, ok := c.service.(*webSocketService); ok {
-                err = orderService.handleOrderMessage(&message)
-                if err != nil {
-                    log.Printf("Error handling order message: %v", err)
-                    continue
-                }
-            }
-        }
-
-        if message.ToUser != "" {
-            // Handle direct message
+        if message.ToUser != 0 { // Check for non-zero recipient
             if c.isGuest {
-                err = c.service.SendMessageToGuest(
-                    message.FromUser,
-                    message.ToUser,
-                    message.Type,
-                    message.Content,
-                    message.TableID,
-                    message.OrderID,
-                )
+                c.service.SendMessageToGuest(message.FromUser, message.ToUser, message.Type, message.Content, message.TableID, message.OrderID)
             } else {
-                err = c.service.SendMessageToUser(
-                    message.FromUser,
-                    message.ToUser,
-                    message.Type,
-                    message.Content,
-                    message.TableID,
-                    message.OrderID,
-                )
-            }
-            
-            if err != nil {
-                log.Printf("Error sending direct message from %s user %s: %v", 
-                    c.getClientType(), c.userID, err)
+                c.service.SendMessageToUser(message.FromUser, message.ToUser, message.Type, message.Content, message.TableID, message.OrderID)
             }
         } else {
-            // Broadcast message
             c.service.BroadcastMessage(&message)
         }
     }
 }
+
 
 
 func (c *Client) WritePump() {
@@ -126,7 +90,6 @@ func (c *Client) WritePump() {
         if !c.closed {
             c.closed = true
             c.conn.Close()
-            log.Printf("WritePump closed for %s user %s", c.getClientType(), c.userID)
         }
     }()
 
@@ -141,21 +104,14 @@ func (c *Client) WritePump() {
 
             err := c.conn.WriteJSON(message)
             if err != nil {
-                log.Printf("Error writing message to %s user %s: %v", 
-                    c.getClientType(), c.userID, err)
                 return
             }
-            log.Printf("Successfully sent message to %s user %s", 
-                c.getClientType(), c.userID)
 
         case <-ticker.C:
             c.conn.SetWriteDeadline(time.Now().Add(writeWait))
             if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-                log.Printf("Error sending ping to %s user %s: %v", 
-                    c.getClientType(), c.userID, err)
                 return
             }
-            log.Printf("Sent ping to %s user %s", c.getClientType(), c.userID)
         }
     }
 }

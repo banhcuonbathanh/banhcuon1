@@ -4,26 +4,26 @@ package websocket_model
 import "time"
 
 type UserWS struct {
-    ID   int    `json:"id"`
+    ID   int64    `json:"id"`
     Name string `json:"name"`
 }
 
 type GuestInfoWS struct {
-    ID   int    `json:"id"`
+    ID   int64    `json:"id"`
     Name string `json:"name"`
 }
 
 type Message struct {
     Type      string      `json:"type"`
     Content   interface{} `json:"content"`
-    Sender    string      `json:"sender"`
+    Sender    int64      `json:"sender"`
     Recipient string      `json:"recipient,omitempty"` // Add this field
     Timestamp time.Time   `json:"timestamp"`
-    TableID   string      `json:"table_id,omitempty"`
-    OrderID   string      `json:"order_id,omitempty"`
-    ID        string      `json:"id,omitempty"`
-    FromUser  string      `json:"fromUser"`
-    ToUser    string      `json:"toUser"`
+    TableID   int64      `json:"table_id,omitempty"`
+    OrderID   int64      `json:"order_id,omitempty"`
+    ID        int64      `json:"id,omitempty"`
+    FromUser  int64      `json:"fromUser"`
+    ToUser    int64      `json:"toUser"`
 }
 
 type DishOrderItem struct {
@@ -43,8 +43,8 @@ type SetOrderItem struct {
 
 
 type CreateOrderRequest struct {
-    GuestID        *int            `json:"guest_id"`
-    UserID         *int            `json:"user_id"`
+    GuestID        *int64            `json:"guest_id"`
+    UserID         *int64            `json:"user_id"`
     IsGuest        bool            `json:"is_guest"`
     TableNumber    int             `json:"table_number"`
     OrderHandlerID int             `json:"order_handler_id"`

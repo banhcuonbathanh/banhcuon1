@@ -14,7 +14,7 @@ func RegisterOrderRoutes(r *chi.Mux, handler *OrderHandlerController) *chi.Mux {
 
 	r.Route("/orders", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
-			// If you need authentication middleware, uncomment and adjust the following line:
+
 			// r.Use(middleware.GetAuthMiddlewareFunc(handler.TokenMaker))
 
 			r.Post("/", handler.CreateOrder)
