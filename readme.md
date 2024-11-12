@@ -125,7 +125,7 @@ golang/
 ============================================== git hub ================================
 git branch make_order1
 git checkout make_order1
-
+git branch -d web-sokcert-new-strtuchture delete branch
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/python_proto/claude/claude.proto
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/python_proto/helloworld.proto

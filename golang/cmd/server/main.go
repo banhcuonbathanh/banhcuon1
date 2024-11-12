@@ -212,13 +212,15 @@ order_hdl := order.NewOrderHandler(order_client, *secretKey)
 
 order.RegisterOrderRoutes(r, order_hdl)
 
-SetupWs2(r, order_hdl)
+
 // delivery
 
 delivery_client := pb_delivery.NewDeliveryServiceClient(conn)
 delivery_hdl := delivery.NewDeliveryHandler(delivery_client, *secretKey)
 
 delivery.RegisterDeliveryRoutes(r, delivery_hdl)
+
+SetupWs2(r, order_hdl, delivery_hdl)
 	//
     r.Get("/image", func(w http.ResponseWriter, r *http.Request) {
 
@@ -342,7 +344,7 @@ func getEnvWithDefault(key, defaultValue string) string {
 
 
 
-func SetupWs2(r chi.Router, orderHandler *order.OrderHandlerController) {
+func SetupWs2(r chi.Router, orderHandler *order.OrderHandlerController, deliveryHander *delivery.DeliveryHandlerController) {
 	log.Println("golang/cmd/server/main.go")
     // Create message handler with order handler dependency
     messageHandler := ws2.NewOrderMessageHandler(orderHandler)
