@@ -299,3 +299,7 @@ ws://localhost:8888/ws?userId=8&userName=vy1_2024_11_07_14_53_51_24e6a4af-9052-4
 ws://localhost:8888/ws?userId=1&userName=John&isGuest=false
 
 ws://localhost:8888/ws?userId=9&userName=Johnguest&isGuest=true
+
+ws://localhost:8888/ws/user/1?token=abc123&tableToken=table456
+
+ws://localhost:8888/ws/user/2?token=abc124&tableToken=table455

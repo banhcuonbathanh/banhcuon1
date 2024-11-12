@@ -1,27 +1,23 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"image"
 	"image/jpeg"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
 	comment_api "english-ai-full/ecomm-api/comment-api"
 	python_api "english-ai-full/ecomm-api/python-api"
 	python_ielts "english-ai-full/ecomm-api/python-ielts"
 	reading_api "english-ai-full/ecomm-api/reading-api"
 	user_api "english-ai-full/ecomm-api/user-api"
-	websocket_handler "english-ai-full/ecomm-api/websocket/websocket_handler"
+	ws2 "english-ai-full/quanqr/ws2"
+
 	image_upload "english-ai-full/upload/image"
 
 	"github.com/go-chi/cors"
 
-	"english-ai-full/ecomm-api/websocket/websocket_repository"
-	"english-ai-full/ecomm-api/websocket/websocket_service"
 	"english-ai-full/ecomm-grpc/config"
 	pb "english-ai-full/ecomm-grpc/proto"
 	pb_python "english-ai-full/ecomm-grpc/proto/python_proto"
@@ -216,7 +212,7 @@ order_hdl := order.NewOrderHandler(order_client, *secretKey)
 
 order.RegisterOrderRoutes(r, order_hdl)
 
-setupWebSocketService(r,order_hdl )
+SetupWs2(r, order_hdl)
 // delivery
 
 delivery_client := pb_delivery.NewDeliveryServiceClient(conn)
@@ -266,44 +262,48 @@ func setupReadingService(r *chi.Mux, conn *grpc.ClientConn, secretKey *string) {
 
 
 
-func setupWebSocketService(r *chi.Mux, orderHandler *order.OrderHandlerController) {
-    log.Printf("golang/cmd/server/main.go start")
-    websockrepo := websocket_repository.NewInMemoryMessageRepository()
-    websocketService := websocket_service.NewWebSocketService(websockrepo, orderHandler)
-    go websocketService.Run()
+// func setupWebSocketService(r *chi.Mux, orderHandler *order.OrderHandlerController) {
+// 	log.Printf("golang/cmd/server/main.go start", )
+//     websockrepo := websocket_repository.NewInMemoryMessageRepository()
+    
 
-    websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
+    
+//     // Create websocket service with order handler
+//     websocketService := websocket_service.NewWebSocketService(websockrepo, orderHandler)
+//     go websocketService.Run()
 
-    r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
-        userID := r.URL.Query().Get("userId")
-        userName := r.URL.Query().Get("userName")
-        isGuestStr := r.URL.Query().Get("isGuest")
+//     websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
+    
+//     r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
+//         userID := r.URL.Query().Get("userId")
+//         userName := r.URL.Query().Get("userName")
+//         isGuestStr := r.URL.Query().Get("isGuest")
+        
+//         if userID == "" {
+//             log.Printf("WebSocket connection attempt without userID from %s", r.RemoteAddr)
+//             http.Error(w, "UserID is required", http.StatusBadRequest)
+//             return
+//         }
 
-        if userID == "" {
-            log.Printf("WebSocket connection attempt without userID from %s", r.RemoteAddr)
-            http.Error(w, "UserID is required", http.StatusBadRequest)
-            return
-        }
+//         if userName == "" {
+//             userName = fmt.Sprintf("User_%s", userID)
+//         }
 
-        if userName == "" {
-            userName = fmt.Sprintf("User_%s", userID)
-        }
+//         isGuest := false
+//         if isGuestStr != "" {
+//             isGuest = strings.ToLower(isGuestStr) == "true"
+//         }
 
-        isGuest := false
-        if isGuestStr != "" {
-            isGuest = strings.ToLower(isGuestStr) == "true"
-        }
+//         ctx := context.WithValue(r.Context(), "userID", userID)
+//         ctx = context.WithValue(ctx, "userName", userName)
+//         ctx = context.WithValue(ctx, "isGuest", isGuest)
 
-        ctx := context.WithValue(r.Context(), ContextKeyUserID, userID)
-        ctx = context.WithValue(ctx, ContextKeyUserName, userName)
-        ctx = context.WithValue(ctx, ContextKeyIsGuest, isGuest)
-
-        websocketHandler.HandleWebSocket(w, r.WithContext(ctx))
-    })
-
-    r.Post("/api/messages", websocketHandler.HandleSendMessage)
-    log.Println("WebSocket service initialized on /ws endpoint")
-}
+//         websocketHandler.HandleWebSocket(w, r.WithContext(ctx))
+//     })
+    
+//     r.Post("/api/messages", websocketHandler.HandleSendMessage)
+//     log.Println("WebSocket service initialized on /ws endpoint")
+// }
 
 func setupGlobalMiddleware(r *chi.Mux) {
     r.Use(func(next http.Handler) http.Handler {
@@ -326,8 +326,8 @@ func setupGlobalMiddleware(r *chi.Mux) {
 
 func debugMiddleware(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        log.Printf("Incoming request: %s %s", r.Method, r.URL.Path)
-        log.Printf("Headers: %v", r.Header)
+        // log.Printf("Incoming request: %s %s", r.Method, r.URL.Path)
+        // log.Printf("Headers: %v", r.Header)
         next.ServeHTTP(w, r)
     })
 }
@@ -339,13 +339,25 @@ func getEnvWithDefault(key, defaultValue string) string {
     }
     return value
 }
-// func setupWebSocketService(r *chi.Mux) {
-//     websockrepo := websocket_repository.NewInMemoryMessageRepository()
-//     websocketService := websocket_service.NewWebSocketService(websockrepo)
-//     go websocketService.Run()
 
-//     websocketHandler := websocket_handler.NewWebSocketHandler(websocketService)
-//     r.Handle("/ws", websocketHandler.HandleWebSocket)
+
+
+func SetupWs2(r chi.Router, orderHandler *order.OrderHandlerController) {
+	log.Println("golang/cmd/server/main.go")
+    // Create message handler with order handler dependency
+    messageHandler := ws2.NewOrderMessageHandler(orderHandler)
     
-//     log.Println("WebSocket service initialized on /ws endpoint")
-// }
+    // Create hub with message handler
+    hub := ws2.NewHub(messageHandler)
+    
+    // Create WebSocket router
+    wsRouter := ws2.NewWebSocketRouter(hub)
+
+    // Register WebSocket routes
+    wsRouter.RegisterRoutes(r)
+
+    // Start the hub
+    go hub.Run()
+
+
+}

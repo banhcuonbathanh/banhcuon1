@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -37,13 +37,13 @@ func NewOrderHandler(client order.OrderServiceClient, secretKey string) *OrderHa
 
 func (h *OrderHandlerController) CreateOrder(w http.ResponseWriter, r *http.Request) {
     var orderReq CreateOrderRequestType
-    log.Printf("golang/quanqr/order/order_handler.go %v, content: ", orderReq)
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go 1111 %+v", orderReq))
     if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
         http.Error(w, "error decoding request body", http.StatusBadRequest)
         return
     }
 
-    h.logger.Info(fmt.Sprintf("Creating new order: %+v", orderReq))
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go 2222 %+v", orderReq))
     
     pbReq := ToPBCreateOrderRequest(orderReq)
     createdOrderResponse, err := h.client.CreateOrder(h.ctx, pbReq)
@@ -577,4 +577,41 @@ func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse
             PageSize:   pbRes.Pagination.PageSize,
         },
     }
+}
+
+func (h *OrderHandlerController) CreateOrder2(w http.ResponseWriter, r *http.Request) {
+    var orderReq CreateOrderRequestType
+    
+    // Read the entire body first
+    body, err := io.ReadAll(r.Body)
+    if err != nil {
+        h.logger.Error("Error reading request body: " + err.Error())
+        http.Error(w, "error reading request body", http.StatusBadRequest)
+        return
+    }
+    
+    // Log the raw body for debugging
+    h.logger.Info(fmt.Sprintf("Raw request body: %s", string(body)))
+
+    // Decode the JSON
+    if err := json.Unmarshal(body, &orderReq); err != nil {
+        h.logger.Error("Error decoding request body: " + err.Error())
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
+
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Decoded order request: %+v", orderReq))
+    
+    pbReq := ToPBCreateOrderRequest(orderReq)
+    createdOrderResponse, err := h.client.CreateOrder(h.ctx, pbReq)
+    if err != nil {
+        h.logger.Error("Error creating order: " + err.Error())
+        http.Error(w, "error creating order", http.StatusInternalServerError)
+        return
+    }
+
+    res := ToOrderResFromPbOrderResponse(createdOrderResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(res)
 }

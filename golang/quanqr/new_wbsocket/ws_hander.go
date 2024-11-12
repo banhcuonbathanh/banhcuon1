@@ -14,6 +14,8 @@ type WebSocketHandler struct {
 }
 
 func (h *WebSocketHandler) HandleUserConnection(w http.ResponseWriter, r *http.Request, userID int64, userName string) {
+
+    
     conn, err := h.upgrader.Upgrade(w, r, nil)
     if err != nil {
         http.Error(w, "Could not upgrade connection", http.StatusInternalServerError)

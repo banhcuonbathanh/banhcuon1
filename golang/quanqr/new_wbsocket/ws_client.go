@@ -39,9 +39,9 @@ func NewClient(conn *websocket.Conn, service WebSocketService, userID int64, use
     }
 }
 
-
 func (c *Client) readPump() {
     defer func() {
+        log.Printf("Client readPump ended for userID: %d, userName: %s, isGuest: %t", c.userID, c.userName, c.isGuest)
         c.service.UnregisterClient(c)
         c.conn.Close()
     }()
@@ -57,7 +57,7 @@ func (c *Client) readPump() {
         _, message, err := c.conn.ReadMessage()
         if err != nil {
             if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-                log.Printf("error: %v", err)
+                log.Printf("readPump error for userID: %d, userName: %s, isGuest: %t: %v", c.userID, c.userName, c.isGuest, err)
             }
             break
         }
@@ -65,6 +65,7 @@ func (c *Client) readPump() {
         // Process incoming message
         msg := &Message{}
         if err := json.Unmarshal(message, msg); err != nil {
+            log.Printf("Error unmarshaling message for userID: %d, userName: %s, isGuest: %t: %v", c.userID, c.userName, c.isGuest, err)
             continue
         }
 
@@ -74,6 +75,8 @@ func (c *Client) readPump() {
             c.handleOrderUpdate(msg)
         case "delivery_update":
             c.handleDeliveryUpdate(msg)
+        default:
+            log.Printf("Received unknown message type '%s' for userID: %d, userName: %s, isGuest: %t", msg.Type, c.userID, c.userName, c.isGuest)
         }
     }
 }
@@ -81,6 +84,7 @@ func (c *Client) readPump() {
 func (c *Client) writePump() {
     ticker := time.NewTicker(pingPeriod)
     defer func() {
+        log.Printf("Client writePump ended for userID: %d, userName: %s, isGuest: %t", c.userID, c.userName, c.isGuest)
         ticker.Stop()
         c.conn.Close()
     }()
@@ -90,29 +94,34 @@ func (c *Client) writePump() {
         case message, ok := <-c.send:
             c.conn.SetWriteDeadline(time.Now().Add(writeWait))
             if !ok {
+                log.Printf("Client writePump channel closed for userID: %d, userName: %s, isGuest: %t", c.userID, c.userName, c.isGuest)
                 c.conn.WriteMessage(websocket.CloseMessage, []byte{})
                 return
             }
 
             w, err := c.conn.NextWriter(websocket.TextMessage)
             if err != nil {
+                log.Printf("Error getting writer for userID: %d, userName: %s, isGuest: %t: %v", c.userID, c.userName, c.isGuest, err)
                 return
             }
 
-            json.NewEncoder(w).Encode(message)
+            if err := json.NewEncoder(w).Encode(message); err != nil {
+                log.Printf("Error encoding message for userID: %d, userName: %s, isGuest: %t: %v", c.userID, c.userName, c.isGuest, err)
+            }
 
             if err := w.Close(); err != nil {
+                log.Printf("Error closing writer for userID: %d, userName: %s, isGuest: %t: %v", c.userID, c.userName, c.isGuest, err)
                 return
             }
         case <-ticker.C:
             c.conn.SetWriteDeadline(time.Now().Add(writeWait))
             if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+                log.Printf("Error writing ping message for userID: %d, userName: %s, isGuest: %t: %v", c.userID, c.userName, c.isGuest, err)
                 return
             }
         }
     }
 }
-
 func (c *Client) handleOrderUpdate(msg *Message) {
     // Implement the logic to handle order update messages
     log.Printf("Received order update message: %v", msg)
