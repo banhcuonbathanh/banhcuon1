@@ -53,7 +53,7 @@ func (c *Client) ReadPump() {
 
 func (c *Client) WritePump() {
 
-	log.Printf("golang/quanqr/ws2/ws2_client.go WritePump 1" )
+	// log.Printf("golang/quanqr/ws2/ws2_client.go WritePump 1" )
     ticker := time.NewTicker(54 * time.Second)
     defer func() {
         ticker.Stop()
@@ -67,7 +67,7 @@ func (c *Client) WritePump() {
                 c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
                 return
             }
-            log.Printf("golang/quanqr/ws2/ws2_client.go WritePump sending message to client 1111 %s: %s", c.ID, string(message))
+            // log.Printf("golang/quanqr/ws2/ws2_client.go WritePump sending message to client 1111 %s: %s", c.ID, string(message))
             w, err := c.Conn.NextWriter(websocket.TextMessage)
             if err != nil {
                 return

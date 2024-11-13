@@ -34,8 +34,7 @@ func (h *DeliveryMessageHandler) Handle(c *Client, msg Message) {
     log.Printf("BEGIN DeliveryMessageHandler.Handle - Type: %s, Action: %s", msg.Type, msg.Action)
     defer log.Printf("END DeliveryMessageHandler.Handle")
 
-    switch msg.Type {
-    case "delivery":
+
         switch msg.Action {
         case "create":
             h.handleDeliveryMessageToStaff(c, msg)
@@ -47,11 +46,11 @@ func (h *DeliveryMessageHandler) Handle(c *Client, msg Message) {
         }
     // default:
     //     h.DefaultMessageHandler.HandleMessage(c, msg)
-    }
+    
 }
 
 func (h *DeliveryMessageHandler) handleDeliveryMessageToStaff(c *Client, msg Message) {
-    log.Printf("BEGIN handleDeliveryMessageToStaff")
+    log.Printf("golang/quanqr/ws2/ws_delivery_hander.go BEGIN handleDeliveryMessageToStaff")
     defer log.Printf("END handleDeliveryMessageToStaff")
 
     // Extract the direct message
@@ -341,8 +340,8 @@ func (h *DeliveryMessageHandler) createDelivery(payload interface{}) error {
 
 
 func (h *DeliveryMessageHandler) handleDirectMessageDelivery(c *Client, msg Message) {
-    log.Printf("golang/quanqr/ws2/ws_order_hander.go BEGIN handleDirectMessage")
-    defer log.Printf("golang/quanqr/ws2/ws_order_hander.go END handleDirectMessage")
+    log.Printf("golang/quanqr/ws2/ws_delivery_hander.go BEGIN handleDirectMessage")
+    defer log.Printf("golang/quanqr/ws2/ws_delivery_hander.go END handleDirectMessage")
     
     var directMsg DirectMessage
     data, _ := json.Marshal(msg.Payload)
@@ -351,8 +350,8 @@ func (h *DeliveryMessageHandler) handleDirectMessageDelivery(c *Client, msg Mess
         return
     }
 
-    log.Printf("golang/quanqr/ws2/ws_order_hander.go Sending direct message from %s to %s", directMsg.FromUserID, directMsg.ToUserID)
-    log.Printf("golang/quanqr/ws2/ws_order_hander.g directMsg.Payload %v", directMsg.Payload)
+    log.Printf("golang/quanqr/ws2/ws_delivery_hander.go Sending direct message from %s to %s", directMsg.FromUserID, directMsg.ToUserID)
+    log.Printf("golang/quanqr/ws2/ws_delivery_hander.go directMsg.Payload %v", directMsg.Payload)
 
   
     if err := c.Hub.SendDirectMessage(directMsg.FromUserID, directMsg.ToUserID, directMsg.Type, directMsg.Action, directMsg.Payload); err != nil {

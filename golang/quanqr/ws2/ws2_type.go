@@ -1,6 +1,6 @@
 package ws2
 type Role string
-
+type TypeMessage string
 const (
     RoleGuest    Role = "Guest"
     RoleUser     Role = "User"
@@ -9,8 +9,14 @@ const (
     RoleKitchen  Role = "Kitchen"
 )
 
+const (
+    TypeDelivery    TypeMessage = "delivery"
+ 
+)
+
+
 type Message struct {
-    Type    string      `json:"type"`
+    Type    TypeMessage      `json:"type"`
     Action  string      `json:"action"`
     Payload interface{} `json:"payload"`
     Role    Role        `json:"role"`
