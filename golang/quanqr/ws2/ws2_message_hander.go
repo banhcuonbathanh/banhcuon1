@@ -16,7 +16,7 @@ func NewCombinedMessageHandler(orderHandler *OrderMessageHandler, deliveryHandle
     }
 }
 
-func (h *CombinedMessageHandler) Handle(c *Client, msg Message) {
+func (h *CombinedMessageHandler) DispatcherMessage(c *Client, msg Message) {
     switch msg.Type {
     case "order":
         h.orderHandler.Handle(c, msg)

@@ -47,7 +47,7 @@ func (c *Client) ReadPump() {
             continue
         }
 
-        c.Hub.CombinedMessageHandler.Handle(c, msg)
+        c.Hub.CombinedMessageHandler.DispatcherMessage(c, msg)
     }
 }
 
