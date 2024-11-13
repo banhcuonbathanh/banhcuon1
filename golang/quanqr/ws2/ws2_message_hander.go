@@ -10,7 +10,7 @@ type MessageHandler interface {
 }
 
 type DefaultMessageHandler struct {
-    // Add any dependencies like database connections
+
 }
 
 func (h *DefaultMessageHandler) HandleMessage(c *Client, msg Message) {

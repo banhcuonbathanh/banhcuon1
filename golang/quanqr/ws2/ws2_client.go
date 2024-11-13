@@ -40,7 +40,7 @@ func (c *Client) ReadPump() {
             }
             break
         }
-        log.Printf("ReadPump received message from client %s: %s", c.ID, string(message))
+        // log.Printf("ReadPump received message from client %s: %s", c.ID, string(message))
         var msg Message
         if err := json.Unmarshal(message, &msg); err != nil {
             log.Printf("error unmarshaling message: %v", err)

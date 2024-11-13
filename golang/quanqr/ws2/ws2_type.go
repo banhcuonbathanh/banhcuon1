@@ -1,5 +1,4 @@
 package ws2
-
 type Role string
 
 const (
@@ -40,3 +39,4 @@ type DirectMessage struct {
     Action     string      `json:"action"`
     Payload    interface{} `json:"payload"`
 }
+

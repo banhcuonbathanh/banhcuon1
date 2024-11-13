@@ -303,3 +303,5 @@ ws://localhost:8888/ws?userId=9&userName=Johnguest&isGuest=true
 ws://localhost:8888/ws/user/1?token=abc123&tableToken=table456
 
 ws://localhost:8888/ws/user/2?token=abc124&tableToken=table455
+ws://localhost:8888/ws/employee/1?token=abc123&tableToken=table455
+ws://localhost:8888/ws/admin/1?token=abc123&tableToken=table455

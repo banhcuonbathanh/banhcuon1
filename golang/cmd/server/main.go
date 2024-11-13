@@ -346,20 +346,31 @@ func getEnvWithDefault(key, defaultValue string) string {
 
 func SetupWs2(r chi.Router, orderHandler *order.OrderHandlerController, deliveryHander *delivery.DeliveryHandlerController) {
 	log.Println("golang/cmd/server/main.go")
-    // Create message handler with order handler dependency
-    messageHandler := ws2.NewOrderMessageHandler(orderHandler)
+
+    // messageHandler := ws2.NewOrderMessageHandler(orderHandler)
     
-    // Create hub with message handler
-    hub := ws2.NewHub(messageHandler)
+ 
+    // hub := ws2.NewHub(messageHandler)
     
-    // Create WebSocket router
-    wsRouter := ws2.NewWebSocketRouter(hub)
 
-    // Register WebSocket routes
-    wsRouter.RegisterRoutes(r)
+    // wsRouter := ws2.NewWebSocketRouter(hub)
 
-    // Start the hub
-    go hub.Run()
 
+    // wsRouter.RegisterRoutes(r)
+
+    
+    // go hub.Run()
+
+// new
+messageHandler := ws2.NewOrderMessageHandler(orderHandler)
+hub := ws2.NewHub(messageHandler)
+
+// Create broadcaster and set it in the message handler
+broadcaster := ws2.NewBroadcaster(hub)
+messageHandler.SetBroadcaster(broadcaster)
+
+wsRouter := ws2.NewWebSocketRouter(hub)
+wsRouter.RegisterRoutes(r)
+go hub.Run()
 
 }

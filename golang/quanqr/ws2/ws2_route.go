@@ -48,25 +48,25 @@ func (wr *WebSocketRouter) RegisterRoutes(r chi.Router) {
             wr.handleWebSocket(w, r, RoleUser)
         })
 
-        // Guest connections
+ 
         r.Get("/guest/{id}", func(w http.ResponseWriter, r *http.Request) {
 			log.Println("golang/quanqr/ws2/ws2_route.go guest RegisterRoutes")
             wr.handleWebSocket(w, r, RoleGuest)
         })
 
-        // Kitchen staff connections
+
         r.Get("/kitchen/{id}", func(w http.ResponseWriter, r *http.Request) {
 			log.Println("golang/quanqr/ws2/ws2_route.go kitchen RegisterRoutes")
             wr.handleWebSocket(w, r, RoleKitchen)
         })
 
-        // Employee connections
+ 
         r.Get("/employee/{id}", func(w http.ResponseWriter, r *http.Request) {
 			log.Println("golang/quanqr/ws2/ws2_route.go employee RegisterRoutes")
             wr.handleWebSocket(w, r, RoleEmployee)
         })
 
-        // Admin connections
+     
         r.Get("/admin/{id}", func(w http.ResponseWriter, r *http.Request) {
 			log.Println("golang/quanqr/ws2/ws2_route.go admin RegisterRoutes")
             wr.handleWebSocket(w, r, RoleAdmin)
@@ -100,15 +100,15 @@ func (wr *WebSocketRouter) handleWebSocket(w http.ResponseWriter, r *http.Reques
     }
 	// log.Printf("golang/quanqr/ws2/ws2_route.go handleWebSocket client %+v", client)
 
-    // Register client
+
     client.Hub.Register <- client
 
-    // Start read/write pumps
+  
     go client.ReadPump()
     go client.WritePump()
 }
 
-// BroadcastDeliveryUpdate sends delivery updates to connected clients
+
 func (wr *WebSocketRouter) BroadcastDeliveryUpdate(action string, deliveryID string, payload interface{}) {
     wr.deliveryQueue <- DeliveryUpdate{
         Action:     action,
@@ -134,12 +134,12 @@ func (wr *WebSocketRouter) processDeliveryUpdates() {
             continue
         }
 
-        // Broadcast to all relevant clients
+
         wr.hub.Broadcast <- data
     }
 }
 
-// Helper method to get connected clients count
+
 func (wr *WebSocketRouter) GetConnectedClientsCount() map[Role]int {
     counts := make(map[Role]int)
     wr.hub.mu.Lock()

@@ -80,7 +80,7 @@ func (h *Hub) SendDirectMessage(fromUserID, toUserID string, msgType, action str
     h.mu.Lock()
     defer h.mu.Unlock()
 
-    // Find the target client
+
     var targetClient *Client
     for client := range h.Clients {
         if client.Role == RoleUser && client.ID == toUserID {
@@ -93,7 +93,6 @@ func (h *Hub) SendDirectMessage(fromUserID, toUserID string, msgType, action str
         return fmt.Errorf("target user %s not found", toUserID)
     }
 
-    // Create direct message
     directMsg := DirectMessage{
         FromUserID: fromUserID,
         ToUserID:   toUserID,
@@ -116,7 +115,7 @@ func (h *Hub) SendDirectMessage(fromUserID, toUserID string, msgType, action str
         return fmt.Errorf("error marshaling message: %v", err)
     }
 
-    // Send to target client
+
     select {
     case targetClient.Send <- data:
         return nil
@@ -141,3 +140,47 @@ func (h *Hub) Run() {
     }
 }
 
+// new
+
+func (h *Hub) BroadcastToStaff(fromUserID string, msg Message) error {
+    h.mu.Lock()
+    defer h.mu.Unlock()
+
+    // Add role information to the message
+    msg.Role = RoleEmployee // Default to Employee role, staff can determine their actions based on their actual role
+
+    // Marshal the message
+    data, err := json.Marshal(msg)
+    if err != nil {
+        return fmt.Errorf("error marshaling message: %v", err)
+    }
+
+    // Keep track of successful sends
+    successfulSends := 0
+    staffRoles := map[Role]bool{
+        RoleAdmin:    true,
+        RoleEmployee: true,
+        RoleKitchen:  true,
+    }
+
+    // Send to all staff clients (Admin, Employee, and Kitchen)
+    for client := range h.Clients {
+        if staffRoles[client.Role] {
+            select {
+            case client.Send <- data:
+                successfulSends++
+                log.Printf("Message sent from user %s to %s (ID: %s)", fromUserID, client.Role, client.ID)
+            default:
+                close(client.Send)
+                delete(h.Clients, client)
+                log.Printf("Failed to send message to %s (ID: %s), client removed", client.Role, client.ID)
+            }
+        }
+    }
+
+    if successfulSends == 0 {
+        return fmt.Errorf("no staff members available to receive the message")
+    }
+
+    return nil
+}
