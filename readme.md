@@ -305,3 +305,76 @@ ws://localhost:8888/ws/user/1?token=abc123&tableToken=table456
 ws://localhost:8888/ws/user/2?token=abc124&tableToken=table455
 ws://localhost:8888/ws/employee/1?token=abc123&tableToken=table455
 ws://localhost:8888/ws/admin/1?token=abc123&tableToken=table455
+
+
+ws smessage 
+
+// 1. Create Delivery Message Structure
+{
+    "type": "delivery",
+    "action": "create",
+    "payload": {
+        "fromUserId": "user_123",
+        "toUserId": "staff_456",
+        "type": "delivery",
+        "action": "create",
+        "payload": {
+            "guest_id": null,
+            "user_id": 1,
+            "is_guest": false,
+            "table_number": 1,
+            "order_handler_id": 1,
+            "status": "Pending",
+            "total_price": 2500,
+            "dish_items": [
+                {
+                    "dish_id": 1,
+                    "quantity": 2
+                },
+                {
+                    "dish_id": 2,
+                    "quantity": 1
+                }
+            ],
+            "bow_chili": 1,
+            "bow_no_chili": 1,
+            "take_away": false,
+            "chili_number": 3,
+            "table_token": "MTp0YWJsZTo0ODg0Mjk0Mjk0.666YJoUIKKI",
+            "client_name": "John Doe",
+            "delivery_address": "123 Main St, Springfield",
+            "delivery_contact": "555-1234",
+            "delivery_notes": "Ring the doorbell upon arrival",
+            "scheduled_time": "2024-11-04T14:00:00Z",
+            "order_id": 456789,
+            "delivery_fee": 200,
+            "delivery_status": "pending"
+        }
+    },
+    "role": "User",
+    "roomId": ""
+}
+
+// 2. Update Delivery Status Message Structure
+{
+    "type": "delivery",
+    "action": "update_status",
+    "payload": {
+        "delivery_id": "delivery_789",
+        "status": "in_progress"
+    },
+    "role": "Employee",
+    "roomId": ""
+}
+
+// 3. Assign Delivery Message Structure
+{
+    "type": "delivery",
+    "action": "assign",
+    "payload": {
+        "delivery_id": "delivery_789",
+        "driver_id": "driver_123"
+    },
+    "role": "Employee",
+    "roomId": ""
+}

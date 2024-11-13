@@ -8,9 +8,9 @@ type WebSocketHandler struct {
     hub *Hub
 }
 
-func NewWebSocketHandler(messageHandler MessageHandler) *WebSocketHandler {
+func NewWebSocketHandler(   CombinedMessageHandler *CombinedMessageHandler ) *WebSocketHandler {
 	log.Println("golang/quanqr/ws2/ws_hander.go")
     return &WebSocketHandler{
-        hub: NewHub(messageHandler),
+        hub: NewHub(CombinedMessageHandler),
     }
 }

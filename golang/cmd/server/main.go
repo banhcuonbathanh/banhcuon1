@@ -344,33 +344,29 @@ func getEnvWithDefault(key, defaultValue string) string {
 
 
 
-func SetupWs2(r chi.Router, orderHandler *order.OrderHandlerController, deliveryHander *delivery.DeliveryHandlerController) {
-	log.Println("golang/cmd/server/main.go")
 
-    // messageHandler := ws2.NewOrderMessageHandler(orderHandler)
+
+func SetupWs2(r chi.Router, orderHandler *order.OrderHandlerController, deliveryHandler *delivery.DeliveryHandlerController) {
+    log.Println("golang/cmd/server/main.go")
+
+    // Create message handlers
+    orderMsgHandler := ws2.NewOrderMessageHandler(orderHandler)
+    deliveryMsgHandler := ws2.NewDeliveryMessageHandler(deliveryHandler)
+
+    // Create a combined message handler
+    combinedHandler := ws2.NewCombinedMessageHandler(orderMsgHandler, deliveryMsgHandler)
+
+    // Create and setup the hub
+    hub := ws2.NewHub(combinedHandler)
+    broadcaster := ws2.NewBroadcaster(hub)
+
+    // Set broadcasters
+    orderMsgHandler.SetBroadcaster(broadcaster)
+    deliveryMsgHandler.SetBroadcaster(broadcaster)
+
+    // Setup router
+    wsRouter := ws2.NewWebSocketRouter(hub)
+    wsRouter.RegisterRoutes(r)
     
- 
-    // hub := ws2.NewHub(messageHandler)
-    
-
-    // wsRouter := ws2.NewWebSocketRouter(hub)
-
-
-    // wsRouter.RegisterRoutes(r)
-
-    
-    // go hub.Run()
-
-// new
-messageHandler := ws2.NewOrderMessageHandler(orderHandler)
-hub := ws2.NewHub(messageHandler)
-
-// Create broadcaster and set it in the message handler
-broadcaster := ws2.NewBroadcaster(hub)
-messageHandler.SetBroadcaster(broadcaster)
-
-wsRouter := ws2.NewWebSocketRouter(hub)
-wsRouter.RegisterRoutes(r)
-go hub.Run()
-
+    go hub.Run()
 }

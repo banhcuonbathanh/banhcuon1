@@ -13,19 +13,19 @@ type Hub struct {
     Register       chan *Client
     Unregister    chan *Client
     RoomMap        map[string]map[*Client]bool
-    MessageHandler MessageHandler
+    CombinedMessageHandler *CombinedMessageHandler  // Changed to pointer
     mu            sync.Mutex
 }
 
-func NewHub(messageHandler MessageHandler) *Hub {
-    log.Printf("Creating new Hub with message handler type: %T", messageHandler)
+func NewHub(combinedMessageHandler *CombinedMessageHandler) *Hub {
+    log.Printf("Creating new Hub with message handler type: %T", combinedMessageHandler)
     return &Hub{
         Broadcast:      make(chan []byte),
         Register:       make(chan *Client),
         Unregister:    make(chan *Client),
         Clients:        make(map[*Client]bool),
         RoomMap:        make(map[string]map[*Client]bool),
-        MessageHandler: messageHandler,
+        CombinedMessageHandler: combinedMessageHandler,
     }
 }
 func (h *Hub) registerClient(client *Client) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -33,13 +34,13 @@ func NewDeliveryHandler(client delivery.DeliveryServiceClient, secretKey string)
 
 func (h *DeliveryHandlerController) CreateDelivery(w http.ResponseWriter, r *http.Request) {
     var deliveryReq CreateDeliveryRequest
-
+    h.logger.Info(fmt.Sprintf("Creating new delivery:222222 %+v", deliveryReq))
     if err := json.NewDecoder(r.Body).Decode(&deliveryReq); err != nil {
         http.Error(w, "error decoding request body", http.StatusBadRequest)
         return
     }
 
-    h.logger.Info(fmt.Sprintf("Creating new delivery: %+v", deliveryReq))
+
     
     pbReq := ToPBCreateDeliveryRequest(deliveryReq)
     createdDeliveryResponse, err := h.client.CreateOrder(h.ctx, pbReq)
@@ -76,25 +77,7 @@ func (h *DeliveryHandlerController) GetDeliveryDetail(w http.ResponseWriter, r *
     json.NewEncoder(w).Encode(res)
 }
 
-// func (h *DeliveryHandlerController) GetDeliveryByClientName(w http.ResponseWriter, r *http.Request) {
-//     clientName := chi.URLParam(r, "name")
-//     if clientName == "" {
-//         http.Error(w, "client name is required", http.StatusBadRequest)
-//         return
-//     }
 
-//     h.logger.Info(fmt.Sprintf("Fetching delivery for client: %s", clientName))
-//     deliveryResponse, err := h.client.GetDeliveryDetailByClientName(h.ctx, &delivery.DeliveryClientNameParam{Name: clientName})
-//     if err != nil {
-//         h.logger.Error("Error fetching delivery by client name: " + err.Error())
-//         http.Error(w, "error getting delivery", http.StatusInternalServerError)
-//         return
-//     }
-
-//     res := ToDeliveryResFromPbDeliveryResponse(deliveryResponse)
-//     w.Header().Set("Content-Type", "application/json")
-//     json.NewEncoder(w).Encode(res)
-// }
 
 func (h *DeliveryHandlerController) GetDeliveriesListDetail(w http.ResponseWriter, r *http.Request) {
     // Parse query parameters
@@ -266,68 +249,6 @@ func ToDeliveryDishItemsFromProto(pbItems []*delivery.DishDeliveryItem) []DishDe
     return items
 }
 
-// func ToDeliveryDetailedListResponseFromProto(pbRes *delivery.DeliveryDetailedListResponse) DeliveryDetailedListResponse {
-//     if pbRes == nil {
-//         return DeliveryDetailedListResponse{}
-//     }
-
-//     detailedResponses := make([]DeliveryDetailedResponse, len(pbRes.Data))
-//     for i, pbDetailedRes := range pbRes.Data {
-//         detailedResponses[i] = DeliveryDetailedResponse{
-//             ID:             pbDetailedRes.Id,
-//             GuestID:        pbDetailedRes.GuestId,
-//             UserID:         pbDetailedRes.UserId,
-//             TableNumber:    pbDetailedRes.TableNumber,
-//             OrderHandlerID: pbDetailedRes.OrderHandlerId,
-//             Status:         pbDetailedRes.Status,
-//             TotalPrice:     pbDetailedRes.TotalPrice,
-//             DataDish:       ToDeliveryDetailedDishFromProto(pbDetailedRes.DishItems),
-//             IsGuest:        pbDetailedRes.IsGuest,
-//             BowChili:       pbDetailedRes.BowChili,
-//             BowNoChili:     pbDetailedRes.BowNoChili,
-//             TakeAway:       pbDetailedRes.TakeAway,
-//             ChiliNumber:    pbDetailedRes.ChiliNumber,
-//             TableToken:     pbDetailedRes.TableToken,
-//             ClientName:     pbDetailedRes.ClientName,
-//             DeliveryStatus: pbDetailedRes.DeliveryStatus,
-//             DeliveryAddress: pbDetailedRes.DeliveryAddress,
-//             DeliveryContact: pbDetailedRes.DeliveryContact,
-//             DeliveryNotes:   pbDetailedRes.DeliveryNotes,
-//         }
-//     }
-
-//     return DeliveryDetailedListResponse{
-//         Data: detailedResponses,
-//         Pagination: PaginationInfo{
-//             CurrentPage: pbRes.Pagination.CurrentPage,
-//             TotalPages:  pbRes.Pagination.TotalPages,
-//             TotalItems:  pbRes.Pagination.TotalItems,
-//             PageSize:    pbRes.Pagination.PageSize,
-//         },
-//     }
-// }
-
-// func ToDeliveryDetailedDishFromProto(pbDishes []*delivery.DeliveryDetailedDish) []DeliveryDetailedDish {
-//     if pbDishes == nil {
-//         return nil
-//     }
-
-//     dishes := make([]DeliveryDetailedDish, len(pbDishes))
-//     for i, pbDish := range pbDishes {
-//         dishes[i] = DeliveryDetailedDish{
-//             DishID:      pbDish.DishId,
-//             Quantity:    pbDish.Quantity,
-//             Name:        pbDish.Name,
-//             Price:       pbDish.Price,
-//             Description: pbDish.Description,
-//             Image:       pbDish.Image,
-//             Status:      pbDish.Status,
-//         }
-//     }
-//     return dishes
-// }
-
-
 
 
 
@@ -419,4 +340,40 @@ func ToDeliveryDetailedDishFromProto(pbDishes []*delivery.DeliveryDetailedDish) 
         }
     }
     return dishes
+}
+
+
+func (h *DeliveryHandlerController) CreateDelivery3(w http.ResponseWriter, r *http.Request) {
+    var deliveryReq CreateDeliveryRequest
+
+    body, err := io.ReadAll(r.Body) 
+    if err != nil {
+        h.logger.Error("Error reading request body: " + err.Error())
+        http.Error(w, "error reading request body", http.StatusBadRequest)
+        return
+    }
+    // h.logger.Info(fmt.Sprintf("Creating new delivery:333333 %+v", deliveryReq))
+    // if err := json.NewDecoder(r.Body).Decode(&deliveryReq); err != nil {
+    //     http.Error(w, "error decoding request body", http.StatusBadRequest)
+    //     return
+    // }
+
+    h.logger.Info(fmt.Sprintf(" golang/quanqr/delivery/delivery_hander.go Raw request CreateDelivery3: %s", string(body)))
+    if err := json.Unmarshal(body, &deliveryReq); err != nil {
+        h.logger.Error("Error decoding request body: " + err.Error())
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
+    pbReq := ToPBCreateDeliveryRequest(deliveryReq)
+    createdDeliveryResponse, err := h.client.CreateOrder(h.ctx, pbReq)
+    if err != nil {
+        h.logger.Error("Error creating delivery: " + err.Error())
+        http.Error(w, "error creating delivery", http.StatusInternalServerError)
+        return
+    }
+
+    res := ToDeliveryResFromPbDeliveryResponse(createdDeliveryResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(res)
 }

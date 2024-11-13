@@ -37,12 +37,6 @@ type Delivery struct {
     ActualDeliveryTime   time.Time `json:"actual_delivery_time" db:"actual_delivery_time"`
 }
 
-type DishDeliveryItem struct {
-
-    DishID     int64 `json:"dish_id" db:"dish_id"`
-    Quantity   int64 `json:"quantity" db:"quantity"`
-}
-
 type DeliveryDetailedDish struct {
     DishID      int64  `json:"dish_id" db:"dish_id"`
     Quantity    int64  `json:"quantity" db:"quantity"`
@@ -51,6 +45,12 @@ type DeliveryDetailedDish struct {
     Description string `json:"description" db:"description"`
     Image       string `json:"image" db:"image"`
     Status      string `json:"status" db:"status"`
+}
+
+type DishDeliveryItem struct {
+
+    DishID     int64 `json:"dish_id" db:"dish_id"`
+    Quantity   int64 `json:"quantity" db:"quantity"`
 }
 
 type CreateDeliveryRequest struct {

@@ -13,13 +13,9 @@ import (
 	"time"
 )
 
-// type OrderMessageHandler struct {
-//     DefaultMessageHandler
-//     orderHandler *order.OrderHandlerController
-// }
-// new
+
 type OrderMessageHandler struct {
-    DefaultMessageHandler
+
     orderHandler *order.OrderHandlerController
     broadcaster  *Broadcaster
 }
@@ -48,15 +44,15 @@ func (h *OrderMessageHandler) Handle(c *Client, msg Message) {
     case "order":
         log.Printf("Handling order message")
         h.handleOrderMessage(c, msg)
-    case "notification":
-        log.Printf("Handling notification message")
-        h.handleNotificationMessage(c, msg)
-    case "status_update":
-        log.Printf("Handling status update")
-        h.handleStatusUpdate(c, msg)
-    default:
-        log.Printf("Using default handler")
-        h.DefaultMessageHandler.HandleMessage(c, msg)
+    // case "notification":
+    //     log.Printf("Handling notification message")
+    //     h.handleNotificationMessage(c, msg)
+    // case "status_update":
+    //     log.Printf("Handling status update")
+    //     h.handleStatusUpdate(c, msg)
+    // default:
+    //     log.Printf("Using default handler")
+    //     h.DefaultMessageHandler.HandleMessage(c, msg)
     }
 }
 
@@ -286,23 +282,23 @@ func (w *ResponseWriter) WriteHeader(statusCode int) {
 
 
 func (h *OrderMessageHandler) handleOrderMessage(c *Client, msg Message) {
-    var order OrderMessage
-    data, _ := json.Marshal(msg.Payload)
-    if err := json.Unmarshal(data, &order); err != nil {
-        log.Printf("error unmarshaling order: %v", err)
-        return
-    }
+    // var order OrderMessage
+    // data, _ := json.Marshal(msg.Payload)
+    // if err := json.Unmarshal(data, &order); err != nil {
+    //     log.Printf("error unmarshaling order: %v", err)
+    //     return
+    // }
 
 
-    notification := Message{
-        Type:    "notification",
-        Action:  "new_order",
-        Payload: order,
-        Role:    RoleKitchen,
-    }
+    // notification := Message{
+    //     Type:    "notification",
+    //     Action:  "new_order",
+    //     Payload: order,
+    //     Role:    RoleKitchen,
+    // }
     
-    data, _ = json.Marshal(notification)
-    c.Hub.Broadcast <- data
+    // data, _ = json.Marshal(notification)
+    // c.Hub.Broadcast <- data
 }
 
 // new
