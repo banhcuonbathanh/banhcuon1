@@ -1,7 +1,6 @@
 package ws2
 
 import (
-
 	"log"
 )
 
@@ -25,6 +24,6 @@ func (h *CombinedMessageHandler) Handle(c *Client, msg Message) {
         h.deliveryHandler.Handle(c, msg)
     default:
         // Handle other message types or use default handler
-        log.Printf("Unhandled message type: %s", msg.Type)
+        log.Printf(" golang/quanqr/ws2/ws2_message_hander.go Unhandled message type: %s", msg.Type)
     }
 }

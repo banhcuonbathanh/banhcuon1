@@ -33,7 +33,7 @@ func (h *OrderMessageHandler) Handle(c *Client, msg Message) {
     
    
         switch msg.Type {
-        case "direct":
+        case "order":
             if msg.Action == "order" {
                 log.Printf("Handling order message to staff")
                 h.handleOrderMessageToStaff(c, msg)
@@ -41,18 +41,10 @@ func (h *OrderMessageHandler) Handle(c *Client, msg Message) {
                 log.Printf("Handling direct message")
                 h.handleDirectMessage(c, msg)
             }
-    case "order":
+    case "order1":
         log.Printf("Handling order message")
         h.handleOrderMessage(c, msg)
-    // case "notification":
-    //     log.Printf("Handling notification message")
-    //     h.handleNotificationMessage(c, msg)
-    // case "status_update":
-    //     log.Printf("Handling status update")
-    //     h.handleStatusUpdate(c, msg)
-    // default:
-    //     log.Printf("Using default handler")
-    //     h.DefaultMessageHandler.HandleMessage(c, msg)
+ 
     }
 }
 

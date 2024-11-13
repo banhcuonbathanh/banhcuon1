@@ -39,6 +39,7 @@ func (h *DeliveryMessageHandler) Handle(c *Client, msg Message) {
         switch msg.Action {
         case "create":
             h.handleDeliveryMessageToStaff(c, msg)
+            h.handleDirectMessageDelivery(c, msg)
         case "update_status":
             h.handleUpdateDeliveryStatus( msg)
         case "assign":
@@ -242,28 +243,7 @@ func (h *DeliveryMessageHandler) createDelivery(payload interface{}) error {
         scheduledTime = time.Now()
     }
 
-    // Create delivery request with safe conversions
-    // deliveryReq := delivery.CreateDeliveryRequest{
-    //     TableNumber:      int64(safeFloat64(getMapValue(payloadMap, "table_number", "tableNumber"))),
-    //     TotalPrice:       int32(safeFloat64(getMapValue(payloadMap, "total_price", "totalPrice"))),
-    //     BowChili:        int64(safeFloat64(getMapValue(payloadMap, "bow_chili", "bowChili"))),
-    //     BowNoChili:      int64(safeFloat64(getMapValue(payloadMap, "bow_no_chili", "bowNoChili"))),
-    //     TakeAway:        safeBool(getMapValue(payloadMap, "take_away", "takeAway")),
-    //     ChiliNumber:     int64(safeFloat64(getMapValue(payloadMap, "chili_number", "chiliNumber"))),
-    //     TableToken:      safeString(getMapValue(payloadMap, "table_token", "tableToken")),
-    //     OrderHandlerID:  safeInt64(getMapValue(payloadMap, "order_handler_id", "orderHandlerId")),
-    //     IsGuest:         isGuest,
-    //     Status:          safeString(getMapValue(payloadMap, "status")),
-    //     ClientName:      safeString(getMapValue(payloadMap, "client_name", "clientName")),
-    //     DeliveryAddress: safeString(getMapValue(payloadMap, "delivery_address", "deliveryAddress")),
-    //     DeliveryContact: safeString(getMapValue(payloadMap, "delivery_contact", "deliveryContact")),
-    //     DeliveryNotes:   safeString(getMapValue(payloadMap, "delivery_notes", "deliveryNotes")),
-    //     ScheduledTime:   scheduledTime,
-    //     OrderID:         safeInt64(getMapValue(payloadMap, "order_id", "orderId")),
-    //     DeliveryFee:     int32(safeFloat64(getMapValue(payloadMap, "delivery_fee", "deliveryFee"))),
-    //     DeliveryStatus:  "pending",
-    //     DishItems:       dishItems,
-    // }
+
     deliveryReq := delivery.CreateDeliveryRequest{
         GuestID:            safeInt64(getMapValue(payloadMap, "guest_id", "guestId")), // Updated to use guest_id
         UserID:             safeInt64(getMapValue(payloadMap, "user_id", "userId")),   // Updated to use user_id
@@ -357,4 +337,25 @@ func (h *DeliveryMessageHandler) createDelivery(payload interface{}) error {
     }
 
     return nil
+}
+
+
+func (h *DeliveryMessageHandler) handleDirectMessageDelivery(c *Client, msg Message) {
+    log.Printf("golang/quanqr/ws2/ws_order_hander.go BEGIN handleDirectMessage")
+    defer log.Printf("golang/quanqr/ws2/ws_order_hander.go END handleDirectMessage")
+    
+    var directMsg DirectMessage
+    data, _ := json.Marshal(msg.Payload)
+    if err := json.Unmarshal(data, &directMsg); err != nil {
+        log.Printf("error unmarshaling direct message: %v", err)
+        return
+    }
+
+    log.Printf("golang/quanqr/ws2/ws_order_hander.go Sending direct message from %s to %s", directMsg.FromUserID, directMsg.ToUserID)
+    log.Printf("golang/quanqr/ws2/ws_order_hander.g directMsg.Payload %v", directMsg.Payload)
+
+  
+    if err := c.Hub.SendDirectMessage(directMsg.FromUserID, directMsg.ToUserID, directMsg.Type, directMsg.Action, directMsg.Payload); err != nil {
+        log.Printf("error sending direct message: %v", err)
+    }
 }
