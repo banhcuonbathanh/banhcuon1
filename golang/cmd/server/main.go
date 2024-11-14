@@ -13,6 +13,7 @@ import (
 	reading_api "english-ai-full/ecomm-api/reading-api"
 	user_api "english-ai-full/ecomm-api/user-api"
 	ws2 "english-ai-full/quanqr/ws2"
+	"english-ai-full/token"
 
 	image_upload "english-ai-full/upload/image"
 
@@ -346,8 +347,37 @@ func getEnvWithDefault(key, defaultValue string) string {
 
 
 
+// func SetupWs2(r chi.Router, orderHandler *order.OrderHandlerController, deliveryHandler *delivery.DeliveryHandlerController) {
+//     log.Println("golang/cmd/server/main.go")
+
+//     // Create message handlers
+//     orderMsgHandler := ws2.NewOrderMessageHandler(orderHandler)
+//     deliveryMsgHandler := ws2.NewDeliveryMessageHandler(deliveryHandler)
+
+//     // Create a combined message handler
+//     combinedHandler := ws2.NewCombinedMessageHandler(orderMsgHandler, deliveryMsgHandler)
+
+//     // Create and setup the hub
+//     hub := ws2.NewHub(combinedHandler)
+//     broadcaster := ws2.NewBroadcaster(hub)
+
+//     // Set broadcasters
+//     orderMsgHandler.SetBroadcaster(broadcaster)
+//     deliveryMsgHandler.SetBroadcaster(broadcaster)
+
+//     // Setup router
+//     wsRouter := ws2.NewWebSocketRouter(hub)
+//     wsRouter.RegisterRoutes(r)
+    
+//     go hub.Run()
+// }
+
 func SetupWs2(r chi.Router, orderHandler *order.OrderHandlerController, deliveryHandler *delivery.DeliveryHandlerController) {
     log.Println("golang/cmd/server/main.go")
+
+    // Initialize the JWT token maker
+    secretKey := "your-secret-key" // Make sure to get this from your config
+    tokenMaker := token.NewJWTMaker(secretKey)
 
     // Create message handlers
     orderMsgHandler := ws2.NewOrderMessageHandler(orderHandler)
@@ -364,9 +394,11 @@ func SetupWs2(r chi.Router, orderHandler *order.OrderHandlerController, delivery
     orderMsgHandler.SetBroadcaster(broadcaster)
     deliveryMsgHandler.SetBroadcaster(broadcaster)
 
-    // Setup router
-    wsRouter := ws2.NewWebSocketRouter(hub)
+    // Setup router with token maker
+    // wsRouter := ws2.NewWebSocketRouter(hub)
+
+	wsRouter := ws2.NewWebSocketRouter(hub, tokenMaker)
     wsRouter.RegisterRoutes(r)
-    
+
     go hub.Run()
 }

@@ -30,35 +30,33 @@ export class WebSocketService {
   private connectHandlers: (() => void)[] = [];
   private disconnectHandlers: (() => void)[] = [];
   private userId: string;
-  private userName: string;
-  private isGuest: boolean;
+  private role: string;
 
-  constructor(userId: string, userName: string, isGuest: boolean) {
+  private user_Token: string;
+  private table_Token: string;
+
+  constructor(
+    userId: string,
+    role: string,
+
+    user_Token: string,
+    table_Token: string
+  ) {
     this.userId = userId;
-    this.userName = userName;
-    this.isGuest = isGuest;
+    this.role = role;
+
+    this.user_Token = user_Token;
+    this.table_Token = table_Token;
     this.connect();
-  }
-  private createWebSocketUrl(): string {
-    const endpoint = envConfig.NEXT_PUBLIC_API_ENDPOINT.replace(
-      /^(http|https):\/\//,
-      ""
-    ).replace(/\/$/, "");
-    const wsUrl = `ws://${endpoint}/ws?userId=${
-      this.userId
-    }&userName=${encodeURIComponent(this.userName)}&isGuest=${this.isGuest}`;
-    return wsUrl;
   }
 
   private connect() {
-    const wsUrl = this.createWebSocketUrl();
-
-    const linktest =
-      "ws://localhost:8888/ws?userId=9&userName=dung_2024_11_08_12_43_15_0ed49e95-07c3-489f-a6f3-f6a8dcef835a&isGuest=true";
-    console.log("Connecting to WebSocket:", wsUrl);
+    const link = `${envConfig.wslink}/${this.role}/${this.userId}?token=${this.user_Token}&tableToken=${this.table_Token}`;
+ "   ws://localhost:8888/ws/admin/1?token=abc123&tableToken=table455"
+    console.log("Connecting to WebSocket:", link);
     console.log("quananqr1/zusstand/web-socket/websoket-service.ts connect");
     try {
-      this.ws = new WebSocket(linktest);
+      this.ws = new WebSocket(link);
 
       this.ws.onopen = () => {
         console.log("WebSocket connected");
@@ -138,21 +136,3 @@ export class WebSocketService {
   }
 }
 
-const createWebSocketUrl = (
-  userId: string | number,
-  userName: string,
-  isGuest: boolean
-) => {
-  // Remove 'http://' or 'https://' from the API endpoint
-  const cleanEndpoint = envConfig.NEXT_PUBLIC_API_ENDPOINT.replace(
-    /^(http|https):\/\//,
-    ""
-  );
-
-  const wsUrl = `ws://${cleanEndpoint}/ws?userId=${userId}&userName=${encodeURIComponent(
-    userName
-  )}&isGuest=${isGuest}`;
-
-  console.log("Connecting to WebSocket:", wsUrl);
-  return wsUrl;
-};

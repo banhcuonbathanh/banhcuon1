@@ -19,6 +19,7 @@ import {
 import { GuestLoginBodyType } from "@/schemaValidations/guest.schema";
 import { generateFormattedName } from "@/lib/utils";
 interface AuthState {
+  userId: string | null;
   user: User | null;
   guest: GuestInfo | null;
   accessToken: string | null;
@@ -26,8 +27,8 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   isLoginDialogOpen: boolean;
-  isGuestDialogOpen: boolean; // New state
-  isRegisterDialogOpen: boolean; // New state
+  isGuestDialogOpen: boolean;
+  isRegisterDialogOpen: boolean;
   isGuest: boolean;
 }
 
@@ -41,10 +42,10 @@ interface AuthActions {
   clearError: () => void;
   openLoginDialog: () => void;
   closeLoginDialog: () => void;
-  openGuestDialog: () => void; // New action
-  closeGuestDialog: () => void; // New action
-  openRegisterDialog: () => void; // New action
-  closeRegisterDialog: () => void; // New action
+  openGuestDialog: () => void;
+  closeGuestDialog: () => void;
+  openRegisterDialog: () => void;
+  closeRegisterDialog: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -62,6 +63,7 @@ export const useAuthStore = create<AuthStore>()(
       isGuestDialogOpen: false, // New initial state
       isRegisterDialogOpen: false, // New initial state
       isGuest: false,
+      userId: null,
 
       register: async (body: RegisterBodyType) => {
         set({ loading: true, error: null });
@@ -79,6 +81,7 @@ export const useAuthStore = create<AuthStore>()(
 
           set({
             user: response.data,
+            userId: response.data.id.toString(), // Set userId from user.id
             error: null,
             isLoginDialogOpen: false,
             isRegisterDialogOpen: false, // Close register dialog on success
@@ -108,6 +111,7 @@ export const useAuthStore = create<AuthStore>()(
               ...response.data.user,
               password: body.password
             },
+            userId: response.data.user.id.toString(), // Set userId from user.id
             guest: null,
             isGuest: false,
             accessToken: response.data.access_token,
@@ -166,6 +170,7 @@ export const useAuthStore = create<AuthStore>()(
           );
 
           set({
+            userId: response.data.guest.id.toString(), // Set userId from guest.id
             user: null,
             guest: response.data.guest,
             isGuest: true,
@@ -202,6 +207,7 @@ export const useAuthStore = create<AuthStore>()(
             .getState()
             .http.post(`${envConfig.NEXT_PUBLIC_API_Logout}`);
           set({
+            userId: null, // Reset userId
             user: null,
             guest: null,
             isGuest: false,
@@ -229,6 +235,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           await useApiStore.getState().http.post(`${guest_logout_link}`, body);
           set({
+            userId: "", // Reset userId
             user: null,
             guest: null,
             isGuest: false,

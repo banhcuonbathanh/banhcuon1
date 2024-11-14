@@ -22,7 +22,7 @@ interface OrderCreationState {
       clearOrder: () => void;
     };
     websocket: {
-      connect: (user: any, isGuest: boolean) => void;
+  
       disconnect: () => void;
       isConnected: boolean;
       sendMessage: (message: any) => void;
@@ -41,7 +41,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     http,
     auth: { guest, user, isGuest },
     orderStore: { tableNumber, getOrderSummary, clearOrder },
-    websocket: { connect, disconnect, isConnected, sendMessage },
+    websocket: {  disconnect, isConnected, sendMessage },
     openLoginDialog
   }) => {
     // Check authentication
@@ -51,7 +51,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     }
 
     const orderSummary = getOrderSummary();
-    connect(isGuest ? guest : user, isGuest);
+ 
 
     // Prepare order items
     const dish_items = orderSummary.dishes.map((dish: any) => ({

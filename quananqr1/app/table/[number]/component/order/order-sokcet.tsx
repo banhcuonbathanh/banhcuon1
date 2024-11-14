@@ -1,4 +1,8 @@
-import { OrderContent, WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
+import { Button } from "@/components/ui/button";
+import {
+  OrderContent,
+  WebSocketMessage
+} from "@/schemaValidations/interface/type_websocker";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 import React, { useEffect } from "react";
 
@@ -13,13 +17,13 @@ interface Props {
   response: OrderData;
 }
 
-const OrderComponent: React.FC<Props> = ({ tableNumber, response }) => {
+const OrderComponent1: React.FC<Props> = ({ tableNumber, response }) => {
   // Get the WebSocket store methods
   const { connect, sendMessage, isConnected } = useWebSocketStore();
 
   // Connect to WebSocket when component mounts
   useEffect(() => {
-    connect();
+    // connect();
   }, [connect]);
 
   const handleSendOrder = () => {
@@ -37,18 +41,18 @@ const OrderComponent: React.FC<Props> = ({ tableNumber, response }) => {
         timestamp: new Date().toISOString()
       };
 
-      sendMessage(message);
+      // sendMessage(message);
     } else {
       console.error("WebSocket is not connected");
     }
   };
   return (
     <div>
-      <button onClick={handleSendOrder} disabled={!isConnected}>
+      <Button onClick={handleSendOrder} disabled={!isConnected}>
         Send Order
-      </button>
+      </Button>
     </div>
   );
 };
 
-export default OrderComponent;
+export default OrderComponent1;

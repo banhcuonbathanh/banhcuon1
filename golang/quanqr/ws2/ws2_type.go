@@ -1,4 +1,6 @@
 package ws2
+
+import "time"
 type Role string
 type TypeMessage string
 const (
@@ -33,3 +35,15 @@ type DirectMessage struct {
     Payload    interface{} `json:"payload"`
 }
 
+type TokenRequestWS struct {
+	UserID int64  `json:"userId"`
+	Email  string `json:"email"`
+	Role   string `json:"role"`
+}
+type TokenResponseWS struct {
+	Token          string    `json:"token"`
+	ExpiresAt      time.Time `json:"expiresAt"`
+	Role           string    `json:"role"`
+	UserID         int64     `json:"userId"`
+	Email          string    `json:"email"`
+}

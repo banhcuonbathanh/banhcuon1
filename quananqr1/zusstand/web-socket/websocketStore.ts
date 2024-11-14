@@ -1,34 +1,38 @@
 import { create } from "zustand";
 import { WebSocketMessage, WebSocketService } from "./websoket-service";
 
-import { User } from "@/schemaValidations/user.schema";
-import { GuestInfo } from "@/schemaValidations/interface/type_guest";
+
 
 interface WebSocketState {
   socket: WebSocketService | null;
   isConnected: boolean;
-  connect: (user: User | GuestInfo | null, isGuest: boolean) => void;
+  connect: (params: {
+    userId: string;
+    isGuest: boolean;
+    userToken: string;
+    tableToken: string;
+    role: string;
+  }) => void;
   disconnect: () => void;
   sendMessage: (message: WebSocketMessage) => void;
-  addMessageHandler: (handler: (message: WebSocketMessage) => void) => () => void;
+  addMessageHandler: (
+    handler: (message: WebSocketMessage) => void
+  ) => () => void;
   messageHandlers: Array<(message: WebSocketMessage) => void>;
 }
-
 
 export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   socket: null,
   isConnected: false,
   messageHandlers: [],
 
-  connect: (user: User | GuestInfo | null, isGuest: boolean) => {
+
+  
+
+  connect: ({ userId, isGuest, userToken, tableToken, role }) => {
     console.log("quananqr1/zusstand/web-socket/websocketStore.ts");
-    // const userId = user.id.toString();
-    // const userName = user.name;
-    const socket = new WebSocketService(
-      "9",
-      "dung_2024_11_08_12_43_15_0ed49e95-07c3-489f-a6f3-f6a8dcef835a",
-      true
-    );
+
+    const socket = new WebSocketService(userId, role, userToken, tableToken);
     socket.onMessage((message: WebSocketMessage) => {
       const handlers = get().messageHandlers;
       handlers.forEach((handler) => handler(message)); // Call each registered handler
@@ -70,17 +74,16 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   },
   addMessageHandler: (handler) => {
     set((state) => ({
-      messageHandlers: [...state.messageHandlers, handler],
+      messageHandlers: [...state.messageHandlers, handler]
     }));
 
     // Return a function to unsubscribe this handler
     return () => {
       set((state) => ({
-        messageHandlers: state.messageHandlers.filter((h) => h !== handler),
+        messageHandlers: state.messageHandlers.filter((h) => h !== handler)
       }));
     };
-  },
-
+  }
 }));
 
 // how to use

@@ -113,6 +113,9 @@ export default function OrderSummary({ number, token }: OrderProps) {
         bowlNoChili={bowlNoChili}
         table_token={token}
       />
+
+
+      
     </div>
   );
 }

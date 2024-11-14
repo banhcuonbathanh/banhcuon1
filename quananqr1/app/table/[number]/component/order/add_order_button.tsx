@@ -23,13 +23,19 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   const { isLoading, createOrder } = useOrderCreationStore();
   const { tableNumber, getOrderSummary, clearOrder } = useOrderStore();
   const { http } = useApiStore();
-  const { guest, user, isGuest, openLoginDialog } = useAuthStore();
+  const { guest, user, isGuest, openLoginDialog ,userId } = useAuthStore();
   const { connect, disconnect, isConnected, sendMessage } = useWebSocketStore();
 
   const orderSummary = getOrderSummary();
   const isDisabled = isLoading || !tableNumber || orderSummary.totalItems === 0;
 
+
+
   const handleCreateOrder = () => {
+    if (userId !== null){
+      connect(userId,isGuest,  )
+    }
+  
     createOrder({
       bowlChili,
       bowlNoChili,
@@ -37,7 +43,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       http,
       auth: { guest, user, isGuest },
       orderStore: { tableNumber, getOrderSummary, clearOrder },
-      websocket: { connect, disconnect, isConnected, sendMessage },
+      websocket: {  disconnect, isConnected, sendMessage },
       openLoginDialog
     });
   };
@@ -51,6 +57,11 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       >
         {isLoading ? "Creating Order..." : "Place Order"}
       </Button>
+
+   
+
+
+
     </div>
   );
 };
