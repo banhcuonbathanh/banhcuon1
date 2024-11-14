@@ -18,6 +18,7 @@ import {
 } from "@/schemaValidations/interface/type_guest";
 import { GuestLoginBodyType } from "@/schemaValidations/guest.schema";
 import { generateFormattedName } from "@/lib/utils";
+
 interface AuthState {
   userId: string | null;
   user: User | null;
@@ -30,6 +31,7 @@ interface AuthState {
   isGuestDialogOpen: boolean;
   isRegisterDialogOpen: boolean;
   isGuest: boolean;
+  isLogin: boolean; // New field for login status
 }
 
 interface AuthActions {
@@ -60,15 +62,15 @@ export const useAuthStore = create<AuthStore>()(
       loading: false,
       error: null,
       isLoginDialogOpen: false,
-      isGuestDialogOpen: false, // New initial state
-      isRegisterDialogOpen: false, // New initial state
+      isGuestDialogOpen: false,
+      isRegisterDialogOpen: false,
       isGuest: false,
       userId: null,
+      isLogin: false, // Initialize isLogin as false
 
       register: async (body: RegisterBodyType) => {
         set({ loading: true, error: null });
 
-        // Generate the formatted name before making the API call
         const formattedName = generateFormattedName(body.name);
 
         try {
@@ -76,27 +78,30 @@ export const useAuthStore = create<AuthStore>()(
             .getState()
             .http.post<User>(`${envConfig.NEXT_PUBLIC_API_Create_User}`, {
               ...body,
-              name: formattedName // Use the generated formatted name here
+              name: formattedName
             });
 
           set({
             user: response.data,
-            userId: response.data.id.toString(), // Set userId from user.id
+            userId: response.data.id.toString(),
             error: null,
             isLoginDialogOpen: false,
-            isRegisterDialogOpen: false, // Close register dialog on success
+            isRegisterDialogOpen: false,
             loading: false,
             isGuest: true,
-            guest: null
+            guest: null,
+            isLogin: true // Set isLogin to true after successful registration
           });
         } catch (error) {
           set({
             error:
               error instanceof Error ? error.message : "Registration failed",
-            loading: false
+            loading: false,
+            isLogin: false // Ensure isLogin is false if registration fails
           });
         }
       },
+
       login: async (body: LoginBodyType) => {
         set({ loading: true, error: null });
         try {
@@ -111,14 +116,15 @@ export const useAuthStore = create<AuthStore>()(
               ...response.data.user,
               password: body.password
             },
-            userId: response.data.user.id.toString(), // Set userId from user.id
+            userId: response.data.user.id.toString(),
             guest: null,
             isGuest: false,
             accessToken: response.data.access_token,
             refreshToken: response.data.refresh_token,
             error: null,
             isLoginDialogOpen: false,
-            loading: false
+            loading: false,
+            isLogin: true // Set isLogin to true after successful user login
           });
           useApiStore.getState().setAccessToken(response.data.access_token);
           Cookies.set("accessToken", response.data.access_token, {
@@ -132,45 +138,31 @@ export const useAuthStore = create<AuthStore>()(
         } catch (error) {
           set({
             error: error instanceof Error ? error.message : "Login failed",
-            loading: false
+            loading: false,
+            isLogin: false // Ensure isLogin is false if login fails
           });
         }
       },
 
       guestLogin: async (body: GuestLoginBodyType) => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts GuestLoginBodyType",
-          body
-        );
         set({ loading: true, error: null });
         try {
-          // Set the table token before making the request
           useApiStore.getState().setTableToken(body.token);
 
           const guest_login_link =
             envConfig.NEXT_PUBLIC_API_ENDPOINT +
             envConfig.NEXT_PUBLIC_API_Guest_Login;
 
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts guest_login_link",
-            guest_login_link
-          );
-
           const response = await useApiStore
             .getState()
             .http.post<GuestLoginResponse>(`${guest_login_link}`, {
-              name: generateFormattedName(body.name), // Add generated name here
+              name: generateFormattedName(body.name),
               table_number: body.tableNumber,
               token: body.token
             });
 
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts response.data",
-            response.data
-          );
-
           set({
-            userId: response.data.guest.id.toString(), // Set userId from guest.id
+            userId: response.data.guest.id.toString(),
             user: null,
             guest: response.data.guest,
             isGuest: true,
@@ -180,7 +172,8 @@ export const useAuthStore = create<AuthStore>()(
             isLoginDialogOpen: false,
             isGuestDialogOpen: false,
             loading: false,
-            isRegisterDialogOpen: false
+            isRegisterDialogOpen: false,
+            isLogin: true // Set isLogin to true after successful guest login
           });
 
           useApiStore.getState().setAccessToken(response.data.access_token);
@@ -196,10 +189,12 @@ export const useAuthStore = create<AuthStore>()(
           set({
             error:
               error instanceof Error ? error.message : "Guest login failed",
-            loading: false
+            loading: false,
+            isLogin: false // Ensure isLogin is false if guest login fails
           });
         }
       },
+
       logout: async () => {
         set({ loading: true, error: null });
         try {
@@ -207,14 +202,15 @@ export const useAuthStore = create<AuthStore>()(
             .getState()
             .http.post(`${envConfig.NEXT_PUBLIC_API_Logout}`);
           set({
-            userId: null, // Reset userId
+            userId: null,
             user: null,
             guest: null,
             isGuest: false,
             accessToken: null,
             refreshToken: null,
             error: null,
-            loading: false
+            loading: false,
+            isLogin: false // Set isLogin to false after logout
           });
           useApiStore.getState().setAccessToken(null);
           Cookies.remove("accessToken");
@@ -235,14 +231,15 @@ export const useAuthStore = create<AuthStore>()(
         try {
           await useApiStore.getState().http.post(`${guest_logout_link}`, body);
           set({
-            userId: "", // Reset userId
+            userId: "",
             user: null,
             guest: null,
             isGuest: false,
             accessToken: null,
             refreshToken: null,
             error: null,
-            loading: false
+            loading: false,
+            isLogin: false // Set isLogin to false after guest logout
           });
           useApiStore.getState().setAccessToken(null);
           Cookies.remove("accessToken");
@@ -306,12 +303,3 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 );
-
-// // Example usage
-// const { openGuestDialog, closeGuestDialog, openRegisterDialog, closeRegisterDialog } = useAuthStore();
-
-// // Open guest dialog
-// openGuestDialog();
-
-// // Close register dialog
-// closeRegisterDialog();

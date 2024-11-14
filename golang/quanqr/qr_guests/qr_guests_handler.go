@@ -36,7 +36,7 @@ func NewGuestHandler(client guest.GuestServiceClient, secretKey string) *GuestHa
 //---------------
 
 func (h *GuestHandlerController) GuestLogin(w http.ResponseWriter, r *http.Request) {
-    h.logger.Info("Guest login handler started")
+    // h.logger.Info("Guest login handler started")
     var loginReq GuestLoginRequest
     if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
         h.logger.Error(fmt.Sprintf("error decoding request body: %v", err))
@@ -44,7 +44,7 @@ func (h *GuestHandlerController) GuestLogin(w http.ResponseWriter, r *http.Reque
         return
     }
 
-	h.logger.Error(fmt.Sprintf("golang/quanqr/qr_guests/qr_guests_handler.go loginReq: %v", loginReq))
+	// h.logger.Error(fmt.Sprintf("golang/quanqr/qr_guests/qr_guests_handler.go loginReq: %v", loginReq))
 
     // Create guest through gRPC service
     guestResponse, err := h.client.GuestLoginGRPC(h.ctx, ToPBGuestLoginRequest(loginReq))

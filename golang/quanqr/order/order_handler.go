@@ -37,13 +37,13 @@ func NewOrderHandler(client order.OrderServiceClient, secretKey string) *OrderHa
 
 func (h *OrderHandlerController) CreateOrder(w http.ResponseWriter, r *http.Request) {
     var orderReq CreateOrderRequestType
-    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go 1111 %+v", orderReq))
+
     if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
         http.Error(w, "error decoding request body", http.StatusBadRequest)
         return
     }
 
-    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go 2222 %+v", orderReq))
+    // h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go 2222 %+v", orderReq))
     
     pbReq := ToPBCreateOrderRequest(orderReq)
     createdOrderResponse, err := h.client.CreateOrder(h.ctx, pbReq)

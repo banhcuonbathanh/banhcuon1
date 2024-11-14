@@ -65,6 +65,7 @@ func (wr *WebSocketRouter) RegisterRoutes(r chi.Router) {
     r.Route("/ws", func(r chi.Router) {
         // First register the API routes
         r.Route("/api", func(r chi.Router) {
+      
             r.Post("/ws-auth", wr.handleTokenGeneration)
         })
 
@@ -174,6 +175,7 @@ func (wr *WebSocketRouter) GetConnectedClientsCount() map[Role]int {
 
 // new ---------------
 func (wr *WebSocketRouter) handleTokenGeneration(w http.ResponseWriter, r *http.Request) {
+    log.Println("golang/quanqr/ws2/ws2_route.go user RegisterRoutes ws token create")
 	var req TokenRequestWS
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)

@@ -1,41 +1,121 @@
 import { create } from "zustand";
 import { WebSocketMessage, WebSocketService } from "./websoket-service";
-
-
+import envConfig from "@/config";
 
 interface WebSocketState {
   socket: WebSocketService | null;
   isConnected: boolean;
+  wsToken: string | null;
+  wsTokenExpiry: string | null;
   connect: (params: {
     userId: string;
     isGuest: boolean;
     userToken: string;
     tableToken: string;
     role: string;
-  }) => void;
+  }) => Promise<void>;
   disconnect: () => void;
   sendMessage: (message: WebSocketMessage) => void;
   addMessageHandler: (
     handler: (message: WebSocketMessage) => void
   ) => () => void;
   messageHandlers: Array<(message: WebSocketMessage) => void>;
+  fetchWsToken: (params: {
+    userId: number;
+    email: string;
+    role: string;
+  }) => Promise<WsAuthResponse>;
+}
+
+interface WsAuthResponse {
+  token: string;
+  expiresAt: string;
+  role: string;
+  userId: number;
+  email: string;
 }
 
 export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   socket: null,
   isConnected: false,
   messageHandlers: [],
+  wsToken: null,
+  wsTokenExpiry: null,
 
+  fetchWsToken: async ({ userId, email, role }) => {
+    console.log("quananqr1/zusstand/web-socket/websocketStore.ts fetchWsToken");
+    try {
+      const response = await fetch("http://localhost:8888/ws/api/ws-auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId,
+          email,
+          role
+        })
+      });
 
-  
+      if (!response.ok) {
+        throw new Error("Failed to fetch WS token");
+      }
 
-  connect: ({ userId, isGuest, userToken, tableToken, role }) => {
+      const data: WsAuthResponse = await response.json();
+
+      set({
+        wsToken: data.token,
+        wsTokenExpiry: data.expiresAt
+      });
+
+      return data;
+    } catch (error) {
+      console.error("Error fetching WS token:", error);
+      throw error;
+    }
+  },
+
+  connect: async ({ userId, isGuest, userToken, tableToken, role }) => {
     console.log("quananqr1/zusstand/web-socket/websocketStore.ts");
 
+    // Check if token is expired and fetch new one if needed
+    const currentTime = new Date();
+    const wsTokenExpiry = get().wsTokenExpiry;
+    const tokenExpiry = wsTokenExpiry ? new Date(wsTokenExpiry) : null;
+
+    const isTokenExpired =
+      !get().wsToken ||
+      !wsTokenExpiry ||
+      currentTime >= new Date(wsTokenExpiry);
+
+    if (isTokenExpired) {
+      try {
+        await get().fetchWsToken({
+          userId: parseInt(userId),
+          email: userToken,
+          role
+        });
+      } catch (error) {
+        console.error("Failed to get WS token before connection:", error);
+        return;
+      }
+    }
+
+    console.log(
+      "quananqr1/zusstand/web-socket/websocketStore.ts 121212121 userId role usertoek tabletoken ",
+      userId,
+      role,
+      userToken,
+      tableToken
+    );
+
+    const wsUrl = `ws://localhost:8888/ws/user/1?token=abc124&tableToken=table455`;
+    console.log("Connecting to WebSocket:3434343434343434", wsUrl);
     const socket = new WebSocketService(userId, role, userToken, tableToken);
+
     socket.onMessage((message: WebSocketMessage) => {
       const handlers = get().messageHandlers;
-      handlers.forEach((handler) => handler(message)); // Call each registered handler
+      handlers.forEach((handler) => handler(message));
     });
 
     socket.onConnect(() => set({ isConnected: true }));
@@ -44,25 +124,21 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       console.log(
         "quananqr1/zusstand/web-socket/websocketStore.ts message",
         message
-      ); // Log message for debugging
+      );
     });
     set({ socket });
-    // if (!get().socket && user) {
-    //   const userId = user.id.toString();
-    //   const userName = user.name;
-    //   const socket = new WebSocketService(userId, userName, isGuest);
-    //   socket.onConnect(() => set({ isConnected: true }));
-    //   socket.onDisconnect(() => set({ isConnected: false }));
-    //   set({ socket });
-    // }
   },
-  //
 
   disconnect: () => {
     const { socket } = get();
     if (socket) {
       socket.disconnect();
-      set({ socket: null, isConnected: false });
+      set({
+        socket: null,
+        isConnected: false,
+        wsToken: null,
+        wsTokenExpiry: null
+      });
     }
   },
 
@@ -72,12 +148,12 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       socket.sendMessage(message);
     }
   },
+
   addMessageHandler: (handler) => {
     set((state) => ({
       messageHandlers: [...state.messageHandlers, handler]
     }));
 
-    // Return a function to unsubscribe this handler
     return () => {
       set((state) => ({
         messageHandlers: state.messageHandlers.filter((h) => h !== handler)
@@ -85,207 +161,3 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     };
   }
 }));
-
-// how to use
-
-// // 1. Basic Component with WebSocket Connection
-// import React, { useEffect } from 'react';
-// import { useWebSocketStore } from './websocket-store';
-
-// const WebSocketComponent: React.FC = () => {
-//   const { connect, disconnect, isConnected, socket, sendMessage } = useWebSocketStore();
-
-//   // Connect on component mount
-//   useEffect(() => {
-//     connect();
-
-//     // Cleanup on unmount
-//     return () => {
-//       disconnect();
-//     };
-//   }, [connect, disconnect]);
-
-//   // Example message handler
-//   useEffect(() => {
-//     if (!socket) return;
-
-//     const cleanup = socket.onMessage((message) => {
-//       try {
-//         console.log('Received message:', message);
-//         switch (message.type) {
-//           case 'chat':
-//             handleChatMessage(message);
-//             break;
-//           case 'notification':
-//             handleNotification(message);
-//             break;
-//           default:
-//             console.log('Unknown message type:', message.type);
-//         }
-//       } catch (error) {
-//         console.error('Error handling message:', error);
-//       }
-//     });
-
-//     return () => cleanup();
-//   }, [socket]);
-
-//   // Example of handling connection events
-//   useEffect(() => {
-//     if (!socket) return;
-
-//     const onConnect = () => {
-//       console.log('Connected to WebSocket');
-//       // Send initial messages or perform setup
-//       sendMessage({ type: 'init', data: { userId: 'user123' } });
-//     };
-
-//     const onDisconnect = () => {
-//       console.log('Disconnected from WebSocket');
-//       // Handle cleanup or show reconnection UI
-//     };
-
-//     socket.onConnect(onConnect);
-//     socket.onDisconnect(onDisconnect);
-//   }, [socket, sendMessage]);
-
-//   return (
-//     <div>
-//       <div className="status">
-//         Connection Status: {isConnected ? 'Connected' : 'Disconnected'}
-//       </div>
-
-//       {/* Example UI */}
-//       <button
-//         onClick={() => sendMessage({
-//           type: 'chat',
-//           data: { message: 'Hello!' }
-//         })}
-//         disabled={!isConnected}
-//       >
-//         Send Message
-//       </button>
-//     </div>
-//   );
-// };
-
-// // 2. Custom Hook for WebSocket Functionality
-// const useWebSocket = () => {
-//   const { connect, disconnect, isConnected, socket, sendMessage } = useWebSocketStore();
-
-//   const initialize = React.useCallback(() => {
-//     if (!socket) {
-//       connect();
-//     }
-//   }, [connect, socket]);
-
-//   const handleMessage = React.useCallback((handler: (message: WebSocketMessage) => void) => {
-//     if (!socket) return () => {};
-//     return socket.onMessage(handler);
-//   }, [socket]);
-
-//   return {
-//     initialize,
-//     disconnect,
-//     isConnected,
-//     sendMessage,
-//     handleMessage,
-//   };
-// };
-
-// // 3. Example Chat Component Using Custom Hook
-// const ChatComponent: React.FC = () => {
-//   const { initialize, isConnected, sendMessage, handleMessage } = useWebSocket();
-//   const [messages, setMessages] = React.useState<string[]>([]);
-
-//   useEffect(() => {
-//     initialize();
-
-//     return () => {
-//       // Cleanup
-//     };
-//   }, [initialize]);
-
-//   useEffect(() => {
-//     const cleanup = handleMessage((message) => {
-//       if (message.type === 'chat') {
-//         setMessages(prev => [...prev, message.data.content]);
-//       }
-//     });
-
-//     return () => cleanup();
-//   }, [handleMessage]);
-
-//   const sendChatMessage = (content: string) => {
-//     if (isConnected) {
-//       sendMessage({
-//         type: 'chat',
-//         data: { content }
-//       });
-//     }
-//   };
-
-//   // Example error handling
-//   const handleError = (error: Error) => {
-//     console.error('WebSocket error:', error);
-//     // Show error UI or retry connection
-//   };
-
-//   return (
-//     <div>
-//       {/* Chat UI implementation */}
-//     </div>
-//   );
-// };
-
-// // 4. Example of handling different message types
-// type MessageHandlers = {
-//   [K in WebSocketMessage['type']]: (data: any) => void;
-// };
-
-// const messageHandlers: MessageHandlers = {
-//   chat: (data) => {
-//     console.log('Chat message:', data);
-//   },
-//   notification: (data) => {
-//     console.log('Notification:', data);
-//   },
-//   error: (data) => {
-//     console.error('Error message:', data);
-//   }
-// };
-
-// // 5. Example of reconnection handling
-// const ReconnectionHandler: React.FC = () => {
-//   const { isConnected, connect } = useWebSocketStore();
-//   const [retryCount, setRetryCount] = useState(0);
-//   const maxRetries = 5;
-
-//   useEffect(() => {
-//     if (!isConnected && retryCount < maxRetries) {
-//       const timeout = setTimeout(() => {
-//         console.log(`Attempting to reconnect (${retryCount + 1}/${maxRetries})`);
-//         connect();
-//         setRetryCount(prev => prev + 1);
-//       }, 3000);
-
-//       return () => clearTimeout(timeout);
-//     }
-//   }, [isConnected, retryCount, connect]);
-
-//   return (
-//     <div>
-//       {!isConnected && retryCount >= maxRetries && (
-//         <div className="error-message">
-//           Unable to establish connection. Please try again later.
-//           <button onClick={() => {
-//             setRetryCount(0);
-//             connect();
-//           }}>
-//             Retry Connection
-//           </button>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };

@@ -3,7 +3,6 @@ import { CreateOrderRequest } from "@/schemaValidations/interface/type_order";
 
 export interface OrderPayload {
   orderId: number;
-
   orderData: CreateOrderRequest;
 }
 
@@ -20,7 +19,7 @@ export type WebSocketMessage =
         timestamp: string;
       };
     };
-// Add other message types as needed
+
 export class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
@@ -31,35 +30,50 @@ export class WebSocketService {
   private disconnectHandlers: (() => void)[] = [];
   private userId: string;
   private role: string;
-
-  private user_Token: string;
-  private table_Token: string;
+  private userToken: string;
+  private tableToken: string;
 
   constructor(
     userId: string,
     role: string,
-
-    user_Token: string,
-    table_Token: string
+    userToken: string,
+    tableToken: string
   ) {
     this.userId = userId;
     this.role = role;
-
-    this.user_Token = user_Token;
-    this.table_Token = table_Token;
+    this.userToken = userToken;
+    this.tableToken = tableToken;
     this.connect();
   }
 
-  private connect() {
-    const link = `${envConfig.wslink}/${this.role}/${this.userId}?token=${this.user_Token}&tableToken=${this.table_Token}`;
- "   ws://localhost:8888/ws/admin/1?token=abc123&tableToken=table455"
-    console.log("Connecting to WebSocket:", link);
-    console.log("quananqr1/zusstand/web-socket/websoket-service.ts connect");
+  public constructWebSocketUrl(): string {
+    const baseWsUrl = `${envConfig.wslink}/ws/${this.role}/${this.userId}?token=${this.userToken}&tableToken=${this.tableToken}`;
+    console.log("Constructed WebSocket URL:", baseWsUrl);
+    return baseWsUrl;
+  }
+
+  public connect() {
     try {
-      this.ws = new WebSocket(link);
+      console.log("Attempting to connect with params:", {
+        userId: this.userId,
+        role: this.role,
+        userToken: this.userToken,
+        tableToken: this.tableToken
+      });
+      console.log("Attempting to connect with params:", {
+        userId: this.userId,
+        role: this.role,
+        userToken: this.userToken,
+        tableToken: this.tableToken
+      });
+
+      const wsUrl = `ws://localhost:8888/ws/user/1?token=abc124&tableToken=table455`;
+      console.log("Connecting to WebSocket:3434343434343434", wsUrl);
+
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log("WebSocket connected");
+        console.log("WebSocket connected successfully");
         this.reconnectAttempts = 0;
         this.connectHandlers.forEach((handler) => handler());
       };
@@ -74,9 +88,13 @@ export class WebSocketService {
       };
 
       this.ws.onclose = (event) => {
-        console.log("WebSocket disconnected:", event.code, event.reason);
+        console.log(
+          `WebSocket disconnected: code=${event.code}, reason=${event.reason}`
+        );
         this.disconnectHandlers.forEach((handler) => handler());
-        this.attemptReconnect();
+        if (event.code !== 1000) {
+          this.attemptReconnect();
+        }
       };
 
       this.ws.onerror = (error) => {
@@ -90,18 +108,31 @@ export class WebSocketService {
   private attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
+      const backoffTime =
+        this.reconnectTimeout * Math.pow(2, this.reconnectAttempts - 1);
       console.log(
-        `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
+        `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${backoffTime}ms...`
       );
-      setTimeout(() => this.connect(), this.reconnectTimeout);
+      setTimeout(() => this.connect(), backoffTime);
+    } else {
+      console.error(
+        "Max reconnection attempts reached. Please check your connection and try again."
+      );
     }
   }
 
   public sendMessage(message: WebSocketMessage) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    if (!this.ws) {
+      console.error("WebSocket instance not initialized");
+      return;
+    }
+
+    if (this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     } else {
-      console.error("WebSocket is not connected");
+      console.error(
+        `WebSocket is not open (current state: ${this.ws.readyState})`
+      );
     }
   }
 
@@ -130,9 +161,8 @@ export class WebSocketService {
 
   public disconnect() {
     if (this.ws) {
-      this.ws.close();
+      this.ws.close(1000, "Normal closure");
       this.ws = null;
     }
   }
 }
-
