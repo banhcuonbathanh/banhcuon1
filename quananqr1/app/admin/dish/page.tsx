@@ -6,11 +6,11 @@ import {
   CardTitle
 } from "@/components/ui/card";
 
-import { Suspense } from "react";
+
 
 import { get_dishes } from "@/zusstand/server/dish-controller";
 import { DishClient } from "./components-data-table/dish-client";
-import AddDish from "./add-dish";
+
 
 export default async function DishesPage() {
   const dishes = await get_dishes();

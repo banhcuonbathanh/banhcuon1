@@ -30,11 +30,13 @@ const configSchema = z.object({
   Order_External_End_Point: z.string(),
   NEXT_PUBLIC_API_Guest_Login: z.string(),
   NEXT_PUBLIC_API_Guest_Logout: z.string(),
-  wslink: z.string()
+  wslink: z.string(),
+  wsAuth: z.string()
 });
 // /users/email
 const configProject = configSchema.safeParse({
   wslink: "ws://localhost:8888/ws/",
+  wsAuth: "ws/api/ws-auth", 
   Order_Internal_End_Point: "api/order",
   Order_External_End_Point: "orders",
   NEXT_PUBLIC_API_Guest_Login: "qr/guest/login",

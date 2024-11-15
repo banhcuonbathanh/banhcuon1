@@ -96,14 +96,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     } catch (error) {
       console.error("[OrderCreation] Connection error:", error);
 
-      // const nextAttempt = connectionAttempts + 1;
-      // setConnectionAttempts(nextAttempt);
-
-      // if (nextAttempt < MAX_RETRY_ATTEMPTS) {
-      //   setTimeout(initializeWebSocket, 2000 * nextAttempt);
-      // } else {
-      //   console.log("[OrderCreation] Max retry attempts reached");
-      // }
+ 
     }
   };
 
@@ -184,12 +177,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       >
         {getButtonText()}
       </Button>
-      {/* {connectionStatus === "error" &&
-        connectionAttempts >= MAX_RETRY_ATTEMPTS && (
-          <div className="mt-2 text-sm text-red-500 text-center">
-            Connection failed. Please try again later.
-          </div>
-        )} */}
+
     </div>
   );
 };

@@ -43,9 +43,10 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   wsTokenExpiry: null,
 
   fetchWsToken: async ({ userId, email, role }) => {
-    console.log("quananqr1/zusstand/web-socket/websocketStore.ts fetchWsToken");
+    const serverEndpoint = envConfig.NEXT_PUBLIC_API_ENDPOINT;
+    // console.log("quananqr1/zusstand/web-socket/websocketStore.ts fetchWsToken");
     try {
-      const response = await fetch("http://localhost:8888/ws/api/ws-auth", {
+      const response = await fetch(`${serverEndpoint}${envConfig.wsAuth}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
