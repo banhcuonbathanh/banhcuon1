@@ -27,7 +27,7 @@ psql -U myuser -d mydatabase
 DROP DATABASE mydatabase;
 TRUNCATE TABLE schema\*migrations, users; delete all data
 \dt : list all table
-\d guests
+\d orders
 \d users
 \d comments
 \d sessions
