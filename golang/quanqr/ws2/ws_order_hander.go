@@ -266,7 +266,7 @@ func (h *OrderMessageHandler) createOrder(payload interface{}) error {
     orderReq := order.CreateOrderRequestType{
         TableNumber:    int64(safeFloat64(getMapValue(payloadMap, "table_number", "tableNumber"))),
         TotalPrice:     int32(safeFloat64(getMapValue(payloadMap, "total_price", "totalPrice"))),
-        BowChili:       int64(safeFloat64(getMapValue(payloadMap, "bow_chili", "bowChili"))),
+        Topping:       safeString(getMapValue(payloadMap, "topping", "topping")),
         BowNoChili:     int64(safeFloat64(getMapValue(payloadMap, "bow_no_chili", "bowNoChili"))),
         TakeAway:       safeBool(getMapValue(payloadMap, "take_away", "takeAway")),
         ChiliNumber:    int64(safeFloat64(getMapValue(payloadMap, "chili_number", "chiliNumber"))),

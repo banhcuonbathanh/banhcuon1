@@ -1,73 +1,86 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-
-import useOrderStore from "@/zusstand/order/order_zustand";
-import OrderCreationComponent from "./add_order_button";
-import OrderDetails from "../total-dishes-detail";
-import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import useOrderStore from "@/zusstand/order/order_zustand";
+import OrderDetails from "../total-dishes-detail";
+import OrderCreationComponent from "./add_order_button";
 
 interface OrderProps {
   number: string;
   token: string;
 }
-export default function OrderSummary({ number, token }: OrderProps) {
-  const {
-    addTableNumber,
-    addTableToken,
 
-    dishItems,
-    setItems
-  } = useOrderStore();
+export default function OrderSummary({ number, token }: OrderProps) {
+  const { addTableNumber, addTableToken, getOrderSummary } = useOrderStore();
+
+  const [canhkhongrauCount, setCanhKhongrau] = useState(0);
+  const [canhCoRau, setCanhCoRau] = useState(0);
+  const [smallBowl, setSmallBowl] = useState(0);
+  const [toppingTotal, setToppingTotal] = useState("");
+
   useEffect(() => {
     if (token) {
       addTableToken(token);
     }
     if (number) {
-      const tablenumber = addTableNumberconvert(number);
-      addTableNumber(tablenumber);
+      const tableNumber = addTableNumberconvert(number);
+      addTableNumber(tableNumber);
     }
-  }, [token, addTableToken, number]);
+  }, [token, addTableToken, number, addTableNumber]);
 
-  const [bowlChili, setBowlChili] = useState(0);
-  const [bowlNoChili, setBowlNoChili] = useState(0);
+  // New useEffect to calculate total
+  useEffect(() => {
+    const total = `Canh không rau: ${canhkhongrauCount} - Canh rau: ${canhCoRau} - Bát bé: ${smallBowl}`;
+    setToppingTotal(total);
+  }, [canhkhongrauCount, canhCoRau, smallBowl]);
 
-  const { getOrderSummary } = useOrderStore();
   const orderSummary = getOrderSummary();
 
-  // -------
-  const handleBowlChange = (type: "chili" | "noChili", change: number) => {
-    if (type === "chili") {
-      const newValue = bowlChili + change;
-      if (newValue >= 0) setBowlChili(newValue);
-    } else {
-      const newValue = bowlNoChili + change;
-      if (newValue >= 0) setBowlNoChili(newValue);
+  const handleBowlChange = (
+    type: "chili" | "noChili" | "small",
+    change: number
+  ) => {
+    switch (type) {
+      case "chili":
+        const newToppingValue = canhkhongrauCount + change;
+        if (newToppingValue >= 0) setCanhKhongrau(newToppingValue);
+        break;
+      case "noChili":
+        const newNoChiliValue = canhCoRau + change;
+        if (newNoChiliValue >= 0) setCanhCoRau(newNoChiliValue);
+        break;
+      case "small":
+        const newSmallBowlValue = smallBowl + change;
+        if (newSmallBowlValue >= 0) setSmallBowl(newSmallBowlValue);
+        break;
     }
   };
-  // ------
+
   return (
     <div className="container mx-auto px-4 py-5 space-y-5">
-      {/*         canh banh cuon  */}
-
       <Card>
         <CardHeader>
-          <CardTitle>canh banh cuon</CardTitle>
+          <CardTitle>Canh Banh Cuon</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-3">
+              {/* Bowl without vegetables */}
               <div className="flex items-center justify-between">
-                <span>canh khong rau</span>
+                <span>Canh không rau</span>
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     onClick={() => handleBowlChange("chili", -1)}
+                    disabled={canhkhongrauCount === 0}
                   >
                     -
                   </Button>
-                  <span className="mx-2">{bowlChili}</span>
+                  <span className="mx-2 min-w-[2rem] text-center">
+                    {canhkhongrauCount}
+                  </span>
                   <Button
                     size="sm"
                     onClick={() => handleBowlChange("chili", 1)}
@@ -76,16 +89,21 @@ export default function OrderSummary({ number, token }: OrderProps) {
                   </Button>
                 </div>
               </div>
+
+              {/* Bowl with vegetables */}
               <div className="flex items-center justify-between">
-                <span>canh rau </span>
+                <span>Canh rau</span>
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     onClick={() => handleBowlChange("noChili", -1)}
+                    disabled={canhCoRau === 0}
                   >
                     -
                   </Button>
-                  <span className="mx-2">{bowlNoChili}</span>
+                  <span className="mx-2 min-w-[2rem] text-center">
+                    {canhCoRau}
+                  </span>
                   <Button
                     size="sm"
                     onClick={() => handleBowlChange("noChili", 1)}
@@ -94,11 +112,39 @@ export default function OrderSummary({ number, token }: OrderProps) {
                   </Button>
                 </div>
               </div>
+
+              {/* Small bowl */}
+              <div className="flex items-center justify-between">
+                <span>Bát bé</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleBowlChange("small", -1)}
+                    disabled={smallBowl === 0}
+                  >
+                    -
+                  </Button>
+                  <span className="mx-2 min-w-[2rem] text-center">
+                    {smallBowl}
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={() => handleBowlChange("small", 1)}
+                  >
+                    +
+                  </Button>
+                </div>
+              </div>
+
+              {/* Total summary */}
+              <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                <span className="font-medium">Total Orders: </span>
+                <span>{toppingTotal}</span>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
-      {/*         canh banh cuon  */}
 
       <OrderDetails
         dishes={orderSummary.dishes}
@@ -107,15 +153,11 @@ export default function OrderSummary({ number, token }: OrderProps) {
         totalItems={orderSummary.totalItems}
       />
 
-
       <OrderCreationComponent
-        bowlChili={bowlChili}
-        bowlNoChili={bowlNoChili}
+        topping={toppingTotal}
+        bowlNoChili={canhCoRau}
         table_token={token}
       />
-
-
-      
     </div>
   );
 }

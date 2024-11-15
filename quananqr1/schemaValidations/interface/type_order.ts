@@ -21,7 +21,7 @@ export interface Order {
   total_price: number;
   dish_items: DishOrderItem[];
   set_items: SetOrderItem[];
-  bow_chili: number;
+  topping: string;
   bow_no_chili: number;
   takeAway: boolean;
   chiliNumber: number;
@@ -41,7 +41,7 @@ export interface CreateOrderRequest {
   total_price: number;
   dish_items: DishOrderItem[];
   set_items: SetOrderItem[];
-  bow_chili: number;
+  topping: string;
   bow_no_chili: number;
   takeAway: boolean;
   chiliNumber: number;
@@ -60,7 +60,7 @@ export interface UpdateOrderRequest {
   dish_items: DishOrderItem[];
   set_items: SetOrderItem[];
   is_guest: boolean;
-  bow_chili: number;
+  topping: string;
   bow_no_chili: number;
   takeAway: boolean; // Added missing field
   chiliNumber: number; // Added missing field
@@ -105,7 +105,7 @@ export interface OrderDetailedResponse {
   created_at: string;
   updated_at: string;
   total_price: number;
-  bow_chili: number;
+  topping: string;
   bow_no_chili: number;
   takeAway: boolean;
   chiliNumber: number;

@@ -7,7 +7,7 @@ import { CreateOrderRequest } from "@/schemaValidations/interface/type_order";
 interface OrderCreationState {
   isLoading: boolean;
   createOrder: (params: {
-    bowlChili: number;
+    topping: string;
     bowlNoChili: number;
     Table_token: string;
     http: any; // Replace with proper type from your API store
@@ -35,7 +35,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
   isLoading: false,
 
   createOrder: async ({
-    bowlChili,
+    topping,
     bowlNoChili,
     Table_token,
     http,
@@ -86,7 +86,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
       total_price: orderSummary.totalPrice,
       dish_items,
       set_items,
-      bow_chili: bowlChili,
+      topping: topping,
       bow_no_chili: bowlNoChili,
       takeAway: false,
       chiliNumber: 0,

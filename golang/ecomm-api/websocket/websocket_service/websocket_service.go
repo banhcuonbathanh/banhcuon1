@@ -34,7 +34,7 @@ type OrderContent struct {
         OrderName      string          `json:"order_name"`
         DishItems      []order_grpc.OrderDish `json:"dish_items"`
         SetItems       []order_grpc.OrderSet  `json:"set_items"`
-        BowChili       int64           `json:"bow_chili"`
+        Topping       string           `json:"topping"`
         BowNoChili     int64           `json:"bow_no_chili"`
         TakeAway       bool            `json:"take_away"`
         ChiliNumber    int64           `json:"chili_number"`
@@ -442,7 +442,7 @@ func (s *webSocketService) handleOrderMessage(message *websocket_model.Message) 
         OrderName:      orderContent.Order.OrderName,
         DishItems:      orderContent.Order.DishItems,
         SetItems:       orderContent.Order.SetItems,
-        BowChili:       orderContent.Order.BowChili,
+        Topping:       orderContent.Order.Topping,
         BowNoChili:     orderContent.Order.BowNoChili,
         TakeAway:       orderContent.Order.TakeAway,
         ChiliNumber:    orderContent.Order.ChiliNumber,

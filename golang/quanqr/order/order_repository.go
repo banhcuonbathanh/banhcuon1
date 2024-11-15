@@ -181,7 +181,7 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
             o.order_handler_id,
             COALESCE(o.status, 'Pending') as status, 
             o.total_price,
-            COALESCE(o.bow_chili, 0) as bow_chili,
+            COALESCE(o.topping, '') as topping,
             COALESCE(o.bow_no_chili, 0) as bow_no_chili,
             COALESCE(o.take_away, false) as take_away,
             COALESCE(o.chili_number, 0) as chili_number,
@@ -211,7 +211,7 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
             orderHandlerId sql.NullInt64
             totalPrice     sql.NullInt32
             status         sql.NullString
-            bowChili       sql.NullInt64
+            topping       sql.NullString
             bowNoChili     sql.NullInt64
             chiliNumber    sql.NullInt64
             orderName      sql.NullString
@@ -226,7 +226,7 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
             &orderHandlerId,
             &status,
             &totalPrice,
-            &bowChili,
+            &topping,
             &bowNoChili,
             &o.TakeAway,
             &chiliNumber,
@@ -257,8 +257,8 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
         if status.Valid {
             o.Status = status.String
         }
-        if bowChili.Valid {
-            o.BowChili = bowChili.Int64
+        if topping.Valid {
+            o.Topping = topping.String
         }
         if bowNoChili.Valid {
             o.BowNoChili = bowNoChili.Int64
@@ -470,7 +470,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     query := `
         INSERT INTO orders (
             guest_id, user_id, is_guest, table_number, order_handler_id,
-            status, created_at, updated_at, total_price, bow_chili, bow_no_chili,
+            status, created_at, updated_at, total_price, topping, bow_no_chili,
             take_away, chili_number, table_token, order_name
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
@@ -500,7 +500,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         now,          // created_at
         now,          // updated_at
         req.TotalPrice,
-        req.BowChili,
+        req.Topping,
         req.BowNoChili,
         req.TakeAway,
         req.ChiliNumber,
@@ -578,7 +578,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     o.TotalPrice = req.TotalPrice
     o.DishItems = req.DishItems
     o.SetItems = req.SetItems
-    o.BowChili = req.BowChili
+    o.Topping = req.Topping
     o.BowNoChili = req.BowNoChili
     o.TakeAway = req.TakeAway
     o.ChiliNumber = req.ChiliNumber
@@ -602,7 +602,7 @@ func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrd
         UPDATE orders
         SET guest_id = $2, user_id = $3, table_number = $4, order_handler_id = $5,
             status = $6, updated_at = $7, total_price = $8, is_guest = $9,
-            bow_chili = $10, bow_no_chili = $11, take_away = $12, 
+            topping = $10, bow_no_chili = $11, take_away = $12, 
             chili_number = $13, table_token = $14, order_name = $15
         WHERE id = $1
         RETURNING created_at, updated_at
@@ -621,7 +621,7 @@ func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrd
         time.Now(),
         req.TotalPrice,
         req.IsGuest,
-        req.BowChili,
+        req.Topping,
         req.BowNoChili,
         req.TakeAway,
         req.ChiliNumber,
@@ -652,7 +652,7 @@ func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrd
     o.TotalPrice = req.TotalPrice
     o.DishItems = req.DishItems
     o.SetItems = req.SetItems
-    o.BowChili = req.BowChili
+    o.Topping = req.Topping
     o.BowNoChili = req.BowNoChili
     o.TakeAway = req.TakeAway
     o.ChiliNumber = req.ChiliNumber
@@ -691,7 +691,7 @@ func (or *OrderRepository) GetOrders(ctx context.Context, page, pageSize int32) 
             o.created_at, 
             o.updated_at, 
             o.total_price, 
-            COALESCE(o.bow_chili, 0) as bow_chili, 
+            COALESCE(o.topping, '') as topping, 
             COALESCE(o.bow_no_chili, 0) as bow_no_chili,
             COALESCE(o.take_away, false) as take_away, 
             COALESCE(o.chili_number, 0) as chili_number,
@@ -722,7 +722,7 @@ func (or *OrderRepository) GetOrders(ctx context.Context, page, pageSize int32) 
             orderHandlerId sql.NullInt64
             totalPrice     sql.NullInt32
             status         sql.NullString
-            bowChili       sql.NullInt64
+            topping       sql.NullString
             bowNoChili     sql.NullInt64
             chiliNumber    sql.NullInt64
             orderName      sql.NullString
@@ -738,7 +738,7 @@ func (or *OrderRepository) GetOrders(ctx context.Context, page, pageSize int32) 
             &createdAt,
             &updatedAt,
             &totalPrice,
-            &bowChili,
+            &topping,
             &bowNoChili,
             &o.TakeAway,
             &chiliNumber,
@@ -759,7 +759,7 @@ func (or *OrderRepository) GetOrders(ctx context.Context, page, pageSize int32) 
         o.OrderHandlerId = orderHandlerId.Int64
         o.Status = status.String
         o.TotalPrice = totalPrice.Int32
-        o.BowChili = bowChili.Int64
+        o.Topping = topping.String
         o.BowNoChili = bowNoChili.Int64
         o.ChiliNumber = chiliNumber.Int64
         if orderName.Valid {
@@ -786,7 +786,7 @@ func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order
     query := `
         SELECT 
             id, guest_id, user_id, is_guest, table_number, order_handler_id,
-            status, created_at, updated_at, total_price, bow_chili, bow_no_chili,
+            status, created_at, updated_at, total_price, topping, bow_no_chili,
             take_away, chili_number, table_token, order_name
         FROM orders
         WHERE id = $1
@@ -807,7 +807,7 @@ func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order
         &createdAt,
         &updatedAt,
         &o.TotalPrice,
-        &o.BowChili,
+        &o.Topping,
         &o.BowNoChili,
         &o.TakeAway,
         &o.ChiliNumber,

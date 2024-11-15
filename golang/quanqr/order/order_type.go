@@ -16,7 +16,7 @@ type OrderType struct {
     TotalPrice     int32           `json:"total_price"`
     DishItems      []OrderDish     `json:"dish_items"`
     SetItems       []OrderSet      `json:"set_items"`
-    BowChili       int64           `json:"bow_chili"`
+    Topping       string           `json:"topping"`
     BowNoChili     int64           `json:"bow_no_chili"`
     TakeAway       bool            `json:"take_away"`
     ChiliNumber    int64           `json:"chili_number"`
@@ -36,7 +36,7 @@ type CreateOrderRequestType struct {
     TotalPrice     int32           `json:"total_price"`
     DishItems      []OrderDish     `json:"dish_items"`
     SetItems       []OrderSet      `json:"set_items"`
-    BowChili       int64           `json:"bow_chili"`
+    Topping       string           `json:"topping"`
     BowNoChili     int64           `json:"bow_no_chili"`
     TakeAway       bool            `json:"take_away"`
     ChiliNumber    int64           `json:"chili_number"`
@@ -55,7 +55,7 @@ type UpdateOrderRequestType struct {
     DishItems      []OrderDish     `json:"dish_items"`
     SetItems       []OrderSet      `json:"set_items"`
     IsGuest        bool            `json:"is_guest"`
-    BowChili       int64           `json:"bow_chili"`
+    Topping       string           `json:"topping"`
     BowNoChili     int64           `json:"bow_no_chili"`
     TakeAway       bool            `json:"take_away"`
     ChiliNumber    int64           `json:"chili_number"`
@@ -74,7 +74,7 @@ type OrderDetailedResponse struct {
     Status          string                `json:"status"`
     TotalPrice      int32                 `json:"total_price"`
     IsGuest         bool                  `json:"is_guest"`
-    BowChili        int64                 `json:"bow_chili"`
+    Topping       string           `json:"topping"`
     BowNoChili      int64                 `json:"bow_no_chili"`
     TakeAway        bool                  `json:"take_away"`
     ChiliNumber     int64                 `json:"chili_number"`

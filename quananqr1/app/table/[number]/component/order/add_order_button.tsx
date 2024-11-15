@@ -9,7 +9,7 @@ import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 
 interface OrderCreationComponentProps {
-  bowlChili: number;
+  topping: string;
   bowlNoChili: number;
   table_token: string;
 }
@@ -17,7 +17,7 @@ interface OrderCreationComponentProps {
 
 
 const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
-  bowlChili,
+  topping,
   bowlNoChili,
   table_token
 }) => {
@@ -127,7 +127,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
 
     console.log("[OrderCreation] Creating order with summary:", orderSummary);
     createOrder({
-      bowlChili,
+      topping,
       bowlNoChili,
       Table_token: table_token,
       http,

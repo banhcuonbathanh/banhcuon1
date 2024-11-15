@@ -281,7 +281,7 @@ CREATE TABLE deliveries (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     total_price INTEGER,
-    bow_chili BIGINT DEFAULT 0,
+    topping VARCHAR(255),
     bow_no_chili BIGINT DEFAULT 0,
     take_away BOOLEAN NOT NULL DEFAULT false,
     chili_number BIGINT DEFAULT 0,

@@ -68,7 +68,7 @@ export const get_Orders = async (
         status: string;
         total_price: number;
         is_guest: boolean;
-        bow_chili: number;
+        topping: string;
         bow_no_chili: number;
         take_away: boolean;
         chili_number: number;
@@ -104,7 +104,7 @@ export const get_Orders = async (
         created_at: "asdf", // Consider getting actual timestamps
         updated_at: "asdf", // Consider getting actual timestamps
         total_price: item.total_price,
-        bow_chili: item.bow_chili,
+        topping: item.topping,
         bow_no_chili: item.bow_no_chili,
         takeAway: item.take_away,
         chiliNumber: item.chili_number,
@@ -145,12 +145,10 @@ export const get_Orders = async (
           status: dish.status
         }))
       })),
+
       pagination: pagination // Fixed casing to match interface
     };
-    // console.log(
-    //   "quananqr1/zusstand/server/order-controller.ts validatedData",
-    //   validatedData
-    // );
+
     return validatedData;
   } catch (error) {
     console.error("Error fetching or parsing orders:", error);
