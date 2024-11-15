@@ -28,47 +28,33 @@ export class WebSocketService {
   private messageHandlers: ((message: WebSocketMessage) => void)[] = [];
   private connectHandlers: (() => void)[] = [];
   private disconnectHandlers: (() => void)[] = [];
-  private userId: string;
+  private userName: string;
   private role: string;
   private userToken: string;
   private tableToken: string;
 
   constructor(
-    userId: string,
+    userName: string,
     role: string,
     userToken: string,
     tableToken: string
   ) {
-    this.userId = userId;
+    this.userName = userName;
     this.role = role;
     this.userToken = userToken;
     this.tableToken = tableToken;
     this.connect();
   }
 
-  public constructWebSocketUrl(): string {
-    const baseWsUrl = `${envConfig.wslink}/ws/${this.role}/${this.userId}?token=${this.userToken}&tableToken=${this.tableToken}`;
-    console.log("Constructed WebSocket URL:", baseWsUrl);
-    return baseWsUrl;
-  }
-
   public connect() {
     try {
-      console.log("Attempting to connect with params:", {
-        userId: this.userId,
-        role: this.role,
-        userToken: this.userToken,
-        tableToken: this.tableToken
-      });
-      console.log("Attempting to connect with params:", {
-        userId: this.userId,
-        role: this.role,
-        userToken: this.userToken,
-        tableToken: this.tableToken
-      });
-
-      const wsUrl = `ws://localhost:8888/ws/user/1?token=abc124&tableToken=table455`;
-      console.log("Connecting to WebSocket:3434343434343434", wsUrl);
+      const wsUrl = `ws://localhost:8888/ws/${this.role.toLowerCase()}/${
+        this.userName
+      }?token=${this.userToken}&tableToken=${this.tableToken}`;
+      console.log(
+        "quananqr1/zusstand/web-socket/websoket-service.ts wsUrl",
+        wsUrl
+      );
 
       this.ws = new WebSocket(wsUrl);
 

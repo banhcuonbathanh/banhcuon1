@@ -109,8 +109,6 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       tableToken
     );
 
-    const wsUrl = `ws://localhost:8888/ws/user/1?token=abc124&tableToken=table455`;
-    console.log("Connecting to WebSocket:3434343434343434", wsUrl);
     const socket = new WebSocketService(userId, role, userToken, tableToken);
 
     socket.onMessage((message: WebSocketMessage) => {
