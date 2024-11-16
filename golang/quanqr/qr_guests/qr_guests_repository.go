@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	proto "english-ai-full/quanqr/proto_qr/guest"
+		 "english-ai-full/util"
 )
 
 type GuestRepository struct {
@@ -23,6 +24,8 @@ func NewGuestRepository(db *pgxpool.Pool) *GuestRepository {
 }
 
 func (gr *GuestRepository) GuestLogin(ctx context.Context, req *proto.GuestLoginRequest) (*proto.GuestLoginResponse, error) {
+	formattedName := util.GenerateFormattedName(req.Name)
+	
 	query := `
 		INSERT INTO guests (name, table_number, refresh_token, refresh_token_expires_at, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $5)
@@ -30,10 +33,10 @@ func (gr *GuestRepository) GuestLogin(ctx context.Context, req *proto.GuestLogin
 	`
 	var guest proto.GuestInfo
 	var createdAt, updatedAt time.Time
-	refreshTokenExpiresAt := time.Now().Add(24 * time.Hour) // Set refresh token to expire in 24 hours
+	refreshTokenExpiresAt := time.Now().Add(24 * time.Hour)
 
 	err := gr.db.QueryRow(ctx, query,
-		req.Name,
+		formattedName,
 		req.TableNumber,
 		req.Token,
 		refreshTokenExpiresAt,
@@ -43,13 +46,12 @@ func (gr *GuestRepository) GuestLogin(ctx context.Context, req *proto.GuestLogin
 		return nil, fmt.Errorf("error creating guest: %w", err)
 	}
 
-	guest.Name = req.Name
-	guest.Role = "guest" // Assuming all are guests for now
+	guest.Name = formattedName // Use the formatted name
+	guest.Role = "guest"
 	guest.TableNumber = req.TableNumber
 	guest.CreatedAt = timestamppb.New(createdAt)
 	guest.UpdatedAt = timestamppb.New(updatedAt)
 
-	// In a real-world scenario, you'd generate these tokens securely
 	accessToken := "sample_access_token"
 	refreshToken := req.Token
 
@@ -60,7 +62,6 @@ func (gr *GuestRepository) GuestLogin(ctx context.Context, req *proto.GuestLogin
 		Message:      "Guest logged in successfully",
 	}, nil
 }
-
 func (gr *GuestRepository) GuestLogout(ctx context.Context, req *proto.LogoutRequest) error {
 	query := `
 		UPDATE guests
@@ -292,3 +293,4 @@ func (gr *GuestRepository) GuestDeleteSession(ctx context.Context, sessionID str
 
 	return nil
 }
+

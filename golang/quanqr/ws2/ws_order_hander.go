@@ -267,7 +267,7 @@ func (h *OrderMessageHandler) createOrder(payload interface{}) error {
         TableNumber:    int64(safeFloat64(getMapValue(payloadMap, "table_number", "tableNumber"))),
         TotalPrice:     int32(safeFloat64(getMapValue(payloadMap, "total_price", "totalPrice"))),
         Topping:       safeString(getMapValue(payloadMap, "topping", "topping")),
-        BowNoChili:     int64(safeFloat64(getMapValue(payloadMap, "bow_no_chili", "bowNoChili"))),
+        TrackingOrder:    safeString(getMapValue(payloadMap, "tracking_order", "tracking_order")),
         TakeAway:       safeBool(getMapValue(payloadMap, "take_away", "takeAway")),
         ChiliNumber:    int64(safeFloat64(getMapValue(payloadMap, "chili_number", "chiliNumber"))),
         TableToken:     safeString(getMapValue(payloadMap, "table_token", "tableToken", "Table_token")),

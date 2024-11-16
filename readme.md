@@ -37,7 +37,7 @@ TRUNCATE TABLE schema\*migrations, users; delete all data
 
 SELECT _ FROM tables;
 SELECT _ FROM set*dishes;
-SELECT * FROM sets;
+SELECT * FROM users;
 SELECT _ FROM dishes;
 SELECT \* FROM orders;
 SELECT _ FROM users;

@@ -219,7 +219,7 @@ CREATE TABLE orders (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     total_price INTEGER,
     topping VARCHAR(255),
-    bow_no_chili BIGINT DEFAULT 0,
+    tracking_order VARCHAR(255),
     take_away BOOLEAN NOT NULL DEFAULT false,
     chili_number BIGINT DEFAULT 0,
     table_token VARCHAR(255) NOT NULL,

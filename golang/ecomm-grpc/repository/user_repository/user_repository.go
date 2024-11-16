@@ -8,11 +8,13 @@ import (
 	logg "english-ai-full/logger"
 	"fmt"
 
-	"english-ai-full/util"
+
 
 	"github.com/jackc/pgx/v4/pgxpool"
 
 	"english-ai-full/ecomm-api/types"
+
+	 "english-ai-full/util"
 )
 
 
@@ -30,19 +32,22 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 }
 
 func (us *UserRepository) CreateUser(ctx context.Context, u *types.UserReqModel) (*types.UserReqModel, error) {
-	us.logger.Info("Inserting new user into database: " + u.Name + ", " + u.Email)
+	formattedName := util.GenerateFormattedName(u.Name)
+	us.logger.Info("Inserting new user into database: " + formattedName + ", " + u.Email)
 
 	query := `INSERT INTO users (name, email, password, role, phone, image, address, created_at, updated_at) 
 			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
 			  RETURNING id`
 
-	err := us.db.QueryRow(ctx, query, u.Name, u.Email, u.Password, u.Role, u.Phone, u.Image, u.Address, u.CreatedAt, u.UpdatedAt).Scan(&u.ID)
+	err := us.db.QueryRow(ctx, query, formattedName, u.Email, u.Password, u.Role, u.Phone, u.Image, u.Address, u.CreatedAt, u.UpdatedAt).Scan(&u.ID)
 	if err != nil {
 		us.logger.Error("Error inserting user: " + err.Error())
 		return nil, fmt.Errorf("error inserting user: %w", err)
 	}
 
-	us.logger.Info("User inserted successfully. ID: "  +
+	u.Name = formattedName // Update the name in the model
+	
+	us.logger.Info("User inserted successfully. ID: " + fmt.Sprint(u.ID) +
 		", Name: " + u.Name +
 		", Email: " + u.Email +
 		", Role: " + u.Role +

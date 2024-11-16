@@ -17,7 +17,6 @@ import {
   LogoutRequest
 } from "@/schemaValidations/interface/type_guest";
 import { GuestLoginBodyType } from "@/schemaValidations/guest.schema";
-import { generateFormattedName } from "@/lib/utils";
 
 interface AuthState {
   userId: string | null;
@@ -71,7 +70,7 @@ export const useAuthStore = create<AuthStore>()(
       register: async (body: RegisterBodyType) => {
         set({ loading: true, error: null });
 
-        const formattedName = generateFormattedName(body.name);
+        const formattedName = body.name;
 
         try {
           const response = await useApiStore
@@ -156,7 +155,7 @@ export const useAuthStore = create<AuthStore>()(
           const response = await useApiStore
             .getState()
             .http.post<GuestLoginResponse>(`${guest_login_link}`, {
-              name: generateFormattedName(body.name),
+              name: body.name,
               table_number: body.tableNumber,
               token: body.token
             });

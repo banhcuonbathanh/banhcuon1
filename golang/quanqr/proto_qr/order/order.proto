@@ -23,7 +23,7 @@ message Order {
   repeated DishOrderItem dish_items = 11;
   repeated SetOrderItem set_items = 12;
   string topping = 13;
-  int64 bow_no_chili = 14;
+  string tracking_order = 14;
   bool take_away = 15;
   int64 chili_number = 16;
   string table_token = 17;
@@ -82,7 +82,7 @@ message CreateOrderRequest {
   repeated DishOrderItem dish_items = 10;
   repeated SetOrderItem set_items = 11;
   string topping = 12;
-  int64 bow_no_chili = 13;
+  string tracking_order = 13;
   bool take_away = 15;
   int64 chili_number = 16;
   string table_token = 17;
@@ -101,7 +101,7 @@ message UpdateOrderRequest {
   repeated SetOrderItem set_items = 9;
   bool is_guest = 10;
   string topping = 11;
-  int64 bow_no_chili = 12;
+  string tracking_order = 12;
   bool takeAway = 15;
   int64 chiliNumber = 16;
   string table_token = 17;
@@ -142,7 +142,7 @@ message OrderDetailedResponse {
   repeated OrderDetailedDish data_dish = 9;
   bool is_guest = 10;
   string topping = 11;
-  int64 bow_no_chili = 12;
+  string tracking_order = 12;
   bool takeAway = 15;
   int64 chiliNumber = 16;
   string table_token = 17;

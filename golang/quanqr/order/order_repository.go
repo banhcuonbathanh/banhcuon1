@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -182,7 +184,7 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
             COALESCE(o.status, 'Pending') as status, 
             o.total_price,
             COALESCE(o.topping, '') as topping,
-            COALESCE(o.bow_no_chili, 0) as bow_no_chili,
+            COALESCE(o.tracking_order, '') as tracking_order,
             COALESCE(o.take_away, false) as take_away,
             COALESCE(o.chili_number, 0) as chili_number,
               o.table_token,
@@ -212,7 +214,7 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
             totalPrice     sql.NullInt32
             status         sql.NullString
             topping       sql.NullString
-            bowNoChili     sql.NullInt64
+            trackingOrder     sql.NullString
             chiliNumber    sql.NullInt64
             orderName      sql.NullString
         )
@@ -227,7 +229,7 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
             &status,
             &totalPrice,
             &topping,
-            &bowNoChili,
+            &trackingOrder,
             &o.TakeAway,
             &chiliNumber,
             &o.TableToken,
@@ -260,8 +262,8 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
         if topping.Valid {
             o.Topping = topping.String
         }
-        if bowNoChili.Valid {
-            o.BowNoChili = bowNoChili.Int64
+        if trackingOrder.Valid {
+            o.TrackingOrder = trackingOrder.String
         }
         if chiliNumber.Valid {
             o.ChiliNumber = chiliNumber.Int64
@@ -434,6 +436,405 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
 
 
 
+
+func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.Order, error) {
+    or.logger.Info(fmt.Sprintf("Updating order with ID: %d", req.Id))
+    
+    tx, err := or.db.Begin(ctx)
+    if err != nil {
+        or.logger.Error("Error starting transaction: " + err.Error())
+        return nil, fmt.Errorf("error starting transaction: %w", err)
+    }
+    defer tx.Rollback(ctx)
+
+    query := `
+        UPDATE orders
+        SET guest_id = $2, user_id = $3, table_number = $4, order_handler_id = $5,
+            status = $6, updated_at = $7, total_price = $8, is_guest = $9,
+            topping = $10, tracking_order = $11, take_away = $12, 
+            chili_number = $13, table_token = $14, order_name = $15
+        WHERE id = $1
+        RETURNING created_at, updated_at
+    `
+
+    var o order.Order
+    var createdAt, updatedAt time.Time
+
+    err = tx.QueryRow(ctx, query,
+        req.Id,
+        req.GuestId,
+        req.UserId,
+        req.TableNumber,
+        req.OrderHandlerId,
+        req.Status,
+        time.Now(),
+        req.TotalPrice,
+        req.IsGuest,
+        req.Topping,
+        req.TrackingOrder,
+        req.TakeAway,
+        req.ChiliNumber,
+        req.TableToken,
+        req.OrderName,
+    ).Scan(&createdAt, &updatedAt)
+
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("Error updating order: %s", err.Error()))
+        return nil, fmt.Errorf("error updating order: %w", err)
+    }
+
+    if err := tx.Commit(ctx); err != nil {
+        or.logger.Error("Error committing transaction: " + err.Error())
+        return nil, fmt.Errorf("error committing transaction: %w", err)
+    }
+
+    // Populate response
+    o.Id = req.Id
+    o.GuestId = req.GuestId
+    o.UserId = req.UserId
+    o.IsGuest = req.IsGuest
+    o.TableNumber = req.TableNumber
+    o.OrderHandlerId = req.OrderHandlerId
+    o.Status = req.Status
+    o.CreatedAt = timestamppb.New(createdAt)
+    o.UpdatedAt = timestamppb.New(updatedAt)
+    o.TotalPrice = req.TotalPrice
+    o.DishItems = req.DishItems
+    o.SetItems = req.SetItems
+    o.Topping = req.Topping
+    o.TrackingOrder = req.TrackingOrder
+    o.TakeAway = req.TakeAway
+    o.ChiliNumber = req.ChiliNumber
+    o.TableToken = req.TableToken
+    o.OrderName = req.OrderName
+
+    return &o, nil
+}
+
+func (or *OrderRepository) GetOrders(ctx context.Context, page, pageSize int32) ([]*order.Order, int64, error) {
+    or.logger.Info("Fetching orders with pagination")
+    
+    // Get total count for pagination
+    countQuery := `SELECT COUNT(*) FROM orders`
+    
+    var totalItems int64
+    err := or.db.QueryRow(ctx, countQuery).Scan(&totalItems)
+    if err != nil {
+        or.logger.Error("Error counting orders: " + err.Error())
+        return nil, 0, fmt.Errorf("error counting orders: %w", err)
+    }
+
+    // Calculate offset
+    offset := (page - 1) * pageSize
+    
+    // Main order query
+    query := `
+        SELECT 
+            o.id, 
+            o.guest_id, 
+            o.user_id, 
+            o.is_guest, 
+            o.table_number, 
+            o.order_handler_id,
+            COALESCE(o.status, 'Pending') as status, 
+            o.created_at, 
+            o.updated_at, 
+            o.total_price, 
+            COALESCE(o.topping, '') as topping, 
+            COALESCE(o.tracking_order, '') as tracking_order,
+            COALESCE(o.take_away, false) as take_away, 
+            COALESCE(o.chili_number, 0) as chili_number,
+            o.table_token,
+            COALESCE(o.order_name, '') as order_name
+        FROM orders o
+        ORDER BY o.created_at DESC
+        LIMIT $1 OFFSET $2
+    `
+
+    rows, err := or.db.Query(ctx, query, pageSize, offset)
+    if err != nil {
+        or.logger.Error("Error fetching orders: " + err.Error())
+        return nil, 0, fmt.Errorf("error fetching orders: %w", err)
+    }
+    defer rows.Close()
+
+    var orders []*order.Order
+    for rows.Next() {
+        var o order.Order
+        var createdAt, updatedAt time.Time
+
+        // Create nullable variables for fields that can be NULL in the database
+        var (
+            guestId        sql.NullInt64
+            userId         sql.NullInt64
+            tableNumber    sql.NullInt64
+            orderHandlerId sql.NullInt64
+            totalPrice     sql.NullInt32
+            status         sql.NullString
+            topping       sql.NullString
+            trackingOrder     sql.NullString
+            chiliNumber    sql.NullInt64
+            orderName      sql.NullString
+        )
+        err = rows.Scan(
+            &o.Id,
+            &guestId,
+            &userId,
+            &o.IsGuest,
+            &tableNumber,
+            &orderHandlerId,
+            &status,
+            &createdAt,
+            &updatedAt,
+            &totalPrice,
+            &topping,
+            &trackingOrder,
+            &o.TakeAway,
+            &chiliNumber,
+            &o.TableToken,
+            &orderName,
+        )
+        if err != nil {
+            or.logger.Error("Error scanning order: " + err.Error())
+            return nil, 0, fmt.Errorf("error scanning order: %w", err)
+        }
+
+        // Convert nullable fields
+        o.GuestId = guestId.Int64
+        o.UserId = userId.Int64
+        if tableNumber.Valid {
+            o.TableNumber = tableNumber.Int64
+        }
+        o.OrderHandlerId = orderHandlerId.Int64
+        o.Status = status.String
+        o.TotalPrice = totalPrice.Int32
+        o.Topping = topping.String
+        o.TrackingOrder = trackingOrder.String
+        o.ChiliNumber = chiliNumber.Int64
+        if orderName.Valid {
+            o.OrderName = orderName.String
+        }
+
+        // Handle timestamps
+        o.CreatedAt = timestamppb.New(createdAt)
+        o.UpdatedAt = timestamppb.New(updatedAt)
+
+        orders = append(orders, &o)
+    }
+
+    return orders, totalItems, nil
+}
+
+
+//--------------
+
+
+func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order.Order, error) {
+    // or.logger.Info(fmt.Sprintf("Fetching order detail for ID: %d", id))
+    
+    query := `
+        SELECT 
+            id, guest_id, user_id, is_guest, table_number, order_handler_id,
+            status, created_at, updated_at, total_price, topping, tracking_order,
+            take_away, chili_number, table_token, order_name
+        FROM orders
+        WHERE id = $1
+    `
+
+    var o order.Order
+    var createdAt, updatedAt time.Time
+    var orderName sql.NullString
+
+    err := or.db.QueryRow(ctx, query, id).Scan(
+        &o.Id,
+        &o.GuestId,
+        &o.UserId,
+        &o.IsGuest,
+        &o.TableNumber,
+        &o.OrderHandlerId,
+        &o.Status,
+        &createdAt,
+        &updatedAt,
+        &o.TotalPrice,
+        &o.Topping,
+        &o.TrackingOrder,
+        &o.TakeAway,
+        &o.ChiliNumber,
+        &o.TableToken,
+        &orderName,
+    )
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("Error fetching order detail: %s", err.Error()))
+        return nil, fmt.Errorf("error fetching order detail: %w", err)
+    }
+
+    if orderName.Valid {
+        o.OrderName = orderName.String
+    }
+
+    o.CreatedAt = timestamppb.New(createdAt)
+    o.UpdatedAt = timestamppb.New(updatedAt)
+
+    return &o, nil
+}
+
+//--------------------
+
+// Helper function to extract client number from order name
+
+
+
+func extractClientNumber(orderName string) (int64, error) {
+    parts := strings.Split(orderName, "_")
+    if len(parts) < 4 {
+        return 0, fmt.Errorf("invalid order name format")
+    }
+    
+    // Client number is the second part
+    clientNumber, err := strconv.ParseInt(parts[1], 10, 64)
+    if err != nil {
+        return 0, fmt.Errorf("invalid client number in order name: %w", err)
+    }
+    
+    return clientNumber, nil
+}
+
+
+func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (int64, error) {
+    // Get the start and end of the current day in UTC
+    startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
+    endOfDay := startOfDay.Add(24 * time.Hour)
+
+    // First try to find an existing active order for this client today
+    // Note: We now specifically exclude DONE status when checking for existing orders
+    var existingOrderName string
+    var existingQuery string
+    var args []interface{}
+
+    if isGuest {
+        existingQuery = `
+            SELECT order_name
+            FROM orders
+            WHERE guest_id = $1 
+            AND created_at >= $2 
+            AND created_at < $3
+            AND status NOT IN ('DONE')
+            ORDER BY created_at DESC
+            LIMIT 1
+        `
+        args = []interface{}{clientId, startOfDay, endOfDay}
+    } else {
+        existingQuery = `
+            SELECT order_name
+            FROM orders
+            WHERE user_id = $1 
+            AND created_at >= $2 
+            AND created_at < $3
+            AND status NOT IN ('DONE')
+            ORDER BY created_at DESC
+            LIMIT 1
+        `
+        args = []interface{}{clientId, startOfDay, endOfDay}
+    }
+
+    err := tx.QueryRow(ctx, existingQuery, args...).Scan(&existingOrderName)
+    if err != nil {
+        if err.Error() == "no rows in result set" {
+            // No existing active orders found, need to check if there are any DONE orders
+            return or.getNextClientNumber(ctx, tx, startOfDay, endOfDay, isGuest, clientId)
+        } else {
+            return 0, fmt.Errorf("error checking existing orders: %w", err)
+        }
+    }
+
+    // If we found an existing active order, extract the client number from it
+    if existingOrderName != "" {
+        clientNumber, err := extractClientNumber(existingOrderName)
+        if err != nil {
+            return 0, fmt.Errorf("error extracting client number: %w", err)
+        }
+        return clientNumber, nil
+    }
+
+    // If no existing active order found, get next client number
+    return or.getNextClientNumber(ctx, tx, startOfDay, endOfDay, isGuest, clientId)
+}
+
+// New helper function to get the next client number
+func (or *OrderRepository) getNextClientNumber(ctx context.Context, tx *pgxpool.Pool, startOfDay time.Time, endOfDay time.Time, isGuest bool, clientId int64) (int64, error) {
+    // First check if this client has any DONE orders today
+    var clientLastOrderQuery string
+    var args []interface{}
+
+    if isGuest {
+        clientLastOrderQuery = `
+            SELECT order_name
+            FROM orders
+            WHERE guest_id = $1 
+            AND created_at >= $2 
+            AND created_at < $3
+            ORDER BY created_at DESC
+            LIMIT 1
+        `
+        args = []interface{}{clientId, startOfDay, endOfDay}
+    } else {
+        clientLastOrderQuery = `
+            SELECT order_name
+            FROM orders
+            WHERE user_id = $1 
+            AND created_at >= $2 
+            AND created_at < $3
+            ORDER BY created_at DESC
+            LIMIT 1
+        `
+        args = []interface{}{clientId, startOfDay, endOfDay}
+    }
+
+    var lastClientOrderName string
+    err := tx.QueryRow(ctx, clientLastOrderQuery, args...).Scan(&lastClientOrderName)
+    if err != nil && err.Error() != "no rows in result set" {
+        return 0, fmt.Errorf("error checking client's last order: %w", err)
+    }
+
+    if lastClientOrderName != "" {
+        // Client has ordered before today, get their last number and increment it
+        lastClientNumber, err := extractClientNumber(lastClientOrderName)
+        if err != nil {
+            return 0, fmt.Errorf("error extracting last client number: %w", err)
+        }
+        return lastClientNumber + 1, nil
+    }
+
+    // If client hasn't ordered today, get the last order number for the day
+    var lastOrderName string
+    query := `
+        SELECT order_name
+        FROM orders
+        WHERE created_at >= $1 AND created_at < $2
+        ORDER BY created_at DESC
+        LIMIT 1
+    `
+
+    err = tx.QueryRow(ctx, query, startOfDay, endOfDay).Scan(&lastOrderName)
+    if err != nil {
+        if err.Error() == "no rows in result set" {
+            return 1, nil // First client of the day
+        }
+        return 0, fmt.Errorf("error getting last order: %w", err)
+    }
+
+    if lastOrderName == "" {
+        return 1, nil // First client of the day
+    }
+
+    lastClientNumber, err := extractClientNumber(lastOrderName)
+    if err != nil {
+        return 0, fmt.Errorf("error extracting last client number: %w", err)
+    }
+
+    return lastClientNumber + 1, nil
+}
+
 func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrderRequest) (*order.Order, error) {
     or.logger.Info(fmt.Sprintf("Creating new order: %+v", req))
     tx, err := or.db.Begin(ctx)
@@ -443,12 +844,18 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     }
     defer tx.Rollback(ctx)
     now := time.Now()
-    clientNumber, err := or.getClientNumberForDay(ctx, or.db, now)
+    // Get client ID based on whether it's a guest or user
+    clientId := req.GuestId
+    if !req.IsGuest {
+        clientId = req.UserId
+    }
+    
+    // Get the client number
+    clientNumber, err := or.getClientNumberForDay(ctx, or.db, now, req.IsGuest, clientId)
     if err != nil {
         or.logger.Error("Error getting client number: " + err.Error())
         return nil, fmt.Errorf("error getting client number: %w", err)
     }
-
     // Format the order name with client number and day
     weekday := now.Weekday().String()
     day := now.Day()
@@ -470,7 +877,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     query := `
         INSERT INTO orders (
             guest_id, user_id, is_guest, table_number, order_handler_id,
-            status, created_at, updated_at, total_price, topping, bow_no_chili,
+            status, created_at, updated_at, total_price, topping, tracking_order,
             take_away, chili_number, table_token, order_name
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
@@ -501,7 +908,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         now,          // updated_at
         req.TotalPrice,
         req.Topping,
-        req.BowNoChili,
+        req.TrackingOrder,
         req.TakeAway,
         req.ChiliNumber,
         req.TableToken,
@@ -579,274 +986,11 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     o.DishItems = req.DishItems
     o.SetItems = req.SetItems
     o.Topping = req.Topping
-    o.BowNoChili = req.BowNoChili
+    o.TrackingOrder = req.TrackingOrder
     o.TakeAway = req.TakeAway
     o.ChiliNumber = req.ChiliNumber
     o.TableToken = req.TableToken
     o.OrderName = formattedOrderName // Use the formatted order name
 
     return &o, nil
-}
-
-func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.Order, error) {
-    or.logger.Info(fmt.Sprintf("Updating order with ID: %d", req.Id))
-    
-    tx, err := or.db.Begin(ctx)
-    if err != nil {
-        or.logger.Error("Error starting transaction: " + err.Error())
-        return nil, fmt.Errorf("error starting transaction: %w", err)
-    }
-    defer tx.Rollback(ctx)
-
-    query := `
-        UPDATE orders
-        SET guest_id = $2, user_id = $3, table_number = $4, order_handler_id = $5,
-            status = $6, updated_at = $7, total_price = $8, is_guest = $9,
-            topping = $10, bow_no_chili = $11, take_away = $12, 
-            chili_number = $13, table_token = $14, order_name = $15
-        WHERE id = $1
-        RETURNING created_at, updated_at
-    `
-
-    var o order.Order
-    var createdAt, updatedAt time.Time
-
-    err = tx.QueryRow(ctx, query,
-        req.Id,
-        req.GuestId,
-        req.UserId,
-        req.TableNumber,
-        req.OrderHandlerId,
-        req.Status,
-        time.Now(),
-        req.TotalPrice,
-        req.IsGuest,
-        req.Topping,
-        req.BowNoChili,
-        req.TakeAway,
-        req.ChiliNumber,
-        req.TableToken,
-        req.OrderName,
-    ).Scan(&createdAt, &updatedAt)
-
-    if err != nil {
-        or.logger.Error(fmt.Sprintf("Error updating order: %s", err.Error()))
-        return nil, fmt.Errorf("error updating order: %w", err)
-    }
-
-    if err := tx.Commit(ctx); err != nil {
-        or.logger.Error("Error committing transaction: " + err.Error())
-        return nil, fmt.Errorf("error committing transaction: %w", err)
-    }
-
-    // Populate response
-    o.Id = req.Id
-    o.GuestId = req.GuestId
-    o.UserId = req.UserId
-    o.IsGuest = req.IsGuest
-    o.TableNumber = req.TableNumber
-    o.OrderHandlerId = req.OrderHandlerId
-    o.Status = req.Status
-    o.CreatedAt = timestamppb.New(createdAt)
-    o.UpdatedAt = timestamppb.New(updatedAt)
-    o.TotalPrice = req.TotalPrice
-    o.DishItems = req.DishItems
-    o.SetItems = req.SetItems
-    o.Topping = req.Topping
-    o.BowNoChili = req.BowNoChili
-    o.TakeAway = req.TakeAway
-    o.ChiliNumber = req.ChiliNumber
-    o.TableToken = req.TableToken
-    o.OrderName = req.OrderName
-
-    return &o, nil
-}
-
-func (or *OrderRepository) GetOrders(ctx context.Context, page, pageSize int32) ([]*order.Order, int64, error) {
-    or.logger.Info("Fetching orders with pagination")
-    
-    // Get total count for pagination
-    countQuery := `SELECT COUNT(*) FROM orders`
-    
-    var totalItems int64
-    err := or.db.QueryRow(ctx, countQuery).Scan(&totalItems)
-    if err != nil {
-        or.logger.Error("Error counting orders: " + err.Error())
-        return nil, 0, fmt.Errorf("error counting orders: %w", err)
-    }
-
-    // Calculate offset
-    offset := (page - 1) * pageSize
-    
-    // Main order query
-    query := `
-        SELECT 
-            o.id, 
-            o.guest_id, 
-            o.user_id, 
-            o.is_guest, 
-            o.table_number, 
-            o.order_handler_id,
-            COALESCE(o.status, 'Pending') as status, 
-            o.created_at, 
-            o.updated_at, 
-            o.total_price, 
-            COALESCE(o.topping, '') as topping, 
-            COALESCE(o.bow_no_chili, 0) as bow_no_chili,
-            COALESCE(o.take_away, false) as take_away, 
-            COALESCE(o.chili_number, 0) as chili_number,
-            o.table_token,
-            COALESCE(o.order_name, '') as order_name
-        FROM orders o
-        ORDER BY o.created_at DESC
-        LIMIT $1 OFFSET $2
-    `
-
-    rows, err := or.db.Query(ctx, query, pageSize, offset)
-    if err != nil {
-        or.logger.Error("Error fetching orders: " + err.Error())
-        return nil, 0, fmt.Errorf("error fetching orders: %w", err)
-    }
-    defer rows.Close()
-
-    var orders []*order.Order
-    for rows.Next() {
-        var o order.Order
-        var createdAt, updatedAt time.Time
-
-        // Create nullable variables for fields that can be NULL in the database
-        var (
-            guestId        sql.NullInt64
-            userId         sql.NullInt64
-            tableNumber    sql.NullInt64
-            orderHandlerId sql.NullInt64
-            totalPrice     sql.NullInt32
-            status         sql.NullString
-            topping       sql.NullString
-            bowNoChili     sql.NullInt64
-            chiliNumber    sql.NullInt64
-            orderName      sql.NullString
-        )
-        err = rows.Scan(
-            &o.Id,
-            &guestId,
-            &userId,
-            &o.IsGuest,
-            &tableNumber,
-            &orderHandlerId,
-            &status,
-            &createdAt,
-            &updatedAt,
-            &totalPrice,
-            &topping,
-            &bowNoChili,
-            &o.TakeAway,
-            &chiliNumber,
-            &o.TableToken,
-            &orderName,
-        )
-        if err != nil {
-            or.logger.Error("Error scanning order: " + err.Error())
-            return nil, 0, fmt.Errorf("error scanning order: %w", err)
-        }
-
-        // Convert nullable fields
-        o.GuestId = guestId.Int64
-        o.UserId = userId.Int64
-        if tableNumber.Valid {
-            o.TableNumber = tableNumber.Int64
-        }
-        o.OrderHandlerId = orderHandlerId.Int64
-        o.Status = status.String
-        o.TotalPrice = totalPrice.Int32
-        o.Topping = topping.String
-        o.BowNoChili = bowNoChili.Int64
-        o.ChiliNumber = chiliNumber.Int64
-        if orderName.Valid {
-            o.OrderName = orderName.String
-        }
-
-        // Handle timestamps
-        o.CreatedAt = timestamppb.New(createdAt)
-        o.UpdatedAt = timestamppb.New(updatedAt)
-
-        orders = append(orders, &o)
-    }
-
-    return orders, totalItems, nil
-}
-
-
-//--------------
-
-
-func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order.Order, error) {
-    // or.logger.Info(fmt.Sprintf("Fetching order detail for ID: %d", id))
-    
-    query := `
-        SELECT 
-            id, guest_id, user_id, is_guest, table_number, order_handler_id,
-            status, created_at, updated_at, total_price, topping, bow_no_chili,
-            take_away, chili_number, table_token, order_name
-        FROM orders
-        WHERE id = $1
-    `
-
-    var o order.Order
-    var createdAt, updatedAt time.Time
-    var orderName sql.NullString
-
-    err := or.db.QueryRow(ctx, query, id).Scan(
-        &o.Id,
-        &o.GuestId,
-        &o.UserId,
-        &o.IsGuest,
-        &o.TableNumber,
-        &o.OrderHandlerId,
-        &o.Status,
-        &createdAt,
-        &updatedAt,
-        &o.TotalPrice,
-        &o.Topping,
-        &o.BowNoChili,
-        &o.TakeAway,
-        &o.ChiliNumber,
-        &o.TableToken,
-        &orderName,
-    )
-    if err != nil {
-        or.logger.Error(fmt.Sprintf("Error fetching order detail: %s", err.Error()))
-        return nil, fmt.Errorf("error fetching order detail: %w", err)
-    }
-
-    if orderName.Valid {
-        o.OrderName = orderName.String
-    }
-
-    o.CreatedAt = timestamppb.New(createdAt)
-    o.UpdatedAt = timestamppb.New(updatedAt)
-
-    return &o, nil
-}
-
-//--------------------
-
-func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time) (int64, error) {
-    // Get the start and end of the current day in UTC
-    startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
-    endOfDay := startOfDay.Add(24 * time.Hour)
-
-    var clientNumber int64
-    query := `
-        SELECT COUNT(*) + 1
-        FROM orders
-        WHERE created_at >= $1 AND created_at < $2
-    `
-
-    err := tx.QueryRow(ctx, query, startOfDay, endOfDay).Scan(&clientNumber)
-    if err != nil {
-        return 0, fmt.Errorf("error getting client number: %w", err)
-    }
-
-    return clientNumber, nil
 }

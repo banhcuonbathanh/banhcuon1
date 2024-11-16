@@ -17,7 +17,7 @@ type OrderType struct {
     DishItems      []OrderDish     `json:"dish_items"`
     SetItems       []OrderSet      `json:"set_items"`
     Topping       string           `json:"topping"`
-    BowNoChili     int64           `json:"bow_no_chili"`
+    TrackingOrder     string           `json:"tracking_order"`
     TakeAway       bool            `json:"take_away"`
     ChiliNumber    int64           `json:"chili_number"`
     TableToken     string          `json:"table_token"`
@@ -37,7 +37,7 @@ type CreateOrderRequestType struct {
     DishItems      []OrderDish     `json:"dish_items"`
     SetItems       []OrderSet      `json:"set_items"`
     Topping       string           `json:"topping"`
-    BowNoChili     int64           `json:"bow_no_chili"`
+    TrackingOrder     string           `json:"tracking_order"`
     TakeAway       bool            `json:"take_away"`
     ChiliNumber    int64           `json:"chili_number"`
     TableToken     string          `json:"table_token"`
@@ -56,7 +56,7 @@ type UpdateOrderRequestType struct {
     SetItems       []OrderSet      `json:"set_items"`
     IsGuest        bool            `json:"is_guest"`
     Topping       string           `json:"topping"`
-    BowNoChili     int64           `json:"bow_no_chili"`
+    TrackingOrder     string           `json:"tracking_order"`
     TakeAway       bool            `json:"take_away"`
     ChiliNumber    int64           `json:"chili_number"`
     TableToken     string          `json:"table_token"`
@@ -75,7 +75,7 @@ type OrderDetailedResponse struct {
     TotalPrice      int32                 `json:"total_price"`
     IsGuest         bool                  `json:"is_guest"`
     Topping       string           `json:"topping"`
-    BowNoChili      int64                 `json:"bow_no_chili"`
+    TrackingOrder     string           `json:"tracking_order"`
     TakeAway        bool                  `json:"take_away"`
     ChiliNumber     int64                 `json:"chili_number"`
     TableToken      string                `json:"table_token"`
