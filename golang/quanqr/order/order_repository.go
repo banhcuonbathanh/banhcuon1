@@ -5,8 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"math"
-	"strconv"
-	"strings"
+
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -678,185 +677,198 @@ func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order
     return &o, nil
 }
 
-//--------------------
-
-// Helper function to extract client number from order name
+// -----------------------------------
 
 
+// // New helper function to get the next client number
+// func (or *OrderRepository) getNextClientNumber(ctx context.Context, tx *pgxpool.Pool, startOfDay time.Time, endOfDay time.Time, isGuest bool, clientId int64) (int64, error) {
+//     // First check if this client has any DONE orders today
+//     var clientLastOrderQuery string
+//     var args []interface{}
 
-func extractClientNumber(orderName string) (int64, error) {
-    parts := strings.Split(orderName, "_")
-    if len(parts) < 4 {
-        return 0, fmt.Errorf("invalid order name format")
-    }
+//     if isGuest {
+//         clientLastOrderQuery = `
+//             SELECT order_name
+//             FROM orders
+//             WHERE guest_id = $1 
+//             AND created_at >= $2 
+//             AND created_at < $3
+//             ORDER BY created_at DESC
+//             LIMIT 1
+//         `
+//         args = []interface{}{clientId, startOfDay, endOfDay}
+//     } else {
+//         clientLastOrderQuery = `
+//             SELECT order_name
+//             FROM orders
+//             WHERE user_id = $1 
+//             AND created_at >= $2 
+//             AND created_at < $3
+//             ORDER BY created_at DESC
+//             LIMIT 1
+//         `
+//         args = []interface{}{clientId, startOfDay, endOfDay}
+//     }
+
+//     var lastClientOrderName string
+//     err := tx.QueryRow(ctx, clientLastOrderQuery, args...).Scan(&lastClientOrderName)
+//     if err != nil && err.Error() != "no rows in result set" {
+//         return 0, fmt.Errorf("error checking client's last order: %w", err)
+//     }
+
+//     if lastClientOrderName != "" {
+//         // Client has ordered before today, get their last number and increment it
+//         lastClientNumber, err := extractClientNumber(lastClientOrderName)
+//         if err != nil {
+//             return 0, fmt.Errorf("error extracting last client number: %w", err)
+//         }
+//         return lastClientNumber + 1, nil
+//     }
+
+//     // If client hasn't ordered today, get the last order number for the day
+//     var lastOrderName string
+//     query := `
+//         SELECT order_name
+//         FROM orders
+//         WHERE created_at >= $1 AND created_at < $2
+//         ORDER BY created_at DESC
+//         LIMIT 1
+//     `
+
+//     err = tx.QueryRow(ctx, query, startOfDay, endOfDay).Scan(&lastOrderName)
+//     if err != nil {
+//         if err.Error() == "no rows in result set" {
+//             return 1, nil // First client of the day
+//         }
+//         return 0, fmt.Errorf("error getting last order: %w", err)
+//     }
+
+//     if lastOrderName == "" {
+//         return 1, nil // First client of the day
+//     }
+
+//     lastClientNumber, err := extractClientNumber(lastOrderName)
+//     if err != nil {
+//         return 0, fmt.Errorf("error extracting last client number: %w", err)
+//     }
+
+//     return lastClientNumber + 1, nil
+// }
+
+
+// func extractClientNumber(orderName string) (int64, error) {
+//     parts := strings.Split(orderName, "_")
+//     if len(parts) < 4 {
+//         return 0, fmt.Errorf("invalid order name format")
+//     }
     
-    // Client number is the second part
-    clientNumber, err := strconv.ParseInt(parts[1], 10, 64)
-    if err != nil {
-        return 0, fmt.Errorf("invalid client number in order name: %w", err)
-    }
+//     clientNumber, err := strconv.ParseInt(parts[1], 10, 64)
+//     if err != nil {
+//         return 0, fmt.Errorf("invalid client number in order name: %w", err)
+//     }
     
-    return clientNumber, nil
-}
+//     return clientNumber, nil
+// }
 
-
-func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (int64, error) {
-    // Get the start and end of the current day in UTC
+func (or *OrderRepository) getTrackingOrderInfo(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (string, error) {
     startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
     endOfDay := startOfDay.Add(24 * time.Hour)
 
-    // First try to find an existing active order for this client today
-    // Note: We now specifically exclude DONE status when checking for existing orders
-    var existingOrderName string
-    var existingQuery string
-    var args []interface{}
-
-    if isGuest {
-        existingQuery = `
-            SELECT order_name
-            FROM orders
-            WHERE guest_id = $1 
-            AND created_at >= $2 
-            AND created_at < $3
-            AND status NOT IN ('DONE')
-            ORDER BY created_at DESC
-            LIMIT 1
-        `
-        args = []interface{}{clientId, startOfDay, endOfDay}
-    } else {
-        existingQuery = `
-            SELECT order_name
-            FROM orders
-            WHERE user_id = $1 
-            AND created_at >= $2 
-            AND created_at < $3
-            AND status NOT IN ('DONE')
-            ORDER BY created_at DESC
-            LIMIT 1
-        `
-        args = []interface{}{clientId, startOfDay, endOfDay}
-    }
-
-    err := tx.QueryRow(ctx, existingQuery, args...).Scan(&existingOrderName)
+    clientPosition, err := or.getClientPosition(ctx, tx, startOfDay, endOfDay, clientId, isGuest)
     if err != nil {
-        if err.Error() == "no rows in result set" {
-            // No existing active orders found, need to check if there are any DONE orders
-            return or.getNextClientNumber(ctx, tx, startOfDay, endOfDay, isGuest, clientId)
-        } else {
-            return 0, fmt.Errorf("error checking existing orders: %w", err)
-        }
+        return "", fmt.Errorf("error getting client position: %w", err)
     }
 
-    // If we found an existing active order, extract the client number from it
-    if existingOrderName != "" {
-        clientNumber, err := extractClientNumber(existingOrderName)
-        if err != nil {
-            return 0, fmt.Errorf("error extracting client number: %w", err)
-        }
-        return clientNumber, nil
+    orderCount, err := or.getClientOrderCount(ctx, tx, startOfDay, endOfDay, clientId, isGuest)
+    if err != nil {
+        return "", fmt.Errorf("error getting client order count: %w", err)
     }
 
-    // If no existing active order found, get next client number
-    return or.getNextClientNumber(ctx, tx, startOfDay, endOfDay, isGuest, clientId)
+    var clientType string
+    if isGuest {
+        clientType = "Guest"
+    } else {
+        clientType = "Client"
+    }
+
+    trackingOrder := fmt.Sprintf("%d%s %s - Order #%d", 
+        clientPosition,
+        getOrdinalSuffix(clientPosition),
+        clientType,
+        orderCount)
+
+    return trackingOrder, nil
 }
 
-// New helper function to get the next client number
-func (or *OrderRepository) getNextClientNumber(ctx context.Context, tx *pgxpool.Pool, startOfDay time.Time, endOfDay time.Time, isGuest bool, clientId int64) (int64, error) {
-    // First check if this client has any DONE orders today
-    var clientLastOrderQuery string
-    var args []interface{}
+// func (or *OrderRepository) getClientOrderCount(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
+//     var query string
+//     if isGuest {
+//         query = `
+//             SELECT COUNT(*) + 1
+//             FROM orders
+//             WHERE guest_id = $1
+//             AND created_at >= $2 AND created_at < $3
+//         `
+//     } else {
+//         query = `
+//             SELECT COUNT(*) + 1
+//             FROM orders
+//             WHERE user_id = $1
+//             AND created_at >= $2 AND created_at < $3
+//         `
+//     }
 
-    if isGuest {
-        clientLastOrderQuery = `
-            SELECT order_name
-            FROM orders
-            WHERE guest_id = $1 
-            AND created_at >= $2 
-            AND created_at < $3
-            ORDER BY created_at DESC
-            LIMIT 1
-        `
-        args = []interface{}{clientId, startOfDay, endOfDay}
-    } else {
-        clientLastOrderQuery = `
-            SELECT order_name
-            FROM orders
-            WHERE user_id = $1 
-            AND created_at >= $2 
-            AND created_at < $3
-            ORDER BY created_at DESC
-            LIMIT 1
-        `
-        args = []interface{}{clientId, startOfDay, endOfDay}
+//     var count int64
+//     err := tx.QueryRow(ctx, query, clientId, startOfDay, endOfDay).Scan(&count)
+//     if err != nil {
+//         return 0, fmt.Errorf("error getting order count: %w", err)
+//     }
+
+//     return count, nil
+// }
+
+func getOrdinalSuffix(n int64) string {
+    if n%100 >= 11 && n%100 <= 13 {
+        return "th"
     }
-
-    var lastClientOrderName string
-    err := tx.QueryRow(ctx, clientLastOrderQuery, args...).Scan(&lastClientOrderName)
-    if err != nil && err.Error() != "no rows in result set" {
-        return 0, fmt.Errorf("error checking client's last order: %w", err)
+    switch n % 10 {
+    case 1:
+        return "st"
+    case 2:
+        return "nd"
+    case 3:
+        return "rd"
+    default:
+        return "th"
     }
-
-    if lastClientOrderName != "" {
-        // Client has ordered before today, get their last number and increment it
-        lastClientNumber, err := extractClientNumber(lastClientOrderName)
-        if err != nil {
-            return 0, fmt.Errorf("error extracting last client number: %w", err)
-        }
-        return lastClientNumber + 1, nil
-    }
-
-    // If client hasn't ordered today, get the last order number for the day
-    var lastOrderName string
-    query := `
-        SELECT order_name
-        FROM orders
-        WHERE created_at >= $1 AND created_at < $2
-        ORDER BY created_at DESC
-        LIMIT 1
-    `
-
-    err = tx.QueryRow(ctx, query, startOfDay, endOfDay).Scan(&lastOrderName)
-    if err != nil {
-        if err.Error() == "no rows in result set" {
-            return 1, nil // First client of the day
-        }
-        return 0, fmt.Errorf("error getting last order: %w", err)
-    }
-
-    if lastOrderName == "" {
-        return 1, nil // First client of the day
-    }
-
-    lastClientNumber, err := extractClientNumber(lastOrderName)
-    if err != nil {
-        return 0, fmt.Errorf("error extracting last client number: %w", err)
-    }
-
-    return lastClientNumber + 1, nil
 }
 
 func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrderRequest) (*order.Order, error) {
     or.logger.Info(fmt.Sprintf("Creating new order: %+v", req))
+    
     tx, err := or.db.Begin(ctx)
     if err != nil {
         or.logger.Error("Error starting transaction: " + err.Error())
         return nil, fmt.Errorf("error starting transaction: %w", err)
     }
     defer tx.Rollback(ctx)
+
     now := time.Now()
+    
     // Get client ID based on whether it's a guest or user
     clientId := req.GuestId
     if !req.IsGuest {
         clientId = req.UserId
     }
-    
-    // Get the client number
-    clientNumber, err := or.getClientNumberForDay(ctx, or.db, now, req.IsGuest, clientId)
+
+    // Get tracking order information
+    trackingOrder, err := or.getTrackingOrderInfo(ctx, or.db, now, req.IsGuest, clientId)
     if err != nil {
-        or.logger.Error("Error getting client number: " + err.Error())
-        return nil, fmt.Errorf("error getting client number: %w", err)
+        or.logger.Error("Error getting tracking order info: " + err.Error())
+        return nil, fmt.Errorf("error getting tracking order info: %w", err)
     }
-    // Format the order name with client number and day
+
+    // Format the order name
     weekday := now.Weekday().String()
     day := now.Day()
     orderName := req.OrderName
@@ -867,13 +879,29 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
             orderName = "user"
         }
     }
+
+    // Get client number for the order name
+    clientNumber, err := or.getClientNumberForDay(ctx, or.db, now, req.IsGuest, clientId)
+    if err != nil {
+        or.logger.Error("Error getting client number: " + err.Error())
+        return nil, fmt.Errorf("error getting client number: %w", err)
+    }
+
     formattedOrderName := fmt.Sprintf("%s_%d_%s_%d", 
         orderName, 
-        clientNumber, 
-        weekday, 
+        clientNumber,
+        weekday,
         day)
 
-        // new data
+    var guestId, userId sql.NullInt64
+    if req.IsGuest {
+        guestId = sql.NullInt64{Int64: req.GuestId, Valid: true}
+        userId = sql.NullInt64{Valid: false}
+    } else {
+        userId = sql.NullInt64{Int64: req.UserId, Valid: true}
+        guestId = sql.NullInt64{Valid: false}
+    }
+
     query := `
         INSERT INTO orders (
             guest_id, user_id, is_guest, table_number, order_handler_id,
@@ -886,17 +914,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
 
     var o order.Order
     var createdAt, updatedAt time.Time
-    var guestId, userId sql.NullInt64
 
-    if req.IsGuest {
-        guestId = sql.NullInt64{Int64: req.GuestId, Valid: true}
-        userId = sql.NullInt64{Valid: false}
-    } else {
-        userId = sql.NullInt64{Int64: req.UserId, Valid: true}
-        guestId = sql.NullInt64{Valid: false}
-    }
-
- 
     err = tx.QueryRow(ctx, query,
         guestId,
         userId,
@@ -904,15 +922,15 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         req.TableNumber,
         req.OrderHandlerId,
         req.Status,
-        now,          // created_at
-        now,          // updated_at
+        now,
+        now,
         req.TotalPrice,
         req.Topping,
-        req.TrackingOrder,
+        trackingOrder, // Use the generated tracking order
         req.TakeAway,
         req.ChiliNumber,
         req.TableToken,
-        formattedOrderName, // Use the formatted order name
+        formattedOrderName,
     ).Scan(&o.Id, &createdAt, &updatedAt)
 
     if err != nil {
@@ -920,9 +938,8 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         return nil, fmt.Errorf("error creating order: %w", err)
     }
 
-    // Verify dishes exist before inserting
+    // Insert dish items
     for _, dish := range req.DishItems {
-        // First verify the dish exists
         var exists bool
         err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM dishes WHERE id = $1)", dish.DishId).Scan(&exists)
         if err != nil {
@@ -934,7 +951,6 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
             return nil, fmt.Errorf("dish with id %d does not exist", dish.DishId)
         }
 
-        // Then insert the order item
         _, err = tx.Exec(ctx, 
             "INSERT INTO dish_order_items (order_id, dish_id, quantity) VALUES ($1, $2, $3)",
             o.Id, dish.DishId, dish.Quantity)
@@ -944,9 +960,8 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         }
     }
 
-    // Verify sets exist before inserting
+    // Insert set items
     for _, set := range req.SetItems {
-        // First verify the set exists
         var exists bool
         err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM sets WHERE id = $1)", set.SetId).Scan(&exists)
         if err != nil {
@@ -958,7 +973,6 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
             return nil, fmt.Errorf("set with id %d does not exist", set.SetId)
         }
 
-        // Then insert the set item
         _, err = tx.Exec(ctx, 
             "INSERT INTO set_order_items (order_id, set_id, quantity) VALUES ($1, $2, $3)",
             o.Id, set.SetId, set.Quantity)
@@ -986,11 +1000,140 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     o.DishItems = req.DishItems
     o.SetItems = req.SetItems
     o.Topping = req.Topping
-    o.TrackingOrder = req.TrackingOrder
+    o.TrackingOrder = trackingOrder
     o.TakeAway = req.TakeAway
     o.ChiliNumber = req.ChiliNumber
     o.TableToken = req.TableToken
-    o.OrderName = formattedOrderName // Use the formatted order name
+    o.OrderName = formattedOrderName
 
     return &o, nil
+}
+
+
+
+func (or *OrderRepository) getClientPosition(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
+    var query string
+    if isGuest {
+        query = `
+            WITH ordered_clients AS (
+                SELECT 
+                    CASE 
+                        WHEN guest_id IS NOT NULL THEN guest_id 
+                        ELSE user_id 
+                    END as client_id,
+                    MIN(created_at) as first_order_time,
+                    ROW_NUMBER() OVER (ORDER BY MIN(created_at)) as position
+                FROM orders
+                WHERE created_at >= $1 AND created_at < $2
+                GROUP BY CASE WHEN guest_id IS NOT NULL THEN guest_id ELSE user_id END
+            )
+            SELECT COALESCE(position, 1)
+            FROM ordered_clients
+            WHERE client_id = $3
+        `
+    } else {
+        query = `
+            WITH ordered_clients AS (
+                SELECT 
+                    CASE 
+                        WHEN guest_id IS NOT NULL THEN guest_id 
+                        ELSE user_id 
+                    END as client_id,
+                    MIN(created_at) as first_order_time,
+                    ROW_NUMBER() OVER (ORDER BY MIN(created_at)) as position
+                FROM orders
+                WHERE created_at >= $1 AND created_at < $2
+                GROUP BY CASE WHEN guest_id IS NOT NULL THEN guest_id ELSE user_id END
+            )
+            SELECT COALESCE(position, 1)
+            FROM ordered_clients
+            WHERE client_id = $3
+        `
+    }
+
+    var position int64
+    err := tx.QueryRow(ctx, query, startOfDay, endOfDay, clientId).Scan(&position)
+    if err != nil {
+        if err.Error() == "no rows in result set" {
+            return 1, nil // First client of the day
+        }
+        return 0, fmt.Errorf("error getting client position: %w", err)
+    }
+
+    return position, nil
+}
+
+func (or *OrderRepository) getClientOrderCount(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
+    var query string
+    if isGuest {
+        query = `
+            SELECT COUNT(*) + 1
+            FROM orders
+            WHERE guest_id = $1
+            AND created_at >= $2 AND created_at < $3
+        `
+    } else {
+        query = `
+            SELECT COUNT(*) + 1
+            FROM orders
+            WHERE user_id = $1
+            AND created_at >= $2 AND created_at < $3
+        `
+    }
+
+    var count int64
+    err := tx.QueryRow(ctx, query, clientId, startOfDay, endOfDay).Scan(&count)
+    if err != nil {
+        if err.Error() == "no rows in result set" {
+            return 1, nil
+        }
+        return 0, fmt.Errorf("error getting order count: %w", err)
+    }
+
+    return count, nil
+}
+
+func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (int64, error) {
+    startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
+    endOfDay := startOfDay.Add(24 * time.Hour)
+
+    var query string
+    var args []interface{}
+
+    if isGuest {
+        query = `
+            SELECT COALESCE(
+                (SELECT MAX(CAST(SPLIT_PART(order_name, '_', 2) AS BIGINT))
+                FROM orders
+                WHERE guest_id = $1 
+                AND created_at >= $2 
+                AND created_at < $3),
+                0
+            ) + 1
+        `
+        args = []interface{}{clientId, startOfDay, endOfDay}
+    } else {
+        query = `
+            SELECT COALESCE(
+                (SELECT MAX(CAST(SPLIT_PART(order_name, '_', 2) AS BIGINT))
+                FROM orders
+                WHERE user_id = $1 
+                AND created_at >= $2 
+                AND created_at < $3),
+                0
+            ) + 1
+        `
+        args = []interface{}{clientId, startOfDay, endOfDay}
+    }
+
+    var clientNumber int64
+    err := tx.QueryRow(ctx, query, args...).Scan(&clientNumber)
+    if err != nil {
+        if err.Error() == "no rows in result set" {
+            return 1, nil // First order of the day
+        }
+        return 0, fmt.Errorf("error getting client number: %w", err)
+    }
+
+    return clientNumber, nil
 }
