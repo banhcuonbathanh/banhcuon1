@@ -771,18 +771,27 @@ func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order
 // }
 
 func (or *OrderRepository) getTrackingOrderInfo(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (string, error) {
+    or.logger.Info("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Starting")
+    
     startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
     endOfDay := startOfDay.Add(24 * time.Hour)
+    
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Processing for clientId: %d, isGuest: %v, date range: %v to %v", 
+        clientId, isGuest, startOfDay, endOfDay))
 
     clientPosition, err := or.getClientPosition(ctx, tx, startOfDay, endOfDay, clientId, isGuest)
     if err != nil {
+        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Error getting client position: %v", err))
         return "", fmt.Errorf("error getting client position: %w", err)
     }
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Got client position: %d", clientPosition))
 
     orderCount, err := or.getClientOrderCount(ctx, tx, startOfDay, endOfDay, clientId, isGuest)
     if err != nil {
+        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Error getting client order count: %v", err))
         return "", fmt.Errorf("error getting client order count: %w", err)
     }
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Got order count: %d", orderCount))
 
     var clientType string
     if isGuest {
@@ -797,35 +806,11 @@ func (or *OrderRepository) getTrackingOrderInfo(ctx context.Context, tx *pgxpool
         clientType,
         orderCount)
 
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Generated tracking order: %s", trackingOrder))
     return trackingOrder, nil
 }
 
-// func (or *OrderRepository) getClientOrderCount(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
-//     var query string
-//     if isGuest {
-//         query = `
-//             SELECT COUNT(*) + 1
-//             FROM orders
-//             WHERE guest_id = $1
-//             AND created_at >= $2 AND created_at < $3
-//         `
-//     } else {
-//         query = `
-//             SELECT COUNT(*) + 1
-//             FROM orders
-//             WHERE user_id = $1
-//             AND created_at >= $2 AND created_at < $3
-//         `
-//     }
 
-//     var count int64
-//     err := tx.QueryRow(ctx, query, clientId, startOfDay, endOfDay).Scan(&count)
-//     if err != nil {
-//         return 0, fmt.Errorf("error getting order count: %w", err)
-//     }
-
-//     return count, nil
-// }
 
 func getOrdinalSuffix(n int64) string {
     if n%100 >= 11 && n%100 <= 13 {
@@ -860,7 +845,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     if !req.IsGuest {
         clientId = req.UserId
     }
-
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Processing for clientId: %d, isGuest: %v", clientId, req.IsGuest))
     // Get tracking order information
     trackingOrder, err := or.getTrackingOrderInfo(ctx, or.db, now, req.IsGuest, clientId)
     if err != nil {
@@ -883,15 +868,14 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     // Get client number for the order name
     clientNumber, err := or.getClientNumberForDay(ctx, or.db, now, req.IsGuest, clientId)
     if err != nil {
-        or.logger.Error("Error getting client number: " + err.Error())
+        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Error getting client number: %v", err))
         return nil, fmt.Errorf("error getting client number: %w", err)
     }
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Got client number: %d", clientNumber))
 
-    formattedOrderName := fmt.Sprintf("%s_%d_%s_%d", 
-        orderName, 
-        clientNumber,
-        weekday,
-        day)
+    formattedOrderName := fmt.Sprintf("%s_%d_%s_%d", orderName, clientNumber, weekday, day)
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Formatted order name: %s", formattedOrderName))
+
 
     var guestId, userId sql.NullInt64
     if req.IsGuest {
@@ -911,7 +895,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING id, created_at, updated_at
     `
-
+    or.logger.Info("golang/quanqr/order/order_repository.go CreateOrder - Executing order insertion")
     var o order.Order
     var createdAt, updatedAt time.Time
 
@@ -1011,59 +995,11 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
 
 
 
-func (or *OrderRepository) getClientPosition(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
-    var query string
-    if isGuest {
-        query = `
-            WITH ordered_clients AS (
-                SELECT 
-                    CASE 
-                        WHEN guest_id IS NOT NULL THEN guest_id 
-                        ELSE user_id 
-                    END as client_id,
-                    MIN(created_at) as first_order_time,
-                    ROW_NUMBER() OVER (ORDER BY MIN(created_at)) as position
-                FROM orders
-                WHERE created_at >= $1 AND created_at < $2
-                GROUP BY CASE WHEN guest_id IS NOT NULL THEN guest_id ELSE user_id END
-            )
-            SELECT COALESCE(position, 1)
-            FROM ordered_clients
-            WHERE client_id = $3
-        `
-    } else {
-        query = `
-            WITH ordered_clients AS (
-                SELECT 
-                    CASE 
-                        WHEN guest_id IS NOT NULL THEN guest_id 
-                        ELSE user_id 
-                    END as client_id,
-                    MIN(created_at) as first_order_time,
-                    ROW_NUMBER() OVER (ORDER BY MIN(created_at)) as position
-                FROM orders
-                WHERE created_at >= $1 AND created_at < $2
-                GROUP BY CASE WHEN guest_id IS NOT NULL THEN guest_id ELSE user_id END
-            )
-            SELECT COALESCE(position, 1)
-            FROM ordered_clients
-            WHERE client_id = $3
-        `
-    }
 
-    var position int64
-    err := tx.QueryRow(ctx, query, startOfDay, endOfDay, clientId).Scan(&position)
-    if err != nil {
-        if err.Error() == "no rows in result set" {
-            return 1, nil // First client of the day
-        }
-        return 0, fmt.Errorf("error getting client position: %w", err)
-    }
-
-    return position, nil
-}
 
 func (or *OrderRepository) getClientOrderCount(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientOrderCount - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientOrderCount - Date range: %v to %v", startOfDay, endOfDay))
     var query string
     if isGuest {
         query = `
@@ -1089,13 +1025,16 @@ func (or *OrderRepository) getClientOrderCount(ctx context.Context, tx *pgxpool.
         }
         return 0, fmt.Errorf("error getting order count: %w", err)
     }
-
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientOrderCount - Retrieved count: %d", count))
     return count, nil
 }
 
 func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (int64, error) {
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
+    
     startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
     endOfDay := startOfDay.Add(24 * time.Hour)
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Date range: %v to %v", startOfDay, endOfDay))
 
     var query string
     var args []interface{}
@@ -1130,10 +1069,108 @@ func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpoo
     err := tx.QueryRow(ctx, query, args...).Scan(&clientNumber)
     if err != nil {
         if err.Error() == "no rows in result set" {
-            return 1, nil // First order of the day
+            or.logger.Info("golang/quanqr/order/order_repository.go getClientNumberForDay - No existing client number found, returning 1")
+            return 1, nil
         }
+        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Error getting client number: %v", err))
         return 0, fmt.Errorf("error getting client number: %w", err)
     }
-
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - clientNumber %v ", clientNumber))
     return clientNumber, nil
+}
+
+
+
+func (or *OrderRepository) getClientPosition(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientPosition - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientPosition - Date range: %v to %v", startOfDay, endOfDay))
+    
+    // First, let's debug the virtual table
+    debugQuery := `
+        WITH ordered_clients AS (
+            SELECT 
+                CASE 
+                    WHEN guest_id IS NOT NULL THEN guest_id 
+                    ELSE user_id 
+                END as client_id,
+                MIN(created_at) as first_order_time,
+                DENSE_RANK() OVER (ORDER BY MIN(created_at)) as position
+            FROM orders
+            WHERE created_at >= $1 AND created_at < $2
+            GROUP BY 
+                CASE 
+                    WHEN guest_id IS NOT NULL THEN guest_id 
+                    ELSE user_id 
+                END
+        )
+        SELECT client_id, first_order_time, position 
+        FROM ordered_clients
+        ORDER BY position;
+    `
+    
+    // Execute debug query to see the virtual table
+    rows, err := tx.Query(ctx, debugQuery, startOfDay, endOfDay)
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("Debug query error: %v", err))
+    } else {
+        defer rows.Close()
+        or.logger.Info("Virtual Table Content:")
+        or.logger.Info("| Client ID | First Order Time | Position |")
+        or.logger.Info("|-----------|-----------------|-----------|")
+        
+        for rows.Next() {
+            var cid int64
+            var orderTime time.Time
+            var pos int64
+            if err := rows.Scan(&cid, &orderTime, &pos); err != nil {
+                or.logger.Error(fmt.Sprintf("Error scanning debug row: %v", err))
+                continue
+            }
+            or.logger.Info(fmt.Sprintf("| %9d | %s | %9d |", cid, orderTime.Format("15:04:05"), pos))
+        }
+    }
+
+    // Now execute the actual position query
+    query := `
+        WITH ordered_clients AS (
+            SELECT 
+                CASE 
+                    WHEN guest_id IS NOT NULL THEN guest_id 
+                    ELSE user_id 
+                END as client_id,
+                MIN(created_at) as first_order_time,
+                DENSE_RANK() OVER (ORDER BY MIN(created_at)) as position
+            FROM orders
+            WHERE created_at >= $1 AND created_at < $2
+            GROUP BY 
+                CASE 
+                    WHEN guest_id IS NOT NULL THEN guest_id 
+                    ELSE user_id 
+                END
+        )
+        SELECT position
+        FROM ordered_clients
+        WHERE client_id = $3
+        UNION ALL
+        SELECT COALESCE(
+            (SELECT MAX(position) + 1 
+            FROM ordered_clients),
+            1
+        )
+        WHERE NOT EXISTS (
+            SELECT 1 
+            FROM ordered_clients 
+            WHERE client_id = $3
+        )
+        LIMIT 1
+    `
+
+    var position int64
+    err = tx.QueryRow(ctx, query, startOfDay, endOfDay, clientId).Scan(&position)
+    if err != nil {
+        return 0, fmt.Errorf("error getting client position: %w", err)
+    }
+    
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientPosition - Retrieved position for client %d: %d", clientId, position))
+    return position, nil
 }
