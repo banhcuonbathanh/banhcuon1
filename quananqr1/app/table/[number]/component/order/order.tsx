@@ -137,7 +137,7 @@ export default function OrderSummary({ number, token }: OrderProps) {
               </div>
 
               {/* Total summary */}
-              <div className="mt-4 p-3 bg-gray-50 rounded-md">
+              <div className="mt-4 p-3  rounded-md">
                 <span className="font-medium">Total Orders: </span>
                 <span>{toppingTotal}</span>
               </div>

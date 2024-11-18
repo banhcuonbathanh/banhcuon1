@@ -1,8 +1,8 @@
 package main
 
 import (
-	"english-ai-full/ecomm-grpc/config"
 	"english-ai-full/ecomm-grpc/db"
+	"english-ai-full/util"
 
 	// "os"
 
@@ -46,7 +46,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.Load()
+	cfg, err := util.Load()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}

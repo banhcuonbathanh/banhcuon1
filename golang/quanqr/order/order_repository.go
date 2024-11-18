@@ -854,16 +854,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     }
 
     // Format the order name
-    weekday := now.Weekday().String()
-    day := now.Day()
-    orderName := req.OrderName
-    if orderName == "" {
-        if req.IsGuest {
-            orderName = "guest"
-        } else {
-            orderName = "user"
-        }
-    }
+ 
 
     // Get client number for the order name
     clientNumber, err := or.getClientNumberForDay(ctx, or.db, now, req.IsGuest, clientId)
@@ -873,8 +864,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     }
     or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Got client number: %d", clientNumber))
 
-    formattedOrderName := fmt.Sprintf("%s_%d_%s_%d", orderName, clientNumber, weekday, day)
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Formatted order name: %s", formattedOrderName))
+    
 
 
     var guestId, userId sql.NullInt64
@@ -914,7 +904,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         req.TakeAway,
         req.ChiliNumber,
         req.TableToken,
-        formattedOrderName,
+        req.OrderName,
     ).Scan(&o.Id, &createdAt, &updatedAt)
 
     if err != nil {
@@ -988,7 +978,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
     o.TakeAway = req.TakeAway
     o.ChiliNumber = req.ChiliNumber
     o.TableToken = req.TableToken
-    o.OrderName = formattedOrderName
+    o.OrderName = req.OrderName
 
     return &o, nil
 }

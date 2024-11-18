@@ -1,4 +1,4 @@
-package config
+package util
 
 import (
 	"github.com/spf13/viper"
@@ -6,10 +6,12 @@ import (
 
 type Config struct {
 	DatabaseURL  string `mapstructure:"databaseURL"`
-	GRPCAddress  string `mapstructure:"grpcAddress"`
-	HTTPAddress  string `mapstructure:"HTTPAddress"`
+	GRPCAddress  string `mapstructure:"GRPCAddress"`
+	ServerAddress  string `mapstructure:"ServerAddress"`
 	AnthropicAPIKey string `mapstructure:"anthropicAPIKey"`
 	AnthropicAPIURL string `mapstructure:"anthropicAPIURL"`
+	QuanAnAddress string `mapstructure:"QuanAnAddress"`
+	QuanAnJWTsecretKey string `mapstructure:"QuanAnJWTsecretKey"`
 }
 
 func Load() (*Config, error) {
@@ -29,3 +31,8 @@ func Load() (*Config, error) {
 
 	return &cfg, nil
 }
+
+// cfg, err := config.Load()
+// if err != nil {
+// 	log.Fatalf("Failed to load config: %v", err)
+// }
