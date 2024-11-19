@@ -104,7 +104,7 @@ docker-compose up -d
 docker-compose up
 docker compose build go_app_ai
 docker compose down
-docker-compose up go_app_ai
+docker-compose up mypostgres_ai
 //
 ========================================= golang ==============================
 
