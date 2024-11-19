@@ -1,17 +1,11 @@
-# Use the official PostgreSQL image as the base
 FROM postgres:15-alpine
 
-# Set environment variables (adjust as needed)
-ENV POSTGRES_DB mydatabase
-ENV POSTGRES_USER myuser
-ENV POSTGRES_PASSWORD mypassword
+# Set environment variables
+ENV POSTGRES_DB=mydatabase \
+    POSTGRES_USER=myuser \
+    POSTGRES_PASSWORD=mypassword
 
-# Create a PostgreSQL data directory and grant permissions
+# The official postgres image automatically handles directory creation and permissions
+# No need to manually create directories
 
-
-# Expose the PostgreSQL port
 EXPOSE 5432
-
-# Set the command to start PostgreSQL
-
-CMD ["postgres"]

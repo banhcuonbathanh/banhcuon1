@@ -1,39 +1,55 @@
+version: "3.8"
+
 services:
   mypostgres_ai:
-    build:
-      context: ./postgres
-      dockerfile: Dockerfile
-    container_name: english-postgres-Ai
+    image: postgres:15-alpine
+    container_name: ai-postgres
     environment:
-      POSTGRES_DB: mydatabase
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: mydatabase
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - ai-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     networks:
       - app-network
-        # -------------------------------  golang -------------------------------
-  # go_app_ai:
-  #   build:
-  #     context: ./golang
-  #     dockerfile: Dockerfile
-  #     args:
-  #       HOST: host-in-docker-compose
-  #   container_name: english-golang-ai
-  #   volumes:
-  #      # - ./golang:/go/src/golang
-  #     - ./golang:/app # Mount to /app instead of /go/src/golang
-  #   working_dir: /app
-  #   ports:
-  #     - "8888:8888"
-  #   networks:
-  #     - app-network
-  #   depends_on:
-  #     - mypostgres_ai
-  #   environment:
-  #     DB_HOST: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydatabase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  go_app_ai:
+    build:
+      context: ./golang
+      dockerfile: Dockerfile
+    container_name: english-golang-ai
+    ports:
+      - "8888:8888"
+      - "50051:50051"
+    networks:
+      - app-network
+    environment:
+      - APP_ENV=docker
+      - DB_HOST=mypostgres_ai
+      - DB_USER=myuser
+      - DB_PASSWORD=mypassword
+      - DB_NAME=mydatabase
+      - DB_PORT=5432
+    depends_on:
+      mypostgres_ai:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  ai-postgres-data:
+    driver: local
   # -------------------------------  nextjs -------------------------------
   # next-app:
   #   container_name: next-app1
@@ -102,22 +118,21 @@ services:
   #   depends_on:
   #     - admin-app
   # -------------------------------   -------------------------------
+# networks:
+#   app-network:
+#     driver: bridge
+# volumes:
+#   ai-postgres-data:
 
-networks:
-  app-network:
-    driver: bridge
-volumes:
-  ai-postgres-data:
+# build: a -> b -> c -> start: a - b - c
+# commit - nextjs -> clone -> build image /push -> pull -> run
+# commut - shop-golang -> .....
+#
+#
+#
 
-  # build: a -> b -> c -> start: a - b - c
-  # commit - nextjs -> clone -> build image /push -> pull -> run
-  # commut - shop-golang -> .....
-  #
-  #
-  #
-
-  # - /bin/sh
-  #   - -c
-  #   - |
-  #     npm run build
-  #     npm start
+# - /bin/sh
+#   - -c
+#   - |
+#     npm run build
+#     npm start

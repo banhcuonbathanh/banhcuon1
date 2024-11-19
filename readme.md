@@ -98,6 +98,8 @@ JOIN pg_enum e ON t.oid = e.enumtypid
 JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
 WHERE n.nspname = 'public';
 =================================================== docker =======================
+branch delivery2 and makeorder
+
 docker-compose up -d
 docker-compose up
 docker compose build go_app_ai
@@ -383,3 +385,9 @@ ws smessage
 
 
  int64 bow_chili = 13;
+
+
+
+
+
+ 

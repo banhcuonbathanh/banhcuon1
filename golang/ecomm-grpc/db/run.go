@@ -2,7 +2,11 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -24,41 +28,78 @@ func Connect(databaseURL string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func RunMigrations(databaseURL string) error {
-    migrationsPath := "file://ecomm-grpc/db/migrations" // Relative path from the project root
-
-	// migrationsPath1 := fmt.Sprintf("file://%s/db/migrations", os.Getwd())
-    m, err := migrate.New(migrationsPath, databaseURL)
-    if err != nil {
-        return fmt.Errorf("failed to create migrate instance: %w", err)
-    }
-    defer m.Close()
-
-    if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-        return fmt.Errorf("failed to run migrations: %w", err)
-    }
-
-    return nil
-}
-
 // func RunMigrations(databaseURL string) error {
-//     migrationsPath := "file://ecomm-grpc/db/migrations"
+//     migrationsPath := "file://ecomm-grpc/db/migrations" // Relative path from the project root
 
+// 	// migrationsPath1 := fmt.Sprintf("file://%s/db/migrations", os.Getwd())
 //     m, err := migrate.New(migrationsPath, databaseURL)
 //     if err != nil {
 //         return fmt.Errorf("failed to create migrate instance: %w", err)
 //     }
 //     defer m.Close()
 
-//     // Force the version to 7 (or the version you want to force)
-//     if err := m.Force(7); err != nil {
-//         return fmt.Errorf("failed to force migration version: %w", err)
-//     }
-
-//     // Now run the migrations
 //     if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 //         return fmt.Errorf("failed to run migrations: %w", err)
 //     }
 
 //     return nil
 // }
+
+
+// for docker 
+
+// db/run.go
+func RunMigrations(databaseURL string) error {
+	// Add retry logic for database connection
+	maxRetries := 5
+	var err error
+	
+	for i := 0; i < maxRetries; i++ {
+		// Try to connect to database
+		db, err := sql.Open("postgres", databaseURL)
+		if err == nil {
+			err = db.Ping()
+			if err == nil {
+				db.Close()
+				break
+			}
+		}
+		
+		fmt.Printf("Attempt %d: Failed to connect to database, retrying in 5 seconds...\n", i+1)
+		time.Sleep(5 * time.Second)
+	}
+	
+	
+
+	// Find migrations directory
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+
+	// In Docker environment, migrations should be in /app/db/migrations
+	migrationsPath := "/app/db/migrations"
+	if os.Getenv("APP_ENV") != "docker" {
+		migrationsPath = filepath.Join(currentDir, "db", "migrations")
+	}
+
+	// Verify migrations directory exists
+	if _, err := os.Stat(migrationsPath); os.IsNotExist(err) {
+		return fmt.Errorf("migrations directory not found at %s: %w", migrationsPath, err)
+	}
+
+	// Convert to file URL format
+	migrationURL := fmt.Sprintf("file://%s", migrationsPath)
+
+	m, err := migrate.New(migrationURL, databaseURL)
+	if err != nil {
+		return fmt.Errorf("failed to create migrate instance: %w", err)
+	}
+	defer m.Close()
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	return nil
+}
