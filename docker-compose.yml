@@ -1,6 +1,27 @@
 version: "3.8"
 
 services:
+  nextjs_app:
+    build:
+      context: ./quananqr1
+      dockerfile: Dockerfile
+    container_name: nextjs-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./quananqr1/src:/app/src
+      - ./quananqr1/public:/app/public
+      - ./quananqr1/.env:/app/.env
+      - ./quananqr1/.env.local:/app/.env.local
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+    networks:
+      - app-network
+    depends_on:
+      mypostgres_ai:
+        condition: service_healthy
+    restart: unless-stopped
   mypostgres_ai:
     image: postgres:15-alpine
     container_name: ai-postgres
@@ -43,13 +64,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-networks:
-  app-network:
-    driver: bridge
-
-volumes:
-  ai-postgres-data:
-    driver: local
   # -------------------------------  nextjs -------------------------------
   # next-app:
   #   container_name: next-app1
@@ -72,9 +86,8 @@ volumes:
   #     - go_app
   #   ports:
   #     - "3000:3000"
-  #environment:
-  #  NEXT_PUBLIC_DB_HOST:
-  #    environment-nextapp
+  # environment:
+  #   NEXT_PUBLIC_DB_HOST: environment-nextapp
 
   # -------------------------------  admin -------------------------------
   # admin-app:
@@ -136,3 +149,11 @@ volumes:
 #   - |
 #     npm run build
 #     npm start
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  ai-postgres-data:
+    driver: local
