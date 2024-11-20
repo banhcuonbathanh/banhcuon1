@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import useOrderStore from "@/zusstand/order/order_zustand";
 import OrderDetails from "../total-dishes-detail";
 import OrderCreationComponent from "./add_order_button";
+import ToppingSummary from "./topping";
 
 interface OrderProps {
   number: string;
@@ -13,12 +14,21 @@ interface OrderProps {
 }
 
 export default function OrderSummary({ number, token }: OrderProps) {
-  const { addTableNumber, addTableToken, getOrderSummary } = useOrderStore();
-
-  const [canhkhongrauCount, setCanhKhongrau] = useState(0);
-  const [canhCoRau, setCanhCoRau] = useState(0);
-  const [smallBowl, setSmallBowl] = useState(0);
-  const [toppingTotal, setToppingTotal] = useState("");
+  const {
+    addTableNumber,
+    addTableToken,
+    getOrderSummary,
+    canhKhongRau,
+    canhCoRau,
+    smallBowl,
+    wantChili,
+    selectedFilling,
+    updateCanhKhongRau,
+    updateCanhCoRau,
+    updateSmallBowl,
+    updateWantChili,
+    updateSelectedFilling
+  } = useOrderStore();
 
   useEffect(() => {
     if (token) {
@@ -30,33 +40,35 @@ export default function OrderSummary({ number, token }: OrderProps) {
     }
   }, [token, addTableToken, number, addTableNumber]);
 
-  // New useEffect to calculate total
-  useEffect(() => {
-    const total = `Canh không rau: ${canhkhongrauCount} - Canh rau: ${canhCoRau} - Bát bé: ${smallBowl}`;
-    setToppingTotal(total);
-  }, [canhkhongrauCount, canhCoRau, smallBowl]);
-
-  const orderSummary = getOrderSummary();
-
   const handleBowlChange = (
     type: "chili" | "noChili" | "small",
     change: number
   ) => {
     switch (type) {
       case "chili":
-        const newToppingValue = canhkhongrauCount + change;
-        if (newToppingValue >= 0) setCanhKhongrau(newToppingValue);
+        const newToppingValue = canhKhongRau + change;
+        if (newToppingValue >= 0) updateCanhKhongRau(newToppingValue);
         break;
       case "noChili":
         const newNoChiliValue = canhCoRau + change;
-        if (newNoChiliValue >= 0) setCanhCoRau(newNoChiliValue);
+        if (newNoChiliValue >= 0) updateCanhCoRau(newNoChiliValue);
         break;
       case "small":
         const newSmallBowlValue = smallBowl + change;
-        if (newSmallBowlValue >= 0) setSmallBowl(newSmallBowlValue);
+        if (newSmallBowlValue >= 0) updateSmallBowl(newSmallBowlValue);
         break;
     }
   };
+
+  const toppingTotal = `Canh không rau: ${canhKhongRau} - Canh rau: ${canhCoRau} - Bát bé: ${smallBowl} - Nhân mọc nhĩ: ${
+    selectedFilling.mocNhi ? "true" : "false"
+  } - Nhân thịt: ${
+    selectedFilling.thit ? "true" : "false"
+  } - Nhân thịt và mọc nhĩ: ${
+    selectedFilling.thitMocNhi ? "true" : "false"
+  } - Có ớt: ${wantChili ? "true" : "false"}`;
+
+  const orderSummary = getOrderSummary();
 
   return (
     <div className="container mx-auto px-4 py-5 space-y-5">
@@ -74,12 +86,12 @@ export default function OrderSummary({ number, token }: OrderProps) {
                   <Button
                     size="sm"
                     onClick={() => handleBowlChange("chili", -1)}
-                    disabled={canhkhongrauCount === 0}
+                    disabled={canhKhongRau === 0}
                   >
                     -
                   </Button>
                   <span className="mx-2 min-w-[2rem] text-center">
-                    {canhkhongrauCount}
+                    {canhKhongRau}
                   </span>
                   <Button
                     size="sm"
@@ -136,11 +148,63 @@ export default function OrderSummary({ number, token }: OrderProps) {
                 </div>
               </div>
 
-              {/* Total summary */}
-              <div className="mt-4 p-3  rounded-md">
-                <span className="font-medium">Total Orders: </span>
-                <span>{toppingTotal}</span>
+              {/* Chili option */}
+              <div className="flex items-center justify-between">
+                <span>Có ớt</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={wantChili ? "default" : "outline"}
+                    onClick={() => updateWantChili(!wantChili)}
+                  >
+                    {wantChili ? "Selected" : "Select"}
+                  </Button>
+                </div>
               </div>
+
+              {/* Nhân mọc nhĩ */}
+              <div className="flex items-center justify-between">
+                <span>Nhân mọc nhĩ</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={selectedFilling.mocNhi ? "default" : "outline"}
+                    onClick={() => updateSelectedFilling("mocNhi")}
+                  >
+                    {selectedFilling.mocNhi ? "Selected" : "Select"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Nhân thịt */}
+              <div className="flex items-center justify-between">
+                <span>Nhân thịt</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={selectedFilling.thit ? "default" : "outline"}
+                    onClick={() => updateSelectedFilling("thit")}
+                  >
+                    {selectedFilling.thit ? "Selected" : "Select"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Nhân thịt và mọc nhĩ */}
+              <div className="flex items-center justify-between">
+                <span>Nhân thịt và mọc nhĩ</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={selectedFilling.thitMocNhi ? "default" : "outline"}
+                    onClick={() => updateSelectedFilling("thitMocNhi")}
+                  >
+                    {selectedFilling.thitMocNhi ? "Selected" : "Select"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Total summary */}
             </div>
           </div>
         </CardContent>
@@ -153,11 +217,7 @@ export default function OrderSummary({ number, token }: OrderProps) {
         totalItems={orderSummary.totalItems}
       />
 
-      <OrderCreationComponent
-        topping={toppingTotal}
-        bowlNoChili={canhCoRau}
-        table_token={token}
-      />
+      <OrderCreationComponent table_token={token} />
     </div>
   );
 }

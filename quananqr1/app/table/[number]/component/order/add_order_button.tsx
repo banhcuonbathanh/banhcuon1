@@ -9,20 +9,23 @@ import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 
 interface OrderCreationComponentProps {
-  topping: string;
-  bowlNoChili: number;
   table_token: string;
 }
 
-
-
 const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
-  topping,
-  bowlNoChili,
   table_token
 }) => {
   const { isLoading, createOrder } = useOrderCreationStore();
-  const { tableNumber, getOrderSummary, clearOrder } = useOrderStore();
+  const {
+    tableNumber,
+    getOrderSummary,
+    clearOrder,
+    canhKhongRau,
+    canhCoRau,
+    smallBowl,
+    wantChili,
+    selectedFilling
+  } = useOrderStore();
   const { http } = useApiStore();
   const { guest, user, isGuest, openLoginDialog, userId, isLogin } =
     useAuthStore();
@@ -35,6 +38,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     fetchWsToken
   } = useWebSocketStore();
 
+  let topping = `canhKhongRau ${canhKhongRau} - canhCoRau ${canhCoRau} - bat be ${smallBowl} - ot tuoi  ${wantChili} - nhan ${selectedFilling} -`;
   // const MAX_RETRY_ATTEMPTS = 3;
 
   const orderSummary = getOrderSummary();
@@ -95,8 +99,6 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       // setConnectionAttempts(0);
     } catch (error) {
       console.error("[OrderCreation] Connection error:", error);
-
- 
     }
   };
 
@@ -128,7 +130,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     console.log("[OrderCreation] Creating order with summary:", orderSummary);
     createOrder({
       topping,
-      bowlNoChili,
+
       Table_token: table_token,
       http,
       auth: { guest, user, isGuest },
@@ -177,7 +179,6 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       >
         {getButtonText()}
       </Button>
-
     </div>
   );
 };

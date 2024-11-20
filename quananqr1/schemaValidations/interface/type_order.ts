@@ -22,7 +22,7 @@ export interface Order {
   dish_items: DishOrderItem[];
   set_items: SetOrderItem[];
   topping: string;
-  bow_no_chili: number;
+  tracking_order: string;
   takeAway: boolean;
   chiliNumber: number;
   table_token: string; // Added to match Go struct
@@ -42,7 +42,7 @@ export interface CreateOrderRequest {
   dish_items: DishOrderItem[];
   set_items: SetOrderItem[];
   topping: string;
-  bow_no_chili: number;
+  tracking_order: string;
   takeAway: boolean;
   chiliNumber: number;
   table_token: string; // Fixed casing to match Go naming convention
@@ -61,7 +61,7 @@ export interface UpdateOrderRequest {
   set_items: SetOrderItem[];
   is_guest: boolean;
   topping: string;
-  bow_no_chili: number;
+  tracking_order: string;
   takeAway: boolean; // Added missing field
   chiliNumber: number; // Added missing field
   table_token: string; // Added missing field
@@ -106,7 +106,7 @@ export interface OrderDetailedResponse {
   updated_at: string;
   total_price: number;
   topping: string;
-  bow_no_chili: number;
+  tracking_order: string;
   takeAway: boolean;
   chiliNumber: number;
   table_token: string; // Added missing field

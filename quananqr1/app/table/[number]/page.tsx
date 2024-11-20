@@ -23,12 +23,12 @@ export default async function TablePage({ params, searchParams }: TableProps) {
 
   return (
     <div className="guest-page">
-      <div className="container mx-auto px-4 py-8">
+      {/* <div className="container mx-auto px-4 py-8">
         <img
           src={"/api/placeholder/300/400"}
           className="w-full h-full object-cover rounded-md"
         />
-      </div>
+      </div> */}
       <SetCardList sets={setsData} />
 
       <DishSelection dishes={dishesData} />

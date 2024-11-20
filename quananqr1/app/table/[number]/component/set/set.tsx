@@ -16,7 +16,6 @@ interface SetSelectionProps {
 }
 
 const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
-  // console.log("quananqr1/app/(guest)/component/set/set.tsx set ", set);
   const orderStore = useOrderStore();
 
   const {
@@ -29,15 +28,10 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
 
   const setOrderItem = findSetOrderItem(set.id);
 
+  // Initialize dishQuantities with the default quantities from set.dishes
   const [dishQuantities, setDishQuantities] = React.useState<
     Record<number, number>
   >(() => {
-    if (setOrderItem) {
-      return setOrderItem.modifiedDishes.reduce(
-        (acc, dish) => ({ ...acc, [dish.dish_id]: dish.quantity }),
-        {}
-      );
-    }
     return set.dishes.reduce(
       (acc, dish) => ({ ...acc, [dish.dish_id]: dish.quantity }),
       {}
@@ -68,7 +62,7 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
         image: dish.image,
         status: dish.status
       }));
-      addSetItem(set, 1, modifiedDishes);
+      addSetItem(set, 1);
     }
   }, [set, setOrderItem, dishQuantities, addSetItem, updateSetQuantity]);
 
@@ -144,7 +138,7 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
         </div>
         <div className="w-2/3 flex flex-col justify-between">
           <div className="space-y-2">
-            <div className=" flex flex-row justify-between">
+            <div className="flex flex-row justify-between">
               <h2 className="text-2xl font-bold">{set.name}</h2>
               <span className="font-semibold text-lg">{set.price}k</span>
             </div>

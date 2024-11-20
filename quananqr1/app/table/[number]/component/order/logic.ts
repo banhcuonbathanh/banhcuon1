@@ -8,7 +8,7 @@ interface OrderCreationState {
   isLoading: boolean;
   createOrder: (params: {
     topping: string;
-    bowlNoChili: number;
+
     Table_token: string;
     http: any; // Replace with proper type from your API store
     auth: {
@@ -36,7 +36,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
 
   createOrder: async ({
     topping,
-    bowlNoChili,
+
     Table_token,
     http,
     auth: { guest, user, isGuest },
@@ -87,7 +87,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
       dish_items,
       set_items,
       topping: topping,
-      bow_no_chili: bowlNoChili,
+      tracking_order: "tracking_order",
       takeAway: false,
       chiliNumber: 0,
       table_token: Table_token,
