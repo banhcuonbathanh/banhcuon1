@@ -7,6 +7,10 @@ import {
 import envConfig from "@/config";
 
 export async function GET() {
+  console.log(
+    "quananqr1/app/api/guest/route.ts ",
+    `${envConfig.NEXT_SERVER_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Add_Dished}`
+  );
   try {
     const response = await fetch(
       `${envConfig.NEXT_SERVER_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Add_Dished}`,

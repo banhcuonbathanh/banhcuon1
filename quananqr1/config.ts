@@ -2,7 +2,7 @@
 import { z } from "zod";
 
 const configSchema = z.object({
-  NEXT_SERVER_API_ENDPOINT: z.string().default("http://go_app_ai:8888/"),
+  NEXT_SERVER_API_ENDPOINT: z.string().default("http://localhost:8888/"),
   NEXT_PUBLIC_API_ENDPOINT: z.string().default("http://localhost:8888/"),
   NEXT_PUBLIC_URL: z.string().default("http://nextjs_app:3000/"),
   NEXT_PUBLIC_API_Create_User: z.string().default("users"),
