@@ -9,13 +9,16 @@ import envConfig from "@/config";
 export async function GET() {
   try {
     const response = await fetch(
-      `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Add_Dished}`,
+      `${envConfig.NEXT_SERVER_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Add_Dished}`,
       {
         method: "GET",
         cache: "no-store"
       }
     );
-
+    console.log(
+      "quananqr1/app/api/guest/route.ts ",
+      `${envConfig.NEXT_SERVER_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Add_Dished}`
+    );
     // Check for response.ok before parsing JSON
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -43,7 +46,7 @@ export async function POST(request: Request) {
     const validatedBody = CreateDishBody.parse(body);
 
     const response = await fetch(
-      `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Add_Dished}`,
+      `${envConfig.NEXT_SERVER_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Add_Dished}`,
       {
         method: "POST",
         headers: {

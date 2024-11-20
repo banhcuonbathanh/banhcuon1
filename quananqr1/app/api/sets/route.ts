@@ -8,7 +8,7 @@ import envConfig from "@/config";
 import { CreateTableBody } from "@/zusstand/table/table.schema";
 
 export async function GET() {
-  const link_set = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Set_End_Point}`;
+  const link_set = `${envConfig.NEXT_SERVER_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Set_End_Point}`;
 
   // console.log("quananqr1/app/api/sets/route.ts link_set", link_set);
   try {
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     const validatedBody = CreateTableBody.parse(body);
 
     const response = await fetch(
-      `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Table_List}`,
+      `${envConfig.NEXT_SERVER_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Table_List}`,
       {
         method: "POST",
         headers: {

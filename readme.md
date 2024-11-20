@@ -119,14 +119,20 @@ project-root/
 ├── docker-compose.yml
 ├── quananqr1/
 │ ├── Dockerfile
+│ ├── .dockerignore  <-- Place it here
 │ ├── src/
 │ ├── public/
 │ ├── package.json
 │ └── package-lock.json
 └── golang/
-└── Dockerfile
-
+  ├── Dockerfile
+  └── .dockerignore  <-- You can have another one here for Golang
 //
+
+
+curl http://localhost:8888/qr/guest/test
+
+curl http://go_app_ai:8888/qr/guest/test
 ========================================= golang ==============================
 
 go run cmd/server/main.go

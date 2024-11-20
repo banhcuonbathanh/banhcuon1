@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const page = searchParams.get("page") || "1";
   const page_size = searchParams.get("page_size") || "10";
 
-  const link_order = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.Order_External_End_Point}`;
+  const link_order = `${envConfig.NEXT_SERVER_API_ENDPOINT}${envConfig.Order_External_End_Point}`;
   const queryParams = new URLSearchParams({
     page,
     page_size
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const validatedBody = CreateTableBody.parse(body);
 
     const response = await fetch(
-      `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Table_List}`,
+      `${envConfig.NEXT_SERVER_API_ENDPOINT}${envConfig.NEXT_PUBLIC_Table_List}`,
       {
         method: "POST",
         headers: {
