@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
 
   // If trying to access login page while already authenticated
   if (unAuthPaths.includes(pathname) && accessToken) {
-    return NextResponse.redirect(new URL("/manage", request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // If trying to access protected route without authentication
