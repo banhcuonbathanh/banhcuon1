@@ -103,6 +103,8 @@ import (
 
 // Connect establishes a connection to the database using pgxpool
 func Connect(databaseURL string) (*pgxpool.Pool, error) {
+
+	fmt.Print("golang/ecomm-grpc/db/run.go Connect databaseURL", databaseURL)
 	config, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse database URL: %v", err)
@@ -136,9 +138,9 @@ func RunMigrations(databaseURL string) error {
 		time.Sleep(5 * time.Second)
 	}
 
-	if err != nil {
-		return fmt.Errorf("failed to connect to database after %d attempts: %w", maxRetries, err)
-	}
+	// if err != nil {
+	// 	return fmt.Errorf("failed to connect to database after %d attempts: %w", maxRetries, err)
+	// }
 
 	// Determine migrations path based on environment
 	var migrationsPath string

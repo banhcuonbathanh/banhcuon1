@@ -45,16 +45,14 @@ package util
 // // 	log.Fatalf("Failed to load config: %v", err)
 // // }
 
-
-// new for docker 
-
+// new for docker
 
 // config/config.go
 
-
 import (
-	"os"
 	"fmt"
+	"os"
+
 	"github.com/spf13/viper"
 )
 
@@ -86,13 +84,15 @@ func Load() (*Config, error) {
 	// Override database URL based on environment
 	if os.Getenv("APP_ENV") == "docker" {
 		// Construct database URL using environment variables
+
+		fmt.Print("golang/util/config.go func Load() ")
 		cfg.DatabaseURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 			os.Getenv("DB_USER"),
 			os.Getenv("DB_PASSWORD"),
 			os.Getenv("DB_HOST"),
 			os.Getenv("DB_PORT"),
 			os.Getenv("DB_NAME"))
-		
+			fmt.Print("golang/util/config.go func Load() 	cfg.DatabaseURL", 	cfg.DatabaseURL)
 		// Override GRPC address for Docker
 		cfg.GRPCAddress = ":50051"
 	}
