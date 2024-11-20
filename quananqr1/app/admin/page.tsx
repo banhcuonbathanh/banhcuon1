@@ -1,8 +1,9 @@
+import { cookies } from "next/headers";
 
 
 export default async function ManageHomePage() {
-  // const cookieStore = cookies();
-  // const accessToken = cookieStore.get("accessToken")?.value!;
+  const cookieStore = cookies();
+  const accessToken = cookieStore.get("accessToken")?.value!;
   // let name = "";
   console.log("ManageHomePage quananqr1/app/manage/page.tsx");
   // const resul = await get_Account("alice.johnson@example.com1234");
