@@ -144,6 +144,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       guestLogin: async (body: GuestLoginBodyType) => {
+        console.log("quananqr1/zusstand/new_auth/new_auth_controller.ts ");
         set({ loading: true, error: null });
         try {
           useApiStore.getState().setTableToken(body.token);
@@ -151,7 +152,11 @@ export const useAuthStore = create<AuthStore>()(
           const guest_login_link =
             envConfig.NEXT_PUBLIC_API_ENDPOINT +
             envConfig.NEXT_PUBLIC_API_Guest_Login;
-
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts guest_login_link NEXT_PUBLIC_API_ENDPOINT",
+            guest_login_link,
+            envConfig.NEXT_PUBLIC_API_ENDPOINT
+          );
           const response = await useApiStore
             .getState()
             .http.post<GuestLoginResponse>(`${guest_login_link}`, {

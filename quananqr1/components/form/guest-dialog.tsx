@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
-import {  useSearchParams, useParams } from "next/navigation";
+import { useSearchParams, useParams } from "next/navigation";
 import {
   GuestLoginBody,
   GuestLoginBodyType
@@ -44,7 +44,7 @@ const GuestLoginDialog = () => {
   });
 
   const onSubmit = async (data: GuestLoginBodyType) => {
-    console.log("quananqr1/components/form/guest-dialog.tsx data", data);
+    console.log("quananqr1/components/form/guest-dialog.tsx data 123123", data);
     try {
       await guestLogin(data);
     } catch (error: any) {

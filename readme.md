@@ -1,4 +1,4 @@
-http://localhost:3000/table/1?token=MTp0YWJsZTo0ODg0Mjk0Mjk0.666YJoUIKKI
+http://localhost:3000/table/1?token=MTp0YWJsZTo0ODg1NjA3Mzk2.lfUUbFV53Tc
 fmt.Printf("golang/quanqr/order/order_handler.go ordersResponse %v\n", ordersResponse)
 docker-compose up
 
@@ -106,6 +106,14 @@ docker compose down
 docker-compose up mypostgres_ai
 
 ---
+
+docker-compose stop nextjs_app
+
+docker-compose build nextjs_app
+
+docker-compose up -d nextjs_app
+
+docker-compose up -d --build nextjs_app (all above command in 1 shot)
 
 project-root/
 ├── docker-compose.yml
