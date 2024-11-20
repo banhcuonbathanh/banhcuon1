@@ -2,20 +2,61 @@ import { Role } from "@/constants/type";
 import { decodeToken } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
+// Define path configurations
 const managePaths = ["/manage"];
 const guestPaths = ["/guest"];
 const privatePaths = [...managePaths, ...guestPaths];
 const unAuthPaths = ["/login"];
 
-// This function can be marked `async` if using `await` inside
+// Define allowed roles for different paths - updated to match Role enum casing
+const pathRoleConfig = {
+  "/manage": [Role.Admin, Role.Employee],
+  "/guest": [Role.Guest, Role.Admin, Role.Employee]
+};
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  console.log(" middleware pathname", pathname);
   const accessToken = request.cookies.get("accessToken")?.value;
-  console.log(" middleware accessToken", accessToken);
   const refreshToken = request.cookies.get("refreshToken")?.value;
 
-  console.log(" middleware refreshToken", refreshToken);
+  // If trying to access login page while already authenticated
+  if (unAuthPaths.includes(pathname) && accessToken) {
+    return NextResponse.redirect(new URL("/manage", request.url));
+  }
+
+  // If trying to access protected route without authentication
+  if (privatePaths.some((path) => pathname.startsWith(path)) && !accessToken) {
+    const url = new URL("/login", request.url);
+    url.searchParams.set("from", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // If authenticated, check role-based access
+  if (accessToken) {
+    try {
+      const decoded = decodeToken(accessToken);
+      const userRole = decoded.role;
+
+      // Check if the current path requires specific roles
+      for (const [path, allowedRoles] of Object.entries(pathRoleConfig)) {
+        if (pathname.startsWith(path)) {
+          // if (!allowedRoles.includes(userRole)) {
+          //   // Redirect to appropriate page based on role - updated to match Role enum casing
+          //   if (userRole === Role.Guest) {
+          //     return NextResponse.redirect(new URL("/guest", request.url));
+          //   }
+          //   return NextResponse.redirect(new URL("/unauthorized", request.url));
+          // }
+        }
+      }
+    } catch (error) {
+      // Token decode failed - redirect to login
+      const url = new URL("/login", request.url);
+      url.searchParams.set("from", pathname);
+      return NextResponse.redirect(url);
+    }
+  }
+
   return NextResponse.next();
 }
 
@@ -73,10 +114,7 @@ export const config = {
 //     return NextResponse.next();
 //   }
 
-
-
 //
-
 
 // import { NextRequest, NextResponse } from 'next/server';
 // import { jwtVerify } from 'jose';

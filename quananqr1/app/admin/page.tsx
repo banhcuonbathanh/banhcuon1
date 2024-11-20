@@ -1,21 +1,30 @@
 import { cookies } from "next/headers";
-
+import { redirect } from "next/navigation";
+import { decodeToken } from "@/lib/utils";
+import { Role } from "@/constants/type";
 
 export default async function ManageHomePage() {
   const cookieStore = cookies();
-  const accessToken = cookieStore.get("accessToken")?.value!;
-  // let name = "";
-  console.log("ManageHomePage quananqr1/app/manage/page.tsx");
-  // const resul = await get_Account("alice.johnson@example.com1234");
+  const accessToken = cookieStore.get("accessToken")?.value;
 
-  // console.log("ManageHomePage quananqr1/app/manage/page.tsx email", resul);
-  // try {
-  //   const result = await accountApiRequest.sMe(accessToken)
-  //   name = result.payload.data.name
-  // } catch (error: any) {
-  //   if (error.digest?.includes('NEXT_REDIRECT')) {
-  //     throw error
-  //   }
-  // }
-  return <div>ManageHomePage </div>;
+  // Double-check authorization on server side
+  if (!accessToken) {
+    redirect("/login");
+  }
+
+  try {
+    const decoded = decodeToken(accessToken);
+    if (!(decoded.role === Role.Admin || decoded.role === Role.Employee)) {
+      redirect("/unauthorized");
+    }
+  } catch (error) {
+    redirect("/login");
+  }
+
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold">Manage Dashboard</h1>
+      {/* Add your management dashboard content here */}
+    </div>
+  );
 }
