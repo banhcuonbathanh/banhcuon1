@@ -1,6 +1,6 @@
 http://localhost:3000/table/1?token=MTp0YWJsZTo0ODg1NjA3Mzk2.lfUUbFV53Tc
 fmt.Printf("golang/quanqr/order/order_handler.go ordersResponse %v\n", ordersResponse)
-docker-compose up
+docker-compose up mypostgres_ai
 
 cd quananqr1
 npm run dev

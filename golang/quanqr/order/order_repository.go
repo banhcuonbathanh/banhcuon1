@@ -1019,56 +1019,7 @@ func (or *OrderRepository) getClientOrderCount(ctx context.Context, tx *pgxpool.
     return count, nil
 }
 
-func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (int64, error) {
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
-    
-    startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
-    endOfDay := startOfDay.Add(24 * time.Hour)
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Date range: %v to %v", startOfDay, endOfDay))
-
-    var query string
-    var args []interface{}
-
-    if isGuest {
-        query = `
-            SELECT COALESCE(
-                (SELECT MAX(CAST(SPLIT_PART(order_name, '_', 2) AS BIGINT))
-                FROM orders
-                WHERE guest_id = $1 
-                AND created_at >= $2 
-                AND created_at < $3),
-                0
-            ) + 1
-        `
-        args = []interface{}{clientId, startOfDay, endOfDay}
-    } else {
-        query = `
-            SELECT COALESCE(
-                (SELECT MAX(CAST(SPLIT_PART(order_name, '_', 2) AS BIGINT))
-                FROM orders
-                WHERE user_id = $1 
-                AND created_at >= $2 
-                AND created_at < $3),
-                0
-            ) + 1
-        `
-        args = []interface{}{clientId, startOfDay, endOfDay}
-    }
-
-    var clientNumber int64
-    err := tx.QueryRow(ctx, query, args...).Scan(&clientNumber)
-    if err != nil {
-        if err.Error() == "no rows in result set" {
-            or.logger.Info("golang/quanqr/order/order_repository.go getClientNumberForDay - No existing client number found, returning 1")
-            return 1, nil
-        }
-        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Error getting client number: %v", err))
-        return 0, fmt.Errorf("error getting client number: %w", err)
-    }
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - clientNumber %v ", clientNumber))
-    return clientNumber, nil
-}
-
+// 
 
 
 func (or *OrderRepository) getClientPosition(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
@@ -1163,4 +1114,56 @@ func (or *OrderRepository) getClientPosition(ctx context.Context, tx *pgxpool.Po
     
     or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientPosition - Retrieved position for client %d: %d", clientId, position))
     return position, nil
+}
+
+
+
+func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (int64, error) {
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
+    
+    startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
+    endOfDay := startOfDay.Add(24 * time.Hour)
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Date range: %v to %v", startOfDay, endOfDay))
+
+    var query string
+    var args []interface{}
+
+    if isGuest {
+        query = `
+            SELECT COALESCE(
+                (SELECT COUNT(*) 
+                FROM orders 
+                WHERE guest_id = $1 
+                AND created_at >= $2 
+                AND created_at < $3),
+                0
+            ) + 1
+        `
+        args = []interface{}{clientId, startOfDay, endOfDay}
+    } else {
+        query = `
+            SELECT COALESCE(
+                (SELECT COUNT(*) 
+                FROM orders 
+                WHERE user_id = $1 
+                AND created_at >= $2 
+                AND created_at < $3),
+                0
+            ) + 1
+        `
+        args = []interface{}{clientId, startOfDay, endOfDay}
+    }
+
+    var clientNumber int64
+    err := tx.QueryRow(ctx, query, args...).Scan(&clientNumber)
+    if err != nil {
+        if err.Error() == "no rows in result set" {
+            or.logger.Info("golang/quanqr/order/order_repository.go getClientNumberForDay - No existing client number found, returning 1")
+            return 1, nil
+        }
+        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Error getting client number: %v", err))
+        return 0, fmt.Errorf("error getting client number: %w", err)
+    }
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - clientNumber %v ", clientNumber))
+    return clientNumber, nil
 }
