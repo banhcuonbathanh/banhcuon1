@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import useOrderStore from "@/zusstand/order/order_zustand";
 import OrderDetails from "../total-dishes-detail";
 import OrderCreationComponent from "./add_order_button";
-import ToppingSummary from "./topping";
 
 interface OrderProps {
   number: string;
@@ -59,14 +58,6 @@ export default function OrderSummary({ number, token }: OrderProps) {
         break;
     }
   };
-
-  const toppingTotal = `Canh không rau: ${canhKhongRau} - Canh rau: ${canhCoRau} - Bát bé: ${smallBowl} - Nhân mọc nhĩ: ${
-    selectedFilling.mocNhi ? "true" : "false"
-  } - Nhân thịt: ${
-    selectedFilling.thit ? "true" : "false"
-  } - Nhân thịt và mọc nhĩ: ${
-    selectedFilling.thitMocNhi ? "true" : "false"
-  } - Có ớt: ${wantChili ? "true" : "false"}`;
 
   const orderSummary = getOrderSummary();
 

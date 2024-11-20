@@ -408,3 +408,13 @@ ws smessage
 }
 
 int64 bow_chili = 13;
+
+
+import Image from 'next/image'   
+
+ {/* <DishList
+            dishes={set.dishes}
+            dishQuantities={dishQuantities}
+            onIncrease={handleDishIncrease}
+            onDecrease={handleDishDecrease}
+          /> */}

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,8 @@ interface SetSelectionProps {
 }
 
 const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
+  // Add mounted state to prevent hydration mismatch
+  const [isMounted, setIsMounted] = React.useState(false);
   const orderStore = useOrderStore();
 
   const {
@@ -26,17 +29,30 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
     removeSetItem
   } = orderStore;
 
-  const setOrderItem = findSetOrderItem(set.id);
+  // Use useEffect to set mounted state
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Get set order item with null check
+  const setOrderItem = React.useMemo(() => {
+    return findSetOrderItem?.(set.id) || null;
+  }, [findSetOrderItem, set.id]);
 
   // Initialize dishQuantities with the default quantities from set.dishes
   const [dishQuantities, setDishQuantities] = React.useState<
     Record<number, number>
-  >(() => {
-    return set.dishes.reduce(
-      (acc, dish) => ({ ...acc, [dish.dish_id]: dish.quantity }),
-      {}
+  >({});
+
+  // Move initialization to useEffect to avoid hydration mismatch
+  React.useEffect(() => {
+    setDishQuantities(
+      set.dishes.reduce(
+        (acc, dish) => ({ ...acc, [dish.dish_id]: dish.quantity }),
+        {}
+      )
     );
-  });
+  }, [set.dishes]);
 
   const totalPrice = React.useMemo(() => {
     return set.dishes.reduce(
@@ -44,10 +60,6 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
       0
     );
   }, [set.dishes, dishQuantities]);
-
-  const totalDishes = React.useMemo(() => {
-    return Object.values(dishQuantities).reduce((sum, q) => sum + q, 0);
-  }, [dishQuantities]);
 
   const handleIncrease = React.useCallback(() => {
     if (setOrderItem) {
@@ -126,33 +138,40 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
     [set, setOrderItem, updateSetDishes]
   );
 
+  // Don't render until mounted to prevent hydration mismatch
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <Card className="w-full">
       <CardContent className="p-4 flex">
         <div className="w-1/3 pr-4">
-          <img
+          <Image
             src={set.image || "/api/placeholder/300/400"}
             alt={set.name}
             className="w-full h-full object-cover rounded-md"
+            width={200}
+            height={200}
+            priority
           />
         </div>
         <div className="w-2/3 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex flex-row justify-between">
               <h2 className="text-2xl font-bold">{set.name}</h2>
-              <span className="font-semibold text-lg">{set.price}k</span>
+              <span className="font-semibold text-lg">
+                {typeof set.price === "number" ? `${set.price}k` : ""}
+              </span>
             </div>
-
             <p className="text-sm text-gray-600">{set.description}</p>
           </div>
-
           <DishList
             dishes={set.dishes}
             dishQuantities={dishQuantities}
             onIncrease={handleDishIncrease}
             onDecrease={handleDishDecrease}
           />
-
           <div className="flex items-center justify-end mt-4">
             <div className="flex items-center space-x-4">
               <Button

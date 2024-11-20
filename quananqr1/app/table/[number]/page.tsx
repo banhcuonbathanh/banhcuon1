@@ -4,7 +4,7 @@ import { DishSelection } from "./component/dish/dishh_list";
 import { DishInterface } from "@/schemaValidations/interface/type_dish";
 import { SetInterface } from "@/schemaValidations/interface/types_set";
 import { get_Sets } from "@/zusstand/server/set-controller";
-import { SetCardList } from "./component/set/sets_list";
+import SetCardList from "./component/set/sets_list";
 import OrderSummary from "./component/order/order";
 interface TableProps {
   params: { number: string };

@@ -1,18 +1,29 @@
+"use client";
+
 import { SetInterface } from "@/schemaValidations/interface/types_set";
 import SetCard from "./set";
+import React from "react";
 
 interface SetCardListProps {
   sets: SetInterface[];
 }
 
-export function SetCardList({ sets }: SetCardListProps) {
+export default function SetCardList({ sets }: SetCardListProps) {
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null; // or a loading skeleton
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sets.map((set) => (
-          <SetCard key={set.id} set={set} />
-        ))}
-      </div>
+    <div className="space-y-4">
+      {sets.map((set) => (
+        <SetCard key={set.id} set={set} />
+      ))}
     </div>
   );
 }
