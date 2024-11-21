@@ -20,7 +20,7 @@ import {
 } from "@/schemaValidations/guest.schema";
 import { handleErrorApi } from "@/lib/utils";
 
-const GuestLoginDialog = () => {
+const GuestLoginDialog = ({ fromPath }: { fromPath: string | null }) => {
   const {
     guestLogin,
     isGuestDialogOpen,
@@ -46,7 +46,7 @@ const GuestLoginDialog = () => {
   const onSubmit = async (data: GuestLoginBodyType) => {
     console.log("quananqr1/components/form/guest-dialog.tsx data 123123", data);
     try {
-      await guestLogin(data);
+      await guestLogin(data, fromPath);
     } catch (error: any) {
       handleErrorApi({
         error,

@@ -8,8 +8,8 @@ import RegisterDialog from "./register-dialog";
 const AuthDialogs = () => {
   return (
     <>
-      <LoginDialog />
-      <GuestLoginDialog />
+      <LoginDialog fromPath={null} />
+      <GuestLoginDialog fromPath={null} />
       <RegisterDialog /> {/* If you have this component */}
     </>
   );

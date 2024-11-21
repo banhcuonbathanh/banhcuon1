@@ -1,10 +1,10 @@
 import DarkModeToggle from "@/components/dark-mode-toggle";
+import DropdownAvatar from "@/components/dropdown-avatar";
 
-import DropdownAvatar from "../../admin/admin_component/dropdown-avatar";
-import LoginDialog from "../../../components/form/login-dialog";
-import RegisterDialog from "../../../components/form/register-dialog";
-import GuestLoginDialog from "@/app/public/tables/[number]/guest-login-form";
+
+
 import AuthDialogs from "@/components/form/auth-dialog";
+
 
 // import NavLinks from './admin_component/nav-links'
 // import DropdownAvatar from './admin_component/dropdown-avatar'

@@ -17,34 +17,28 @@ interface SetSelectionProps {
 }
 
 const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
-  // Add mounted state to prevent hydration mismatch
-  const [isMounted, setIsMounted] = React.useState(false);
+  // Use the store hook to subscribe to specific state
+  // const setOrderItem = useOrderStore(
+  //   React.useCallback(
+  //     (state) => state.setItems.find((item) => item.id === set.id),
+  //     [set.id]
+  //   )
+  // );
+
   const orderStore = useOrderStore();
 
-  const {
-    addSetItem,
-    updateSetDishes,
-    findSetOrderItem,
-    updateSetQuantity,
-    removeSetItem
-  } = orderStore;
+  // Find the set item directly from the store
+  const setOrderItem = orderStore.setItems.find((item) => item.id === set.id);
 
-  // Use useEffect to set mounted state
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Get set order item with null check
-  const setOrderItem = React.useMemo(() => {
-    return findSetOrderItem?.(set.id) || null;
-  }, [findSetOrderItem, set.id]);
+  const { addSetItem, updateSetDishes, updateSetQuantity, removeSetItem } =
+    orderStore;
 
   // Initialize dishQuantities with the default quantities from set.dishes
   const [dishQuantities, setDishQuantities] = React.useState<
     Record<number, number>
   >({});
 
-  // Move initialization to useEffect to avoid hydration mismatch
+  // Move initialization to useEffect to handle initial state
   React.useEffect(() => {
     setDishQuantities(
       set.dishes.reduce(
@@ -63,30 +57,25 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
 
   const handleIncrease = React.useCallback(() => {
     if (setOrderItem) {
-      updateSetQuantity(set.id, setOrderItem.quantity + 1);
+      // Increase quantity of existing set item
+      orderStore.updateSetQuantity(set.id, (setOrderItem.quantity || 0) + 1);
     } else {
-      const modifiedDishes: SetProtoDish[] = set.dishes.map((dish) => ({
-        dish_id: dish.dish_id,
-        quantity: dishQuantities[dish.dish_id] || 0,
-        name: dish.name,
-        price: dish.price,
-        description: dish.description,
-        image: dish.image,
-        status: dish.status
-      }));
-      addSetItem(set, 1);
+      // Add new set item with quantity 1
+      orderStore.addSetItem(set, 1);
     }
-  }, [set, setOrderItem, dishQuantities, addSetItem, updateSetQuantity]);
+  }, [set, setOrderItem, orderStore]);
 
   const handleDecrease = React.useCallback(() => {
     if (setOrderItem) {
-      if (setOrderItem.quantity > 1) {
-        updateSetQuantity(set.id, setOrderItem.quantity - 1);
+      if ((setOrderItem.quantity || 0) > 1) {
+        // Decrease quantity
+        orderStore.updateSetQuantity(set.id, (setOrderItem.quantity || 0) - 1);
       } else {
-        removeSetItem(set.id);
+        // Remove item if quantity is 1
+        orderStore.removeSetItem(set.id);
       }
     }
-  }, [set.id, setOrderItem, updateSetQuantity, removeSetItem]);
+  }, [set.id, setOrderItem, orderStore]);
 
   const handleDishIncrease = React.useCallback(
     (dishId: number) => {
@@ -138,11 +127,6 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
     [set, setOrderItem, updateSetDishes]
   );
 
-  // Don't render until mounted to prevent hydration mismatch
-  if (!isMounted) {
-    return null;
-  }
-
   return (
     <Card className="w-full">
       <CardContent className="p-4 flex">
@@ -182,7 +166,7 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
                 <Minus className="h-4 w-4" />
               </Button>
               <span className="font-semibold w-8 text-center">
-                {setOrderItem ? setOrderItem.quantity : 0}
+                {setOrderItem?.quantity || 0}
               </span>
               <Button variant="default" onClick={handleIncrease}>
                 <Plus className="h-4 w-4" />

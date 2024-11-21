@@ -170,22 +170,49 @@ const useOrderStore = create<OrderState>()(
             return { setItems: [...state.setItems, newItem] };
           }
         }),
-      removeSetItem: (id) =>
-        set((state) => ({
-          setItems: state.setItems.filter((i) => i.id !== id)
-        })),
       updateSetQuantity: (id, quantity) =>
-        set((state) => ({
-          setItems: state.setItems.map((i) =>
-            i.id === id ? { ...i, quantity } : i
-          )
-        })),
+        set((state) => {
+     
+
+          return {
+            setItems: state.setItems.map((i) =>
+              i.id === id
+                ? { ...i, quantity: Math.max(0, quantity) } // Ensure quantity never goes below 0
+                : i
+            )
+          };
+        }),
+
+      removeSetItem: (id) =>
+        set((state) => {
+      
+        
+      
+
+          const updatedSetItems = state.setItems.filter((i) => i.id !== id);
+
+      
+
+          return {
+            setItems: updatedSetItems
+          };
+        }),
+
       updateSetDishes: (setId, modifiedDishes) =>
-        set((state) => ({
-          setItems: state.setItems.map((i) =>
+        set((state) => {
+       
+    
+
+          const updatedSetItems = state.setItems.map((i) =>
             i.id === setId ? { ...i, dishes: modifiedDishes } : i
-          )
-        })),
+          );
+
+      
+
+          return {
+            setItems: updatedSetItems
+          };
+        }),
       clearOrder: () =>
         set({
           dishItems: [],

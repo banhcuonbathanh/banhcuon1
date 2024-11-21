@@ -1,17 +1,21 @@
-import { Role } from "@/constants/type";
+import { Role, RoleType } from "@/constants/type";
 import { decodeToken } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 // Define path configurations
-const managePaths = ["/manage"];
-const guestPaths = ["/guest"];
-const privatePaths = [...managePaths, ...guestPaths];
-const unAuthPaths = ["/login"];
+const adminPaths = ["/manage/admin"];
+const employeePaths = ["/manage/employee"];
 
-// Define allowed roles for different paths - updated to match Role enum casing
-const pathRoleConfig = {
-  "/manage": [Role.Admin, Role.Employee],
-  "/guest": [Role.Guest, Role.Admin, Role.Employee]
+const privatePaths = [...adminPaths, ...employeePaths];
+const tablePaths = ["/table"];
+const unAuthPaths = ["/auth"];
+const wellComaePage = ["/"];
+
+// Define allowed roles for different paths
+const pathRoleConfig: Record<string, RoleType[]> = {
+  "/manage/admin": [Role.Admin],
+  "/manage/employee": [Role.Employee, Role.Admin]
+  // "/table": [Role.Admin, Role.Employee]
 };
 
 export function middleware(request: NextRequest) {
@@ -19,39 +23,59 @@ export function middleware(request: NextRequest) {
   const accessToken = request.cookies.get("accessToken")?.value;
   const refreshToken = request.cookies.get("refreshToken")?.value;
 
-  // If trying to access login page while already authenticated
+  // If trying to access login/table pages while already authenticated
+
+  console.log(
+    "quananqr1/middleware.ts pathname accessToken",
+    pathname,
+    accessToken
+  );
   if (unAuthPaths.includes(pathname) && accessToken) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    console.log(
+      "quananqr1/middleware.ts already authenticated pathname accessToken 11111",
+      pathname,
+      accessToken
+    );
+    return NextResponse.redirect(new URL(`${wellComaePage}`, request.url));
   }
 
   // If trying to access protected route without authentication
   if (privatePaths.some((path) => pathname.startsWith(path)) && !accessToken) {
-    const url = new URL("/login", request.url);
+    console.log(
+      "quananqr1/middleware.ts already without authenticatio privatePaths.some((path) accessToken 22222",
+      pathname,
+      accessToken
+    );
+    const url = new URL(`${unAuthPaths}`, request.url);
     url.searchParams.set("from", pathname);
     return NextResponse.redirect(url);
   }
 
   // If authenticated, check role-based access
   if (accessToken) {
+    console.log(
+      "quananqr1/middleware.ts authenticated, check role-based pathname accessToken",
+      pathname,
+      accessToken
+    );
     try {
       const decoded = decodeToken(accessToken);
-      const userRole = decoded.role;
-
+      const userRole = decoded.role as RoleType;
+      console.log(
+        "quananqr1/middleware.ts authenticated, check role-based decoded userRole",
+        decoded,
+        userRole
+      );
       // Check if the current path requires specific roles
       for (const [path, allowedRoles] of Object.entries(pathRoleConfig)) {
-        if (pathname.startsWith(path)) {
-          // if (!allowedRoles.includes(userRole)) {
-          //   // Redirect to appropriate page based on role - updated to match Role enum casing
-          //   if (userRole === Role.Guest) {
-          //     return NextResponse.redirect(new URL("/guest", request.url));
-          //   }
-          //   return NextResponse.redirect(new URL("/unauthorized", request.url));
-          // }
+        if (pathname.startsWith(path) && !allowedRoles.includes(userRole)) {
+          // Redirect to unauthorized page or default dashboard
+          return NextResponse.redirect(new URL("/", request.url));
         }
       }
     } catch (error) {
       // Token decode failed - redirect to login
-      const url = new URL("/login", request.url);
+      const url = new URL("/auth", request.url);
       url.searchParams.set("from", pathname);
       return NextResponse.redirect(url);
     }

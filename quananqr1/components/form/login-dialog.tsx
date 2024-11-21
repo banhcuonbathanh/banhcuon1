@@ -18,7 +18,7 @@ import { LoginBodyType, LoginBody } from "@/schemaValidations/auth.schema";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { handleErrorApi } from "@/lib/utils";
 
-const LoginDialog = () => {
+const LoginDialog = ({ fromPath }: { fromPath: string | null }) => {
   const {
     login,
     isLoginDialogOpen,
@@ -37,7 +37,7 @@ const LoginDialog = () => {
 
   const onSubmit = async (data: LoginBodyType) => {
     try {
-      await login(data);
+      await login(data, fromPath);
     } catch (error: any) {
       handleErrorApi({
         error,

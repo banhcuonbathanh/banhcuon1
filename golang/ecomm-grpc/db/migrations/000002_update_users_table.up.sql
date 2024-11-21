@@ -14,7 +14,7 @@ CREATE TABLE users (
     favorite_food INTEGER[] DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT check_valid_role CHECK (role IN ('Admin', 'Employee', 'Manager', 'Guest'))
+    CONSTRAINT check_valid_role CHECK (role IN ('Admin', 'Employee', 'User', 'Guest', 'Manager'))
 );
 
 CREATE TABLE tables (

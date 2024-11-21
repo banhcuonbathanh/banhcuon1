@@ -1,8 +1,8 @@
 import DarkModeToggle from "@/components/dark-mode-toggle";
-import NavLinks from "../admin/admin_component/nav-links";
-import DropdownAvatar from "../admin/admin_component/dropdown-avatar";
+
 import LoginDialog from "../../components/form/login-dialog";
 import RegisterDialog from "../../components/form/register-dialog";
+import DropdownAvatar from "@/components/dropdown-avatar";
 
 // import NavLinks from './admin_component/nav-links'
 // import DropdownAvatar from './admin_component/dropdown-avatar'
@@ -23,7 +23,7 @@ export default function Layout({
             </div>
           </div>
           <DropdownAvatar />
-          <LoginDialog />
+          <LoginDialog fromPath={null} />
           <RegisterDialog />
         </header>
         {children}

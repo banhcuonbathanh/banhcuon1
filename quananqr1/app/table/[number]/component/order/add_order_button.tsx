@@ -59,7 +59,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
 
   const initializeWebSocket = async () => {
     console.log(
-      "quananqr1/app/table/[number]/component/order/add_order_button.tsx  12121212 !initializeWebSocket"
+      "quananqr1/app/table/[number]/component/order/add_order_button.tsx  !initializeWebSocket"
     );
     const emailIdentifier = getEmailIdentifier();
 
@@ -103,6 +103,17 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   };
 
   const handleCreateOrder = async () => {
+    // First, sync the auth state from cookies
+    useAuthStore.getState().syncAuthState();
+
+    // console.log(
+    //   "Login state immediately after sync:",
+    //   useAuthStore.getState().isLogin
+    // );
+
+    const { isLogin } = useAuthStore.getState();
+    // console.log("Logged in status:", isLogin);
+
     if (!isLogin) {
       console.log("[OrderCreation] User not logged in, showing login dialog");
       openLoginDialog();

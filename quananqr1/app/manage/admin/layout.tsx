@@ -1,6 +1,7 @@
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import NavLinks from './admin_component/nav-links'
-import DropdownAvatar from './admin_component/dropdown-avatar'
+import DropdownAvatar from '@/components/dropdown-avatar'
+
 
 
 

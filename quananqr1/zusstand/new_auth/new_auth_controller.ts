@@ -17,6 +17,7 @@ import {
   LogoutRequest
 } from "@/schemaValidations/interface/type_guest";
 import { GuestLoginBodyType } from "@/schemaValidations/guest.schema";
+import { decodeToken } from "@/lib/utils";
 
 interface AuthState {
   userId: string | null;
@@ -35,10 +36,13 @@ interface AuthState {
 
 interface AuthActions {
   register: (body: RegisterBodyType) => Promise<void>;
-  login: (body: LoginBodyType) => Promise<void>;
+  login: (body: LoginBodyType, fromPath?: string | null) => Promise<void>;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<void>;
-  guestLogin: (body: GuestLoginBodyType) => Promise<void>;
+  guestLogin: (
+    body: GuestLoginBodyType,
+    fromPath?: string | null
+  ) => Promise<void>;
   guestLogout: (body: LogoutRequest) => Promise<void>;
   clearError: () => void;
   openLoginDialog: () => void;
@@ -47,13 +51,16 @@ interface AuthActions {
   closeGuestDialog: () => void;
   openRegisterDialog: () => void;
   closeRegisterDialog: () => void;
+
+  syncAuthState: () => void; // New method to sync auth state
+  initializeAuthFromCookies: () => void; // New method to initialize auth from cookies
 }
 
 type AuthStore = AuthState & AuthActions;
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       guest: null,
       accessToken: null,
@@ -101,7 +108,7 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      login: async (body: LoginBodyType) => {
+      login: async (body: LoginBodyType, fromPath?: string | null) => {
         set({ loading: true, error: null });
         try {
           const response = await useApiStore
@@ -134,6 +141,13 @@ export const useAuthStore = create<AuthStore>()(
             secure: true,
             sameSite: "strict"
           });
+
+          // new part to
+          // console.log(
+          //   "quananqr1/zusstand/new_auth/new_auth_controller.ts login fromPath",
+          //   fromPath
+          // );
+          window.location.href = fromPath || "/";
         } catch (error) {
           set({
             error: error instanceof Error ? error.message : "Login failed",
@@ -143,8 +157,11 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      guestLogin: async (body: GuestLoginBodyType) => {
-        console.log("quananqr1/zusstand/new_auth/new_auth_controller.ts ");
+      guestLogin: async (
+        body: GuestLoginBodyType,
+        fromPath?: string | null
+      ) => {
+        // console.log("quananqr1/zusstand/new_auth/new_auth_controller.ts ");
         set({ loading: true, error: null });
         try {
           useApiStore.getState().setTableToken(body.token);
@@ -189,6 +206,21 @@ export const useAuthStore = create<AuthStore>()(
             secure: true,
             sameSite: "strict"
           });
+
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts guest login fromPath",
+            fromPath
+          );
+          // Get the original destination path from search params
+          // const searchParams = new URLSearchParams(window.location.search);
+          // const fromPath = searchParams.get("from") || "/"; // default to home if no path
+          // console.log(
+          //   "quananqr1/zusstand/new_auth/new_auth_controller.ts guest login searchParams fromPath",
+          //   searchParams,
+          //   fromPath
+          // );
+          // Redirect to the original destination or home
+          window.location.href = fromPath || "/";
         } catch (error) {
           set({
             error:
@@ -299,7 +331,86 @@ export const useAuthStore = create<AuthStore>()(
           isLoginDialogOpen: false,
           isGuestDialogOpen: false
         }),
-      closeRegisterDialog: () => set({ isRegisterDialogOpen: false })
+      closeRegisterDialog: () => set({ isRegisterDialogOpen: false }),
+
+      //
+
+      syncAuthState: () => {
+        // console.log(
+        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState"
+        // );
+        const accessToken = Cookies.get("accessToken");
+        const refreshToken = Cookies.get("refreshToken");
+        // console.log(
+        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState accessToken, refreshToken",
+        //   accessToken,
+        //   refreshToken
+        // );
+        if (accessToken && refreshToken) {
+          try {
+            const decoded = decodeToken(accessToken);
+            // console.log(
+            //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState decoded",
+            //   decoded
+            // );
+            // Log exact state before setting
+            const newState = {
+              accessToken,
+              refreshToken,
+              isLogin: true,
+              isGuest: decoded.role === "Guest",
+              userId: decoded.id.toString()
+            };
+            // console.log(
+            //   "quananqr1/zusstand/new_auth/new_auth_controller.ts New state being set:",
+            //   newState
+            // );
+
+            set(newState);
+            // console.log(
+            //   "quananqr1/zusstand/new_auth/new_auth_controller.ts Current login state:",
+            //   useAuthStore.getState()
+            // );
+          } catch (error) {
+            // If token is invalid, clear auth state
+            set({
+              userId: null,
+              user: null,
+              guest: null,
+              accessToken: null,
+              refreshToken: null,
+              isLogin: false,
+              isGuest: false
+            });
+            Cookies.remove("accessToken");
+            Cookies.remove("refreshToken");
+          }
+        } else {
+          // No tokens found, clear auth state
+          set({
+            userId: null,
+            user: null,
+            guest: null,
+            accessToken: null,
+            refreshToken: null,
+            isLogin: false,
+            isGuest: false
+          });
+        }
+      },
+
+      // New method to initialize auth from cookies when app loads
+      initializeAuthFromCookies: () => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts initializeAuthFromCookies"
+        );
+        const accessToken = Cookies.get("accessToken");
+        const refreshToken = Cookies.get("refreshToken");
+
+        if (accessToken && refreshToken) {
+          get().syncAuthState();
+        }
+      }
     }),
     {
       name: "auth-storage",

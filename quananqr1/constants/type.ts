@@ -8,14 +8,15 @@ export const TokenType = {
 } as const;
 
 export const Role = {
-  Owner: "Owner",
   Employee: "Employee",
   Guest: "Guest",
   Admin: "Admin"
 } as const;
 
+export type RoleType = typeof Role[keyof typeof Role];
+
 export const RoleValues = z.enum([
-  Role.Owner,
+
   Role.Employee,
   Role.Guest,
   Role.Admin
