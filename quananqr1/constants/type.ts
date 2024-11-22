@@ -8,9 +8,11 @@ export const TokenType = {
 } as const;
 
 export const Role = {
+  Admin: "Admin",
   Employee: "Employee",
+  User: "User",
   Guest: "Guest",
-  Admin: "Admin"
+  Manager: "Manager",
 } as const;
 
 export type RoleType = typeof Role[keyof typeof Role];

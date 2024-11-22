@@ -38,11 +38,30 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     fetchWsToken
   } = useWebSocketStore();
 
-  let topping = `canhKhongRau ${canhKhongRau} - canhCoRau ${canhCoRau} - bat be ${smallBowl} - ot tuoi  ${wantChili} - nhan ${selectedFilling} -`;
-  // const MAX_RETRY_ATTEMPTS = 3;
+  // State to track authentication check status
+  const [authChecked, setAuthChecked] = useState(false);
 
+  let topping = `canhKhongRau ${canhKhongRau} - canhCoRau ${canhCoRau} - bat be ${smallBowl} - ot tuoi ${wantChili} - nhan ${selectedFilling} -`;
   const orderSummary = getOrderSummary();
-  const isDisabled = isLoading || !tableNumber || orderSummary.totalItems === 0;
+
+  // Initialize auth state when component mounts
+  useEffect(() => {
+    const initializeAuth = async () => {
+      // Sync auth state from cookies
+      useAuthStore.getState().syncAuthState();
+      setAuthChecked(true);
+    };
+
+    initializeAuth();
+  }, []);
+
+  // Effect for WebSocket initialization after auth check
+  useEffect(() => {
+    if (authChecked && isLogin && userId) {
+      console.log("Initializing WebSocket connection for user:", userId);
+      initializeWebSocket();
+    }
+  }, [authChecked, isLogin, userId, user?.email, guest?.name]);
 
   const getEmailIdentifier = () => {
     if (isGuest && guest) {
@@ -51,22 +70,12 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     return user?.email;
   };
 
-  useEffect(() => {
-    if (isLogin && userId) {
-      initializeWebSocket();
-    }
-  }, [isLogin, userId, user?.email, guest?.name]);
-
   const initializeWebSocket = async () => {
-    console.log(
-      "quananqr1/app/table/[number]/component/order/add_order_button.tsx  !initializeWebSocket"
-    );
     const emailIdentifier = getEmailIdentifier();
 
     if (!isLogin || !userId || !emailIdentifier) {
       console.log(
-        "quananqr1/app/table/[number]/component/order/add_order_button.tsx emailIdentifier",
-        emailIdentifier
+        "WebSocket initialization failed: Missing required credentials"
       );
       return;
     }
@@ -77,53 +86,36 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         email: emailIdentifier,
         role: isGuest ? "Guest" : "User"
       });
-      console.log(
-        "quananqr1/app/table/[number]/component/order/add_order_button.tsx wstoken1",
-        wstoken1
-      );
-      // Verify token after fetching
+
       if (!wstoken1) {
         throw new Error("Failed to obtain WebSocket token");
       }
 
-      // Step 2: Establish WebSocket Connection
-
       await connect({
         userId: userId.toString(),
         isGuest,
-        userToken: wstoken1.token, // Now TypeScript knows this is non-null
+        userToken: wstoken1.token,
         tableToken: table_token,
         role: isGuest ? "Guest" : "User"
       });
-
-      // setConnectionAttempts(0);
     } catch (error) {
       console.error("[OrderCreation] Connection error:", error);
     }
   };
 
   const handleCreateOrder = async () => {
-    // First, sync the auth state from cookies
-    useAuthStore.getState().syncAuthState();
+    // Ensure auth state is synced before proceeding
+    await useAuthStore.getState().syncAuthState();
+    const currentAuthState = useAuthStore.getState();
 
-    // console.log(
-    //   "Login state immediately after sync:",
-    //   useAuthStore.getState().isLogin
-    // );
-
-    const { isLogin } = useAuthStore.getState();
-    // console.log("Logged in status:", isLogin);
-
-    if (!isLogin) {
+    if (!currentAuthState.isLogin) {
       console.log("[OrderCreation] User not logged in, showing login dialog");
       openLoginDialog();
       return;
     }
 
     if (!isConnected) {
-      console.log(
-        "quananqr1/app/table/[number]/component/order/add_order_button.tsx 12121212 !isConnected"
-      );
+      console.log("Attempting to establish WebSocket connection");
       await initializeWebSocket();
       if (!isConnected) {
         console.log(
@@ -141,7 +133,6 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     console.log("[OrderCreation] Creating order with summary:", orderSummary);
     createOrder({
       topping,
-
       Table_token: table_token,
       http,
       auth: { guest, user, isGuest },
@@ -152,24 +143,23 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   };
 
   const getButtonText = () => {
+    if (!authChecked) {
+      return "Loading...";
+    }
     if (!isLogin) {
       return "Login to Order";
     }
-
     if (orderSummary.totalItems === 0) {
       return "Add Items to Order";
     }
+    return "Create Order";
   };
 
   const isButtonDisabled = () => {
+    if (!authChecked) return true;
     if (!isLogin) return false;
     if (orderSummary.totalItems === 0) return true;
-
     return isLoading;
-
-    // (connectionStatus === "error" &&
-    //   connectionAttempts >= MAX_RETRY_ATTEMPTS) ||
-    // isDisabled
   };
 
   useEffect(() => {

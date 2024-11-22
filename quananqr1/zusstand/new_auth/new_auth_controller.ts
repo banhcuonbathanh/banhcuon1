@@ -234,9 +234,19 @@ export const useAuthStore = create<AuthStore>()(
       logout: async () => {
         set({ loading: true, error: null });
         try {
+          // First clear cookies before making the logout request
+          Cookies.remove("accessToken", { path: "/" });
+          Cookies.remove("refreshToken", { path: "/" });
+
+          // Clear API store token
+          useApiStore.getState().setAccessToken(null);
+
+          // Make logout request
           await useApiStore
             .getState()
             .http.post(`${envConfig.NEXT_PUBLIC_API_Logout}`);
+
+          // Clear all auth state
           set({
             userId: null,
             user: null,
@@ -246,15 +256,24 @@ export const useAuthStore = create<AuthStore>()(
             refreshToken: null,
             error: null,
             loading: false,
-            isLogin: false // Set isLogin to false after logout
+            isLogin: false
           });
-          useApiStore.getState().setAccessToken(null);
-          Cookies.remove("accessToken");
-          Cookies.remove("refreshToken");
         } catch (error) {
+          // Even if the logout request fails, we should still clear local state
+          Cookies.remove("accessToken", { path: "/" });
+          Cookies.remove("refreshToken", { path: "/" });
+          useApiStore.getState().setAccessToken(null);
+
           set({
+            userId: null,
+            user: null,
+            guest: null,
+            isGuest: false,
+            accessToken: null,
+            refreshToken: null,
             error: error instanceof Error ? error.message : "Logout failed",
-            loading: false
+            loading: false,
+            isLogin: false
           });
         }
       },
@@ -263,11 +282,22 @@ export const useAuthStore = create<AuthStore>()(
         const guest_logout_link =
           envConfig.NEXT_PUBLIC_API_ENDPOINT +
           envConfig.NEXT_PUBLIC_API_Guest_Logout;
+
         set({ loading: true, error: null });
         try {
+          // First clear cookies before making the logout request
+          Cookies.remove("accessToken", { path: "/" });
+          Cookies.remove("refreshToken", { path: "/" });
+
+          // Clear API store token
+          useApiStore.getState().setAccessToken(null);
+
+          // Make guest logout request
           await useApiStore.getState().http.post(`${guest_logout_link}`, body);
+
+          // Clear all auth state
           set({
-            userId: "",
+            userId: null,
             user: null,
             guest: null,
             isGuest: false,
@@ -275,16 +305,25 @@ export const useAuthStore = create<AuthStore>()(
             refreshToken: null,
             error: null,
             loading: false,
-            isLogin: false // Set isLogin to false after guest logout
+            isLogin: false
           });
-          useApiStore.getState().setAccessToken(null);
-          Cookies.remove("accessToken");
-          Cookies.remove("refreshToken");
         } catch (error) {
+          // Even if the logout request fails, we should still clear local state
+          Cookies.remove("accessToken", { path: "/" });
+          Cookies.remove("refreshToken", { path: "/" });
+          useApiStore.getState().setAccessToken(null);
+
           set({
+            userId: null,
+            user: null,
+            guest: null,
+            isGuest: false,
+            accessToken: null,
+            refreshToken: null,
             error:
               error instanceof Error ? error.message : "Guest logout failed",
-            loading: false
+            loading: false,
+            isLogin: false
           });
         }
       },
