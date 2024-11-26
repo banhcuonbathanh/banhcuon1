@@ -15,6 +15,7 @@ import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import Cookies from "js-cookie";
 import { Role, RoleType } from "@/constants/type";
 import { useEffect, useRef } from "react";
+import useOrderStore from "@/zusstand/order/order_zustand";
 
 export default function DropdownAvatar() {
   const {
@@ -31,6 +32,8 @@ export default function DropdownAvatar() {
 
     initializeAuthFromCookies
   } = useAuthStore();
+  const { clearOrder } = useOrderStore();
+
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -51,8 +54,10 @@ export default function DropdownAvatar() {
         await guestLogout({
           refresh_token: Cookies.get("refreshToken") || ""
         });
+        clearOrder();
       } else {
         await logout();
+        clearOrder();
       }
       window.location.href = "/";
     } catch (error) {

@@ -13,14 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
-import { useSearchParams, useParams } from "next/navigation";
+import { useSearchParams, useParams, useRouter, usePathname } from "next/navigation";
 import {
   GuestLoginBody,
   GuestLoginBodyType
 } from "@/schemaValidations/guest.schema";
-import { handleErrorApi } from "@/lib/utils";
+import { handleErrorApi, handleLoginRedirect } from "@/lib/utils";
 
-const GuestLoginDialog = ({ fromPath }: { fromPath: string | null }) => {
+const GuestLoginDialog = () => {
   const {
     guestLogin,
     isGuestDialogOpen,
@@ -31,6 +31,11 @@ const GuestLoginDialog = ({ fromPath }: { fromPath: string | null }) => {
 
   const searchParams = useSearchParams();
   const params = useParams();
+
+  const pathname = usePathname();
+  const router = useRouter();
+
+
   const tableNumber = Number(params.number);
   const token = searchParams.get("token");
 
@@ -46,7 +51,8 @@ const GuestLoginDialog = ({ fromPath }: { fromPath: string | null }) => {
   const onSubmit = async (data: GuestLoginBodyType) => {
     console.log("quananqr1/components/form/guest-dialog.tsx data 123123", data);
     try {
-      await guestLogin(data, fromPath);
+      await guestLogin(data);
+      handleLoginRedirect(pathname, router);
     } catch (error: any) {
       handleErrorApi({
         error,

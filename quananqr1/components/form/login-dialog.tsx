@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Info } from "lucide-react";
@@ -7,8 +7,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-  DialogTrigger
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -16,9 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoginBodyType, LoginBody } from "@/schemaValidations/auth.schema";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
-import { handleErrorApi } from "@/lib/utils";
+import { handleErrorApi, handleLoginRedirect } from "@/lib/utils";
+import { usePathname, useRouter } from "next/navigation";
 
-const LoginDialog = ({ fromPath }: { fromPath: string | null }) => {
+const LoginDialog1 = () => {
   const {
     login,
     isLoginDialogOpen,
@@ -26,7 +26,15 @@ const LoginDialog = ({ fromPath }: { fromPath: string | null }) => {
     openRegisterDialog,
     openGuestDialog
   } = useAuthStore();
-
+  const pathname = usePathname();
+  const router = useRouter();
+  // Use useEffect to log only once and track renders
+  useEffect(() => {
+    console.log(
+      "quananqr1/components/form/login-dialog.tsx pathname:",
+      pathname
+    );
+  }, [pathname]); // Only log when pathname changes
   const form = useForm<LoginBodyType>({
     resolver: zodResolver(LoginBody),
     defaultValues: {
@@ -37,7 +45,9 @@ const LoginDialog = ({ fromPath }: { fromPath: string | null }) => {
 
   const onSubmit = async (data: LoginBodyType) => {
     try {
-      await login(data, fromPath);
+      await login(data);
+
+      handleLoginRedirect(pathname, router);
     } catch (error: any) {
       handleErrorApi({
         error,
@@ -151,4 +161,4 @@ const LoginDialog = ({ fromPath }: { fromPath: string | null }) => {
   );
 };
 
-export default LoginDialog;
+export default LoginDialog1;

@@ -31,7 +31,7 @@ interface AuthState {
   isGuestDialogOpen: boolean;
   isRegisterDialogOpen: boolean;
   isGuest: boolean;
-  isLogin: boolean; // New field for login status
+  isLogin: boolean;
 }
 
 interface AuthActions {
@@ -52,8 +52,8 @@ interface AuthActions {
   openRegisterDialog: () => void;
   closeRegisterDialog: () => void;
 
-  syncAuthState: () => void; // New method to sync auth state
-  initializeAuthFromCookies: () => void; // New method to initialize auth from cookies
+  syncAuthState: () => void;
+  initializeAuthFromCookies: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -72,9 +72,13 @@ export const useAuthStore = create<AuthStore>()(
       isRegisterDialogOpen: false,
       isGuest: false,
       userId: null,
-      isLogin: false, // Initialize isLogin as false
+      isLogin: false,
 
       register: async (body: RegisterBodyType) => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts register function called with body:",
+          body
+        );
         set({ loading: true, error: null });
 
         const formattedName = body.name;
@@ -87,6 +91,11 @@ export const useAuthStore = create<AuthStore>()(
               name: formattedName
             });
 
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts register successful, response:",
+            response.data
+          );
+
           set({
             user: response.data,
             userId: response.data.id.toString(),
@@ -96,19 +105,29 @@ export const useAuthStore = create<AuthStore>()(
             loading: false,
             isGuest: true,
             guest: null,
-            isLogin: true // Set isLogin to true after successful registration
+            isLogin: true
           });
         } catch (error) {
+          console.error(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts register error:",
+            error
+          );
           set({
             error:
               error instanceof Error ? error.message : "Registration failed",
             loading: false,
-            isLogin: false // Ensure isLogin is false if registration fails
+            isLogin: false
           });
         }
       },
 
       login: async (body: LoginBodyType, fromPath?: string | null) => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts login function called with body:",
+          body,
+          "fromPath:",
+          fromPath
+        );
         set({ loading: true, error: null });
         try {
           const response = await useApiStore
@@ -117,6 +136,12 @@ export const useAuthStore = create<AuthStore>()(
               `${envConfig.NEXT_PUBLIC_API_Login}`,
               body
             );
+
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts login successful, response:",
+            response.data
+          );
+
           set({
             user: {
               ...response.data.user,
@@ -130,7 +155,7 @@ export const useAuthStore = create<AuthStore>()(
             error: null,
             isLoginDialogOpen: false,
             loading: false,
-            isLogin: true // Set isLogin to true after successful user login
+            isLogin: true
           });
           useApiStore.getState().setAccessToken(response.data.access_token);
           Cookies.set("accessToken", response.data.access_token, {
@@ -142,17 +167,16 @@ export const useAuthStore = create<AuthStore>()(
             sameSite: "strict"
           });
 
-          // new part to
-          // console.log(
-          //   "quananqr1/zusstand/new_auth/new_auth_controller.ts login fromPath",
-          //   fromPath
-          // );
           window.location.href = fromPath || "/";
         } catch (error) {
+          console.error(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts login error:",
+            error
+          );
           set({
             error: error instanceof Error ? error.message : "Login failed",
             loading: false,
-            isLogin: false // Ensure isLogin is false if login fails
+            isLogin: false
           });
         }
       },
@@ -161,7 +185,12 @@ export const useAuthStore = create<AuthStore>()(
         body: GuestLoginBodyType,
         fromPath?: string | null
       ) => {
-        // console.log("quananqr1/zusstand/new_auth/new_auth_controller.ts ");
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogin function called with body:",
+          body,
+          "fromPath:",
+          fromPath
+        );
         set({ loading: true, error: null });
         try {
           useApiStore.getState().setTableToken(body.token);
@@ -170,9 +199,8 @@ export const useAuthStore = create<AuthStore>()(
             envConfig.NEXT_PUBLIC_API_ENDPOINT +
             envConfig.NEXT_PUBLIC_API_Guest_Login;
           console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts guest_login_link NEXT_PUBLIC_API_ENDPOINT",
-            guest_login_link,
-            envConfig.NEXT_PUBLIC_API_ENDPOINT
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts guest_login_link:",
+            guest_login_link
           );
           const response = await useApiStore
             .getState()
@@ -181,6 +209,11 @@ export const useAuthStore = create<AuthStore>()(
               table_number: body.tableNumber,
               token: body.token
             });
+
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogin successful, response:",
+            response.data
+          );
 
           set({
             userId: response.data.guest.id.toString(),
@@ -194,7 +227,7 @@ export const useAuthStore = create<AuthStore>()(
             isGuestDialogOpen: false,
             loading: false,
             isRegisterDialogOpen: false,
-            isLogin: true // Set isLogin to true after successful guest login
+            isLogin: true
           });
 
           useApiStore.getState().setAccessToken(response.data.access_token);
@@ -207,46 +240,40 @@ export const useAuthStore = create<AuthStore>()(
             sameSite: "strict"
           });
 
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts guest login fromPath",
-            fromPath
-          );
-          // Get the original destination path from search params
-          // const searchParams = new URLSearchParams(window.location.search);
-          // const fromPath = searchParams.get("from") || "/"; // default to home if no path
-          // console.log(
-          //   "quananqr1/zusstand/new_auth/new_auth_controller.ts guest login searchParams fromPath",
-          //   searchParams,
-          //   fromPath
-          // );
-          // Redirect to the original destination or home
           window.location.href = fromPath || "/";
         } catch (error) {
+          console.error(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogin error:",
+            error
+          );
           set({
             error:
               error instanceof Error ? error.message : "Guest login failed",
             loading: false,
-            isLogin: false // Ensure isLogin is false if guest login fails
+            isLogin: false
           });
         }
       },
 
       logout: async () => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts logout function called"
+        );
         set({ loading: true, error: null });
         try {
-          // First clear cookies before making the logout request
           Cookies.remove("accessToken", { path: "/" });
           Cookies.remove("refreshToken", { path: "/" });
 
-          // Clear API store token
           useApiStore.getState().setAccessToken(null);
 
-          // Make logout request
           await useApiStore
             .getState()
             .http.post(`${envConfig.NEXT_PUBLIC_API_Logout}`);
 
-          // Clear all auth state
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts logout successful"
+          );
+
           set({
             userId: null,
             user: null,
@@ -259,7 +286,10 @@ export const useAuthStore = create<AuthStore>()(
             isLogin: false
           });
         } catch (error) {
-          // Even if the logout request fails, we should still clear local state
+          console.error(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts logout error:",
+            error
+          );
           Cookies.remove("accessToken", { path: "/" });
           Cookies.remove("refreshToken", { path: "/" });
           useApiStore.getState().setAccessToken(null);
@@ -279,23 +309,27 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       guestLogout: async (body: LogoutRequest) => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogout function called with body:",
+          body
+        );
         const guest_logout_link =
           envConfig.NEXT_PUBLIC_API_ENDPOINT +
           envConfig.NEXT_PUBLIC_API_Guest_Logout;
 
         set({ loading: true, error: null });
         try {
-          // First clear cookies before making the logout request
           Cookies.remove("accessToken", { path: "/" });
           Cookies.remove("refreshToken", { path: "/" });
 
-          // Clear API store token
           useApiStore.getState().setAccessToken(null);
 
-          // Make guest logout request
           await useApiStore.getState().http.post(`${guest_logout_link}`, body);
 
-          // Clear all auth state
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogout successful"
+          );
+
           set({
             userId: null,
             user: null,
@@ -308,7 +342,10 @@ export const useAuthStore = create<AuthStore>()(
             isLogin: false
           });
         } catch (error) {
-          // Even if the logout request fails, we should still clear local state
+          console.error(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogout error:",
+            error
+          );
           Cookies.remove("accessToken", { path: "/" });
           Cookies.remove("refreshToken", { path: "/" });
           useApiStore.getState().setAccessToken(null);
@@ -329,16 +366,29 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       refreshAccessToken: async () => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts refreshAccessToken function called"
+        );
         set({ loading: true, error: null });
         try {
           await useApiStore.getState().refreshToken();
           const newAccessToken = useApiStore.getState().accessToken;
+
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts refreshAccessToken successful, new token:",
+            newAccessToken
+          );
+
           set({
             accessToken: newAccessToken,
             error: null,
             loading: false
           });
         } catch (error) {
+          console.error(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts refreshAccessToken error:",
+            error
+          );
           set({
             error:
               error instanceof Error ? error.message : "Token refresh failed",
@@ -347,70 +397,109 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      clearError: () => set({ error: null }),
-      openLoginDialog: () =>
+      clearError: () => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts clearError function called"
+        );
+        set({ error: null });
+      },
+
+      openLoginDialog: () => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts openLoginDialog function called"
+        );
         set({
           isLoginDialogOpen: true,
           isGuestDialogOpen: false,
           isRegisterDialogOpen: false
-        }),
-      closeLoginDialog: () => set({ isLoginDialogOpen: false }),
+        });
+      },
 
-      openGuestDialog: () =>
+      closeLoginDialog: () => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts closeLoginDialog function called"
+        );
+        set({ isLoginDialogOpen: false });
+      },
+
+      openGuestDialog: () => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts openGuestDialog function called"
+        );
         set({
           isGuestDialogOpen: true,
           isLoginDialogOpen: false,
           isRegisterDialogOpen: false
-        }),
-      closeGuestDialog: () => set({ isGuestDialogOpen: false }),
+        });
+      },
 
-      openRegisterDialog: () =>
+      closeGuestDialog: () => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts closeGuestDialog function called"
+        );
+        set({ isGuestDialogOpen: false });
+      },
+
+      openRegisterDialog: () => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts openRegisterDialog function called"
+        );
         set({
           isRegisterDialogOpen: true,
           isLoginDialogOpen: false,
           isGuestDialogOpen: false
-        }),
-      closeRegisterDialog: () => set({ isRegisterDialogOpen: false }),
+        });
+      },
 
-      //
+      closeRegisterDialog: () => {
+        console.log(
+          "quananqr1/zusstand/new_auth/new_auth_controller.ts closeRegisterDialog function called"
+        );
+        set({ isRegisterDialogOpen: false });
+      },
 
       syncAuthState: () => {
         // console.log(
-        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState"
+        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState function called"
         // );
         const accessToken = Cookies.get("accessToken");
         const refreshToken = Cookies.get("refreshToken");
+
         // console.log(
-        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState accessToken, refreshToken",
+        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState accessToken, refreshToken:",
         //   accessToken,
         //   refreshToken
         // );
+
         if (accessToken && refreshToken) {
           try {
             const decoded = decodeToken(accessToken);
+
             // console.log(
-            //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState decoded",
+            //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState decoded token:",
             //   decoded
             // );
-            // Log exact state before setting
+
             const newState = {
               accessToken,
               refreshToken,
               isLogin: true,
+
               isGuest: decoded.role === "Guest",
               userId: decoded.id.toString()
             };
+
             // console.log(
-            //   "quananqr1/zusstand/new_auth/new_auth_controller.ts New state being set:",
+            //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState new state:",
             //   newState
             // );
 
             set(newState);
-            // console.log(
-            //   "quananqr1/zusstand/new_auth/new_auth_controller.ts Current login state:",
-            //   useAuthStore.getState()
-            // );
           } catch (error) {
+            console.error(
+              "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState error:",
+              error
+            );
             // If token is invalid, clear auth state
             set({
               userId: null,
@@ -425,6 +514,9 @@ export const useAuthStore = create<AuthStore>()(
             Cookies.remove("refreshToken");
           }
         } else {
+          console.log(
+            "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState: No tokens found"
+          );
           // No tokens found, clear auth state
           set({
             userId: null,
@@ -438,13 +530,18 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      // New method to initialize auth from cookies when app loads
       initializeAuthFromCookies: () => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts initializeAuthFromCookies"
-        );
+        // console.log(
+        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts initializeAuthFromCookies function called"
+        // );
         const accessToken = Cookies.get("accessToken");
         const refreshToken = Cookies.get("refreshToken");
+
+        // console.log(
+        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts initializeAuthFromCookies accessToken, refreshToken:",
+        //   accessToken,
+        //   refreshToken
+        // );
 
         if (accessToken && refreshToken) {
           get().syncAuthState();

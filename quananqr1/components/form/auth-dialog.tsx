@@ -9,8 +9,8 @@ const AuthDialogs = () => {
 
   return (
     <>
-      <LoginDialog fromPath={null} />
-      <GuestLoginDialog fromPath={null} />
+      <LoginDialog  />
+      <GuestLoginDialog />
       <RegisterDialog /> {/* If you have this component */}
     </>
   );

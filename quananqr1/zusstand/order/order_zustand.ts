@@ -5,6 +5,21 @@ import {
 } from "@/schemaValidations/interface/types_set";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+const INITIAL_STATE = {
+  setItems: [],
+  dishItems: [],
+  tableNumber: null,
+  tabletoken: null,
+  canhKhongRau: 0,
+  canhCoRau: 0,
+  smallBowl: 0,
+  wantChili: false,
+  selectedFilling: {
+    mocNhi: false,
+    thit: false,
+    thitMocNhi: false
+  }
+};
 
 // Add new interfaces for bowl options
 interface BowlOptions {
@@ -29,7 +44,7 @@ export interface SetOrderItemustand extends SetInterface {
 }
 
 interface FormattedSetItem {
-  id: number;
+  id: number | null;
   name: string;
   displayString: string;
   itemsString: string;
@@ -50,9 +65,9 @@ interface OrderState extends BowlOptions {
   setItems: SetOrderItemustand[];
   isLoading: boolean;
   error: string | null;
-  tableNumber: number;
-  tabletoken: string;
-
+  tableNumber: number | null;
+  tabletoken: string | null;
+  clearDataExecuted: boolean; // New flag to track clear execution
   // Add new bowl-related actions
   updateCanhKhongRau: (count: number) => void;
   updateCanhCoRau: (count: number) => void;
@@ -87,11 +102,16 @@ interface OrderState extends BowlOptions {
   };
   findDishOrderItem: (id: number) => DishOrderItemustand | undefined;
   findSetOrderItem: (id: number) => SetOrderItemustand | undefined;
+
+  // clearAllOrderData: () => void;
+  // resetClearDataFlag: () => void;
 }
 
 const useOrderStore = create<OrderState>()(
   persist(
     (set, get) => ({
+      ...INITIAL_STATE,
+      clearDataExecuted: false,
       // New bowl-related state
       canhKhongRau: 0,
       canhCoRau: 0,
@@ -172,8 +192,6 @@ const useOrderStore = create<OrderState>()(
         }),
       updateSetQuantity: (id, quantity) =>
         set((state) => {
-     
-
           return {
             setItems: state.setItems.map((i) =>
               i.id === id
@@ -185,13 +203,7 @@ const useOrderStore = create<OrderState>()(
 
       removeSetItem: (id) =>
         set((state) => {
-      
-        
-      
-
           const updatedSetItems = state.setItems.filter((i) => i.id !== id);
-
-      
 
           return {
             setItems: updatedSetItems
@@ -200,14 +212,9 @@ const useOrderStore = create<OrderState>()(
 
       updateSetDishes: (setId, modifiedDishes) =>
         set((state) => {
-       
-    
-
           const updatedSetItems = state.setItems.map((i) =>
             i.id === setId ? { ...i, dishes: modifiedDishes } : i
           );
-
-      
 
           return {
             setItems: updatedSetItems
@@ -215,8 +222,10 @@ const useOrderStore = create<OrderState>()(
         }),
       clearOrder: () =>
         set({
-          dishItems: [],
           setItems: [],
+          dishItems: [],
+          tableNumber: null,
+          tabletoken: null,
           canhKhongRau: 0,
           canhCoRau: 0,
           smallBowl: 0,
@@ -298,7 +307,27 @@ const useOrderStore = create<OrderState>()(
           totalItems,
           formattedTotalPrice: formatCurrency(totalPrice)
         };
-      }
+      },
+      // clearAllOrderData: () => {
+      //   const { clearDataExecuted } = get();
+      //   console.log(
+      //     "quananqr1/zusstand/order/order_zustand.ts clearAllOrderData",
+      //     clearDataExecuted
+      //   );
+      //   // Only execute clear if it hasn't been done before
+      //   if (!clearDataExecuted) {
+      //     set({
+      //       ...INITIAL_STATE,
+      //       clearDataExecuted: true // Set flag to prevent multiple clears
+      //     });
+      //   }
+      // },
+      // resetClearDataFlag: () => {
+      //   console.log(
+      //     "quananqr1/zusstand/order/order_zustand.ts resetClearDataFlag"
+      //   );
+      //   set({ clearDataExecuted: false });
+      // }
     }),
     {
       name: "order-storage", // unique name for localStorage

@@ -222,3 +222,41 @@ export const generateFormattedName = (baseName: string) => {
   // Concatenate fields with a special separator, e.g., '_'
   return `${baseName}_${year}_${month}_${day}_${hour}_${minute}_${second}_${uniqueId}`;
 };
+
+
+export const createRedirectUrl = (pathname: string | null): string | null => {
+  // If no pathname is provided, return null
+  if (pathname === null) return null;
+
+  // Get the current URL's full search params
+  const currentUrl = new URL(window.location.href);
+  const searchParams = currentUrl.searchParams;
+
+  // Create a new URL with the pathname and existing search params
+  const redirectUrl = new URL(pathname, window.location.origin);
+
+  // Copy all existing search parameters
+  searchParams.forEach((value, key) => {
+    redirectUrl.searchParams.set(key, value);
+  });
+
+  // Log the redirect URL (you can remove this in production)
+  console.log(
+    "createRedirectUrl redirectUrl.toString()",
+    redirectUrl.toString()
+  );
+
+  // Return the full URL string
+  return redirectUrl.toString();
+};
+
+export const handleLoginRedirect = (
+  pathname: string | null, 
+  router: any
+) => {
+  const redirectUrl = createRedirectUrl(pathname);
+  
+  if (redirectUrl) {
+    router.push(redirectUrl);
+  }
+};

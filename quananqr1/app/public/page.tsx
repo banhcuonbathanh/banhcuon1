@@ -12,8 +12,7 @@ import {
   ReactPortal
 } from "react";
 
-import dishController from "./data-public/public-dish/dish-controller";
-import LoginDialog from "./public-component/login-dialog";
+
 
 export default async function Home() {
   // let dishList: DishListResType["data"] = [];

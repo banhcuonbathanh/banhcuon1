@@ -119,16 +119,15 @@ project-root/
 ├── docker-compose.yml
 ├── quananqr1/
 │ ├── Dockerfile
-│ ├── .dockerignore  <-- Place it here
+│ ├── .dockerignore <-- Place it here
 │ ├── src/
 │ ├── public/
 │ ├── package.json
 │ └── package-lock.json
 └── golang/
-  ├── Dockerfile
-  └── .dockerignore  <-- You can have another one here for Golang
+├── Dockerfile
+└── .dockerignore <-- You can have another one here for Golang
 //
-
 
 curl http://localhost:8888/qr/guest/test
 
@@ -409,6 +408,14 @@ ws smessage
 
 int64 bow_chili = 13;
 
+import Image from 'next/image'
 
-import Image from 'next/image'   
+------------------------ linux -------------------
+find . -name "\*.tsx" | grep -E "login|dialog"
 
+grep -r "from.*LoginDialog" .grep -r "from.*login-dialog" .
+grep -r "from.\*LoginDialog" .
+
+find . -type f \( -name "_.tsx" -o -name "_.jsx" \) -exec grep -l "useAuthStore" {} \;
+
+grep -r "from.\*login-dialog" . ---> ok

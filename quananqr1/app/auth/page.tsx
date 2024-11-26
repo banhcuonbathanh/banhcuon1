@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from 'next/navigation';
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
@@ -9,14 +9,9 @@ import GuestLoginDialog from "@/components/form/guest-dialog";
 import RegisterDialog from "@/components/form/register-dialog";
 
 const AuthPage = () => {
-  const searchParams = useSearchParams();
-  const fromPath = searchParams.get('from');
-
-  const {
-    openLoginDialog,
-    openRegisterDialog,
-    openGuestDialog
-  } = useAuthStore();
+  console.log("quananqr1/app/auth/page.tsx ");
+  const { openLoginDialog, openRegisterDialog, openGuestDialog } =
+    useAuthStore();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 px-4 py-8">
@@ -25,32 +20,25 @@ const AuthPage = () => {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             Authentication
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            {fromPath 
-              ? `Please log in to access ${fromPath}` 
-              : "Choose your preferred login method"}
-          </p>
+          <p className="text-gray-600 dark:text-gray-300 mb-6"></p>
         </div>
 
         <div className="space-y-4">
-          <Button 
-            onClick={openLoginDialog} 
-            className="w-full"
-          >
+          <Button onClick={openLoginDialog} className="w-full">
             Login with Email
           </Button>
-          
-          <Button 
-            onClick={openRegisterDialog} 
-            variant="outline" 
+
+          <Button
+            onClick={openRegisterDialog}
+            variant="outline"
             className="w-full"
           >
             Register New Account
           </Button>
-          
-          <Button 
-            onClick={openGuestDialog} 
-            variant="secondary" 
+
+          <Button
+            onClick={openGuestDialog}
+            variant="secondary"
             className="w-full"
           >
             Continue as Guest
@@ -60,16 +48,16 @@ const AuthPage = () => {
         {/* ... rest of the existing code ... */}
       </div>
 
-      <AuthDialogs fromPath={fromPath} />
+      <AuthDialogs />
     </div>
   );
 };
 
-const AuthDialogs = ({ fromPath }: { fromPath: string | null }) => {
+const AuthDialogs = () => {
   return (
     <>
-      <LoginDialog fromPath={fromPath} />
-      <GuestLoginDialog fromPath={fromPath} />
+      <LoginDialog />
+      <GuestLoginDialog />
       <RegisterDialog />
     </>
   );

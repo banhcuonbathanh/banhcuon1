@@ -65,7 +65,9 @@ export default function OrderSummary({ number, token }: OrderProps) {
     <div className="container mx-auto px-4 py-5 space-y-5">
       <Card>
         <CardHeader>
-          <CardTitle>Canh Banh Cuon</CardTitle>
+          <CardTitle className="flex justify-between items-center">
+            Canh Banh Cuon
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">

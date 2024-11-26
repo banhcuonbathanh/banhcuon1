@@ -105,7 +105,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
 
   const handleCreateOrder = async () => {
     // Ensure auth state is synced before proceeding
-    await useAuthStore.getState().syncAuthState();
+    useAuthStore.getState().syncAuthState();
     const currentAuthState = useAuthStore.getState();
 
     if (!currentAuthState.isLogin) {
@@ -126,6 +126,10 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     }
 
     if (orderSummary.totalItems === 0) {
+      console.log("[OrderCreation] No items in order, aborting");
+      return;
+    }
+    if (tableNumber === null) {
       console.log("[OrderCreation] No items in order, aborting");
       return;
     }
