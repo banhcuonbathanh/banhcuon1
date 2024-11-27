@@ -19,6 +19,7 @@ import { handleErrorApi, handleLoginRedirect } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 
 const LoginDialog1 = () => {
+  console.log("quananqr1/components/form/login-dialog.tsx LoginDialog1");
   const {
     login,
     isLoginDialogOpen,
@@ -28,6 +29,9 @@ const LoginDialog1 = () => {
   } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
+  useEffect(() => {
+    console.log("quananqr1/components/form/login-dialog.tsx 1212121");
+  }, []);
   // Use useEffect to log only once and track renders
   useEffect(() => {
     console.log(
