@@ -48,9 +48,9 @@ const LoginDialog1 = () => {
   });
 
   const onSubmit = async (data: LoginBodyType) => {
+    console.log("quananqr1/components/form/login-dialog.tsx onSubmit");
     try {
       await login(data);
-
       handleLoginRedirect(pathname, router);
     } catch (error: any) {
       handleErrorApi({

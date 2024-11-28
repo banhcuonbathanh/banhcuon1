@@ -223,7 +223,6 @@ export const generateFormattedName = (baseName: string) => {
   return `${baseName}_${year}_${month}_${day}_${hour}_${minute}_${second}_${uniqueId}`;
 };
 
-
 export const createRedirectUrl = (pathname: string | null): string | null => {
   // If no pathname is provided, return null
   if (pathname === null) return null;
@@ -250,13 +249,11 @@ export const createRedirectUrl = (pathname: string | null): string | null => {
   return redirectUrl.toString();
 };
 
-export const handleLoginRedirect = (
-  pathname: string | null, 
-  router: any
-) => {
+export const handleLoginRedirect = (pathname: string | null, router: any) => {
   const redirectUrl = createRedirectUrl(pathname);
-  
+  console.log("quananqr1/lib/utils.ts redirectUrl ", redirectUrl);
   if (redirectUrl) {
+    console.log("quananqr1/lib/utils.ts redirectUrl inside if");
     router.push(redirectUrl);
   }
 };

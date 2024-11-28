@@ -167,7 +167,7 @@ export const useAuthStore = create<AuthStore>()(
             sameSite: "strict"
           });
 
-          window.location.href = fromPath || "/";
+          // window.location.href = fromPath || "/";
         } catch (error) {
           console.error(
             "quananqr1/zusstand/new_auth/new_auth_controller.ts login error:",
