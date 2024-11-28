@@ -17,38 +17,38 @@ const menuItems = [
   {
     title: "Đơn hàng",
     Icon: ShoppingCart,
-    href: "/admin/order"
+    href: "manage/admin/order"
   },
   {
     title: "Bàn ăn",
     Icon: Table,
-    href: "/admin/table"
+    href: "manage/admin/table"
   },
   {
     title: "Món ăn",
     Icon: Salad,
-    href: "/admin/dish"
+    href: "admin/dish"
   },
   {
     title: "Set",
     Icon: Group,
-    href: "/admin/set"
+    href: "admin/set"
   },
 
   {
     title: "Order",
     Icon: Group,
-    href: "/admin/orders"
+    href: "admin/orders"
   },
   {
     title: "Phân tích",
     Icon: LineChart,
-    href: "/admin/analytics"
+    href: "admin/analytics"
   },
   {
     title: "Nhân viên",
     Icon: Users2,
-    href: "/admin/accounts"
+    href: "admin/accounts"
   }
 ];
 

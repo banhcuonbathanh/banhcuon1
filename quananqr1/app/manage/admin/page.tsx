@@ -8,18 +8,23 @@ export default async function ManageHomePage() {
   const cookieStore = cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
 
+  console.log("quananqr1/app/manage/admin/page.tsx ManageHomePage");
   // Double-check authorization on server side
   if (!accessToken) {
     redirect("/login");
   }
-  console.log("quananqr1/app/manage/admin/page.tsx ManageHomePage 222");
+  const decoded = decodeToken(accessToken);
+  console.log(
+    "quananqr1/app/manage/admin/page.tsx ManageHomePage 222 decoded",
+    decoded
+  );
   try {
     const decoded = decodeToken(accessToken);
     if (!(decoded.role === Role.Admin || decoded.role === Role.Employee)) {
-      redirect("/unauthorized");
+      redirect("/manage/employee");
     }
   } catch (error) {
-    redirect("/login");
+    redirect("/auth");
   }
   console.log("quananqr1/app/manage/admin/page.tsx ManageHomePage 333");
   return (

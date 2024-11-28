@@ -17,7 +17,7 @@ const pathRoleConfig: Record<string, RoleType[]> = {
 };
 
 export function middleware(request: NextRequest) {
-  console.log("quananqr1/middleware.ts 1111");
+  // console.log("quananqr1/middleware.ts 1111");
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get("accessToken")?.value;
   const refreshToken = request.cookies.get("refreshToken")?.value;
@@ -31,20 +31,20 @@ export function middleware(request: NextRequest) {
     if (fromPath && fromPath !== "/") {
       return NextResponse.redirect(new URL(fromPath, request.url));
     }
-    console.log("quananqr1/middleware.ts 1111 aaaaaaa");
+    // console.log("quananqr1/middleware.ts 1111 aaaaaaa");
     // Otherwise, redirect to welcome page
     return NextResponse.redirect(new URL(`${wellComaePage}`, request.url));
   }
-  console.log("quananqr1/middleware.ts 222222");
+  // console.log("quananqr1/middleware.ts 222222");
   // If trying to access protected route without authentication
   if (privatePaths.some((path) => pathname.startsWith(path)) && !accessToken) {
     const url = new URL(`${unAuthPaths}`, request.url);
     url.searchParams.set("from", pathname);
 
-    console.log("quananqr1/middleware.ts 222222 bbbbbbb");
+    // console.log("quananqr1/middleware.ts 222222 bbbbbbb");
     return NextResponse.redirect(url);
   }
-  console.log("quananqr1/middleware.ts 33333");
+  // console.log("quananqr1/middleware.ts 33333");
   // If authenticated, check role-based access
   if (accessToken) {
     try {
@@ -56,7 +56,7 @@ export function middleware(request: NextRequest) {
         if (pathname.startsWith(path) && !allowedRoles.includes(userRole)) {
           // Redirect to unauthorized page or default dashboard
 
-          console.log("quananqr1/middleware.ts 33333 ccccccc");
+          // console.log("quananqr1/middleware.ts 33333 ccccccc");
           return NextResponse.redirect(new URL("/", request.url));
         }
       }
@@ -67,7 +67,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   }
-  console.log("quananqr1/middleware.ts 444444");
+  // console.log("quananqr1/middleware.ts 444444");
   return NextResponse.next();
 }
 
