@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { decodeToken } from "@/lib/utils";
 import { Role } from "@/constants/type";
+import WebSocketWrapper from "../component/WebSocketWrapper";
 
 export default async function ManageHomePage() {
   console.log("quananqr1/app/manage/admin/page.tsx ManageHomePage");
@@ -30,7 +31,7 @@ export default async function ManageHomePage() {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold">Manage Dashboard</h1>
-      {/* Add your management dashboard content here */}
+      <WebSocketWrapper userId={decoded.id.toString()} role={decoded.role} />
     </div>
   );
 }

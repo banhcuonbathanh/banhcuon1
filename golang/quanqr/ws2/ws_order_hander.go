@@ -37,7 +37,11 @@ func (h *OrderMessageHandler) Handle(c *Client, msg Message) {
             // h.createOrder(msg.Payload)
             h.handleOrderMessageToStaff(c, msg)
             h.handleDirectMessage(c, msg)
-
+        case "create_message":
+            log.Println("golang/quanqr/ws2/ws_order_hander.go NewOrderMessageHandler case create_message")
+            // h.createOrder(msg.Payload)
+            h.handleOrderMessageToStaff(c, msg)
+            h.handleDirectMessage(c, msg)
         case "order1":
         log.Printf("Handling order message")
         h.handleOrderMessage(c, msg)
@@ -130,10 +134,10 @@ func (h *OrderMessageHandler) handleOrderMessageToStaff(c *Client, msg Message) 
     }
 
     // First, create the order in the database
-    if err := h.createOrder(directMsg.Payload); err != nil {
-        log.Printf("Error creating order: %v", err)
-        return
-    }
+    // if err := h.createOrder(directMsg.Payload); err != nil {
+    //     log.Printf("Error creating order: %v", err)
+    //     return
+    // }
 
     // After successful order creation, broadcast to staff
     staffMsg := Message{

@@ -1,15 +1,13 @@
 "use client";
 
 import { Heading } from "@/components/ui/heading";
-
 import { Separator } from "@/components/ui/separator";
-
 import {
   OrderDetailedResponse,
   PaginationInfo
 } from "@/schemaValidations/interface/type_order";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { get_Orders } from "@/zusstand/server/order-controller";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,18 +18,13 @@ import {
   CardContent
 } from "@/components/ui/card";
 
-import { DeliveryInterface } from "@/schemaValidations/interface/type_delivery";
 import { YourComponent1 } from "./admin-table";
-import { useApiStore } from "@/zusstand/api/api-controller";
-import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
-import { WebSocketMessage } from "@/zusstand/web-socket/websoket-service";
+import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 
-//   const { data: sets, isLoading: setsLoading, error: setsError, refetch: refetchSets } = useSetListQuery();
 interface OrderClientProps {
   initialData: OrderDetailedResponse[];
   initialPagination: PaginationInfo;
-  deliveryData: DeliveryInterface[];
 }
 
 export const OrderClient: React.FC<OrderClientProps> = ({
@@ -45,7 +38,10 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   const [pagination, setPagination] = useState(initialPagination);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { addMessageHandler } = useWebSocketStore();
+
   const handlePageChange = async (newPage: number) => {
+    console.log("OrderClient: handlePageChange triggered", newPage);
     setIsLoading(true);
     try {
       const orders = await get_Orders({
@@ -62,78 +58,29 @@ export const OrderClient: React.FC<OrderClientProps> = ({
       setIsLoading(false);
     }
   };
-  // ---------------------
-  const { http } = useApiStore();
-  const { guest, user, isGuest, openLoginDialog } = useAuthStore();
 
-  const { connect, disconnect, addMessageHandler } = useWebSocketStore();
-  // connect(isGuest ? guest : user, isGuest);
+  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
+    console.log("OrderClient: WebSocket message received:", message);
+
+    // Check if the message is a new order
+    if (message.type === "order" && message.action === "new_order") {
+      console.log("OrderClient: New order received, refreshing page");
+      // Refresh the first page when a new order is received
+      handlePageChange(1);
+    }
+  }, []);
 
   useEffect(() => {
-    connect(isGuest ? guest : user, isGuest);
-    console.log(
-      "quananqr1/app/admin/orders/component/order-client.tsx connect"
-    );
+    // Add message handler specifically for new orders
+    const removeHandler = addMessageHandler(handleWebSocketMessage);
+
+    // Cleanup function
     return () => {
-      disconnect();
+      removeHandler(); // Remove the message handler
     };
-  }, [connect, disconnect, guest, user, isGuest]);
-
-  const handleWebSocketMessage = useCallback(
-    (message: WebSocketMessage) => {
-      console.log(
-        "quananqr1/app/admin/orders/component/order-client.tsx message: 111111",
-        message
-      );
-      if (message.type === "NEW_ORDER") {
-        console.log(
-          "quananqr1/app/admin/orders/component/order-client.tsx message: 111111",
-          message
-        );
-
-        setData((prevData) => {
-          if (currentPage === 1) {
-            const newOrder: OrderDetailedResponse = {
-              id: 12,
-              table_number: 1,
-              status: "message.content.status",
-              created_at: " message.content.timestamp",
-              data_set: [],
-              data_dish: [],
-              guest_id: 0,
-              user_id: 0,
-              is_guest: false,
-              order_handler_id: 0,
-              updated_at: "",
-              total_price: 0,
-              bow_chili: 0,
-              bow_no_chili: 0,
-              takeAway: false,
-              chiliNumber: 0,
-              table_token: "",
-              order_name: "",
-              deliveryData: undefined
-            };
-            return [newOrder, ...prevData.slice(0, -1)];
-          }
-          return prevData;
-        });
-
-        setPagination((prev) => ({
-          ...prev,
-          total_items: prev.total_items + 1
-        }));
-      }
-    },
-    [currentPage]
-  );
-  useEffect(() => {
-    // Register the handler on mount
-    const unsubscribe = addMessageHandler(handleWebSocketMessage);
-
-    // Cleanup the handler on unmount
-    return unsubscribe;
   }, [addMessageHandler, handleWebSocketMessage]);
+
+
   return (
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <div className="space-y-2">
@@ -197,22 +144,6 @@ export const OrderClient: React.FC<OrderClientProps> = ({
                     }
                   >
                     Next
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      connect(isGuest ? guest : user, isGuest);
-                      console.log(
-                        "quananqr1/app/admin/orders/component/order-client.tsx Button "
-                      );
-                    }}
-                    disabled={
-                      currentPage === pagination.total_pages || isLoading
-                    }
-                  >
-                    connect
                   </Button>
                 </div>
               </div>

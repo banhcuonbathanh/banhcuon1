@@ -1,10 +1,9 @@
 export interface WebSocketMessage {
   type: string;
-  content: any;
-  sender: string;
-  timestamp: string;
-  tableID?: string;
-  orderID?: string;
+  action: any;
+  payload: {};
+  role: string;
+  roomId?: string;
 }
 
 export interface OrderContent {

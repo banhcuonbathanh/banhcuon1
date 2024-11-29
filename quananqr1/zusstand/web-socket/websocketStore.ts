@@ -1,6 +1,7 @@
 import { create } from "zustand";
-import { WebSocketMessage, WebSocketService } from "./websoket-service";
+import { WebSocketService } from "./websoket-service";
 import envConfig from "@/config";
+import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 
 interface WebSocketState {
   socket: WebSocketService | null;
@@ -119,12 +120,17 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
 
     socket.onConnect(() => set({ isConnected: true }));
     socket.onDisconnect(() => set({ isConnected: false }));
+
     socket.onMessage((message: WebSocketMessage) => {
-      console.log(
-        "quananqr1/zusstand/web-socket/websocketStore.ts message",
-        message
-      );
+      const handlers = get().messageHandlers;
+      handlers.forEach((handler) => handler(message));
     });
+    // socket.onMessage((message: WebSocketMessage) => {
+    //   console.log(
+    //     "quananqr1/zusstand/web-socket/websocketStore.ts message",
+    //     message
+    //   );
+    // });
     set({ socket });
   },
 

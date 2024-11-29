@@ -9,15 +9,15 @@ export default async function OrdersPage() {
     page: 1,
     page_size: 10
   });
-  console.log(
-    "quananqr1/app/manage/admin/orders/page.tsx initialOrders ",
-    initialOrders
-  );
+  // console.log(
+  //   "quananqr1/app/manage/admin/orders/page.tsx initialOrders ",
+  //   initialOrders
+  // );
   return (
     <OrderClient
       initialData={initialOrders.data}
       initialPagination={initialOrders.pagination}
-      deliveryData={[]}
+      // deliveryData={[]}
     />
   );
 }

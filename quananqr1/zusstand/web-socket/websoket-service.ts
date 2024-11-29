@@ -1,24 +1,25 @@
 import envConfig from "@/config";
 import { CreateOrderRequest } from "@/schemaValidations/interface/type_order";
+import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 
 export interface OrderPayload {
   orderId: number;
   orderData: CreateOrderRequest;
 }
 
-export type WebSocketMessage =
-  | {
-      type: "NEW_ORDER";
-      data: OrderPayload;
-    }
-  | {
-      type: "ORDER_STATUS_UPDATE";
-      data: {
-        orderId: number;
-        status: string;
-        timestamp: string;
-      };
-    };
+// export type WebSocketMessage =
+//   | {
+//       type: "NEW_ORDER";
+//       data: OrderPayload;
+//     }
+//   | {
+//       type: "ORDER_STATUS_UPDATE";
+//       data: {
+//         orderId: number;
+//         status: string;
+//         timestamp: string;
+//       };
+//     };
 
 export class WebSocketService {
   private ws: WebSocket | null = null;

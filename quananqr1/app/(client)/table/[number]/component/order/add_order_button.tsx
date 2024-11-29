@@ -7,6 +7,7 @@ import { useOrderCreationStore } from "./logic";
 import { useApiStore } from "@/zusstand/api/api-controller";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
+import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 
 interface OrderCreationComponentProps {
   table_token: string;
@@ -144,6 +145,10 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       websocket: { disconnect, isConnected, sendMessage },
       openLoginDialog
     });
+
+    console.log(
+      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx done for creating order"
+    );
   };
 
   const getButtonText = () => {
@@ -174,7 +179,92 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       disconnect();
     };
   }, []);
-
+  //
+  const sendMessage1 = async () => {
+    // Ensure auth state is synced before proceeding
+    useAuthStore.getState().syncAuthState();
+    const currentAuthState = useAuthStore.getState();
+  
+    if (!currentAuthState.isLogin) {
+      console.log("[SendMessage] User not logged in, showing login dialog");
+      openLoginDialog();
+      return;
+    }
+  
+    if (!isConnected) {
+      console.log("Attempting to establish WebSocket connection");
+      await initializeWebSocket();
+      if (!isConnected) {
+        console.log("[SendMessage] Failed to establish connection, aborting message send");
+        return;
+      }
+    }
+  
+    try {
+      // Get order summary from the store
+      const { dishes, sets, totalPrice } = getOrderSummary();
+  
+      const messagePayload: WebSocketMessage = {
+        "type": "order",
+        "action": "create_message",
+        "payload": {
+            "fromUserId": "1",
+            "toUserId": "2",
+            "type": "order",
+            "action": "new_order",
+            "payload": {
+                "guest_id": null,
+                "user_id": 1,
+                "is_guest": false,
+                "table_number": 1,
+                "order_handler_id": 1,
+                "status": "pending",
+                "created_at": "2024-10-21T12:00:00Z",
+                "updated_at": "2024-10-21T12:00:00Z",
+                "total_price": 5000,
+                "order_name": "test",
+                "dish_items": [
+                    {
+                        "dish_id": 1,
+                        "quantity": 2
+                    },
+                    {
+                        "dish_id": 2,
+                        "quantity": 2
+                    },
+                    {
+                        "dish_id": 3,
+                        "quantity": 4
+                    }
+                ],
+                "set_items": [
+                    {
+                        "set_id": 1,
+                        "quantity": 3
+                    },
+                    {
+                        "set_id": 2,
+                        "quantity": 3
+                    }
+                ],
+                "bow_chili": 1,
+                "bow_no_chili": 2,
+                "take_away": true,
+                "chili_number": 3,
+                "Table_token": "MTp0YWJsZTo0ODgzMjc3NDQy.2AZhkuCtKB0"
+            }
+        },
+        "role": "User",
+        "roomId": "1"
+      };
+  
+      sendMessage(messagePayload);
+      console.log("[SendMessage] Message sent successfully", messagePayload);
+    } catch (error) {
+      console.error("[SendMessage] Error sending message:", error);
+    }
+  };
+  //
   return (
     <div className="mt-4">
       <Button
@@ -183,6 +273,14 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         disabled={isButtonDisabled()}
       >
         {getButtonText()}
+      </Button>
+
+      <Button
+        className="w-full"
+        onClick={sendMessage1}
+        disabled={isButtonDisabled()}
+      >
+        {"send message"}
       </Button>
     </div>
   );
