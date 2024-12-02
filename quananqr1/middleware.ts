@@ -8,7 +8,7 @@ const employeePaths = ["/manage/employee"];
 
 const privatePaths = [...adminPaths, ...employeePaths];
 const unAuthPaths = ["/auth"];
-const wellComaePage = ["/"];
+const wellComePage = ["/"];
 
 // Define allowed roles for different paths
 const pathRoleConfig: Record<string, RoleType[]> = {
@@ -17,46 +17,46 @@ const pathRoleConfig: Record<string, RoleType[]> = {
 };
 
 export function middleware(request: NextRequest) {
-  // console.log("quananqr1/middleware.ts 1111");
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get("accessToken")?.value;
-  const refreshToken = request.cookies.get("refreshToken")?.value;
 
-  // If trying to access login pages while already authenticated
-  if (unAuthPaths.includes(pathname) && accessToken) {
-    // Check if there's a 'from' parameter to redirect after login
-    const fromPath = request.nextUrl.searchParams.get("from");
-
-    // If there's a specific path to redirect to, use that
-    if (fromPath && fromPath !== "/") {
-      return NextResponse.redirect(new URL(fromPath, request.url));
-    }
-    // console.log("quananqr1/middleware.ts 1111 aaaaaaa");
-    // Otherwise, redirect to welcome page
-    return NextResponse.redirect(new URL(`${wellComaePage}`, request.url));
-  }
-  // console.log("quananqr1/middleware.ts 222222");
-  // If trying to access protected route without authentication
-  if (privatePaths.some((path) => pathname.startsWith(path)) && !accessToken) {
-    const url = new URL(`${unAuthPaths}`, request.url);
-    url.searchParams.set("from", pathname);
-
-    // console.log("quananqr1/middleware.ts 222222 bbbbbbb");
-    return NextResponse.redirect(url);
-  }
-  // console.log("quananqr1/middleware.ts 33333");
-  // If authenticated, check role-based access
   if (accessToken) {
+    const decoded = decodeToken(accessToken);
+
+    console.log("quananqr1/middleware.ts decoded", decoded);
+  }
+
+  // Handle direct access to manage routes
+  if (pathname === "/manage" || pathname.startsWith("/manage/")) {
+    // If no token, redirect to login
+    if (!accessToken) {
+      const url = new URL("/auth", request.url);
+      url.searchParams.set("from", pathname);
+      return NextResponse.redirect(url);
+    }
+
     try {
       const decoded = decodeToken(accessToken);
+
+      console.log("quananqr1/middleware.ts decoded", decoded);
       const userRole = decoded.role as RoleType;
 
-      // Check if the current path requires specific roles
+      // Check for specific manage routes
+      if (pathname === "/manage") {
+        // Redirect to appropriate dashboard based on role
+        if (userRole === Role.Admin) {
+          return NextResponse.redirect(new URL("/manage/admin", request.url));
+        } else if (userRole === Role.Employee) {
+          return NextResponse.redirect(
+            new URL("/manage/employee", request.url)
+          );
+        }
+      }
+
+      // Check role-based access for specific manage routes
       for (const [path, allowedRoles] of Object.entries(pathRoleConfig)) {
         if (pathname.startsWith(path) && !allowedRoles.includes(userRole)) {
-          // Redirect to unauthorized page or default dashboard
-
-          // console.log("quananqr1/middleware.ts 33333 ccccccc");
+          // Redirect to welcome page if not authorized
           return NextResponse.redirect(new URL("/", request.url));
         }
       }
@@ -67,7 +67,23 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   }
-  // console.log("quananqr1/middleware.ts 444444");
+
+  // Previous authentication and redirect logic remains the same
+  if (unAuthPaths.includes(pathname) && accessToken) {
+    const fromPath = request.nextUrl.searchParams.get("from");
+
+    if (fromPath && fromPath !== "/") {
+      return NextResponse.redirect(new URL(fromPath, request.url));
+    }
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (privatePaths.some((path) => pathname.startsWith(path)) && !accessToken) {
+    const url = new URL("/auth", request.url);
+    url.searchParams.set("from", pathname);
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 }
 

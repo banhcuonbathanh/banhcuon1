@@ -32,6 +32,7 @@ interface AuthState {
   isRegisterDialogOpen: boolean;
   isGuest: boolean;
   isLogin: boolean;
+  persistedUser: User | null; // New field for persisted user data
 }
 
 interface AuthActions {
@@ -51,9 +52,9 @@ interface AuthActions {
   closeGuestDialog: () => void;
   openRegisterDialog: () => void;
   closeRegisterDialog: () => void;
-
   syncAuthState: () => void;
   initializeAuthFromCookies: () => void;
+  setPersistedUser: (user: User | null) => void; // New action
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -73,7 +74,10 @@ export const useAuthStore = create<AuthStore>()(
       isGuest: false,
       userId: null,
       isLogin: false,
-
+      persistedUser: null, // Initialize persisted user
+      setPersistedUser: (user: User | null) => {
+        set({ persistedUser: user });
+      },
       register: async (body: RegisterBodyType) => {
         console.log(
           "quananqr1/zusstand/new_auth/new_auth_controller.ts register function called with body:",
@@ -122,12 +126,6 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       login: async (body: LoginBodyType, fromPath?: string | null) => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts login function called with body:",
-          body,
-          "fromPath:",
-          fromPath
-        );
         set({ loading: true, error: null });
         try {
           const response = await useApiStore
@@ -137,16 +135,14 @@ export const useAuthStore = create<AuthStore>()(
               body
             );
 
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts login successful, response:",
-            response.data
-          );
+          const userData = {
+            ...response.data.user,
+            password: body.password
+          };
 
           set({
-            user: {
-              ...response.data.user,
-              password: body.password
-            },
+            user: userData,
+            persistedUser: userData, // Store in persisted state
             userId: response.data.user.id.toString(),
             guest: null,
             isGuest: false,
@@ -157,6 +153,7 @@ export const useAuthStore = create<AuthStore>()(
             loading: false,
             isLogin: true
           });
+
           useApiStore.getState().setAccessToken(response.data.access_token);
           Cookies.set("accessToken", response.data.access_token, {
             secure: true,
@@ -166,13 +163,7 @@ export const useAuthStore = create<AuthStore>()(
             secure: true,
             sameSite: "strict"
           });
-
-          // window.location.href = fromPath || "/";
         } catch (error) {
-          console.error(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts login error:",
-            error
-          );
           set({
             error: error instanceof Error ? error.message : "Login failed",
             loading: false,
@@ -185,12 +176,6 @@ export const useAuthStore = create<AuthStore>()(
         body: GuestLoginBodyType,
         fromPath?: string | null
       ) => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogin function called with body:",
-          body,
-          "fromPath:",
-          fromPath
-        );
         set({ loading: true, error: null });
         try {
           useApiStore.getState().setTableToken(body.token);
@@ -198,10 +183,7 @@ export const useAuthStore = create<AuthStore>()(
           const guest_login_link =
             envConfig.NEXT_PUBLIC_API_ENDPOINT +
             envConfig.NEXT_PUBLIC_API_Guest_Login;
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts guest_login_link:",
-            guest_login_link
-          );
+
           const response = await useApiStore
             .getState()
             .http.post<GuestLoginResponse>(`${guest_login_link}`, {
@@ -210,15 +192,13 @@ export const useAuthStore = create<AuthStore>()(
               token: body.token
             });
 
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogin successful, response:",
-            response.data
-          );
+          const guestData = response.data.guest;
 
           set({
-            userId: response.data.guest.id.toString(),
+            userId: guestData.id.toString(),
             user: null,
-            guest: response.data.guest,
+            guest: guestData,
+            persistedUser: null, // Clear persisted user when switching to guest
             isGuest: true,
             accessToken: response.data.access_token,
             refreshToken: response.data.refresh_token,
@@ -242,10 +222,6 @@ export const useAuthStore = create<AuthStore>()(
 
           window.location.href = fromPath || "/";
         } catch (error) {
-          console.error(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogin error:",
-            error
-          );
           set({
             error:
               error instanceof Error ? error.message : "Guest login failed",
@@ -256,9 +232,6 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: async () => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts logout function called"
-        );
         set({ loading: true, error: null });
         try {
           Cookies.remove("accessToken", { path: "/" });
@@ -270,13 +243,10 @@ export const useAuthStore = create<AuthStore>()(
             .getState()
             .http.post(`${envConfig.NEXT_PUBLIC_API_Logout}`);
 
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts logout successful"
-          );
-
           set({
             userId: null,
             user: null,
+            persistedUser: null, // Clear persisted user
             guest: null,
             isGuest: false,
             accessToken: null,
@@ -286,10 +256,6 @@ export const useAuthStore = create<AuthStore>()(
             isLogin: false
           });
         } catch (error) {
-          console.error(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts logout error:",
-            error
-          );
           Cookies.remove("accessToken", { path: "/" });
           Cookies.remove("refreshToken", { path: "/" });
           useApiStore.getState().setAccessToken(null);
@@ -297,6 +263,7 @@ export const useAuthStore = create<AuthStore>()(
           set({
             userId: null,
             user: null,
+            persistedUser: null, // Clear persisted user
             guest: null,
             isGuest: false,
             accessToken: null,
@@ -309,16 +276,12 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       guestLogout: async (body: LogoutRequest) => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogout function called with body:",
-          body
-        );
-        const guest_logout_link =
-          envConfig.NEXT_PUBLIC_API_ENDPOINT +
-          envConfig.NEXT_PUBLIC_API_Guest_Logout;
-
         set({ loading: true, error: null });
         try {
+          const guest_logout_link =
+            envConfig.NEXT_PUBLIC_API_ENDPOINT +
+            envConfig.NEXT_PUBLIC_API_Guest_Logout;
+
           Cookies.remove("accessToken", { path: "/" });
           Cookies.remove("refreshToken", { path: "/" });
 
@@ -326,14 +289,11 @@ export const useAuthStore = create<AuthStore>()(
 
           await useApiStore.getState().http.post(`${guest_logout_link}`, body);
 
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogout successful"
-          );
-
           set({
             userId: null,
             user: null,
             guest: null,
+            persistedUser: null, // Clear persisted user on guest logout
             isGuest: false,
             accessToken: null,
             refreshToken: null,
@@ -342,10 +302,6 @@ export const useAuthStore = create<AuthStore>()(
             isLogin: false
           });
         } catch (error) {
-          console.error(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts guestLogout error:",
-            error
-          );
           Cookies.remove("accessToken", { path: "/" });
           Cookies.remove("refreshToken", { path: "/" });
           useApiStore.getState().setAccessToken(null);
@@ -354,6 +310,7 @@ export const useAuthStore = create<AuthStore>()(
             userId: null,
             user: null,
             guest: null,
+            persistedUser: null,
             isGuest: false,
             accessToken: null,
             refreshToken: null,
@@ -364,7 +321,6 @@ export const useAuthStore = create<AuthStore>()(
           });
         }
       },
-
       refreshAccessToken: async () => {
         console.log(
           "quananqr1/zusstand/new_auth/new_auth_controller.ts refreshAccessToken function called"
@@ -459,51 +415,28 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       syncAuthState: () => {
-        // console.log(
-        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState function called"
-        // );
         const accessToken = Cookies.get("accessToken");
         const refreshToken = Cookies.get("refreshToken");
-
-        // console.log(
-        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState accessToken, refreshToken:",
-        //   accessToken,
-        //   refreshToken
-        // );
+        const currentState = get();
 
         if (accessToken && refreshToken) {
           try {
             const decoded = decodeToken(accessToken);
 
-            // console.log(
-            //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState decoded token:",
-            //   decoded
-            // );
-
-            const newState = {
+            set({
               accessToken,
               refreshToken,
               isLogin: true,
-
               isGuest: decoded.role === "Guest",
-              userId: decoded.id.toString()
-            };
-
-            // console.log(
-            //   "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState new state:",
-            //   newState
-            // );
-
-            set(newState);
+              userId: decoded.id.toString(),
+              user: currentState.persistedUser // Restore user from persisted state
+            });
           } catch (error) {
-            console.error(
-              "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState error:",
-              error
-            );
-            // If token is invalid, clear auth state
+            console.error("Token validation failed during sync:", error);
             set({
               userId: null,
               user: null,
+              persistedUser: null,
               guest: null,
               accessToken: null,
               refreshToken: null,
@@ -514,10 +447,6 @@ export const useAuthStore = create<AuthStore>()(
             Cookies.remove("refreshToken");
           }
         } else {
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts syncAuthState: No tokens found"
-          );
-          // No tokens found, clear auth state
           set({
             userId: null,
             user: null,
@@ -550,7 +479,10 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: "auth-storage",
-      skipHydration: true
+      partialize: (state) => ({
+        persistedUser: state.persistedUser,
+        guest: state.guest // Also persist guest information
+      })
     }
   )
 );
