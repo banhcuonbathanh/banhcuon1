@@ -38,7 +38,7 @@ export function middleware(request: NextRequest) {
     }
     try {
       const decoded = decodeToken(accessToken);
-      // console.log("quananqr1/middleware.ts decoded", decoded);
+      console.log("quananqr1/middleware.ts decoded", decoded);
       const userRole = decoded.role as RoleType;
       // Check for specific manage routes
       if (pathname === "/manage") {

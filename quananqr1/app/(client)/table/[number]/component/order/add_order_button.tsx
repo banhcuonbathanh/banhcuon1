@@ -106,7 +106,8 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         isGuest,
         userToken: wstoken1.token,
         tableToken: table_token,
-        role: isGuest ? "Guest" : "User"
+        role: isGuest ? "Guest" : "User",
+        email: emailIdentifier
       });
     } catch (error) {
       console.error("[OrderCreation] Connection error:", error);
@@ -156,10 +157,12 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       websocket: { disconnect, isConnected, sendMessage },
       openLoginDialog
     });
-
     console.log(
-      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx done for creating order",
-      order
+      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx done for creating order done qwqwqwqwqwq"
+    );
+    sendMessage1();
+    console.log(
+      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx done for creating order done 121212"
     );
   };
 
@@ -193,6 +196,9 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   }, []);
   //
   const sendMessage1 = async () => {
+    console.log(
+      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx sendMessage1"
+    );
     // Ensure auth state is synced before proceeding
     useAuthStore.getState().syncAuthState();
     const currentAuthState = useAuthStore.getState();

@@ -197,68 +197,11 @@ func (h *Hub) GetClientsByRole(role Role) []ClientInfo {
 
 
 
-func (h *Hub) ListClients() []map[string]interface{} {
-    h.mu.Lock()
-    defer h.mu.Unlock()
-    
-    clientList := make([]map[string]interface{}, 0)
-    
-    for id, info := range h.RegisteredClients {
-        clientInfo := map[string]interface{}{
-            "id":       id,
-            "role":     info.Role,
-            "roomID":   info.RoomID,
-            "joinedAt": info.JoinedAt,
-            "active":   true,
-            "userData": info.UserData,
-        }
-        clientList = append(clientList, clientInfo)
-    }
-    
-    log.Printf("golang/quanqr/ws2/ws2_hub.go Total connected clients: %d", len(h.RegisteredClients))
-    for role := range map[Role]bool{
-        RoleGuest: true,
-        RoleUser: true,
-        RoleEmployee: true,
-        RoleAdmin: true,
-        RoleKitchen: true,
-    } {
-        count := 0
-        for _, info := range h.RegisteredClients {
-            if info.Role == role {
-                count++
-            }
-        }
-        if count > 0 {
-            log.Printf("Clients with role %s: %d", role, count)
-        }
-    }
-    
-    return clientList
-}
+// 
 
 
 
 
-func (h *Hub) logRegisteredClients() {
-    total := len(h.RegisteredClients)
-    
-    // Log total count
-    log.Printf("Total Clients: %d\n+%s+%s+", total, 
-        strings.Repeat("-", 38), strings.Repeat("-", 15))
-    
-    // Table header
-    log.Printf("| %-36s | %-13s |", "Client ID", "Role")
-    log.Printf("+%s+%s+", strings.Repeat("-", 38), strings.Repeat("-", 15))
-    
-    // Table content
-    for _, info := range h.RegisteredClients {
-        log.Printf("| %-36s | %-13s |", info.ID, info.Role)
-    }
-    
-    // Table footer
-    log.Printf("+%s+%s+", strings.Repeat("-", 38), strings.Repeat("-", 15))
-}
 
 func (h *Hub) registerClient(client *Client) {
     h.mu.Lock()
@@ -305,3 +248,77 @@ func (h *Hub) registerClient(client *Client) {
 
 
 
+
+
+func (h *Hub) logRegisteredClients() {
+    total := len(h.RegisteredClients)
+    
+    // Log total count
+    log.Printf("Total Clients: %d\n+%s+%s+%s+", total, 
+        strings.Repeat("-", 36), strings.Repeat("-", 15), strings.Repeat("-", 30))
+    
+    // Table header
+    log.Printf("| %-36s | %-13s | %-28s |", "Client ID", "Role", "Email")
+    log.Printf("+%s+%s+%s+", 
+        strings.Repeat("-", 36), strings.Repeat("-", 15), strings.Repeat("-", 30))
+    
+    // Table content
+    for _, info := range h.RegisteredClients {
+        // Extract email from UserData, defaulting to "N/A" if not found
+        email, _ := info.UserData["email"].(string)
+        if email == "" {
+            email = "N/A"
+        }
+        
+        log.Printf("| %-36s | %-13s | %-28s |", info.ID, info.Role, email)
+    }
+    
+    // Table footer
+    log.Printf("+%s+%s+%s+", 
+        strings.Repeat("-", 36), strings.Repeat("-", 15), strings.Repeat("-", 30))
+}
+
+
+
+func (h *Hub) ListClients() []map[string]interface{} {
+    h.mu.Lock()
+    defer h.mu.Unlock()
+    
+    clientList := make([]map[string]interface{}, 0)
+    
+    for id, info := range h.RegisteredClients {
+        clientInfo := map[string]interface{}{
+            "id":       id,
+            "role":     info.Role,
+            "roomID":   info.RoomID,
+            "joinedAt": info.JoinedAt,
+            "active":   true,
+            "userData": info.UserData,
+        }
+        clientList = append(clientList, clientInfo)
+    }
+    
+    // Updated logging to use h.RegisteredClients directly
+    log.Printf("golang/quanqr/ws2/ws2_hub.go Total connected clients: %d", len(h.RegisteredClients))
+    
+    // Accurate role-based counting using RegisteredClients
+    for role := range map[Role]bool{
+        RoleGuest: true,
+        RoleUser: true,
+        RoleEmployee: true,
+        RoleAdmin: true,
+        RoleKitchen: true,
+    } {
+        count := 0
+        for _, info := range h.RegisteredClients {
+            if info.Role == role {
+                count++
+            }
+        }
+        if count > 0 {
+            log.Printf("Clients with role %s: %d", role, count)
+        }
+    }
+    
+    return clientList
+}

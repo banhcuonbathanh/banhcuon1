@@ -1,11 +1,6 @@
-import envConfig from "@/config";
-import { CreateOrderRequest } from "@/schemaValidations/interface/type_order";
+
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 
-export interface OrderPayload {
-  orderId: number;
-  orderData: CreateOrderRequest;
-}
 
 // export type WebSocketMessage =
 //   | {
@@ -33,13 +28,16 @@ export class WebSocketService {
   private role: string;
   private userToken: string;
   private tableToken: string;
+  private email: string;
 
   constructor(
     userName: string,
     role: string,
     userToken: string,
-    tableToken: string
+    tableToken: string,
+    email: string
   ) {
+    this.email = email;
     this.userName = userName;
     this.role = role;
     this.userToken = userToken;
@@ -51,7 +49,9 @@ export class WebSocketService {
     try {
       const wsUrl = `ws://localhost:8888/ws/${this.role.toLowerCase()}/${
         this.userName
-      }?token=${this.userToken}&tableToken=${this.tableToken}`;
+      }?token=${this.userToken}&tableToken=${this.tableToken}&email=${
+        this.email
+      }`;
       console.log(
         "quananqr1/zusstand/web-socket/websoket-service.ts wsUrl",
         wsUrl

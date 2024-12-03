@@ -98,15 +98,24 @@ func (wr *WebSocketRouter) RegisterRoutes(r chi.Router) {
 
 func (wr *WebSocketRouter) handleWebSocket(w http.ResponseWriter, r *http.Request, role Role) {
     log.Println("golang/quanqr/ws2/ws2_route.go handleWebSocket")
+
+    // Extract all required parameters
+    userToken := r.URL.Query().Get("token")
+    tableToken := r.URL.Query().Get("tableToken")
+    email := r.URL.Query().Get("email")
+
+    // Validate required parameters
+    if email == "" {
+        log.Printf("Error: email parameter is required")
+        http.Error(w, "Email parameter is required", http.StatusBadRequest)
+        return
+    }
+
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
         log.Printf("Error upgrading connection: %v", err)
         return
     }
-
-    // Extract additional parameters
-    userToken := r.URL.Query().Get("token")
-    tableToken := r.URL.Query().Get("tableToken")
 
     client := &Client{
         Hub:    wr.hub,
@@ -118,13 +127,11 @@ func (wr *WebSocketRouter) handleWebSocket(w http.ResponseWriter, r *http.Reques
         UserData: map[string]interface{}{
             "token":      userToken,
             "tableToken": tableToken,
+            "email":      email,
         },
     }
-	// log.Printf("golang/quanqr/ws2/ws2_route.go handleWebSocket client %+v", client)
-
 
     client.Hub.Register <- client
-
   
     go client.ReadPump()
     go client.WritePump()

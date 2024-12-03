@@ -14,6 +14,7 @@ interface WebSocketState {
     userToken: string;
     tableToken: string;
     role: string;
+    email: string;
   }) => Promise<void>;
   disconnect: () => void;
   sendMessage: (message: WebSocketMessage) => void;
@@ -77,7 +78,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     }
   },
 
-  connect: async ({ userId, isGuest, userToken, tableToken, role }) => {
+  connect: async ({ userId, isGuest, userToken, tableToken, role, email }) => {
     console.log("quananqr1/zusstand/web-socket/websocketStore.ts");
 
     // Check if token is expired and fetch new one if needed
@@ -111,7 +112,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       tableToken
     );
 
-    const socket = new WebSocketService(userId, role, userToken, tableToken);
+    const socket = new WebSocketService(userId, role, userToken, tableToken, email);
 
     socket.onMessage((message: WebSocketMessage) => {
       const handlers = get().messageHandlers;
