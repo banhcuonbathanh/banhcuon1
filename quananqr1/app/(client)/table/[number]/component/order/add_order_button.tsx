@@ -137,11 +137,11 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       orderSummary
     );
     if (orderSummary.totalItems === 0) {
-      console.log("[OrderCreation] No items in order, aborting");
+      console.log("[OrderCreation] No items in order, aborting 111111");
       return;
     }
     if (tableNumber === null) {
-      console.log("[OrderCreation] No items in order, aborting");
+      console.log("[OrderCreation] No items in order, aborting 22222");
       return;
     }
 

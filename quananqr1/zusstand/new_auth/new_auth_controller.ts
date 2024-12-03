@@ -54,7 +54,7 @@ interface AuthActions {
   closeRegisterDialog: () => void;
   syncAuthState: () => void;
   initializeAuthFromCookies: () => void;
-  setPersistedUser: (user: User | null) => void; // New action
+  // setPersistedUser: (user: User | null) => void; // New action
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -75,9 +75,9 @@ export const useAuthStore = create<AuthStore>()(
       userId: null,
       isLogin: false,
       persistedUser: null, // Initialize persisted user
-      setPersistedUser: (user: User | null) => {
-        set({ persistedUser: user });
-      },
+      // setPersistedUser: (user: User | null) => {
+      //   set({ persistedUser: user });
+      // },
       register: async (body: RegisterBodyType) => {
         console.log(
           "quananqr1/zusstand/new_auth/new_auth_controller.ts register function called with body:",
@@ -478,11 +478,11 @@ export const useAuthStore = create<AuthStore>()(
       }
     }),
     {
-      name: "auth-storage",
-      partialize: (state) => ({
-        persistedUser: state.persistedUser,
-        guest: state.guest // Also persist guest information
-      })
+      name: "auth-storage"
+      // partialize: (state) => ({
+      //   persistedUser: state.persistedUser,
+      //   guest: state.guest
+      // })
     }
   )
 );

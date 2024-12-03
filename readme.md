@@ -419,3 +419,6 @@ grep -r "from.\*LoginDialog" .
 find . -type f \( -name "_.tsx" -o -name "_.jsx" \) -exec grep -l "useAuthStore" {} \;
 
 grep -r "from.\*login-dialog" . ---> ok
+
+-------------------------- zustand optimization -----------------------------
+how to optimize Zustand store subscriptions to prevent unnecessary rerenders.

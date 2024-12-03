@@ -19,13 +19,15 @@ const pathRoleConfig: Record<string, RoleType[]> = {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get("accessToken")?.value;
-
+  console.log("Middleware - Original URL:", request.nextUrl.pathname);
+  console.log(
+    "Middleware - Original Search Params:",
+    request.nextUrl.searchParams
+  );
   if (accessToken) {
     const decoded = decodeToken(accessToken);
-
     console.log("quananqr1/middleware.ts decoded", decoded);
   }
-
   // Handle direct access to manage routes
   if (pathname === "/manage" || pathname.startsWith("/manage/")) {
     // If no token, redirect to login
@@ -34,13 +36,10 @@ export function middleware(request: NextRequest) {
       url.searchParams.set("from", pathname);
       return NextResponse.redirect(url);
     }
-
     try {
       const decoded = decodeToken(accessToken);
-
       console.log("quananqr1/middleware.ts decoded", decoded);
       const userRole = decoded.role as RoleType;
-
       // Check for specific manage routes
       if (pathname === "/manage") {
         // Redirect to appropriate dashboard based on role
@@ -52,7 +51,6 @@ export function middleware(request: NextRequest) {
           );
         }
       }
-
       // Check role-based access for specific manage routes
       for (const [path, allowedRoles] of Object.entries(pathRoleConfig)) {
         if (pathname.startsWith(path) && !allowedRoles.includes(userRole)) {
@@ -67,23 +65,19 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   }
-
   // Previous authentication and redirect logic remains the same
   if (unAuthPaths.includes(pathname) && accessToken) {
     const fromPath = request.nextUrl.searchParams.get("from");
-
     if (fromPath && fromPath !== "/") {
       return NextResponse.redirect(new URL(fromPath, request.url));
     }
     return NextResponse.redirect(new URL("/", request.url));
   }
-
   if (privatePaths.some((path) => pathname.startsWith(path)) && !accessToken) {
     const url = new URL("/auth", request.url);
     url.searchParams.set("from", pathname);
     return NextResponse.redirect(url);
   }
-
   return NextResponse.next();
 }
 
