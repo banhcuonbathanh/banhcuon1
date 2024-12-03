@@ -8,7 +8,6 @@ interface OrderCreationState {
   isLoading: boolean;
   createOrder: (params: {
     topping: string;
-
     Table_token: string;
     http: any; // Replace with proper type from your API store
     auth: {
@@ -22,7 +21,6 @@ interface OrderCreationState {
       clearOrder: () => void;
     };
     websocket: {
-  
       disconnect: () => void;
       isConnected: boolean;
       sendMessage: (message: any) => void;
@@ -30,6 +28,7 @@ interface OrderCreationState {
     openLoginDialog: () => void;
   }) => Promise<void>;
 }
+
 
 export const useOrderCreationStore = create<OrderCreationState>((set) => ({
   isLoading: false,

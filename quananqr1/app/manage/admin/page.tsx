@@ -2,36 +2,33 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { decodeToken } from "@/lib/utils";
 import { Role } from "@/constants/type";
-import WebSocketWrapper from "../component/WebSocketWrapper";
+import WebSocketWrapper from "@/components/websocket/WebSocketWrapper";
+
 
 export default async function ManageHomePage() {
   console.log("quananqr1/app/manage/admin/page.tsx ManageHomePage");
   const cookieStore = cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
 
-  console.log("quananqr1/app/manage/admin/page.tsx ManageHomePage");
   // Double-check authorization on server side
   if (!accessToken) {
     redirect("/login");
   }
-  const decoded = decodeToken(accessToken);
-  console.log(
-    "quananqr1/app/manage/admin/page.tsx ManageHomePage 222 decoded",
-    decoded
-  );
+
   try {
     const decoded = decodeToken(accessToken);
     if (!(decoded.role === Role.Admin || decoded.role === Role.Employee)) {
       redirect("/manage/employee");
     }
+
+    console.log("quananqr1/app/manage/admin/page.tsx ManageHomePage 333");
+    return (
+      <div className="p-4">
+        <h1 className="text-2xl font-bold">Manage Dashboard</h1>
+        <WebSocketWrapper accessToken={accessToken} />
+      </div>
+    );
   } catch (error) {
     redirect("/auth");
   }
-  console.log("quananqr1/app/manage/admin/page.tsx ManageHomePage 333");
-  return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">Manage Dashboard</h1>
-      <WebSocketWrapper userId={decoded.id.toString()} role={decoded.role} />
-    </div>
-  );
 }

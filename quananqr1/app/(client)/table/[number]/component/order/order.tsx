@@ -210,7 +210,7 @@ export default function OrderSummary({ number, token }: OrderProps) {
         totalItems={orderSummary.totalItems}
       />
 
-      <OrderCreationComponent table_token={token} />
+      <OrderCreationComponent table_token={token} table_number={number} />
     </div>
   );
 }

@@ -19,15 +19,15 @@ const pathRoleConfig: Record<string, RoleType[]> = {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get("accessToken")?.value;
-  console.log("Middleware - Original URL:", request.nextUrl.pathname);
-  console.log(
-    "Middleware - Original Search Params:",
-    request.nextUrl.searchParams
-  );
-  if (accessToken) {
-    const decoded = decodeToken(accessToken);
-    console.log("quananqr1/middleware.ts decoded", decoded);
-  }
+  // console.log("Middleware - Original URL:", request.nextUrl.pathname);
+  // console.log(
+  //   "Middleware - Original Search Params:",
+  //   request.nextUrl.searchParams
+  // );
+  // if (accessToken) {
+  //   const decoded = decodeToken(accessToken);
+  //   console.log("quananqr1/middleware.ts decoded", decoded);
+  // }
   // Handle direct access to manage routes
   if (pathname === "/manage" || pathname.startsWith("/manage/")) {
     // If no token, redirect to login
@@ -38,7 +38,7 @@ export function middleware(request: NextRequest) {
     }
     try {
       const decoded = decodeToken(accessToken);
-      console.log("quananqr1/middleware.ts decoded", decoded);
+      // console.log("quananqr1/middleware.ts decoded", decoded);
       const userRole = decoded.role as RoleType;
       // Check for specific manage routes
       if (pathname === "/manage") {

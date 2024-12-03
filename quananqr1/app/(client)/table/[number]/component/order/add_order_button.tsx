@@ -11,14 +11,16 @@ import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 
 interface OrderCreationComponentProps {
   table_token: string;
+
+  table_number: string;
 }
 
 const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
+  table_number,
   table_token
 }) => {
   const { isLoading, createOrder } = useOrderCreationStore();
   const {
-    tableNumber,
     getOrderSummary,
     clearOrder,
     canhKhongRau,
@@ -125,12 +127,6 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     if (!isConnected) {
       console.log("Attempting to establish WebSocket connection");
       await initializeWebSocket();
-      if (!isConnected) {
-        console.log(
-          "[OrderCreation] Failed to establish connection, aborting order creation"
-        );
-        return;
-      }
     }
     console.log(
       "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx orderSummary",
@@ -140,18 +136,23 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       console.log("[OrderCreation] No items in order, aborting 111111");
       return;
     }
-    if (tableNumber === null) {
+    if (table_number === null) {
       console.log("[OrderCreation] No items in order, aborting 22222");
       return;
     }
 
     console.log("[OrderCreation] Creating order with summary:", orderSummary);
+
     const order = createOrder({
       topping,
       Table_token: table_token,
       http,
       auth: { guest, user, isGuest },
-      orderStore: { tableNumber, getOrderSummary, clearOrder },
+      orderStore: {
+        tableNumber: Number(table_number),
+        getOrderSummary,
+        clearOrder
+      },
       websocket: { disconnect, isConnected, sendMessage },
       openLoginDialog
     });
