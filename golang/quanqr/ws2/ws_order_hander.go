@@ -41,7 +41,7 @@ func (h *OrderMessageHandler) Handle(c *Client, msg Message) {
             log.Println("golang/quanqr/ws2/ws_order_hander.go NewOrderMessageHandler case create_message")
             // h.createOrder(msg.Payload)
             h.handleOrderMessageToStaff(c, msg)
-            h.handleDirectMessage(c, msg)
+            // h.handleDirectMessage(c, msg)
         case "order1":
         log.Printf("Handling order message")
         h.handleOrderMessage(c, msg)

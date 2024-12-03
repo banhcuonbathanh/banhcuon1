@@ -97,7 +97,7 @@ func (wr *WebSocketRouter) RegisterRoutes(r chi.Router) {
 }
 
 func (wr *WebSocketRouter) handleWebSocket(w http.ResponseWriter, r *http.Request, role Role) {
-	
+    log.Println("golang/quanqr/ws2/ws2_route.go handleWebSocket")
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
         log.Printf("Error upgrading connection: %v", err)

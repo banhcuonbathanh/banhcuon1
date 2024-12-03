@@ -4,51 +4,53 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
+	"time"
 )
 
+type ClientInfo struct {
+    ID       string                 `json:"id"`
+    Role     Role                   `json:"role"`
+    RoomID   string                `json:"roomId"`
+    JoinedAt time.Time             `json:"joinedAt"`
+    UserData map[string]interface{} `json:"userData"`
+}
+
 type Hub struct {
-    Clients        map[*Client]bool
-    Broadcast      chan []byte
-    Register       chan *Client
-    Unregister    chan *Client
-    RoomMap        map[string]map[*Client]bool
-    CombinedMessageHandler *CombinedMessageHandler  // Changed to pointer
-    mu            sync.Mutex
+    Clients               map[*Client]bool
+    Broadcast            chan []byte
+    Register             chan *Client
+    Unregister           chan *Client
+    RoomMap              map[string]map[*Client]bool
+    CombinedMessageHandler *CombinedMessageHandler
+    mu                   sync.Mutex
+    RegisteredClients    map[string]ClientInfo
 }
 
 func NewHub(combinedMessageHandler *CombinedMessageHandler) *Hub {
     log.Printf("Creating new Hub with message handler type: %T", combinedMessageHandler)
     return &Hub{
-        Broadcast:      make(chan []byte),
-        Register:       make(chan *Client),
-        Unregister:    make(chan *Client),
-        Clients:        make(map[*Client]bool),
-        RoomMap:        make(map[string]map[*Client]bool),
+        Broadcast:            make(chan []byte),
+        Register:            make(chan *Client),
+        Unregister:          make(chan *Client),
+        Clients:             make(map[*Client]bool),
+        RoomMap:             make(map[string]map[*Client]bool),
         CombinedMessageHandler: combinedMessageHandler,
-    }
-}
-func (h *Hub) registerClient(client *Client) {
-	log.Println("golang/quanqr/ws2/ws2_hub.go registerClient")
-    h.mu.Lock()
-    defer h.mu.Unlock()
-    
-    h.Clients[client] = true
-    if client.RoomID != "" {
-        if h.RoomMap[client.RoomID] == nil {
-            h.RoomMap[client.RoomID] = make(map[*Client]bool)
-        }
-        h.RoomMap[client.RoomID][client] = true
+        RegisteredClients:   make(map[string]ClientInfo),
     }
 }
 
+
+
 func (h *Hub) unregisterClient(client *Client) {
-	log.Println("golang/quanqr/ws2/ws2_hub.go unregisterClient")
     h.mu.Lock()
     defer h.mu.Unlock()
     
     if _, ok := h.Clients[client]; ok {
         delete(h.Clients, client)
+        delete(h.RegisteredClients, client.ID)
+        
         if client.RoomID != "" && h.RoomMap[client.RoomID] != nil {
             delete(h.RoomMap[client.RoomID], client)
             if len(h.RoomMap[client.RoomID]) == 0 {
@@ -56,11 +58,11 @@ func (h *Hub) unregisterClient(client *Client) {
             }
         }
         close(client.Send)
+        log.Printf("Client unregistered - ID: %s, Role: %s", client.ID, client.Role)
     }
 }
 
 func (h *Hub) broadcastMessage(message []byte) {
-	log.Println("golang/quanqr/ws2/ws2_hub.go broadcastMessage")
     h.mu.Lock()
     defer h.mu.Unlock()
     
@@ -74,12 +76,22 @@ func (h *Hub) broadcastMessage(message []byte) {
     }
 }
 
+func (h *Hub) Run() {
+    for {
+        select {
+        case client := <-h.Register:
+            h.registerClient(client)
+        case client := <-h.Unregister:
+            h.unregisterClient(client)
+        case message := <-h.Broadcast:
+            h.broadcastMessage(message)
+        }
+    }
+}
 
 func (h *Hub) SendDirectMessage(fromUserID, toUserID string, msgType, action string, payload interface{}) error {
-	log.Println("golang/quanqr/ws2/ws2_hub.go SendDirectMessage")
     h.mu.Lock()
     defer h.mu.Unlock()
-
 
     var targetClient *Client
     for client := range h.Clients {
@@ -101,20 +113,17 @@ func (h *Hub) SendDirectMessage(fromUserID, toUserID string, msgType, action str
         Payload:    payload,
     }
 
-    // Wrap in standard Message format
     msg := Message{
-        Type:    "direct",
+        Type:    TypeMessage(msgType),
         Action:  action,
         Payload: directMsg,
         Role:    RoleUser,
     }
 
-    // Marshal the message
     data, err := json.Marshal(msg)
     if err != nil {
         return fmt.Errorf("error marshaling message: %v", err)
     }
-
 
     select {
     case targetClient.Send <- data:
@@ -126,36 +135,17 @@ func (h *Hub) SendDirectMessage(fromUserID, toUserID string, msgType, action str
     }
 }
 
-func (h *Hub) Run() {
-	log.Println("golang/quanqr/ws2/ws2_hub.go Run")
-    for {
-        select {
-        case client := <-h.Register:
-            h.registerClient(client)
-        case client := <-h.Unregister:
-            h.unregisterClient(client)
-        case message := <-h.Broadcast:
-            h.broadcastMessage(message)
-        }
-    }
-}
-
-// new
-
 func (h *Hub) BroadcastToStaff(fromUserID string, msg Message) error {
     h.mu.Lock()
     defer h.mu.Unlock()
 
-    // Add role information to the message
-    msg.Role = RoleEmployee // Default to Employee role, staff can determine their actions based on their actual role
+    msg.Role = RoleEmployee
 
-    // Marshal the message
     data, err := json.Marshal(msg)
     if err != nil {
         return fmt.Errorf("error marshaling message: %v", err)
     }
 
-    // Keep track of successful sends
     successfulSends := 0
     staffRoles := map[Role]bool{
         RoleAdmin:    true,
@@ -163,7 +153,6 @@ func (h *Hub) BroadcastToStaff(fromUserID string, msg Message) error {
         RoleKitchen:  true,
     }
 
-    // Send to all staff clients (Admin, Employee, and Kitchen)
     for client := range h.Clients {
         if staffRoles[client.Role] {
             select {
@@ -184,3 +173,135 @@ func (h *Hub) BroadcastToStaff(fromUserID string, msg Message) error {
 
     return nil
 }
+
+func (h *Hub) IsClientRegistered(clientID string) bool {
+    h.mu.Lock()
+    defer h.mu.Unlock()
+    
+    _, exists := h.RegisteredClients[clientID]
+    return exists
+}
+
+func (h *Hub) GetClientsByRole(role Role) []ClientInfo {
+    h.mu.Lock()
+    defer h.mu.Unlock()
+    
+    var clients []ClientInfo
+    for _, info := range h.RegisteredClients {
+        if info.Role == role {
+            clients = append(clients, info)
+        }
+    }
+    return clients
+}
+
+
+
+func (h *Hub) ListClients() []map[string]interface{} {
+    h.mu.Lock()
+    defer h.mu.Unlock()
+    
+    clientList := make([]map[string]interface{}, 0)
+    
+    for id, info := range h.RegisteredClients {
+        clientInfo := map[string]interface{}{
+            "id":       id,
+            "role":     info.Role,
+            "roomID":   info.RoomID,
+            "joinedAt": info.JoinedAt,
+            "active":   true,
+            "userData": info.UserData,
+        }
+        clientList = append(clientList, clientInfo)
+    }
+    
+    log.Printf("golang/quanqr/ws2/ws2_hub.go Total connected clients: %d", len(h.RegisteredClients))
+    for role := range map[Role]bool{
+        RoleGuest: true,
+        RoleUser: true,
+        RoleEmployee: true,
+        RoleAdmin: true,
+        RoleKitchen: true,
+    } {
+        count := 0
+        for _, info := range h.RegisteredClients {
+            if info.Role == role {
+                count++
+            }
+        }
+        if count > 0 {
+            log.Printf("Clients with role %s: %d", role, count)
+        }
+    }
+    
+    return clientList
+}
+
+
+
+
+func (h *Hub) logRegisteredClients() {
+    total := len(h.RegisteredClients)
+    
+    // Log total count
+    log.Printf("Total Clients: %d\n+%s+%s+", total, 
+        strings.Repeat("-", 38), strings.Repeat("-", 15))
+    
+    // Table header
+    log.Printf("| %-36s | %-13s |", "Client ID", "Role")
+    log.Printf("+%s+%s+", strings.Repeat("-", 38), strings.Repeat("-", 15))
+    
+    // Table content
+    for _, info := range h.RegisteredClients {
+        log.Printf("| %-36s | %-13s |", info.ID, info.Role)
+    }
+    
+    // Table footer
+    log.Printf("+%s+%s+", strings.Repeat("-", 38), strings.Repeat("-", 15))
+}
+
+func (h *Hub) registerClient(client *Client) {
+    h.mu.Lock()
+    defer h.mu.Unlock()
+    
+    // First check if client already exists and has a different role
+    if existingInfo, exists := h.RegisteredClients[client.ID]; exists {
+        // If client exists with different role, log it
+        if existingInfo.Role != client.Role {
+            log.Printf("Client %s role changed from %s to %s", client.ID, existingInfo.Role, client.Role)
+        }
+    }
+    
+    h.Clients[client] = true
+    if client.RoomID != "" {
+        if h.RoomMap[client.RoomID] == nil {
+            h.RoomMap[client.RoomID] = make(map[*Client]bool)
+        }
+        h.RoomMap[client.RoomID][client] = true
+    }
+
+    // Perform type assertion for UserData
+    userData, ok := client.UserData.(map[string]interface{})
+    if !ok {
+        userData = make(map[string]interface{})
+    }
+
+    clientInfo := ClientInfo{
+        ID:       client.ID,
+        Role:     client.Role,
+        RoomID:   client.RoomID,
+        JoinedAt: time.Now(),
+        UserData: userData,
+    }
+    
+    // Only update if client doesn't exist or role has changed
+    if existing, exists := h.RegisteredClients[client.ID]; !exists || existing.Role != client.Role {
+        h.RegisteredClients[client.ID] = clientInfo
+    }
+
+    log.Printf("Client registered - ID: %s, Role: %s, Room: %s", client.ID, client.Role, client.RoomID)
+    h.logRegisteredClients()
+}
+
+
+
