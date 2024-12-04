@@ -1,15 +1,30 @@
 import DarkModeToggle from "@/components/dark-mode-toggle";
-
+import { redirect } from "next/navigation";
 import DropdownAvatar from "@/components/dropdown-avatar";
 import NavLinks from "./admin/admin_component/nav-links";
-
+import { cookies } from "next/headers";
+import WebSocketWrapper from "@/components/websocket/WebSocketWrapper";
+import { decodeToken } from "@/lib/utils";
+import { Role } from "@/constants/type";
 export default function Layout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  console.log("quananqr1/app/manage/layout.tsx ");
+  const cookieStore = cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+
+  if (!accessToken) {
+    redirect("/login");
+  }
+  const decoded = decodeToken(accessToken);
+  if (!(decoded.role === Role.Admin || decoded.role === Role.Employee)) {
+    redirect("/manage/employee");
+  }
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      {/* <WebSocketWrapper accessToken={accessToken} /> */}
       <p>this is admin lay out</p>
       <NavLinks />
       <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
