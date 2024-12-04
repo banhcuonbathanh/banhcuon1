@@ -146,6 +146,22 @@ func (h *Hub) BroadcastToStaff(fromUserID string, msg Message) error {
         return fmt.Errorf("error marshaling message: %v", err)
     }
 
+    // Log header for successful message sends
+    log.Printf("+%s+%s+%s+%s+", 
+        strings.Repeat("-", 36),   // FromUserID
+        strings.Repeat("-", 15),   // Recipient Role 
+        strings.Repeat("-", 36),   // Recipient Client ID
+        strings.Repeat("-", 20),    // Status
+    )
+    log.Printf("| %-36s | %-15s | %-36s | %-20s |", 
+        "From User ID", "Recipient Role", "Recipient Client ID", "Status")
+    log.Printf("+%s+%s+%s+%s+", 
+        strings.Repeat("-", 36), 
+        strings.Repeat("-", 15), 
+        strings.Repeat("-", 36),
+        strings.Repeat("-", 20),
+    )
+
     successfulSends := 0
     staffRoles := map[Role]bool{
         RoleAdmin:    true,
@@ -158,14 +174,33 @@ func (h *Hub) BroadcastToStaff(fromUserID string, msg Message) error {
             select {
             case client.Send <- data:
                 successfulSends++
-                log.Printf("Message sent from user %s to %s (ID: %s)", fromUserID, client.Role, client.ID)
+                log.Printf("| %-36s | %-15s | %-36s | %-20s |", 
+                    fromUserID, 
+                    client.Role, 
+                    client.ID, 
+                    "Message Sent ✓",
+                )
             default:
                 close(client.Send)
                 delete(h.Clients, client)
-                log.Printf("Failed to send message to %s (ID: %s), client removed", client.Role, client.ID)
+                log.Printf("| %-36s | %-15s | %-36s | %-20s |", 
+                    fromUserID, 
+                    client.Role, 
+                    client.ID, 
+                    "Send Failed ✗",
+                )
             }
         }
     }
+
+    // Table footer
+    log.Printf("+%s+%s+%s+%s+", 
+        strings.Repeat("-", 36), 
+        strings.Repeat("-", 15), 
+        strings.Repeat("-", 36),
+        strings.Repeat("-", 20),
+    )
+    log.Printf("Total Successful Sends: %d", successfulSends)
 
     if successfulSends == 0 {
         return fmt.Errorf("no staff members available to receive the message")

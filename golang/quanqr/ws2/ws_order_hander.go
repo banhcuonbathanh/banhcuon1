@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -125,21 +126,64 @@ func (h *OrderMessageHandler) handleOrderMessageToStaff(c *Client, msg Message) 
     log.Printf("BEGIN handleOrderMessageToStaff")
     defer log.Printf("END handleOrderMessageToStaff")
 
+    // Log staff clients before processing
+    log.Printf("+%s+%s+%s+", 
+        strings.Repeat("-", 36), strings.Repeat("-", 15), strings.Repeat("-", 30))
+    log.Printf("| %-36s | %-13s | %-28s |", "Staff Clients Before Processing", "Role", "Email")
+    log.Printf("+%s+%s+%s+", 
+        strings.Repeat("-", 36), strings.Repeat("-", 15), strings.Repeat("-", 30))
+    
+    // Log available staff clients
+    staffRoles := map[Role]bool{
+        RoleAdmin:    true,
+        RoleEmployee: true,
+        RoleKitchen:  true,
+    }
+    
+    staffClientsCount := 0
+    for client := range c.Hub.Clients {
+        if staffRoles[client.Role] {
+            // Safely extract email
+            var email string
+            if userData, ok := client.UserData.(map[string]interface{}); ok {
+                if emailVal, exists := userData["email"]; exists {
+                    email = fmt.Sprintf("%v", emailVal)
+                }
+            }
+            
+            if email == "" {
+                email = "N/A"
+            }
+            
+            log.Printf("| %-36s | %-13s | %-28s |", client.ID, client.Role, email)
+            staffClientsCount++
+        }
+    }
+    
+    log.Printf("+%s+%s+%s+", 
+        strings.Repeat("-", 36), strings.Repeat("-", 15), strings.Repeat("-", 30))
+    log.Printf("Total Staff Clients: %d", staffClientsCount)
+
     // Extract the direct message
-    data, _ := json.Marshal(msg.Payload)
-    var directMsg DirectMessage
-    if err := json.Unmarshal(data, &directMsg); err != nil {
-        log.Printf("error unmarshaling direct message: %v", err)
+    data, err := json.Marshal(msg.Payload)
+    if err != nil {
+        log.Printf("Error marshaling payload: %v", err)
         return
     }
 
-    // First, create the order in the database
+    var directMsg DirectMessage
+    if err := json.Unmarshal(data, &directMsg); err != nil {
+        log.Printf("Error unmarshaling direct message: %v", err)
+        return
+    }
+
+    // Commented out order creation for demonstration
     // if err := h.createOrder(directMsg.Payload); err != nil {
     //     log.Printf("Error creating order: %v", err)
     //     return
     // }
 
-    // After successful order creation, broadcast to staff
+    // Create staff message
     staffMsg := Message{
         Type:    "order",
         Action:  "new_order",
