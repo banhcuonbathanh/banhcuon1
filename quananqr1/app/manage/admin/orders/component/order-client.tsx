@@ -21,6 +21,9 @@ import {
 import { YourComponent1 } from "./admin-table";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
+import { APP_CONSTANTS } from "@/config";
+import { RestaurantLayout } from "../restaurant-layout/restaurant-layout";
+import RestaurantSummary from "../restaurant-summary/restaurant-summary";
 
 interface OrderClientProps {
   initialData: OrderDetailedResponse[];
@@ -31,6 +34,7 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   initialData,
   initialPagination
 }) => {
+  console.log("quananqr1/app/manage/admin/orders/component/order-client.tsx ");
   const [currentPage, setCurrentPage] = useState(
     initialPagination.current_page
   );
@@ -80,6 +84,55 @@ export const OrderClient: React.FC<OrderClientProps> = ({
     };
   }, [addMessageHandler, handleWebSocketMessage]);
 
+  // auto fetch -------------------------
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    // Function to check if the page is visible
+    const handleVisibilityChange = () => {
+      setIsVisible(!document.hidden);
+    };
+
+    // Add visibility change listener
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Function to fetch orders
+    const fetchOrders = async () => {
+      // Only fetch if the page is visible
+      if (!document.hidden) {
+        try {
+          const response = await get_Orders({
+            page: 1,
+            page_size: 10
+          });
+
+          setData(response.data);
+          setPagination(response.pagination);
+        } catch (error) {
+          console.error("Error fetching orders:", error);
+        }
+      }
+    };
+
+    // Only set up interval if the component is visible
+    let intervalId: NodeJS.Timeout | null = null;
+    if (isVisible) {
+      intervalId = setInterval(
+        fetchOrders,
+        APP_CONSTANTS.Intervel_revalidata_Page_Order
+      );
+    }
+
+    // Cleanup function
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isVisible]);
+
+  //
   return (
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <div className="space-y-2">
@@ -98,7 +151,8 @@ export const OrderClient: React.FC<OrderClientProps> = ({
               </div>
 
               <Separator className="my-4" />
-
+              <RestaurantSummary restaurantLayoutProps={data} />
+              {/* <RestaurantLayout restaurantLayoutProps={data} /> */}
               <YourComponent1 initialData={initialData} />
 
               <div className="flex items-center justify-between space-x-2 py-4">

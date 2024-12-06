@@ -25,7 +25,9 @@ const configSchema = z.object({
   NEXT_PUBLIC_API_Guest_Login: z.string().default("qr/guest/login"),
   NEXT_PUBLIC_API_Guest_Logout: z.string().default("qr/guest/logout"),
   wslink: z.string().default("ws://localhost:8888/ws/"),
-  wsAuth: z.string().default("ws/api/ws-auth")
+  wsAuth: z.string().default("ws/api/ws-auth"),
+
+
 });
 
 const configProject = configSchema.safeParse({
@@ -77,3 +79,10 @@ export default configProject.data;
 // - NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL:-http://nextjs_app:3000/}
 
 // - NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL:-http://localhost:3000/}
+
+
+export const APP_CONSTANTS = {
+  Intervel_revalidata_Page_Order: 6000000,
+  SESSION_TIMEOUT: 30 * 60 * 1000, // 30 minutes in milliseconds
+  DEFAULT_PAGE_SIZE: 10
+} as const;
