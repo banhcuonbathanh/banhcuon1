@@ -70,6 +70,11 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
     return order.takeAway ? "text-red-600 font-bold" : "";
   };
 
+  // Function to get table number color
+  const getTableNumberColor = (order: OrderDetailedResponse) => {
+    return order.takeAway ? "text-red-600 font-bold" : "";
+  };
+
   // Function to aggregate dishes from both individual dishes and set dishes
   const aggregateDishes = (order: OrderDetailedResponse): AggregatedDish[] => {
     const dishMap = new Map<number, AggregatedDish>();
@@ -111,7 +116,7 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
 
           return (
             <div key={order.id} className="shadow-md rounded-lg p-4">
-              <div className="font-semibold">
+              <div className={`font-semibold ${getTableNumberColor(order)}`}>
                 Table Number: {order.table_number}
               </div>
 
@@ -140,8 +145,6 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
                   <div>{order.topping}</div>
                 </div>
               </CollapsibleSection>
-
-              {/* Aggregated Dishes Section */}
 
               {/* Individual Dishes Section */}
               <CollapsibleSection title="Individual Dishes">
@@ -183,6 +186,8 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
                   </div>
                 ))}
               </CollapsibleSection>
+
+              {/* Aggregated Dishes Section */}
               <CollapsibleSection title="Aggregated Dishes">
                 {aggregatedDishes.map((dish, index) => (
                   <div
@@ -202,6 +207,7 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
                   </div>
                 ))}
               </CollapsibleSection>
+
               <div className="mt-6">
                 <TotalPriceSummary TotalPriceProps={restaurantLayoutProps} />
               </div>

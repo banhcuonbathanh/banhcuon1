@@ -153,7 +153,7 @@ export const OrderClient: React.FC<OrderClientProps> = ({
               <Separator className="my-4" />
               <RestaurantSummary restaurantLayoutProps={data} />
               {/* <RestaurantLayout restaurantLayoutProps={data} /> */}
-              <YourComponent1 initialData={initialData} />
+              {/* <YourComponent1 initialData={initialData} /> */}
 
               <div className="flex items-center justify-between space-x-2 py-4">
                 <div className="flex-1 text-sm text-muted-foreground">
