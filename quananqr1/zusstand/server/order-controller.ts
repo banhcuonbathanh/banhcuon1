@@ -21,7 +21,10 @@ export const get_Orders = async (
     });
 
     const rawData = await response.json();
-
+    console.log(
+      "quananqr1/zusstand/server/order-controller.ts rawData",
+      rawData
+    );
     if (!response.ok) {
       throw new Error(rawData.message || "Failed to fetch orders");
     }
@@ -72,8 +75,9 @@ export const get_Orders = async (
         bow_no_chili: number;
         take_away: boolean;
         chili_number: number;
-        table_token: string; // Updated casing to match interface
-        order_name: string; // Added new field
+        table_token: string;
+        order_name: string;
+        tracking_order: string; // Added missing field
       }>;
       pagination: PaginationInfo;
       message: string;
@@ -105,11 +109,12 @@ export const get_Orders = async (
         updated_at: "asdf", // Consider getting actual timestamps
         total_price: item.total_price,
         topping: item.topping,
+        tracking_order: item.tracking_order, // Added missing field
         bow_no_chili: item.bow_no_chili,
         takeAway: item.take_away,
         chiliNumber: item.chili_number,
-        table_token: item.table_token, // Added missing field
-        order_name: item.order_name, // Added new field
+        table_token: item.table_token,
+        order_name: item.order_name,
         // Add null check for data_set
         data_set: (item.data_set || []).map((set) => ({
           id: set.id,
@@ -145,8 +150,7 @@ export const get_Orders = async (
           status: dish.status
         }))
       })),
-
-      pagination: pagination // Fixed casing to match interface
+      pagination: pagination
     };
 
     return validatedData;

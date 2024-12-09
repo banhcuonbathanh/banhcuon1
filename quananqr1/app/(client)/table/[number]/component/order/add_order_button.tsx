@@ -144,7 +144,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
 
     console.log("[OrderCreation] Creating order with summary:", orderSummary);
 
-    const order = createOrder({
+    const order = await createOrder({
       topping,
       Table_token: table_token,
       http,
@@ -158,7 +158,8 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       openLoginDialog
     });
     console.log(
-      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx done for creating order done qwqwqwqwqwq"
+      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx done for creating order done order  121212",
+      order
     );
     sendMessage1();
     console.log(

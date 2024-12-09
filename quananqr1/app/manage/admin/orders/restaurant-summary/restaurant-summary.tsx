@@ -1,34 +1,29 @@
-"use client";
-
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { ChevronDown, ChevronRight, Info } from "lucide-react";
 import {
-  OrderDetailedResponse,
-  OrderSetDetailed,
-  OrderDetailedDish
+  OrderDetailedDish,
+  OrderDetailedResponse
 } from "../component/new-order-column";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { TotalPriceSummary } from "./totalpricesummary";
 
 interface RestaurantSummaryProps {
   restaurantLayoutProps: OrderDetailedResponse[];
 }
 
-interface AggregatedDish {
-  dish_id: number;
-  name: string;
-  quantity: number;
-  price: number;
+interface AggregatedDish extends OrderDetailedDish {}
+
+interface GroupedOrder {
+  orderName: string;
+  characteristic?: string;
+  tableNumber: number;
+  orders: OrderDetailedResponse[];
 }
 
-// CollapsibleSection component
+// Helper Components
 const CollapsibleSection: React.FC<{
   title: string;
   children: React.ReactNode;
 }> = ({ title, children }) => {
-  // Set initial state based on section title
-  const [isOpen, setIsOpen] = useState(
-    title === "Topping Details" || title === "Aggregated Dishes"
-  );
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="mt-2">
@@ -52,40 +47,179 @@ const CollapsibleSection: React.FC<{
   );
 };
 
-export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
-  restaurantLayoutProps
+const DishSummary: React.FC<{ dish: AggregatedDish }> = ({ dish }) => {
+  const [showDetails, setShowDetails] = useState(false);
+
+  return (
+    <div className="p-2 rounded mb-2 border-b last:border-b-0">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <span className="font-medium">{dish.name}</span>
+          <span className="ml-4">x{dish.quantity}</span>
+        </div>
+        <button
+          onClick={() => setShowDetails(!showDetails)}
+          className="flex items-center text-gray-600 hover:text-gray-800"
+        >
+          <Info className="h-4 w-4 mr-1" />
+          {showDetails ? "Hide Details" : "Show Details"}
+        </button>
+      </div>
+
+      {showDetails && (
+        <div className="mt-2 pl-4 text-gray-600">
+          <div className="grid grid-cols-2 gap-1">
+            <div className="font-medium">Price per Unit:</div>
+            <div>${dish.price.toFixed(2)}</div>
+            <div className="font-medium">Total Price:</div>
+            <div>${(dish.price * dish.quantity).toFixed(2)}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const OrderDetails: React.FC<{
+  order: OrderDetailedResponse;
+}> = ({ order }) => (
+  <div className="border-b last:border-b-0 py-4">
+    <div className="grid grid-cols-2 gap-2">
+      <div className="font-semibold">Table Number:</div>
+      <div>{order.table_number}</div>
+      <div className="font-semibold">Status:</div>
+      <div className={order.takeAway ? "text-red-600 font-bold" : ""}>
+        {order.takeAway ? "Take Away" : order.status}
+      </div>
+      <div className="font-semibold">Total Price:</div>
+      <div>${order.total_price.toFixed(2)}</div>
+      <div className="font-semibold">Tracking Order:</div>
+      <div>{order.tracking_order}</div>
+      <div className="font-semibold">Chili Number:</div>
+      <div>{order.chiliNumber}</div>
+      {order.topping && (
+        <>
+          <div className="font-semibold">Toppings:</div>
+          <div>{order.topping}</div>
+        </>
+      )}
+    </div>
+
+    <div className="mt-4">
+      <h4 className="font-semibold mb-2">Individual Dishes:</h4>
+      {order.data_dish.map((dish, index) => (
+        <div key={`${dish.dish_id}-${index}`} className="ml-4 mb-2">
+          <div>
+            {dish.name} x{dish.quantity} (${dish.price.toFixed(2)} each)
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {order.data_set.length > 0 && (
+      <div className="mt-4">
+        <h4 className="font-semibold mb-2">Order Sets:</h4>
+        {order.data_set.map((set, index) => (
+          <div key={`${set.id}-${index}`} className="ml-4 mb-2">
+            <div>
+              {set.name} x{set.quantity} (${set.price.toFixed(2)} each)
+            </div>
+            <div className="ml-4 text-gray-600">
+              Includes:
+              {set.dishes.map((d, i) => (
+                <React.Fragment key={d.dish_id}>
+                  {i > 0 && ", "}
+                  <span className="inline">
+                    {d.name} (x{d.quantity})
+                  </span>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+// ... (previous imports and interfaces remain the same)
+
+const GroupToppings: React.FC<{ orders: OrderDetailedResponse[] }> = ({
+  orders
 }) => {
-  // Function to extract the first part of the order name
-  const extractOrderPrefix = (orderName: string) => {
-    return orderName.split("-")[0];
-  };
+  const firstOrderToppings = useMemo(() => {
+    // Only process the first order's toppings
+    const toppingsMap = new Map<string, number>();
 
-  // Function to determine status based on takeAway
-  const determineStatus = (order: OrderDetailedResponse) => {
-    return order.takeAway ? "Take Away" : order.status;
-  };
+    if (orders.length > 0 && orders[0].topping) {
+      // Assuming topping string is comma-separated
+      const toppingsList = orders[0].topping.split(",").map((t) => t.trim());
+      toppingsList.forEach((topping) => {
+        const current = toppingsMap.get(topping) || 0;
+        toppingsMap.set(topping, current + 1);
+      });
+    }
 
-  // Function to get status color
-  const getStatusColor = (order: OrderDetailedResponse) => {
-    return order.takeAway ? "text-red-600 font-bold" : "";
-  };
+    return Array.from(toppingsMap.entries()).map(([name, count]) => ({
+      name,
+      count
+    }));
+  }, [orders]);
 
-  // Function to get table number color
-  const getTableNumberColor = (order: OrderDetailedResponse) => {
-    return order.takeAway ? "text-red-600 font-bold" : "";
-  };
+  if (!firstOrderToppings.length) return null;
 
-  // Function to aggregate dishes from both individual dishes and set dishes
-  const aggregateDishes = (order: OrderDetailedResponse): AggregatedDish[] => {
-    const dishMap = new Map<number, AggregatedDish>();
+  return (
+    <div className="p-2 rounded mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex-1">Toppings from first order</div>
+      </div>
 
+      <div className="pl-4">
+        {firstOrderToppings.map((topping, index) => (
+          <div
+            key={index}
+            className="grid grid-cols-2 gap-2 text-sm border-b last:border-b-0 py-2"
+          >
+            <div className="font-medium">{topping.name}</div>
+            <div>x{topping.count}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ... (rest of the code remains the same)
+
+// Helper functions remain the same
+const parseOrderName = (orderName: string): string => {
+  const parts = orderName.split("-");
+  return parts[0].trim();
+};
+
+const getOrdinalSuffix = (num: number): string => {
+  const j = num % 10;
+  const k = num % 100;
+  if (j === 1 && k !== 11) return "st";
+  if (j === 2 && k !== 12) return "nd";
+  if (j === 3 && k !== 13) return "rd";
+  return "th";
+};
+
+const aggregateDishes = (orders: OrderDetailedResponse[]): AggregatedDish[] => {
+  const dishMap = new Map<number, AggregatedDish>();
+
+  orders.forEach((order) => {
     // Add individual dishes
     order.data_dish.forEach((dish) => {
       const existingDish = dishMap.get(dish.dish_id);
       if (existingDish) {
         existingDish.quantity += dish.quantity;
       } else {
-        dishMap.set(dish.dish_id, { ...dish, quantity: dish.quantity });
+        dishMap.set(dish.dish_id, {
+          ...dish,
+          quantity: dish.quantity
+        });
       }
     });
 
@@ -103,153 +237,84 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
         }
       });
     });
+  });
 
-    return Array.from(dishMap.values());
-  };
+  return Array.from(dishMap.values());
+};
+
+export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
+  restaurantLayoutProps
+}) => {
+  const groupedOrders = useMemo(() => {
+    const groups = new Map<string, GroupedOrder>();
+
+    restaurantLayoutProps.forEach((order) => {
+      const characteristic = parseOrderName(order.order_name);
+      const groupKey = `${characteristic}-${order.table_number}`;
+
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          orderName: characteristic,
+          tableNumber: order.table_number,
+          orders: []
+        });
+      }
+      groups.get(groupKey)!.orders.push(order);
+    });
+
+    return Array.from(groups.values());
+  }, [restaurantLayoutProps]);
 
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Restaurant Order Summary</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {restaurantLayoutProps.map((order) => {
-          const aggregatedDishes = aggregateDishes(order);
 
-          return (
-            <div key={order.id} className="shadow-md rounded-lg p-4">
-              <div className={`font-semibold ${getTableNumberColor(order)}`}>
-                Table Number: {order.table_number}
-              </div>
+      <CollapsibleSection title="All Orders">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {groupedOrders.map((group) => {
+            const aggregatedDishes = aggregateDishes(group.orders);
 
-              {/* Order Status Section */}
-              <CollapsibleSection title="Order Status">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="font-semibold">Status:</div>
-                  <div className={getStatusColor(order)}>
-                    {determineStatus(order)}
-                  </div>
-                  <div className="font-semibold">Total Price:</div>
-                  <div>${order.total_price.toFixed(2)}</div>
-                  <div className="font-semibold">Tracking Order:</div>
-                  <div>{order.tracking_order}</div>
-                  <div className="font-semibold">Chili Number:</div>
-                  <div>{order.chiliNumber}</div>
-                  <div className="font-semibold">Order Name:</div>
-                  <div>{extractOrderPrefix(order.order_name)}</div>
-                </div>
-              </CollapsibleSection>
+            return (
+              <div
+                key={`${group.orderName}-${group.tableNumber}`}
+                className="shadow-md rounded-lg p-4"
+              >
+                <h3 className="text-xl font-semibold mb-4">
+                  {group.orderName} - Table {group.tableNumber}
+                </h3>
 
-              {/* Topping Section */}
-              <CollapsibleSection title="Topping Details">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="font-semibold">Topping:</div>
-                  <div>{order.topping}</div>
-                </div>
-              </CollapsibleSection>
+                <div className="rounded-lg shadow-sm p-4">
+                  <CollapsibleSection title="Toppings Summary">
+                    <GroupToppings orders={group.orders} />
+                  </CollapsibleSection>
 
-              {/* Individual Dishes Section */}
-              <CollapsibleSection title="Individual Dishes">
-                {order.data_dish.map((dish, index) => (
-                  <div
-                    key={`${dish.dish_id}-${index}`}
-                    className="p-2 rounded mb-2"
-                  >
-                    <div className="grid grid-cols-2 gap-1">
-                      <div className="font-medium">Dish Name:</div>
-                      <div>{dish.name}</div>
-                      <div className="font-medium">Quantity:</div>
-                      <div>{dish.quantity}</div>
-                      <div className="font-medium">Price:</div>
-                      <div>${dish.price.toFixed(2)}</div>
-                    </div>
-                  </div>
-                ))}
-              </CollapsibleSection>
+                  <CollapsibleSection title="Aggregated Dishes">
+                    {aggregatedDishes.map((dish, index) => (
+                      <DishSummary
+                        key={`${dish.dish_id}-${index}`}
+                        dish={dish}
+                      />
+                    ))}
+                  </CollapsibleSection>
 
-              {/* Order Sets Section */}
-              <CollapsibleSection title="Order Sets">
-                {order.data_set.map((set, index) => (
-                  <div key={`${set.id}-${index}`} className="p-2 rounded mb-2">
-                    <div className="grid grid-cols-2 gap-1">
-                      <div className="font-medium">Set Name:</div>
-                      <div>{set.name}</div>
-                      <div className="font-medium">Price:</div>
-                      <div>${set.price.toFixed(2)}</div>
-                      <div className="font-medium">Quantity:</div>
-                      <div>{set.quantity}</div>
-                      <div className="font-medium">Dishes in Set:</div>
-                      <div>
-                        {set.dishes
-                          .map((d) => `${d.name} (${d.quantity})`)
-                          .join(", ")}
+                  <CollapsibleSection title="Individual Orders">
+                    {group.orders.map((order, index) => (
+                      <div key={order.id} className="mb-4 last:mb-0">
+                        <div className="font-medium text-lg mb-2">
+                          {`${index + 1}${getOrdinalSuffix(index + 1)} Order`}
+                        </div>
+                        <OrderDetails order={order} />
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </CollapsibleSection>
-
-              {/* Aggregated Dishes Section */}
-              <CollapsibleSection title="Aggregated Dishes">
-                {aggregatedDishes.map((dish, index) => (
-                  <div
-                    key={`${dish.dish_id}-${index}`}
-                    className="p-2 rounded mb-2 border-b last:border-b-0"
-                  >
-                    <div className="grid grid-cols-2 gap-1">
-                      <div className="font-medium">Dish Name:</div>
-                      <div>{dish.name}</div>
-                      <div className="font-medium">Total Quantity:</div>
-                      <div>{dish.quantity}</div>
-                    </div>
-                    <DishPriceDetails
-                      price={dish.price}
-                      quantity={dish.quantity}
-                    />
-                  </div>
-                ))}
-              </CollapsibleSection>
-
-              <div className="mt-6">
-                <TotalPriceSummary TotalPriceProps={restaurantLayoutProps} />
+                    ))}
+                  </CollapsibleSection>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </CollapsibleSection>
     </div>
   );
 };
 
 export default RestaurantSummary;
-
-const DishPriceDetails: React.FC<{
-  price: number;
-  quantity: number;
-}> = ({ price, quantity }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="mt-1">
-      <div
-        className="flex items-center cursor-pointer select-none text-sm text-blue-600 hover:text-blue-800"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {isOpen ? (
-          <ChevronDown className="h-3 w-3 mr-1" />
-        ) : (
-          <ChevronRight className="h-3 w-3 mr-1" />
-        )}
-        <span>Price Details</span>
-      </div>
-      {isOpen && (
-        <div className="pl-4 py-2 text-sm">
-          <div className="grid grid-cols-2 gap-1">
-            <div className="font-medium">Price per Dish:</div>
-            <div>${price.toFixed(2)}</div>
-            <div className="font-medium">Total Dish Price:</div>
-            <div>${(quantity * price).toFixed(2)}</div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
