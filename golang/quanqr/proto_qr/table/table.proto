@@ -1,3 +1,4 @@
+// table.proto
 syntax = "proto3";
 
 package table;
@@ -12,6 +13,7 @@ enum TableStatus {
   OCCUPIED = 1;
   RESERVED = 2;
   OUT_OF_SERVICE = 3;
+  TAKE_AWAY = 4;  // Added new status
 }
 
 message Table {
@@ -23,6 +25,7 @@ message Table {
   google.protobuf.Timestamp updated_at = 6;
 }
 
+// Rest of the messages remain the same
 message CreateTableRequest {
   int32 number = 1;
   int32 capacity = 2;
@@ -57,6 +60,3 @@ service TableService {
   rpc UpdateTable(UpdateTableRequest) returns (TableResponse);
   rpc DeleteTable(TableNumberRequest) returns (TableResponse);
 }
-
-
-// func (ts *TableServiceStruct) CreateTable(ctx context.Context, req *CreateTableRequest) (*TableResponse, error) {

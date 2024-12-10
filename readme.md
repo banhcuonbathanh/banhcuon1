@@ -1,4 +1,4 @@
-http://localhost:3000/table/1?token=MTp0YWJsZTo0ODg1NjA3Mzk2.lfUUbFV53Tc
+http://localhost:3000/table/1?token=MTo0OkF2YWlsYWJsZTo0ODg3NDI2MzQz.0v1DNiYriLs
 fmt.Printf("golang/quanqr/order/order_handler.go ordersResponse %v\n", ordersResponse)
 docker-compose up mypostgres_ai
 
@@ -34,13 +34,12 @@ TRUNCATE TABLE schema\*migrations, users; delete all data
 \d reading_test_models;
 
 \d orders
+SELECT * FROM tables;
 
-SELECT _ FROM tables;
-SELECT _ FROM set*dishes;
-SELECT * FROM users;
-SELECT _ FROM dishes;
-SELECT \* FROM orders;
 SELECT _ FROM users;
+SELECT \_ FROM dishes;
+SELECT _ FROM orders;
+SELECT \_ FROM users;
 SELECT \* FROM sessions;
 DELETE FROM sessions;
 \d order_items

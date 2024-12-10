@@ -21,10 +21,10 @@ export const get_Orders = async (
     });
 
     const rawData = await response.json();
-    console.log(
-      "quananqr1/zusstand/server/order-controller.ts rawData",
-      rawData
-    );
+    // console.log(
+    //   "quananqr1/zusstand/server/order-controller.ts rawData",
+    //   rawData
+    // );
     if (!response.ok) {
       throw new Error(rawData.message || "Failed to fetch orders");
     }

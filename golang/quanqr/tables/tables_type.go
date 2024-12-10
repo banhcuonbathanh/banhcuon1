@@ -1,6 +1,5 @@
 package tables_test
 
-
 import (
 	"time"
 )
@@ -12,6 +11,7 @@ const (
 	TableStatusOccupied     TableStatus = "OCCUPIED"
 	TableStatusReserved     TableStatus = "RESERVED"
 	TableStatusOutOfService TableStatus = "OUT_OF_SERVICE"
+	TableStatusTakeAway     TableStatus = "TAKE_AWAY"    // Added new status
 )
 
 type Table struct {
@@ -22,7 +22,6 @@ type Table struct {
 	CreatedAt time.Time   `json:"created_at"`
 	UpdatedAt time.Time   `json:"updated_at"`
 }
-
 
 type CreateTableRequest struct {
 	Number   int32       `json:"number"`
@@ -36,6 +35,7 @@ type UpdateTableRequest struct {
 	Capacity    int32       `json:"capacity"`
 	Status      TableStatus `json:"status"`
 }
+
 type TableResponse struct {
 	Data    Table  `json:"data"`
 	Message string `json:"message"`
@@ -45,20 +45,20 @@ type TableListResponse struct {
 	Data    []Table `json:"data"`
 	Message string  `json:"message"`
 }
+
 type TableNumberRequest struct {
 	Number int32 `json:"number"`
 }
 
-
-// copy from other type
+// Existing Guest and Order types remain unchanged
 type Guest struct {
-	ID                   int64     `json:"id"`
-	Name                 string    `json:"name"`
-	TableNumber          int32     `json:"table_number"`
-	RefreshToken         string    `json:"refresh_token"`
+	ID                    int64     `json:"id"`
+	Name                  string    `json:"name"`
+	TableNumber           int32     `json:"table_number"`
+	RefreshToken          string    `json:"refresh_token"`
 	RefreshTokenExpiresAt time.Time `json:"refresh_token_expires_at"`
-	CreatedAt            time.Time `json:"created_at"`
-	UpdatedAt            time.Time `json:"updated_at"`
+	CreatedAt             time.Time `json:"created_at"`
+	UpdatedAt             time.Time `json:"updated_at"`
 }
 
 type Order struct {

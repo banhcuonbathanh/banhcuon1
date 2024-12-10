@@ -34,7 +34,7 @@ export const OrderClient: React.FC<OrderClientProps> = ({
   initialData,
   initialPagination
 }) => {
-  console.log("quananqr1/app/manage/admin/orders/component/order-client.tsx ");
+  // console.log("quananqr1/app/manage/admin/orders/component/order-client.tsx ");
   const [currentPage, setCurrentPage] = useState(
     initialPagination.current_page
   );

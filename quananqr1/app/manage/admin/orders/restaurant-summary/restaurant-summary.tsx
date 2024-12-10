@@ -4,6 +4,7 @@ import {
   OrderDetailedDish,
   OrderDetailedResponse
 } from "../component/new-order-column";
+import GroupToppings from "./toppping-display";
 
 interface RestaurantSummaryProps {
   restaurantLayoutProps: OrderDetailedResponse[];
@@ -142,56 +143,6 @@ const OrderDetails: React.FC<{
   </div>
 );
 
-// ... (previous imports and interfaces remain the same)
-
-const GroupToppings: React.FC<{ orders: OrderDetailedResponse[] }> = ({
-  orders
-}) => {
-  const firstOrderToppings = useMemo(() => {
-    // Only process the first order's toppings
-    const toppingsMap = new Map<string, number>();
-
-    if (orders.length > 0 && orders[0].topping) {
-      // Assuming topping string is comma-separated
-      const toppingsList = orders[0].topping.split(",").map((t) => t.trim());
-      toppingsList.forEach((topping) => {
-        const current = toppingsMap.get(topping) || 0;
-        toppingsMap.set(topping, current + 1);
-      });
-    }
-
-    return Array.from(toppingsMap.entries()).map(([name, count]) => ({
-      name,
-      count
-    }));
-  }, [orders]);
-
-  if (!firstOrderToppings.length) return null;
-
-  return (
-    <div className="p-2 rounded mb-2">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex-1">Toppings from first order</div>
-      </div>
-
-      <div className="pl-4">
-        {firstOrderToppings.map((topping, index) => (
-          <div
-            key={index}
-            className="grid grid-cols-2 gap-2 text-sm border-b last:border-b-0 py-2"
-          >
-            <div className="font-medium">{topping.name}</div>
-            <div>x{topping.count}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// ... (rest of the code remains the same)
-
-// Helper functions remain the same
 const parseOrderName = (orderName: string): string => {
   const parts = orderName.split("-");
   return parts[0].trim();

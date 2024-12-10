@@ -44,7 +44,24 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   // State to track authentication check status
   const [authChecked, setAuthChecked] = useState(false);
 
-  let topping = `canhKhongRau ${canhKhongRau} - canhCoRau ${canhCoRau} - bat be ${smallBowl} - ot tuoi ${wantChili} - nhan ${selectedFilling} -`;
+  // If selectedFilling is an object with a name or value property:
+  const getFillingString = (filling: {
+    mocNhi: boolean;
+    thit: boolean;
+    thitMocNhi: boolean;
+  }) => {
+    if (filling.mocNhi) return "Mọc Nhĩ";
+    if (filling.thit) return "Thịt";
+    if (filling.thitMocNhi) return "Thịt Mọc Nhĩ";
+    return "Không";
+  };
+
+  let topping = `canhKhongRau ${canhKhongRau} - canhCoRau ${canhCoRau} - bat be ${smallBowl} - ot tuoi ${wantChili} - nhan ${getFillingString(
+    selectedFilling
+  )} -`;
+
+  // Or if selectedFilling should be a primitive value:
+  // Make sure selectedFilling is set as a string/number in your state management
   const orderSummary = getOrderSummary();
 
   // Initialize auth state when component mounts

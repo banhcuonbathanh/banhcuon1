@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import useOrderStore from "@/zusstand/order/order_zustand";
 import OrderDetails from "../total-dishes-detail";
 import OrderCreationComponent from "./add_order_button";
+import { decodeTableToken } from "@/lib/utils";
 
 interface OrderProps {
   number: string;
@@ -13,6 +14,13 @@ interface OrderProps {
 }
 
 export default function OrderSummary({ number, token }: OrderProps) {
+  const decoded = decodeTableToken(token);
+
+  console.log(
+    "quananqr1/app/(client)/table/[number]/component/order/order.tsx table decode",
+    decoded,
+    token
+  );
   const {
     addTableNumber,
     addTableToken,

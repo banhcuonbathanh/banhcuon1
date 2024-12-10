@@ -257,3 +257,74 @@ export const handleLoginRedirect = (pathname: string | null, router: any) => {
     router.push(redirectUrl);
   }
 };
+export interface DecodedTableToken {
+  number: number;
+  capacity: number;
+  status: string;
+  timestamp: number;
+  isExpired: boolean;
+}
+
+export class TokenDecodeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TokenDecodeError";
+  }
+}
+
+function base64UrlDecode(str: string): string {
+  // Convert base64url to base64 by replacing characters
+  const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  // Pad with '=' if needed
+  const pad = base64.length % 4;
+  const padded = pad ? base64 + "=".repeat(4 - pad) : base64;
+
+  try {
+    // Decode base64 to string
+    return decodeURIComponent(
+      atob(padded)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+  } catch {
+    throw new TokenDecodeError("Invalid base64url encoding");
+  }
+}
+
+export function decodeTableToken(token: string): DecodedTableToken {
+  try {
+    // Split the token into its parts (identifier.signature)
+    const parts = token.split(".");
+    if (parts.length !== 2) {
+      throw new TokenDecodeError("Invalid token format");
+    }
+
+    // Decode the base64url identifier part only
+    const identifierStr = base64UrlDecode(parts[0]);
+
+    // Split the identifier into its components
+    const [numberStr, capacityStr, status, timestampStr] =
+      identifierStr.split(":");
+
+    if (!numberStr || !capacityStr || !status || !timestampStr) {
+      throw new TokenDecodeError("Invalid token content");
+    }
+
+    const timestamp = parseInt(timestampStr, 10);
+    const isExpired = Date.now() / 1000 > timestamp;
+
+    return {
+      number: parseInt(numberStr, 10),
+      capacity: parseInt(capacityStr, 10),
+      status,
+      timestamp,
+      isExpired
+    };
+  } catch (error) {
+    if (error instanceof TokenDecodeError) {
+      throw error;
+    }
+    throw new TokenDecodeError("Failed to decode table token");
+  }
+}

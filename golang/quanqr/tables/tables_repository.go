@@ -105,62 +105,14 @@ func (tr *TableRepository) GetTableDetail(ctx context.Context, number int32) (*t
 	return &t, nil
 }
 
-func (tr *TableRepository) CreateTable(ctx context.Context, req *table.CreateTableRequest) (*table.Table, error) {
-	tr.logger.Info("golang/quanqr/tables/tables_repository.go:CreateTable - Creating new table")
-
-	token, err := tr.generateToken(req.Number)
-	if err != nil {
-		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:CreateTable - Error generating token: %v", err))
-		return nil, fmt.Errorf("error generating token: %w", err)
-	}
-
-	if len(token) > 255 {
-		token = token[:255]
-		tr.logger.Warning("golang/quanqr/tables/tables_repository.go:CreateTable - Token truncated to 255 characters")
-	}
-
-	query := `
-		INSERT INTO tables (number, capacity, status, token, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $5)
-		RETURNING number, capacity, status, token, created_at, updated_at
-	`
-	var t table.Table
-	var createdAt, updatedAt time.Time
-	var statusStr string
-	err = tr.db.QueryRow(ctx, query,
-		req.Number,
-		req.Capacity,
-		req.Status.String(),
-		token,
-		time.Now(),
-	).Scan(
-		&t.Number,
-		&t.Capacity,
-		&statusStr,
-		&t.Token,
-		&createdAt,
-		&updatedAt,
-	)
-	if err != nil {
-		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:CreateTable - Error creating table: %v", err))
-		return nil, fmt.Errorf("error creating table: %w", err)
-	}
-	
-	t.Status = table.TableStatus(table.TableStatus_value[statusStr])
-	t.CreatedAt = timestamppb.New(createdAt)
-	t.UpdatedAt = timestamppb.New(updatedAt)
-
-	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:CreateTable - Successfully created table with number: %d", t.Number))
-	return &t, nil
-}
 
 func (tr *TableRepository) UpdateTable(ctx context.Context, req *table.UpdateTableRequest) (*table.Table, error) {
 	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:UpdateTable - Updating table with number: %d", req.Number))
-
+ 
 	var newToken string
 	var err error
 	if req.ChangeToken {
-		newToken, err = tr.generateToken(req.Number)
+		newToken, err = tr.generateToken(req.Number, req.Capacity, req.Status)
 		if err != nil {
 			tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:UpdateTable - Error generating new token: %v", err))
 			return nil, fmt.Errorf("error generating new token: %w", err)
@@ -235,39 +187,133 @@ func (tr *TableRepository) DeleteTable(ctx context.Context, number int32) (*tabl
 	return &t, nil
 }
 
-// func (tr *TableRepository) generateToken(tableNumber int32) (string, error) {
-// 	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Generating token for table number: %d", tableNumber))
 
-// 	tokenString, _, err := tr.jwtMaker.CreateToken(
-// 		int64(tableNumber),
-// 		fmt.Sprintf("table_%d@example.com", tableNumber),
-// 		"table",
-// 		100*365*24*time.Hour,
-// 	)
-// 	if err != nil {
-// 		tr.logger.Error(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Error creating token: %v", err))
-// 		return "", fmt.Errorf("error creating token: %w", err)
-// 	}
 
-// 	tr.logger.Info(fmt.Sprintf("golang/quanqr/tables/tables_repository.go:generateToken - Successfully generated token for table number: %d", tableNumber))
-// 	return tokenString, nil
-// }
 
-func (tr *TableRepository) generateToken(tableNumber int32) (string, error) {
-	tr.logger.Info(fmt.Sprintf("Generating token for table number: %d", tableNumber))
+// helper 
+var TableStatusMap = map[table.TableStatus]string{
+	table.TableStatus_AVAILABLE:       "Available",
+	table.TableStatus_OCCUPIED:        "Occupied",
+	table.TableStatus_RESERVED:        "Reserved",
+	table.TableStatus_OUT_OF_SERVICE:  "Out_Of_Service",
+	table.TableStatus_TAKE_AWAY:       "Take_Away",
+}
 
-	// Generate a short token instead of the full JWT
-	shortToken, err := tr.jwtMaker.CreateShortToken(
-		int64(tableNumber),
-		fmt.Sprintf("table_%d@example.com", tableNumber),
-		"table",
-		100*365*24*time.Hour,
-	)
-	if err != nil {
-		tr.logger.Error(fmt.Sprintf("Error creating short token: %v", err))
-		return "", fmt.Errorf("error creating short token: %w", err)
+// ReverseTableStatusMap maps database status to protobuf status
+var ReverseTableStatusMap = map[string]table.TableStatus{}
+
+func init() {
+	// Initialize reverse mapping
+	for k, v := range TableStatusMap {
+		ReverseTableStatusMap[v] = k
 	}
+}
 
-	tr.logger.Info(fmt.Sprintf("Successfully generated token for table number: %d", tableNumber))
-	return shortToken, nil
+
+
+func (tr *TableRepository) generateToken(tableNumber int32, capacity int32, status table.TableStatus) (string, error) {
+    tr.logger.Info(fmt.Sprintf("Generating token for table number: %d", tableNumber))
+
+    // Convert status to string using the map
+    statusStr := TableStatusMap[status]
+    if statusStr == "" {
+        tr.logger.Warning(fmt.Sprintf("Invalid status provided for table %d, defaulting to Available", tableNumber))
+        statusStr = "Available"
+    }
+
+    // Generate a short token with table-specific claims
+    shortToken, err := tr.jwtMaker.CreateShortTableToken(
+        tableNumber,
+        capacity,
+        statusStr,
+        100*365*24*time.Hour,
+    )
+    if err != nil {
+        tr.logger.Error(fmt.Sprintf("Error creating short token: %v", err))
+        return "", fmt.Errorf("error creating short token: %w", err)
+    }
+
+    tr.logger.Info(fmt.Sprintf("Successfully generated token for table number: %d", tableNumber))
+    return shortToken, nil
+}
+
+func (tr *TableRepository) CreateTable(ctx context.Context, req *table.CreateTableRequest) (*table.Table, error) {
+    // Start logging with request details
+    tr.logger.Info(fmt.Sprintf("Creating new table repository layer - Number: %d, Capacity: %d, Status: %s", 
+        req.Number, 
+        req.Capacity, 
+        req.Status.String()))
+
+    // Status validation and conversion
+    dbStatus, exists := TableStatusMap[req.Status]
+    if !exists {
+        tr.logger.Error(fmt.Sprintf("Invalid status provided: %s, defaulting to Available", req.Status.String()))
+        dbStatus = "Available" // Use default status from schema
+    }
+
+    // Generate token with all table information
+    token, err := tr.generateToken(req.Number, req.Capacity, req.Status)
+    if err != nil {
+        tr.logger.Error(fmt.Sprintf("Failed to generate token for table %d: %v", req.Number, err))
+        return nil, fmt.Errorf("error generating token: %w", err)
+    }
+
+    // Token length validation
+    if len(token) > 255 {
+        token = token[:255]
+        tr.logger.Warning(fmt.Sprintf("Token truncated to 255 characters for table %d", req.Number))
+    }
+
+    // Log the status conversion
+    tr.logger.Info(fmt.Sprintf("Status conversion - Input: %s, DB Status: %s", 
+        req.Status.String(), 
+        dbStatus))
+
+    query := `
+        INSERT INTO tables (number, capacity, status, token, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $5)
+        RETURNING number, capacity, status, token, created_at, updated_at
+    `
+
+    var t table.Table
+    var createdAt, updatedAt time.Time
+    var statusStr string
+
+    // Execute query and scan results
+    err = tr.db.QueryRow(ctx, query,
+        req.Number,
+        req.Capacity,
+        dbStatus,
+        token,
+        time.Now(),
+    ).Scan(
+        &t.Number,
+        &t.Capacity,
+        &statusStr,
+        &t.Token,
+        &createdAt,
+        &updatedAt,
+    )
+
+    if err != nil {
+        tr.logger.Error(fmt.Sprintf("Failed to create table %d: %v", req.Number, err))
+        return nil, fmt.Errorf("error creating table: %w", err)
+    }
+
+    // Convert database status back to protobuf status
+    if protoStatus, exists := ReverseTableStatusMap[statusStr]; exists {
+        t.Status = protoStatus
+    } else {
+        tr.logger.Error(fmt.Sprintf("Unknown status from database: %s", statusStr))
+        t.Status = table.TableStatus_OCCUPIED
+    }
+
+    t.CreatedAt = timestamppb.New(createdAt)
+    t.UpdatedAt = timestamppb.New(updatedAt)
+
+    tr.logger.Info(fmt.Sprintf("Successfully created table %d with status %s", 
+        t.Number, 
+        t.Status.String()))
+
+    return &t, nil
 }

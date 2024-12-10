@@ -2,6 +2,7 @@ package tables_test
 
 import (
 	"context"
+	"fmt"
 
 	"english-ai-full/logger" // Add this import
 	"english-ai-full/quanqr/proto_qr/table"
@@ -55,7 +56,10 @@ func (ts *TableServiceStruct) GetTableDetail(ctx context.Context, req *table.Tab
 
 func (ts *TableServiceStruct) CreateTable(ctx context.Context, req *table.CreateTableRequest) (*table.TableResponse, error) {
 	ts.logger.Info("golang/quanqr/tables/tables_service.go 22 create table")
-
+	ts.logger.Info(fmt.Sprintf("Creating new table service layer - Number: %d, Capacity: %d, Status: %s", 
+	req.Number, 
+	req.Capacity, 
+	req.Status.String()))
 	createdTable, err := ts.tableRepo.CreateTable(ctx, req)
 	if err != nil {
 		ts.logger.Error("golang/quanqr/tables/tables_service.go 22 err: create table" + err.Error())
