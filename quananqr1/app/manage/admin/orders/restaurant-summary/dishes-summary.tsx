@@ -6,6 +6,11 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import useDeliveryStore from "@/zusstand/delivery/delivery_zustand";
+import { toast } from "@/components/ui/use-toast";
+
+const LOG_PATH =
+  "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx";
 
 interface OrderDetailedDish {
   dish_id: number;
@@ -26,16 +31,28 @@ interface NumPadProps {
 }
 
 const NumPad: React.FC<NumPadProps> = ({ dishName, onSubmit, onClose }) => {
+  console.log(`[${LOG_PATH}] NumPad rendered for dish:`, dishName);
+
   const [value, setValue] = useState<string>("");
 
   const handleNumClick = (num: number) => {
-    setValue((prev) => prev + num.toString());
+    console.log(`[${LOG_PATH}] NumPad number clicked:`, num);
+    setValue((prev) => {
+      const newValue = prev + num.toString();
+      console.log(`[${LOG_PATH}] NumPad new value:`, newValue);
+      return newValue;
+    });
   };
 
-  const handleClear = () => setValue("");
+  const handleClear = () => {
+    console.log(`[${LOG_PATH}] NumPad cleared`);
+    setValue("");
+  };
 
   const handleSubmit = () => {
-    onSubmit(parseInt(value || "0", 10));
+    const parsedValue = parseInt(value || "0", 10);
+    console.log(`[${LOG_PATH}] NumPad submitting value:`, parsedValue);
+    onSubmit(parsedValue);
     setValue("");
     onClose();
   };
@@ -45,7 +62,7 @@ const NumPad: React.FC<NumPadProps> = ({ dishName, onSubmit, onClose }) => {
       <input
         type="text"
         value={value}
-        className="w-full p-2 mb-4 text-right text-xl  rounded"
+        className="w-full p-2 mb-4 text-right text-xl rounded"
         readOnly
       />
       <div className="grid grid-cols-3 gap-2">
@@ -53,23 +70,23 @@ const NumPad: React.FC<NumPadProps> = ({ dishName, onSubmit, onClose }) => {
           <button
             key={num}
             onClick={() => handleNumClick(num)}
-            className="p-4 text-xl  rounded "
+            className="p-4 text-xl rounded"
           >
             {num}
           </button>
         ))}
-        <button onClick={handleClear} className="p-4 text-xl  rounded ">
+        <button onClick={handleClear} className="p-4 text-xl rounded">
           C
         </button>
         <button
           onClick={() => handleNumClick(0)}
-          className="p-4 text-xl  rounded "
+          className="p-4 text-xl rounded"
         >
           0
         </button>
         <button
           onClick={handleSubmit}
-          className="p-4 text-xl  rounded bg-blue-500 text-white hover:bg-blue-600"
+          className="p-4 text-xl rounded bg-blue-500 text-white hover:bg-blue-600"
         >
           ✓
         </button>
@@ -78,52 +95,129 @@ const NumPad: React.FC<NumPadProps> = ({ dishName, onSubmit, onClose }) => {
   );
 };
 
-const DishSummary: React.FC<{ dish: AggregatedDish }> = ({ dish }) => {
+const DishSummary: React.FC<{
+  dish: AggregatedDish;
+  http: any;
+  auth: {
+    guest: any;
+    user: any;
+    isGuest: boolean;
+  };
+  orderStore: {
+    tableNumber: number;
+    getOrderSummary: () => any;
+    clearOrder: () => void;
+  };
+}> = ({ dish, http, auth, orderStore }) => {
+  console.log(`[${LOG_PATH}] DishSummary rendered for dish:`, {
+    id: dish.dish_id,
+    name: dish.name,
+    quantity: dish.quantity
+  });
+
   const [showDetails, setShowDetails] = useState(false);
   const [showNumPad, setShowNumPad] = useState(false);
 
+  const { addDishItem, updateDishQuantity, createDelivery } =
+    useDeliveryStore();
+
   const handleDeliverySubmit = async (quantity: number) => {
+    console.log(`[${LOG_PATH}] Handling delivery submit:`, {
+      dishId: dish.dish_id,
+      dishName: dish.name,
+      quantity
+    });
+
     try {
-      const response = await fetch("/api/delivery", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+      const deliveryItem = {
+        dish_id: dish.dish_id,
+        quantity: quantity
+      };
+
+      if (dish.quantity === 0) {
+        console.log(`[${LOG_PATH}] Adding new dish item:`, deliveryItem);
+        addDishItem(deliveryItem);
+      } else {
+        console.log(`[${LOG_PATH}] Updating dish quantity:`, {
           dishId: dish.dish_id,
-          quantity: quantity
-        })
+          newQuantity: quantity
+        });
+        updateDishQuantity(dish.dish_id, quantity);
+      }
+
+      const deliveryDetails = {
+        deliveryAddress: "Default Address",
+        deliveryContact: "Default Contact",
+        deliveryNotes: "",
+        scheduledTime: new Date().toISOString(),
+        deliveryFee: 0
+      };
+
+      console.log(`[${LOG_PATH}] Creating delivery with details:`, {
+        deliveryItem,
+        deliveryDetails
       });
 
-      if (!response.ok) {
-        throw new Error("Delivery request failed");
-      }
+      const response = await createDelivery({
+        http,
+        auth,
+        orderStore,
+        deliveryDetails
+      });
+
+      console.log(`[${LOG_PATH}] Delivery created successfully:`, response);
+
+      toast({
+        title: "Success",
+        description: `Delivery created for ${quantity} ${dish.name}`
+      });
 
       setShowNumPad(false);
     } catch (error) {
-      console.error("Error submitting delivery:", error);
+      console.error(`[${LOG_PATH}] Error submitting delivery:`, error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to create delivery"
+      });
     }
   };
 
   const handleClose = () => {
+    console.log(`[${LOG_PATH}] Closing NumPad`);
     setShowNumPad(false);
   };
 
+  const toggleDetails = () => {
+    console.log(`[${LOG_PATH}] Toggling dish details:`, {
+      dishName: dish.name,
+      currentState: showDetails,
+      newState: !showDetails
+    });
+    setShowDetails(!showDetails);
+  };
+
+  const handleShowNumPad = () => {
+    console.log(`[${LOG_PATH}] Opening NumPad for dish:`, {
+      dishName: dish.name,
+      currentQuantity: dish.quantity
+    });
+    setShowNumPad(true);
+  };
+
   return (
-    <div className="p-2 mb-2 rounded ">
+    <div className="p-2 mb-2 rounded">
       <div className="flex items-center justify-between">
-        <div
-          className="flex-1 cursor-pointer"
-          onClick={() => setShowDetails(!showDetails)}
-        >
+        <div className="flex-1 cursor-pointer" onClick={toggleDetails}>
           <span className="font-bold">
-            {dish.name} :{dish.quantity}
+            {dish.name} : {dish.quantity}
           </span>
         </div>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowNumPad(true)}
+          onClick={handleShowNumPad}
           className="ml-2"
         >
           Delivery

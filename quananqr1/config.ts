@@ -27,10 +27,13 @@ const configSchema = z.object({
   wslink: z.string().default("ws://localhost:8888/ws/"),
   wsAuth: z.string().default("ws/api/ws-auth"),
 
-
+  Delivery_External_End_Point: z.string().default("delivery")
 });
 
 const configProject = configSchema.safeParse({
+  Delivery_External_End_Point:
+    process.env.Delivery_External_End_Point || "delivery",
+
   wslink: process.env.NEXT_PUBLIC_WS_LINK || "ws://localhost:8888/ws/",
   wsAuth: process.env.NEXT_PUBLIC_WS_AUTH || "ws/api/ws-auth",
   Order_Internal_End_Point: process.env.ORDER_INTERNAL_END_POINT || "api/order",
@@ -79,7 +82,6 @@ export default configProject.data;
 // - NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL:-http://nextjs_app:3000/}
 
 // - NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL:-http://localhost:3000/}
-
 
 export const APP_CONSTANTS = {
   Intervel_revalidata_Page_Order: 6000000,

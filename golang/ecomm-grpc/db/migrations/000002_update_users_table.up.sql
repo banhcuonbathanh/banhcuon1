@@ -281,13 +281,13 @@ CREATE TABLE deliveries (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     total_price INTEGER,
-    topping VARCHAR(255),
+    order_id BIGINT,
+    bow_chili BIGINT DEFAULT 0,
     bow_no_chili BIGINT DEFAULT 0,
     take_away BOOLEAN NOT NULL DEFAULT false,
     chili_number BIGINT DEFAULT 0,
     table_token VARCHAR(255) NOT NULL,
     client_name VARCHAR(255),
-    -- Suggested additional fields
     delivery_address TEXT,
     delivery_contact VARCHAR(100),
     delivery_notes TEXT,
@@ -312,7 +312,6 @@ CREATE TABLE deliveries (
         delivery_status IN ('Pending', 'Assigned', 'Picked Up', 'In Transit', 'Delivered', 'Failed', 'Cancelled')
     )
 );
-
 CREATE TABLE dish_delivery_items (
     id BIGSERIAL PRIMARY KEY,
     delivery_id BIGINT NOT NULL,
