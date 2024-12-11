@@ -1,92 +1,90 @@
-import React, { useMemo } from "react";
-import { Card } from "@/components/ui/card";
+import React from "react";
 import { OrderDetailedResponse } from "../component/new-order-column";
 
 interface ToppingDisplayProps {
   orders: OrderDetailedResponse[];
 }
 
-const GroupToppings: React.FC<ToppingDisplayProps> = ({ orders }) => {
-  const parseToppings = (toppingString: string): string[] => {
-    // Split the string by commas and clean up whitespace
+const FirstOrderToppings: React.FC<ToppingDisplayProps> = ({ orders }) => {
+  const parseToppings = (
+    toppingString: string
+  ): Array<{ key: string; value: string }> => {
     return toppingString
-      .split(",")
-      .map((topping) => topping.trim())
-      .filter((topping) => topping.length > 0);
+      .split("-")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+      .map((item) => {
+        // Handle special case for "ot tuoi"
+        if (item.includes("ot tuoi")) {
+          const isTrue = item.includes("true");
+          return {
+            key: "ot tuoi",
+            value: isTrue ? "co" : "khong"
+          };
+        }
+
+        // Remove any existing colons from the input
+        item = item.replace(/:/g, "").trim();
+
+        // Handle numeric values (like "canhKhongRau 2" or "bat be 2")
+        if (item.match(/.*\s\d+$/)) {
+          const lastSpace = item.lastIndexOf(" ");
+          return {
+            key: item.substring(0, lastSpace).trim(),
+            value: item.substring(lastSpace + 1).trim()
+          };
+        }
+
+        // Handle text values (like "nhan Thịt Mọc Nhĩ")
+        const firstSpace = item.indexOf(" ");
+        if (firstSpace !== -1) {
+          return {
+            key: item.substring(0, firstSpace).trim(),
+            value: item.substring(firstSpace + 1).trim()
+          };
+        }
+
+        return {
+          key: item,
+          value: ""
+        };
+      });
   };
 
-  const toppingAnalysis = useMemo(() => {
-    const toppingCounts = new Map<string, number>();
-    let totalOrders = 0;
-    let ordersWithToppings = 0;
+  if (orders.length === 0) {
+    return (
+      <div className="rounded-lg shadow-sm p-4">
+        <div className="text-gray-500 text-center py-4">
+          No orders available
+        </div>
+      </div>
+    );
+  }
 
-    orders.forEach((order) => {
-      if (order.topping) {
-        ordersWithToppings++;
-        const toppings = parseToppings(order.topping);
-        toppings.forEach((topping) => {
-          toppingCounts.set(topping, (toppingCounts.get(topping) || 0) + 1);
-        });
-      }
-      totalOrders++;
-    });
-
-    // Sort toppings by frequency
-    const sortedToppings = Array.from(toppingCounts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([topping, count]) => ({
-        name: topping,
-        count,
-        percentage: ((count / ordersWithToppings) * 100).toFixed(1)
-      }));
-
-    return {
-      sortedToppings,
-      totalOrders,
-      ordersWithToppings
-    };
-  }, [orders]);
+  const firstOrder = orders[0];
+  const toppings = firstOrder.topping ? parseToppings(firstOrder.topping) : [];
 
   return (
-    <Card className="p-4">
+    <div className="rounded-lg shadow-sm p-4">
       <div className="space-y-4">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">Topping Summary</h3>
-          <div className="text-sm text-gray-600">
-            Orders with toppings: {toppingAnalysis.ordersWithToppings} of{" "}
-            {toppingAnalysis.totalOrders}
-          </div>
-        </div>
-
         <div className="space-y-2">
-          {toppingAnalysis.sortedToppings.map((topping, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-2  "
-            >
-              <div className="flex-1">
-                <span className="font-medium">{topping.name}</span>
-              </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">
-                  {topping.count} orders
-                </span>
-                <span className="text-sm text-gray-600">
-                  ({topping.percentage}%)
-                </span>
-              </div>
+          {toppings.map((topping, index) => (
+            <div key={index} className="flex items-center p-2 rounded-md">
+              <span className="font-medium">
+                {`${topping.key}: ${topping.value}`}
+              </span>
             </div>
           ))}
         </div>
 
-        {toppingAnalysis.sortedToppings.length === 0 && (
+        {toppings.length === 0 && (
           <div className="text-gray-500 text-center py-4">
-            No toppings found in these orders
+            No toppings found in this order
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
 
-export default GroupToppings;
+export default FirstOrderToppings;

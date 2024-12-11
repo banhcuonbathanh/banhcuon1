@@ -5,6 +5,7 @@ import {
   OrderDetailedResponse
 } from "../component/new-order-column";
 import GroupToppings from "./toppping-display";
+import DishSummary from "./dishes-summary";
 
 interface RestaurantSummaryProps {
   restaurantLayoutProps: OrderDetailedResponse[];
@@ -17,6 +18,7 @@ interface GroupedOrder {
   characteristic?: string;
   tableNumber: number;
   orders: OrderDetailedResponse[];
+  hasTakeAway: boolean;
 }
 
 // Helper Components
@@ -48,23 +50,21 @@ const CollapsibleSection: React.FC<{
   );
 };
 
-const DishSummary: React.FC<{ dish: AggregatedDish }> = ({ dish }) => {
+const DishSummary1: React.FC<{ dish: AggregatedDish }> = ({ dish }) => {
   const [showDetails, setShowDetails] = useState(false);
 
   return (
-    <div className="p-2 rounded mb-2 border-b last:border-b-0">
+    <div className="p-2 mb-2">
       <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <span className="font-medium">{dish.name}</span>
-          <span className="ml-4">x{dish.quantity}</span>
-        </div>
-        <button
+        <div
+          className="flex-1 cursor-pointer"
           onClick={() => setShowDetails(!showDetails)}
-          className="flex items-center text-gray-600 hover:text-gray-800"
         >
-          <Info className="h-4 w-4 mr-1" />
-          {showDetails ? "Hide Details" : "Show Details"}
-        </button>
+          <span className="font-bold">
+            {dish.name} :{dish.quantity} - {"delivery"}
+          </span>
+          {/* <span className="ml-4">:{dish.quantity} 4</span> */}
+        </div>
       </div>
 
       {showDetails && (
@@ -207,10 +207,16 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
         groups.set(groupKey, {
           orderName: characteristic,
           tableNumber: order.table_number,
-          orders: []
+          orders: [],
+          hasTakeAway: false
         });
       }
-      groups.get(groupKey)!.orders.push(order);
+      const group = groups.get(groupKey)!;
+      group.orders.push(order);
+      // Update hasTakeAway if any order in the group is takeaway
+      if (order.takeAway) {
+        group.hasTakeAway = true;
+      }
     });
 
     return Array.from(groups.values());
@@ -218,54 +224,118 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Restaurant Order Summary</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {groupedOrders.map((group) => {
+          const aggregatedDishes = aggregateDishes(group.orders);
 
-      <CollapsibleSection title="All Orders">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {groupedOrders.map((group) => {
-            const aggregatedDishes = aggregateDishes(group.orders);
+          return (
+            <div
+              key={`${group.orderName}-${group.tableNumber}`}
+              className="shadow-md rounded-lg p-4 border"
+            >
+              <h3 className="text-xl font-semibold mb-4">
+                {group.orderName} - Bàn {group.tableNumber}
+                {group.hasTakeAway && (
+                  <span className="ml-2 text-red-600">(Đem đi)</span>
+                )}
+              </h3>
 
-            return (
-              <div
-                key={`${group.orderName}-${group.tableNumber}`}
-                className="shadow-md rounded-lg p-4"
-              >
-                <h3 className="text-xl font-semibold mb-4">
-                  {group.orderName} - Table {group.tableNumber}
-                </h3>
+              <div className="rounded-lg shadow-sm p-4">
+                <CollapsibleSection title="Canh">
+                  <GroupToppings orders={group.orders} />
+                </CollapsibleSection>
 
-                <div className="rounded-lg shadow-sm p-4">
-                  <CollapsibleSection title="Toppings Summary">
-                    <GroupToppings orders={group.orders} />
-                  </CollapsibleSection>
+                {/* <CollapsibleSection title="Món Ăn">
+                  {aggregatedDishes.map((dish, index) => (
+                    <DishSummary1
+                      key={`${dish.dish_id}-${index}`}
+                      dish={dish}
+                    />
+                  ))}
+                </CollapsibleSection> */}
 
-                  <CollapsibleSection title="Aggregated Dishes">
-                    {aggregatedDishes.map((dish, index) => (
-                      <DishSummary
-                        key={`${dish.dish_id}-${index}`}
-                        dish={dish}
-                      />
-                    ))}
-                  </CollapsibleSection>
+                <CollapsibleSection title="Món Ăn 123412341234">
+                  {aggregatedDishes.map((dish, index) => (
+                    <DishSummary key={`${dish.dish_id}-${index}`} dish={dish} />
+                  ))}
+                </CollapsibleSection>
 
-                  <CollapsibleSection title="Individual Orders">
-                    {group.orders.map((order, index) => (
-                      <div key={order.id} className="mb-4 last:mb-0">
-                        <div className="font-medium text-lg mb-2">
-                          {`${index + 1}${getOrdinalSuffix(index + 1)} Order`}
-                        </div>
-                        <OrderDetails order={order} />
+                <CollapsibleSection title="Lần Gọi Đồ">
+                  {group.orders.map((order, index) => (
+                    <div key={order.id} className="mb-4 last:mb-0">
+                      <div className="font-medium text-lg mb-2">
+                        {`${index + 1}${getOrdinalSuffix(index + 1)} Order`}
                       </div>
-                    ))}
-                  </CollapsibleSection>
-                </div>
+                      <OrderDetails order={order} />
+                    </div>
+                  ))}
+                </CollapsibleSection>
+
+                <GroupSummary orders={group.orders} />
               </div>
-            );
-          })}
-        </div>
-      </CollapsibleSection>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
 
 export default RestaurantSummary;
+
+const GroupSummary: React.FC<{ orders: OrderDetailedResponse[] }> = ({
+  orders
+}) => {
+  const [isDetailsVisible, setIsDetailsVisible] = useState(false);
+  const totals = useMemo(() => {
+    let dishTotal = 0;
+    let setTotal = 0;
+
+    orders.forEach((order) => {
+      order.data_dish.forEach((dish) => {
+        dishTotal += dish.price * dish.quantity;
+      });
+
+      order.data_set.forEach((set) => {
+        setTotal += set.price * set.quantity;
+      });
+    });
+
+    return {
+      dishTotal,
+      setTotal,
+      grandTotal: dishTotal + setTotal
+    };
+  }, [orders]);
+
+  return (
+    <div className="mt-4 pt-4 border-t">
+      <div
+        className="cursor-pointer select-none"
+        onClick={() => setIsDetailsVisible(!isDetailsVisible)}
+      >
+        <div className="grid grid-cols-2 gap-2">
+          <div className="font-bold text-lg">Total:</div>
+          <div className="text-right font-bold text-lg">
+            ${totals.grandTotal.toFixed(2)}
+            <ChevronDown
+              className={`inline-block ml-2 h-4 w-4 transition-transform duration-200 ${
+                isDetailsVisible ? "transform rotate-180" : ""
+              }`}
+            />
+          </div>
+        </div>
+
+        {isDetailsVisible && (
+          <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+            <div className="font-medium">Individual Dishes:</div>
+            <div className="text-right">${totals.dishTotal.toFixed(2)}</div>
+
+            <div className="font-medium">Set Orders:</div>
+            <div className="text-right">${totals.setTotal.toFixed(2)}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

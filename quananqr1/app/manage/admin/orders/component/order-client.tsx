@@ -14,15 +14,15 @@ import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
+
   CardContent
 } from "@/components/ui/card";
 
-import { YourComponent1 } from "./admin-table";
+
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 import { APP_CONSTANTS } from "@/config";
-import { RestaurantLayout } from "../restaurant-layout/restaurant-layout";
+
 import RestaurantSummary from "../restaurant-summary/restaurant-summary";
 
 interface OrderClientProps {
@@ -138,14 +138,13 @@ export const OrderClient: React.FC<OrderClientProps> = ({
       <div className="space-y-2">
         <Card>
           <CardHeader>
-            <CardTitle>Orders Management</CardTitle>
-            <CardDescription>Manage your restaurant orders</CardDescription>
+            <CardTitle>dat ban</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col">
               <div className="flex flex-row justify-between items-center">
                 <Heading
-                  title={`Orders (${pagination.total_items})`}
+                  title={`so luong don : ${pagination.total_items}`}
                   description={`Page ${currentPage} of ${pagination.total_pages}`}
                 />
               </div>
