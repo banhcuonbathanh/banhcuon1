@@ -1,171 +1,213 @@
 // config/loggerConfig.ts
+
 export interface LogPath {
-    path: string;
-    enabled: boolean;
-    description?: string;
-  }
-  
-  export const loggerPaths: LogPath[] = [
-    {
-      path: '/manage/admin/table',
-      enabled: true,
-      description: 'Admin table management page logs'
-    },
-    {
-      path: '/manage/admin/set',
-      enabled: false,
-      description: 'Admin settings page logs'
-    },
-    {
-      path: '/(client)/table',
-      enabled: true,
-      description: 'Client table viewing page logs'
+  path: string;
+  enabled: boolean;
+  description: string;
+  enabledLogIds: number[];
+  logDescriptions: {
+    [key: number]: {
+      description: string;
+      location: string;
+      status: "enabled" | "disabled";
+    };
+  };
+}
+
+export const loggerPaths: LogPath[] = [
+  {
+    path: "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
+    enabled: true,
+    description: "Restaurant Summary Component Logs",
+    enabledLogIds: [1], // Only logs #1 and #2 are enabled
+    logDescriptions: {
+      1: {
+        description: "Initial dishMap state in aggregateDishes function",
+        location: "aggregateDishes function - before processing orders",
+        status: "enabled"
+      },
+      2: {
+        description: "Aggregated dishes result for each group",
+        location: "RestaurantSummary component - inside groupedOrders.map",
+        status: "enabled"
+      }
     }
-  ];
-  
- 
-  
-  const isDevelopment = process.env.NODE_ENV !== 'production';
-  
-  export function log(message: any, path: string) {
-    // Early return if in production
-    if (!isDevelopment) return;
-  
-    const pathConfig = loggerPaths.find(p => path.includes(p.path));
-    
-    if (!pathConfig?.enabled) return;
-    
-    const description = pathConfig?.description || 'No description';
-    const isServer = typeof window === 'undefined';
-    const context = isServer ? '[Server]' : '[Client]';
-    
-    console.log(`${context}[${path}] (${description}):`, message);
-  }
-  
-  // Alternative version with selective production logging
-  export function logWithLevel(message: any, path: string, level: 'debug' | 'info' | 'warn' | 'error' = 'debug') {
-    const pathConfig = loggerPaths.find(p => path.includes(p.path));
-    
-    // Only continue if path is enabled
-    if (!pathConfig?.enabled) return;
-    
-    // In production, only show warnings and errors
-    if (!isDevelopment && level !== 'warn' && level !== 'error') return;
-    
-    const description = pathConfig?.description || 'No description';
-    const isServer = typeof window === 'undefined';
-    const context = isServer ? '[Server]' : '[Client]';
-    
-    switch (level) {
-      case 'debug':
-        isDevelopment && console.log(`${context}[${path}] (${description}):`, message);
-        break;
-      case 'info':
-        isDevelopment && console.info(`${context}[${path}] (${description}):`, message);
-        break;
-      case 'warn':
-        console.warn(`${context}[${path}] (${description}):`, message);
-        break;
-      case 'error':
-        console.error(`${context}[${path}] (${description}):`, message);
-        break;
+  },
+  {
+    path: "/manage/admin/table",
+    enabled: true,
+    description: "Admin Table Management Logs",
+    enabledLogIds: [1, 2, 3],
+    logDescriptions: {
+      1: {
+        description: "Table initialization",
+        location: "Table component initialization",
+        status: "enabled"
+      },
+      2: {
+        description: "Table data updates",
+        location: "Table data manipulation functions",
+        status: "enabled"
+      },
+      3: {
+        description: "Table error states",
+        location: "Error handling in table components",
+        status: "enabled"
+      }
+    }
+  },
+
+  {
+    path: "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx",
+    enabled: true,
+    description: "Restaurant Summary Component Logs",
+    enabledLogIds: [1], // Only logs #1 and #2 are enabled
+    logDescriptions: {
+      1: {
+        description: "Initial dishMap state in aggregateDishes function",
+        location: "aggregateDishes function - before processing orders",
+        status: "enabled"
+      }
     }
   }
+];
 
+const isDevelopment = process.env.NODE_ENV !== "production";
 
-//   'use client';
+type LogLevel = "debug" | "info" | "warn" | "error";
 
-  
-//   export default function AdminTablePage() {
-//     const pathname = usePathname();
+function validateLogId(pathConfig: LogPath, logId: number): void {
+  if (!pathConfig.logDescriptions[logId]) {
+    throw new Error(`
+      Invalid log ID: ${logId}
+      Available log IDs for ${pathConfig.path}:
+      ${Object.keys(pathConfig.logDescriptions)
+        .map(
+          (id) =>
+            `\n- Log #${id}: ${
+              pathConfig.logDescriptions[Number(id)].description
+            }`
+        )
+        .join("")}
+    `);
+  }
+}
 
+function validatePath(path: string): LogPath {
+  const pathConfig = loggerPaths.find((p) => path.startsWith(p.path));
+  if (!pathConfig) {
+    throw new Error(`
+      Invalid path: ${path}
+      Available paths:
+      ${loggerPaths.map((p) => `\n- ${p.path}`).join("")}
+    `);
+  }
+  return pathConfig;
+}
 
+export function getLogStatus(path: string): void {
+  const pathConfig = validatePath(path);
+  console.log(`
+Log Status for: ${pathConfig.path}
+Description: ${pathConfig.description}
+Enabled: ${pathConfig.enabled}
 
-  // First, let's set up our logger paths
-// config/loggerConfig.ts
-// export interface LogPath {
-//     path: string;
-//     enabled: boolean;
-//     description?: string;
-//   }
-  
-//   export const loggerPaths: LogPath[] = [
-//     {
-//       path: '/manage/admin/table',
-//       enabled: true,
-//       description: 'Admin table management page logs'
-//     },
-//     {
-//       path: '/manage/admin/set',
-//       enabled: false,
-//       description: 'Admin settings page logs'
-//     },
-//     {
-//       path: '/(client)/table',
-//       enabled: true,
-//       description: 'Client table viewing page logs'
-//     }
-//   ];
-  
-//   // Example 1: Page with logging enabled
-//   // app/manage/admin/table/page.tsx
-//   'use client';
-//   import { log } from '@/utils/logger';
-//   import { usePathname } from 'next/navigation';
-  
-//   export default function AdminTablePage() {
-//     const pathname = usePathname();
-    
-//     // This WILL show up because enabled: true for this path
-//     log('Admin table page loaded', pathname);
-    
-//     return (
-//       <div>
-//         <button onClick={() => {
-//           // This WILL also show up
-//           log('Button clicked in admin table', pathname);
-//         }}>
-//           Click Me
-//         </button>
-//       </div>
-//     );
-//   }
-  
-//   // Example 2: Page with logging disabled
-//   // app/manage/admin/set/page.tsx
-//   'use client';
-//   import { log } from '@/utils/logger';
-//   import { usePathname } from 'next/navigation';
-  
-//   export default function AdminSettingsPage() {
-//     const pathname = usePathname();
-    
-//     // This will NOT show up because enabled: false for this path
-//     log('Admin settings page loaded', pathname);
-    
-//     return (
-//       <div>
-//         <button onClick={() => {
-//           // This will NOT show up either
-//           log('Button clicked in settings', pathname);
-//         }}>
-//           Click Me
-//         </button>
-//       </div>
-//     );
-//   }
-  
-//   // Example 3: Server Component with logging enabled
-//   // app/(client)/table/[number]/page.tsx
-//   import { log } from '@/utils/logger';
-  
-//   export default async function ClientTablePage() {
-//     // This WILL show up because enabled: true for this path
-//     log('Client table page loaded', '/(client)/table');
-    
-//     const data = await fetchData();
-//     // This WILL also show up
-//     log('Data fetched', '/(client)/table');
-    
-//     return <div>Table Content</div>;
-//   }
+Available Logs:
+${Object.entries(pathConfig.logDescriptions)
+  .map(
+    ([id, log]) => `
+Log #${id}:
+- Description: ${log.description}
+- Location: ${log.location}
+- Status: ${log.status}
+- Enabled: ${pathConfig.enabledLogIds.includes(Number(id)) ? "Yes" : "No"}
+`
+  )
+  .join("")}
+  `);
+}
+
+export function logWithLevel(
+  message: Record<string, unknown>,
+  path: string,
+  level: LogLevel,
+  logId: number
+): void {
+  // Validate message
+  if (!message || typeof message !== "object") {
+    throw new Error(`
+      message: Must be an object (e.g., { dishMap }, { users })
+      Received: ${JSON.stringify(message)}
+    `);
+  }
+
+  // Validate path and get config
+  const pathConfig = validatePath(path);
+
+  // Validate log ID
+  validateLogId(pathConfig, logId);
+
+  // Check if logging is enabled for this path and log ID
+  if (!pathConfig.enabled || !pathConfig.enabledLogIds.includes(logId)) {
+    return;
+  }
+
+  // Get log description
+  const logInfo = pathConfig.logDescriptions[logId];
+
+  // Format the log prefix
+  const logIdPrefix = `[Log #${logId}]`;
+  const locationPrefix = `[${logInfo.location}]`;
+
+  // Log based on level
+  switch (level) {
+    case "debug":
+      isDevelopment &&
+        console.log(
+          `🔍 DEBUG ${logIdPrefix} ${locationPrefix} [${path}]:`,
+          message
+        );
+      break;
+    case "info":
+      isDevelopment &&
+        console.log(
+          `ℹ️ INFO ${logIdPrefix} ${locationPrefix} [${path}]:`,
+          message
+        );
+      break;
+    case "warn":
+      console.log(
+        `⚠️ WARN ${logIdPrefix} ${locationPrefix} [${path}]:`,
+        message
+      );
+      break;
+    case "error":
+      console.log(
+        `❌ ERROR ${logIdPrefix} ${locationPrefix} [${path}]:`,
+        message
+      );
+      break;
+  }
+}
+
+// Example usage in restaurant-summary.tsx:
+/*
+// Get log status for a specific file
+getLogStatus("quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx");
+
+// Log with ID 1
+logWithLevel(
+  { dishMap },
+  "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
+  "info",
+  1
+);
+
+// Log with ID 2
+logWithLevel(
+  { aggregatedDishes },
+  "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
+  "info",
+  2
+);
+*/

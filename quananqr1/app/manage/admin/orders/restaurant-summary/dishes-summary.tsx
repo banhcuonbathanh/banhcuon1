@@ -8,9 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import useDeliveryStore from "@/zusstand/delivery/delivery_zustand";
 import { toast } from "@/components/ui/use-toast";
-
-const LOG_PATH =
-  "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx";
+import { logWithLevel } from "@/lib/log";
 
 interface OrderDetailedDish {
   dish_id: number;
@@ -31,27 +29,23 @@ interface NumPadProps {
 }
 
 const NumPad: React.FC<NumPadProps> = ({ dishName, onSubmit, onClose }) => {
-  console.log(`[${LOG_PATH}] NumPad rendered for dish:`, dishName);
-
   const [value, setValue] = useState<string>("");
 
   const handleNumClick = (num: number) => {
-    console.log(`[${LOG_PATH}] NumPad number clicked:`, num);
     setValue((prev) => {
       const newValue = prev + num.toString();
-      console.log(`[${LOG_PATH}] NumPad new value:`, newValue);
+
       return newValue;
     });
   };
 
   const handleClear = () => {
-    console.log(`[${LOG_PATH}] NumPad cleared`);
     setValue("");
   };
 
   const handleSubmit = () => {
     const parsedValue = parseInt(value || "0", 10);
-    console.log(`[${LOG_PATH}] NumPad submitting value:`, parsedValue);
+
     onSubmit(parsedValue);
     setValue("");
     onClose();
@@ -109,11 +103,15 @@ const DishSummary: React.FC<{
     clearOrder: () => void;
   };
 }> = ({ dish, http, auth, orderStore }) => {
-  console.log(`[${LOG_PATH}] DishSummary rendered for dish:`, {
-    id: dish.dish_id,
-    name: dish.name,
-    quantity: dish.quantity
-  });
+  logWithLevel(
+    {
+      dish
+    },
+    "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx 1212",
+    "info",
+    1
+     // You can use "debug", "info", "warn", or "error"
+  );
 
   const [showDetails, setShowDetails] = useState(false);
   const [showNumPad, setShowNumPad] = useState(false);
@@ -122,12 +120,6 @@ const DishSummary: React.FC<{
     useDeliveryStore();
 
   const handleDeliverySubmit = async (quantity: number) => {
-    console.log(`[${LOG_PATH}] Handling delivery submit:`, {
-      dishId: dish.dish_id,
-      dishName: dish.name,
-      quantity
-    });
-
     try {
       const deliveryItem = {
         dish_id: dish.dish_id,
@@ -135,13 +127,8 @@ const DishSummary: React.FC<{
       };
 
       if (dish.quantity === 0) {
-        console.log(`[${LOG_PATH}] Adding new dish item:`, deliveryItem);
         addDishItem(deliveryItem);
       } else {
-        console.log(`[${LOG_PATH}] Updating dish quantity:`, {
-          dishId: dish.dish_id,
-          newQuantity: quantity
-        });
         updateDishQuantity(dish.dish_id, quantity);
       }
 
@@ -153,19 +140,12 @@ const DishSummary: React.FC<{
         deliveryFee: 0
       };
 
-      console.log(`[${LOG_PATH}] Creating delivery with details:`, {
-        deliveryItem,
-        deliveryDetails
-      });
-
       const response = await createDelivery({
         http,
         auth,
         orderStore,
         deliveryDetails
       });
-
-      console.log(`[${LOG_PATH}] Delivery created successfully:`, response);
 
       toast({
         title: "Success",
@@ -174,7 +154,6 @@ const DishSummary: React.FC<{
 
       setShowNumPad(false);
     } catch (error) {
-      console.error(`[${LOG_PATH}] Error submitting delivery:`, error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -185,24 +164,14 @@ const DishSummary: React.FC<{
   };
 
   const handleClose = () => {
-    console.log(`[${LOG_PATH}] Closing NumPad`);
     setShowNumPad(false);
   };
 
   const toggleDetails = () => {
-    console.log(`[${LOG_PATH}] Toggling dish details:`, {
-      dishName: dish.name,
-      currentState: showDetails,
-      newState: !showDetails
-    });
     setShowDetails(!showDetails);
   };
 
   const handleShowNumPad = () => {
-    console.log(`[${LOG_PATH}] Opening NumPad for dish:`, {
-      dishName: dish.name,
-      currentQuantity: dish.quantity
-    });
     setShowNumPad(true);
   };
 

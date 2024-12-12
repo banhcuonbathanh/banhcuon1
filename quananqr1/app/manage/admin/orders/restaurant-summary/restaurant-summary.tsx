@@ -6,6 +6,7 @@ import {
 } from "../component/new-order-column";
 import GroupToppings from "./toppping-display";
 import DishSummary from "./dishes-summary";
+import { logWithLevel } from "@/lib/log";
 
 interface RestaurantSummaryProps {
   restaurantLayoutProps: OrderDetailedResponse[];
@@ -159,7 +160,14 @@ const getOrdinalSuffix = (num: number): string => {
 
 const aggregateDishes = (orders: OrderDetailedResponse[]): AggregatedDish[] => {
   const dishMap = new Map<number, AggregatedDish>();
-
+  logWithLevel(
+    {
+      dishMap
+    },
+    "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
+    "info",
+    1 // You can use "debug", "info", "warn", or "error"
+  );
   orders.forEach((order) => {
     // Add individual dishes
     order.data_dish.forEach((dish) => {
@@ -197,6 +205,7 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
   restaurantLayoutProps
 }) => {
   const groupedOrders = useMemo(() => {
+    
     const groups = new Map<string, GroupedOrder>();
 
     restaurantLayoutProps.forEach((order) => {
@@ -227,7 +236,14 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {groupedOrders.map((group) => {
           const aggregatedDishes = aggregateDishes(group.orders);
-
+          logWithLevel(
+            {
+              aggregatedDishes
+            },
+            "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
+            "info",
+            2 // You can use "debug", "info", "warn", or "error"
+          );
           return (
             <div
               key={`${group.orderName}-${group.tableNumber}`}
@@ -256,7 +272,19 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
 
                 <CollapsibleSection title="Món Ăn 123412341234">
                   {aggregatedDishes.map((dish, index) => (
-                    <DishSummary key={`${dish.dish_id}-${index}`} dish={dish} />
+                    <DishSummary key={`${dish.dish_id}-${index}`} dish={dish} http={undefined} auth={{
+                      guest: undefined,
+                      user: undefined,
+                      isGuest: false
+                    }} orderStore={{
+                      tableNumber: 0,
+                      getOrderSummary: function () {
+                        throw new Error("Function not implemented.");
+                      },
+                      clearOrder: function (): void {
+                        throw new Error("Function not implemented.");
+                      }
+                    }} />
                   ))}
                 </CollapsibleSection>
 
