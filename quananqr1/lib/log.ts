@@ -19,7 +19,7 @@ export const loggerPaths: LogPath[] = [
     path: "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
     enabled: true,
     description: "Restaurant Summary Component Logs",
-    enabledLogIds: [1], // Only logs #1 and #2 are enabled
+    enabledLogIds: [], // Only logs #1 and #2 are enabled
     logDescriptions: {
       1: {
         description: "Initial dishMap state in aggregateDishes function",
@@ -61,10 +61,21 @@ export const loggerPaths: LogPath[] = [
     path: "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx",
     enabled: true,
     description: "Restaurant Summary Component Logs",
-    enabledLogIds: [1], // Only logs #1 and #2 are enabled
+    enabledLogIds: [1, 2, 3], // Only logs #1 and #2 are enabled
     logDescriptions: {
       1: {
         description: "Initial dishMap state in aggregateDishes function",
+        location: "aggregateDishes function - before processing orders",
+        status: "enabled"
+      },
+      2: {
+        description: "Initial dishMap state in aggregateDishes function",
+        location: "aggregateDishes function - before processing orders",
+        status: "enabled"
+      },
+
+      3: {
+        description: "handleDeliverySubmitn createDelivery",
         location: "aggregateDishes function - before processing orders",
         status: "enabled"
       }

@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import useDeliveryStore from "@/zusstand/delivery/delivery_zustand";
 import { toast } from "@/components/ui/use-toast";
+import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { logWithLevel } from "@/lib/log";
 
 interface OrderDetailedDish {
@@ -32,11 +35,7 @@ const NumPad: React.FC<NumPadProps> = ({ dishName, onSubmit, onClose }) => {
   const [value, setValue] = useState<string>("");
 
   const handleNumClick = (num: number) => {
-    setValue((prev) => {
-      const newValue = prev + num.toString();
-
-      return newValue;
-    });
+    setValue((prev) => prev + num.toString());
   };
 
   const handleClear = () => {
@@ -44,11 +43,12 @@ const NumPad: React.FC<NumPadProps> = ({ dishName, onSubmit, onClose }) => {
   };
 
   const handleSubmit = () => {
+    console.log(
+      "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx handleSubmit"
+    );
     const parsedValue = parseInt(value || "0", 10);
-
     onSubmit(parsedValue);
     setValue("");
-    onClose();
   };
 
   return (
@@ -92,88 +92,152 @@ const NumPad: React.FC<NumPadProps> = ({ dishName, onSubmit, onClose }) => {
 const DishSummary: React.FC<{
   dish: AggregatedDish;
   http: any;
-  auth: {
-    guest: any;
-    user: any;
-    isGuest: boolean;
-  };
   orderStore: {
     tableNumber: number;
     getOrderSummary: () => any;
     clearOrder: () => void;
   };
-}> = ({ dish, http, auth, orderStore }) => {
-  logWithLevel(
-    {
-      dish
-    },
-    "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx 1212",
-    "info",
-    1
-     // You can use "debug", "info", "warn", or "error"
-  );
-
+}> = ({ dish, http, orderStore }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showNumPad, setShowNumPad] = useState(false);
 
-  const { addDishItem, updateDishQuantity, createDelivery } =
-    useDeliveryStore();
+  const guest = useAuthStore((state) => state.guest);
+  const user = useAuthStore((state) => state.user);
+  const isGuest = useAuthStore((state) => state.isGuest);
+  const createDelivery = useDeliveryStore((state) => state.createDelivery);
 
-  const handleDeliverySubmit = async (quantity: number) => {
-    try {
-      const deliveryItem = {
-        dish_id: dish.dish_id,
-        quantity: quantity
-      };
+  const handleDeliverySubmit = useCallback(
+    async (quantity: number) => {
+      try {
+        logWithLevel(
+          {
+            message: "Starting delivery submission",
+            quantity,
+            dish: dish.name
+          },
+          "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx handleDeliverySubmit start",
+          "info",
+          3
+        );
 
-      if (dish.quantity === 0) {
-        addDishItem(deliveryItem);
-      } else {
-        updateDishQuantity(dish.dish_id, quantity);
+        const deliveryDetails = {
+          deliveryAddress: "Default Address",
+          deliveryContact: "Default Contact",
+          deliveryNotes: "",
+          scheduledTime: new Date().toISOString(),
+          deliveryFee: 0
+        };
+
+        logWithLevel(
+          {
+            http,
+            guest,
+            user,
+            isGuest,
+            orderStore,
+            deliveryDetails
+          },
+          "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx handleDeliverySubmit 12121",
+          "info",
+          3
+        );
+
+        try {
+          // const orderSummary = orderStore.getOrderSummary();
+          // logWithLevel(
+          //   {
+          //     message: "Order summary retrieved",
+          //     orderSummary
+          //   },
+          //   "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx handleDeliverySubmit before createDelivery",
+          //   "info",
+          //   3
+          // );
+
+          const result = await createDelivery({
+            http,
+            guest,
+            user,
+            isGuest,
+            orderStore,
+            deliveryDetails
+          });
+
+          logWithLevel(
+            {
+              result,
+              http,
+              guest,
+              user,
+              isGuest,
+              orderStore,
+              deliveryDetails
+            },
+            "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx handleDeliverySubmit 131313131",
+            "info",
+            3
+          );
+
+          toast({
+            title: "Success",
+            description: `Delivery created for ${quantity} ${dish.name}`
+          });
+
+          setShowNumPad(false);
+        } catch (createDeliveryError) {
+          logWithLevel(
+            {
+              error: createDeliveryError,
+              http,
+              guest,
+              user,
+              isGuest,
+              orderStore,
+              deliveryDetails
+            },
+            "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx handleDeliverySubmit createDelivery error",
+            "error",
+            3
+          );
+          throw createDeliveryError;
+        }
+      } catch (error) {
+        logWithLevel(
+          {
+            error,
+            http,
+            guest,
+            user,
+            isGuest,
+            orderStore
+          },
+          "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx handleDeliverySubmit outer error",
+          "error",
+          3
+        );
+
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description:
+            error instanceof Error ? error.message : "Failed to create delivery"
+        });
       }
+    },
+    [createDelivery, dish.name, guest, http, isGuest, orderStore, user]
+  );
 
-      const deliveryDetails = {
-        deliveryAddress: "Default Address",
-        deliveryContact: "Default Contact",
-        deliveryNotes: "",
-        scheduledTime: new Date().toISOString(),
-        deliveryFee: 0
-      };
-
-      const response = await createDelivery({
-        http,
-        auth,
-        orderStore,
-        deliveryDetails
-      });
-
-      toast({
-        title: "Success",
-        description: `Delivery created for ${quantity} ${dish.name}`
-      });
-
-      setShowNumPad(false);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to create delivery"
-      });
-    }
-  };
-
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setShowNumPad(false);
-  };
+  }, []);
 
-  const toggleDetails = () => {
-    setShowDetails(!showDetails);
-  };
+  const toggleDetails = useCallback(() => {
+    setShowDetails((prev) => !prev);
+  }, []);
 
-  const handleShowNumPad = () => {
+  const handleShowNumPad = useCallback(() => {
     setShowNumPad(true);
-  };
+  }, []);
 
   return (
     <div className="p-2 mb-2 rounded">
@@ -204,18 +268,20 @@ const DishSummary: React.FC<{
         </div>
       )}
 
-      <Dialog open={showNumPad} onOpenChange={setShowNumPad}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enter Delivery Quantity for {dish.name}</DialogTitle>
-          </DialogHeader>
-          <NumPad
-            dishName={dish.name}
-            onSubmit={handleDeliverySubmit}
-            onClose={handleClose}
-          />
-        </DialogContent>
-      </Dialog>
+      {showNumPad && (
+        <Dialog open={showNumPad} onOpenChange={setShowNumPad}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Enter Delivery Quantity for {dish.name}</DialogTitle>
+            </DialogHeader>
+            <NumPad
+              dishName={dish.name}
+              onSubmit={handleDeliverySubmit}
+              onClose={handleClose}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

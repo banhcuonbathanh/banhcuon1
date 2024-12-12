@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import Cookies from "js-cookie";
-
+import { shallow } from "zustand/shallow";
 import envConfig from "@/config";
 
 import { User } from "@/schemaValidations/user.schema";
@@ -19,7 +19,7 @@ import {
 import { GuestLoginBodyType } from "@/schemaValidations/guest.schema";
 import { decodeToken } from "@/lib/utils";
 
-interface AuthState {
+export interface AuthState {
   userId: string | null;
   user: User | null;
   guest: GuestInfo | null;
@@ -486,3 +486,10 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 );
+
+// const { isLogin, user } = useAuthStore(state => {
+//   return {
+//     isLogin: state.isLogin,
+//     user: state.user
+//   };
+// });

@@ -205,7 +205,6 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
   restaurantLayoutProps
 }) => {
   const groupedOrders = useMemo(() => {
-    
     const groups = new Map<string, GroupedOrder>();
 
     restaurantLayoutProps.forEach((order) => {
@@ -272,19 +271,20 @@ export const RestaurantSummary: React.FC<RestaurantSummaryProps> = ({
 
                 <CollapsibleSection title="Món Ăn 123412341234">
                   {aggregatedDishes.map((dish, index) => (
-                    <DishSummary key={`${dish.dish_id}-${index}`} dish={dish} http={undefined} auth={{
-                      guest: undefined,
-                      user: undefined,
-                      isGuest: false
-                    }} orderStore={{
-                      tableNumber: 0,
-                      getOrderSummary: function () {
-                        throw new Error("Function not implemented.");
-                      },
-                      clearOrder: function (): void {
-                        throw new Error("Function not implemented.");
-                      }
-                    }} />
+                    <DishSummary
+                      key={`${dish.dish_id}-${index}`}
+                      dish={dish}
+                      http={undefined}
+                      orderStore={{
+                        tableNumber: 0,
+                        getOrderSummary: function () {
+                          throw new Error("Function not implemented.");
+                        },
+                        clearOrder: function (): void {
+                          throw new Error("Function not implemented.");
+                        }
+                      }}
+                    />
                   ))}
                 </CollapsibleSection>
 

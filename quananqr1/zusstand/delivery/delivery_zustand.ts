@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { toast } from "@/components/ui/use-toast";
 import envConfig from "@/config";
+import { logWithLevel } from "@/lib/log";
 
 const LOG_PATH = "quananqr1/zusstand/delivery/delivery_zustand.ts";
 
@@ -63,11 +64,11 @@ interface DeliveryActions {
   getFormattedTotal: () => string;
   createDelivery: (params: {
     http: any;
-    auth: {
+  
       guest: any;
       user: any;
       isGuest: boolean;
-    };
+   
     orderStore: {
       tableNumber: number;
       getOrderSummary: () => any;
@@ -232,7 +233,7 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
 
       createDelivery: async ({
         http,
-        auth: { guest, user, isGuest },
+      guest, user, isGuest ,
         orderStore: { tableNumber, getOrderSummary, clearOrder },
         deliveryDetails: {
           deliveryAddress,
@@ -242,8 +243,9 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
           deliveryFee
         }
       }) => {
-        console.log(`[${LOG_PATH}] createDelivery started`, {
-          auth: { isGuest },
+
+        logWithLevel(
+          {  auth: { isGuest },
           tableNumber,
           deliveryDetails: {
             deliveryAddress,
@@ -251,8 +253,12 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
             deliveryNotes,
             scheduledTime,
             deliveryFee
-          }
-        });
+          } },
+          "quananqr1/zusstand/delivery/delivery_zustand.ts",
+          "info",
+          1
+        );
+
 
         if (!user && !guest) {
           console.error(`[${LOG_PATH}] Authentication required`);
