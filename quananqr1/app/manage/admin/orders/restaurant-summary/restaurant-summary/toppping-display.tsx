@@ -1,5 +1,6 @@
+import { OrderDetailedResponse } from "@/schemaValidations/interface/type_order";
 import React from "react";
-import { OrderDetailedResponse } from "../component/new-order-column";
+
 
 interface ToppingDisplayProps {
   orders: OrderDetailedResponse[];

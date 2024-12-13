@@ -1,8 +1,10 @@
+// delivery-store.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { toast } from "@/components/ui/use-toast";
 import envConfig from "@/config";
 import { logWithLevel } from "@/lib/log";
+import { useApiStore } from "../api/api-controller";
 
 const LOG_PATH = "quananqr1/zusstand/delivery/delivery_zustand.ts";
 
@@ -63,12 +65,9 @@ interface DeliveryActions {
   clearDelivery: () => void;
   getFormattedTotal: () => string;
   createDelivery: (params: {
-    http: any;
-  
-      guest: any;
-      user: any;
-      isGuest: boolean;
-   
+    guest: any;
+    user: any;
+    isGuest: boolean;
     orderStore: {
       tableNumber: number;
       getOrderSummary: () => any;
@@ -109,28 +108,25 @@ const INITIAL_STATE: DeliveryState = {
   delivery_status: "Pending"
 };
 
-// Helper functions
+function getPriceForDish(dishId: number): number {
+  logWithLevel({ dishId }, LOG_PATH, "info", 4);
+  return 1000; // Replace with actual price logic
+}
+
 function calculateTotalPrice(
   items: DishDeliveryItem[],
   deliveryFee: number
 ): number {
-  console.log(`[${LOG_PATH}] calculateTotalPrice input:`, { items, deliveryFee });
+  logWithLevel({ items, deliveryFee }, LOG_PATH, "info", 4);
   const itemsTotal = items.reduce(
     (total, item) => total + item.quantity * getPriceForDish(item.dish_id),
     0
   );
   const finalTotal = itemsTotal + deliveryFee;
-  console.log(`[${LOG_PATH}] calculateTotalPrice result:`, finalTotal);
   return finalTotal;
 }
 
-function getPriceForDish(dishId: number): number {
-  console.log(`[${LOG_PATH}] getPriceForDish:`, dishId);
-  return 1000;
-}
-
 function formatCurrency(amount: number): string {
-  console.log(`[${LOG_PATH}] formatCurrency:`, amount);
   return amount.toLocaleString("en-US", {
     style: "currency",
     currency: "USD"
@@ -143,21 +139,20 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
       ...INITIAL_STATE,
 
       updateDeliveryInfo: (info) => {
-        console.log(`[${LOG_PATH}] updateDeliveryInfo:`, info);
+        logWithLevel({ info }, LOG_PATH, "info", 8);
         set((state) => {
           const newState = { ...state, ...info };
-          console.log(`[${LOG_PATH}] Updated state:`, newState);
           return newState;
         });
       },
 
       updateStatus: (status) => {
-        console.log(`[${LOG_PATH}] updateStatus:`, status);
+        logWithLevel({ status }, LOG_PATH, "info", 5);
         set({ delivery_status: status });
       },
 
       updateDriverInfo: (driverId, estimatedTime) => {
-        console.log(`[${LOG_PATH}] updateDriverInfo:`, { driverId, estimatedTime });
+        logWithLevel({ driverId, estimatedTime }, LOG_PATH, "info", 5);
         set({
           driver_id: driverId,
           estimated_delivery_time: estimatedTime,
@@ -166,7 +161,7 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
       },
 
       completeDelivery: (actualTime) => {
-        console.log(`[${LOG_PATH}] completeDelivery:`, actualTime);
+        logWithLevel({ actualTime }, LOG_PATH, "info", 5);
         set({
           actual_delivery_time: actualTime,
           delivery_status: "Delivered"
@@ -174,145 +169,148 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
       },
 
       addDishItem: (item) => {
-        console.log(`[${LOG_PATH}] addDishItem:`, item);
+        logWithLevel({ action: "addDishItem", item }, LOG_PATH, "info", 3);
         set((state) => {
           const newItems = [...state.dish_items, item];
           const newTotal = calculateTotalPrice(newItems, state.delivery_fee);
-          const newState = {
+          return {
             dish_items: newItems,
             total_price: newTotal
           };
-          console.log(`[${LOG_PATH}] addDishItem result:`, newState);
-          return newState;
         });
       },
 
       removeDishItem: (dishId) => {
-        console.log(`[${LOG_PATH}] removeDishItem:`, dishId);
+        logWithLevel({ action: "removeDishItem", dishId }, LOG_PATH, "info", 3);
         set((state) => {
           const updatedItems = state.dish_items.filter(
             (item) => item.dish_id !== dishId
           );
-          const newTotal = calculateTotalPrice(updatedItems, state.delivery_fee);
-          const newState = {
+          const newTotal = calculateTotalPrice(
+            updatedItems,
+            state.delivery_fee
+          );
+          return {
             dish_items: updatedItems,
             total_price: newTotal
           };
-          console.log(`[${LOG_PATH}] removeDishItem result:`, newState);
-          return newState;
         });
       },
 
       updateDishQuantity: (dishId, quantity) => {
-        console.log(`[${LOG_PATH}] updateDishQuantity:`, { dishId, quantity });
+        logWithLevel(
+          { action: "updateDishQuantity", dishId, quantity },
+          LOG_PATH,
+          "info",
+          3
+        );
         set((state) => {
           const updatedItems = state.dish_items.map((item) =>
             item.dish_id === dishId ? { ...item, quantity } : item
           );
-          const newTotal = calculateTotalPrice(updatedItems, state.delivery_fee);
-          const newState = {
+          const newTotal = calculateTotalPrice(
+            updatedItems,
+            state.delivery_fee
+          );
+          return {
             dish_items: updatedItems,
             total_price: newTotal
           };
-          console.log(`[${LOG_PATH}] updateDishQuantity result:`, newState);
-          return newState;
         });
       },
 
       clearDelivery: () => {
-        console.log(`[${LOG_PATH}] clearDelivery`);
+        logWithLevel({ action: "clearDelivery" }, LOG_PATH, "info", 8);
         set(INITIAL_STATE);
       },
 
       getFormattedTotal: () => {
         const state = get();
-        const formatted = formatCurrency(state.total_price);
-        console.log(`[${LOG_PATH}] getFormattedTotal:`, formatted);
-        return formatted;
+        return formatCurrency(state.total_price);
       },
 
       createDelivery: async ({
-        http,
-      guest, user, isGuest ,
-        orderStore: { tableNumber, getOrderSummary, clearOrder },
-        deliveryDetails: {
-          deliveryAddress,
-          deliveryContact,
-          deliveryNotes,
-          scheduledTime,
-          deliveryFee
-        }
+        guest,
+        user,
+        isGuest,
+        orderStore,
+        deliveryDetails
       }) => {
-
-        logWithLevel(
-          {  auth: { isGuest },
-          tableNumber,
-          deliveryDetails: {
-            deliveryAddress,
-            deliveryContact,
-            deliveryNotes,
-            scheduledTime,
-            deliveryFee
-          } },
-          "quananqr1/zusstand/delivery/delivery_zustand.ts",
-          "info",
-          1
-        );
-
-
-        if (!user && !guest) {
-          console.error(`[${LOG_PATH}] Authentication required`);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "User authentication required"
-          });
-          return;
+        // Validate required fields
+        if (!orderStore?.getOrderSummary) {
+          throw new Error("Order summary function is required");
         }
 
-        const orderSummary = getOrderSummary();
-        console.log(`[${LOG_PATH}] Order summary:`, orderSummary);
+        if (!orderStore?.tableNumber) {
+          throw new Error("Table number is required");
+        }
 
-        const currentState = get();
+        // Get order summary first
+        const orderSummary = orderStore.getOrderSummary();
+        logWithLevel({ orderSummary }, LOG_PATH, "info", 9);
+
+        if (!orderSummary?.dishes?.length) {
+          throw new Error("No dishes found in order");
+        }
+
+        // Validate user/guest data
+        if (isGuest && (!guest || !guest.id)) {
+          throw new Error("Guest ID is required for guest orders");
+        }
+
+        if (!isGuest && (!user || !user.id)) {
+          throw new Error("User ID is required for user orders");
+        }
+
         const dish_items = orderSummary.dishes.map((dish: any) => ({
           dish_id: dish.id,
           quantity: dish.quantity
         }));
 
         const deliveryData = {
-          guest_id: isGuest ? guest?.id ?? null : null,
-          user_id: isGuest ? null : user?.id ?? null,
+          guest_id: isGuest ? guest.id : null,
+          user_id: isGuest ? null : user.id,
           is_guest: isGuest,
-          table_number: tableNumber,
+          table_number: orderStore.tableNumber,
           order_handler_id: 1,
           status: "Pending",
-          total_price: orderSummary.totalPrice + deliveryFee,
+          total_price: calculateTotalPrice(
+            dish_items,
+            deliveryDetails.deliveryFee
+          ),
           dish_items,
-          bow_chili: currentState.bow_chili,
-          bow_no_chili: currentState.bow_no_chili,
+          bow_chili: 0,
+          bow_no_chili: 0,
           take_away: false,
-          chili_number: currentState.chili_number,
-          table_token: currentState.table_token,
+          chili_number: 0,
+          table_token: get().table_token,
           client_name: isGuest ? guest?.name : user?.name,
-          delivery_address: deliveryAddress,
-          delivery_contact: deliveryContact,
-          delivery_notes: deliveryNotes,
-          scheduled_time: scheduledTime,
+          delivery_address: deliveryDetails.deliveryAddress,
+          delivery_contact: deliveryDetails.deliveryContact,
+          delivery_notes: deliveryDetails.deliveryNotes,
+          scheduled_time: deliveryDetails.scheduledTime,
           order_id: orderSummary.orderId,
-          delivery_fee: deliveryFee,
+          delivery_fee: deliveryDetails.deliveryFee,
           delivery_status: "Pending" as DeliveryStatus
         };
 
-        console.log(`[${LOG_PATH}] Delivery data:`, deliveryData);
+        logWithLevel({ deliveryData }, LOG_PATH, "info", 1);
+
         set({ isLoading: true });
 
         try {
           const deliveryEndpoint = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.Delivery_External_End_Point}`;
-          console.log(`[${LOG_PATH}] Making API request to:`, deliveryEndpoint);
-          
-          const response = await http.post(deliveryEndpoint, deliveryData);
-          console.log(`[${LOG_PATH}] API response:`, response.data);
-          
+          logWithLevel(
+            { endpoint: deliveryEndpoint, method: "POST", data: deliveryData },
+            LOG_PATH,
+            "info",
+            2
+          );
+
+          const response = await useApiStore
+            .getState()
+            .http.post(deliveryEndpoint, deliveryData);
+
           set((state) => ({
             ...state,
             ...deliveryData
@@ -323,21 +321,21 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
             description: "Delivery has been created successfully"
           });
 
-          clearOrder();
+          orderStore.clearOrder();
           return response.data;
-
         } catch (error) {
-          console.error(`[${LOG_PATH}] Delivery creation failed:`, error);
+          logWithLevel({ error }, LOG_PATH, "error", 7);
           toast({
             variant: "destructive",
             title: "Error",
-            description: error instanceof Error ? error.message : "Failed to create delivery"
+            description:
+              error instanceof Error
+                ? error.message
+                : "Failed to create delivery"
           });
           throw error;
-
         } finally {
           set({ isLoading: false });
-          console.log(`[${LOG_PATH}] Delivery creation completed`);
         }
       }
     }),
@@ -355,7 +353,7 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
           scheduled_time: state.scheduled_time,
           order_id: state.order_id
         };
-        console.log(`[${LOG_PATH}] Persisting state:`, partialState);
+        logWithLevel({ persistedState: partialState }, LOG_PATH, "info", 6);
         return partialState;
       }
     }

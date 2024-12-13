@@ -10,20 +10,14 @@ import {
 import { useEffect, useState, useCallback } from "react";
 import { get_Orders } from "@/zusstand/server/order-controller";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-
-  CardContent
-} from "@/components/ui/card";
-
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 import { APP_CONSTANTS } from "@/config";
 
-import RestaurantSummary from "../restaurant-summary/restaurant-summary";
+
+import RestaurantSummary2 from "../restaurant-summary/restaurant-summary/restaurant-summary";
 
 interface OrderClientProps {
   initialData: OrderDetailedResponse[];
@@ -150,7 +144,9 @@ export const OrderClient: React.FC<OrderClientProps> = ({
               </div>
 
               <Separator className="my-4" />
-              <RestaurantSummary restaurantLayoutProps={data} />
+
+              <RestaurantSummary2 restaurantLayoutProps={data} />
+              {/* <RestaurantSummary restaurantLayoutProps={data} /> */}
               {/* <RestaurantLayout restaurantLayoutProps={data} /> */}
               {/* <YourComponent1 initialData={initialData} /> */}
 

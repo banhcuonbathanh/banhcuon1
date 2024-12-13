@@ -77,7 +77,9 @@ if (!configProject.success) {
   throw new Error("Invalid environment configuration");
 }
 
-export default configProject.data;
+const envConfig = configProject.data;
+
+export default envConfig;
 
 // - NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL:-http://nextjs_app:3000/}
 

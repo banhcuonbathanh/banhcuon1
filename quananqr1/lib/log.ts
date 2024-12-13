@@ -61,7 +61,7 @@ export const loggerPaths: LogPath[] = [
     path: "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx",
     enabled: true,
     description: "Restaurant Summary Component Logs",
-    enabledLogIds: [1, 2, 3], // Only logs #1 and #2 are enabled
+    enabledLogIds: [1, 2, 3, 4], // Only logs #1 and #2 are enabled
     logDescriptions: {
       1: {
         description: "Initial dishMap state in aggregateDishes function",
@@ -77,6 +77,69 @@ export const loggerPaths: LogPath[] = [
       3: {
         description: "handleDeliverySubmitn createDelivery",
         location: "aggregateDishes function - before processing orders",
+        status: "enabled"
+      },
+      4: {
+        description: "link to server",
+        location: "aggregateDishes function - before processing orders",
+        status: "enabled"
+      }
+    }
+  },
+  {
+    path: "quananqr1/zusstand/delivery/delivery_zustand.ts",
+    enabled: true,
+    description: "Delivery Store State Management Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    logDescriptions: {
+      1: {
+        description: "Initial delivery data preparation",
+        location: "createDelivery function - data preparation",
+        status: "enabled"
+      },
+      2: {
+        description: "API request details",
+        location: "createDelivery function - API call",
+        status: "enabled"
+      },
+      3: {
+        description: "Dish item manipulation",
+        location: "addDishItem/removeDishItem/updateDishQuantity functions",
+        status: "enabled"
+      },
+      4: {
+        description: "Price calculations",
+        location: "calculateTotalPrice function",
+        status: "enabled"
+      },
+      5: {
+        description: "Delivery status updates",
+        location: "updateStatus/updateDriverInfo/completeDelivery functions",
+        status: "enabled"
+      },
+      6: {
+        description: "State persistence operations",
+        location: "persist middleware operations",
+        status: "enabled"
+      },
+      7: {
+        description: "Error handling in delivery creation",
+        location: "createDelivery function - error handling",
+        status: "enabled"
+      },
+      8: {
+        description: "General state updates",
+        location: "updateDeliveryInfo function",
+        status: "enabled"
+      },
+      9: {
+        description: "Order summary processing",
+        location: "createDelivery function - order summary handling",
+        status: "enabled"
+      },
+      10: {
+        description: "Authentication validation",
+        location: "createDelivery function - auth validation",
         status: "enabled"
       }
     }
