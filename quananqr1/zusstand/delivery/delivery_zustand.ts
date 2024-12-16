@@ -1,4 +1,3 @@
-// delivery-store.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { toast } from "@/components/ui/use-toast";
@@ -26,7 +25,8 @@ interface DishDeliveryItem {
   quantity: number;
 }
 
-interface DeliveryState {
+interface SingleDeliveryState {
+  id: string;
   isLoading: boolean;
   guest_id: number | null;
   user_id: number;
@@ -52,18 +52,40 @@ interface DeliveryState {
   driver_id?: number;
   estimated_delivery_time?: string;
   actual_delivery_time?: string;
+  created_at: string;
+}
+
+interface DeliveryState {
+  deliveries: SingleDeliveryState[];
+  deliveryHistory: Record<string, SingleDeliveryState>;
 }
 
 interface DeliveryActions {
-  updateDeliveryInfo: (info: Partial<DeliveryState>) => void;
-  updateStatus: (status: DeliveryStatus) => void;
-  updateDriverInfo: (driverId: number, estimatedTime: string) => void;
-  completeDelivery: (actualTime: string) => void;
-  addDishItem: (item: DishDeliveryItem) => void;
-  removeDishItem: (dishId: number) => void;
-  updateDishQuantity: (dishId: number, quantity: number) => void;
-  clearDelivery: () => void;
-  getFormattedTotal: () => string;
+  updateDeliveryInfo: (
+    deliveryId: string,
+    info: Partial<SingleDeliveryState>
+  ) => void;
+  updateStatus: (deliveryId: string, status: DeliveryStatus) => void;
+  updateDriverInfo: (
+    deliveryId: string,
+    driverId: number,
+    estimatedTime: string
+  ) => void;
+  completeDelivery: (deliveryId: string, actualTime: string) => void;
+  addDishItem: (deliveryId: string, item: DishDeliveryItem) => void;
+  removeDishItem: (deliveryId: string, dishId: number) => void;
+  updateDishQuantity: (
+    deliveryId: string,
+    dishId: number,
+    quantity: number
+  ) => void;
+  clearDelivery: (deliveryId: string) => void;
+  clearAllDeliveries: () => void;
+  getFormattedTotal: (deliveryId: string) => string;
+  addToDeliveryHistory: (delivery: SingleDeliveryState) => void;
+  getDeliveryHistory: () => Record<string, SingleDeliveryState>;
+  getTotalDeliveredForDish: (dishId: number) => number;
+  clearDeliveryHistory: () => void;
   createDelivery: (params: {
     guest: any;
     user: any;
@@ -81,31 +103,12 @@ interface DeliveryActions {
       deliveryFee: number;
     };
   }) => Promise<any>;
+  getDeliveryById: (deliveryId: string) => SingleDeliveryState | undefined;
 }
 
 const INITIAL_STATE: DeliveryState = {
-  isLoading: false,
-  guest_id: null,
-  user_id: 0,
-  is_guest: false,
-  table_number: 0,
-  order_handler_id: 0,
-  status: "Pending",
-  total_price: 0,
-  dish_items: [],
-  bow_chili: 0,
-  bow_no_chili: 0,
-  take_away: false,
-  chili_number: 0,
-  table_token: "",
-  client_name: "",
-  delivery_address: "",
-  delivery_contact: "",
-  delivery_notes: "",
-  scheduled_time: "",
-  order_id: 0,
-  delivery_fee: 0,
-  delivery_status: "Pending"
+  deliveries: [],
+  deliveryHistory: {}
 };
 
 function getPriceForDish(dishId: number): number {
@@ -122,8 +125,7 @@ function calculateTotalPrice(
     (total, item) => total + item.quantity * getPriceForDish(item.dish_id),
     0
   );
-  const finalTotal = itemsTotal + deliveryFee;
-  return finalTotal;
+  return itemsTotal + deliveryFee;
 }
 
 function formatCurrency(amount: number): string {
@@ -138,95 +140,261 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
     (set, get) => ({
       ...INITIAL_STATE,
 
-      updateDeliveryInfo: (info) => {
-        logWithLevel({ info }, LOG_PATH, "info", 8);
-        set((state) => {
-          const newState = { ...state, ...info };
-          return newState;
-        });
+      getDeliveryById: (deliveryId) => {
+        return get().deliveries.find((delivery) => delivery.id === deliveryId);
       },
 
-      updateStatus: (status) => {
-        logWithLevel({ status }, LOG_PATH, "info", 5);
-        set({ delivery_status: status });
+      updateDeliveryInfo: (deliveryId, info) => {
+        logWithLevel({ deliveryId, info }, LOG_PATH, "info", 8);
+        set((state) => ({
+          deliveries: state.deliveries.map((delivery) =>
+            delivery.id === deliveryId ? { ...delivery, ...info } : delivery
+          ),
+          deliveryHistory: {
+            ...state.deliveryHistory,
+            [deliveryId]: { ...state.deliveryHistory[deliveryId], ...info }
+          }
+        }));
       },
 
-      updateDriverInfo: (driverId, estimatedTime) => {
-        logWithLevel({ driverId, estimatedTime }, LOG_PATH, "info", 5);
-        set({
+      updateStatus: (deliveryId, status) => {
+        logWithLevel({ deliveryId, status }, LOG_PATH, "info", 5);
+        set((state) => ({
+          deliveries: state.deliveries.map((delivery) =>
+            delivery.id === deliveryId
+              ? { ...delivery, delivery_status: status }
+              : delivery
+          ),
+          deliveryHistory: {
+            ...state.deliveryHistory,
+            [deliveryId]: {
+              ...state.deliveryHistory[deliveryId],
+              delivery_status: status
+            }
+          }
+        }));
+      },
+
+      updateDriverInfo: (deliveryId, driverId, estimatedTime) => {
+        logWithLevel(
+          { deliveryId, driverId, estimatedTime },
+          LOG_PATH,
+          "info",
+          5
+        );
+        const updateData = {
           driver_id: driverId,
           estimated_delivery_time: estimatedTime,
-          delivery_status: "Assigned"
-        });
+          delivery_status: "Assigned" as DeliveryStatus
+        };
+        set((state) => ({
+          deliveries: state.deliveries.map((delivery) =>
+            delivery.id === deliveryId
+              ? { ...delivery, ...updateData }
+              : delivery
+          ),
+          deliveryHistory: {
+            ...state.deliveryHistory,
+            [deliveryId]: {
+              ...state.deliveryHistory[deliveryId],
+              ...updateData
+            }
+          }
+        }));
       },
 
-      completeDelivery: (actualTime) => {
-        logWithLevel({ actualTime }, LOG_PATH, "info", 5);
-        set({
+      completeDelivery: (deliveryId, actualTime) => {
+        logWithLevel({ deliveryId, actualTime }, LOG_PATH, "info", 5);
+        const updateData = {
           actual_delivery_time: actualTime,
-          delivery_status: "Delivered"
-        });
+          delivery_status: "Delivered" as DeliveryStatus
+        };
+        set((state) => ({
+          deliveries: state.deliveries.map((delivery) =>
+            delivery.id === deliveryId
+              ? { ...delivery, ...updateData }
+              : delivery
+          ),
+          deliveryHistory: {
+            ...state.deliveryHistory,
+            [deliveryId]: {
+              ...state.deliveryHistory[deliveryId],
+              ...updateData
+            }
+          }
+        }));
       },
 
-      addDishItem: (item) => {
-        logWithLevel({ action: "addDishItem", item }, LOG_PATH, "info", 3);
-        set((state) => {
-          const newItems = [...state.dish_items, item];
-          const newTotal = calculateTotalPrice(newItems, state.delivery_fee);
-          return {
-            dish_items: newItems,
-            total_price: newTotal
-          };
-        });
-      },
-
-      removeDishItem: (dishId) => {
-        logWithLevel({ action: "removeDishItem", dishId }, LOG_PATH, "info", 3);
-        set((state) => {
-          const updatedItems = state.dish_items.filter(
-            (item) => item.dish_id !== dishId
-          );
-          const newTotal = calculateTotalPrice(
-            updatedItems,
-            state.delivery_fee
-          );
-          return {
-            dish_items: updatedItems,
-            total_price: newTotal
-          };
-        });
-      },
-
-      updateDishQuantity: (dishId, quantity) => {
+      addDishItem: (deliveryId, item) => {
         logWithLevel(
-          { action: "updateDishQuantity", dishId, quantity },
+          { action: "addDishItem", deliveryId, item },
           LOG_PATH,
           "info",
           3
         );
         set((state) => {
-          const updatedItems = state.dish_items.map((item) =>
-            item.dish_id === dishId ? { ...item, quantity } : item
-          );
-          const newTotal = calculateTotalPrice(
-            updatedItems,
-            state.delivery_fee
-          );
-          return {
-            dish_items: updatedItems,
+          const delivery = state.deliveries.find((d) => d.id === deliveryId);
+          if (!delivery) return state;
+
+          const newItems = [...delivery.dish_items, item];
+          const newTotal = calculateTotalPrice(newItems, delivery.delivery_fee);
+          const updateData = {
+            dish_items: newItems,
             total_price: newTotal
+          };
+
+          return {
+            deliveries: state.deliveries.map((d) =>
+              d.id === deliveryId ? { ...d, ...updateData } : d
+            ),
+            deliveryHistory: {
+              ...state.deliveryHistory,
+              [deliveryId]: {
+                ...state.deliveryHistory[deliveryId],
+                ...updateData
+              }
+            }
           };
         });
       },
 
-      clearDelivery: () => {
-        logWithLevel({ action: "clearDelivery" }, LOG_PATH, "info", 8);
+      removeDishItem: (deliveryId, dishId) => {
+        logWithLevel(
+          { action: "removeDishItem", deliveryId, dishId },
+          LOG_PATH,
+          "info",
+          3
+        );
+        set((state) => {
+          const delivery = state.deliveries.find((d) => d.id === deliveryId);
+          if (!delivery) return state;
+
+          const updatedItems = delivery.dish_items.filter(
+            (item) => item.dish_id !== dishId
+          );
+          const newTotal = calculateTotalPrice(
+            updatedItems,
+            delivery.delivery_fee
+          );
+          const updateData = {
+            dish_items: updatedItems,
+            total_price: newTotal
+          };
+
+          return {
+            deliveries: state.deliveries.map((d) =>
+              d.id === deliveryId ? { ...d, ...updateData } : d
+            ),
+            deliveryHistory: {
+              ...state.deliveryHistory,
+              [deliveryId]: {
+                ...state.deliveryHistory[deliveryId],
+                ...updateData
+              }
+            }
+          };
+        });
+      },
+
+      updateDishQuantity: (deliveryId, dishId, quantity) => {
+        logWithLevel(
+          { action: "updateDishQuantity", deliveryId, dishId, quantity },
+          LOG_PATH,
+          "info",
+          3
+        );
+        set((state) => {
+          const delivery = state.deliveries.find((d) => d.id === deliveryId);
+          if (!delivery) return state;
+
+          const updatedItems = delivery.dish_items.map((item) =>
+            item.dish_id === dishId ? { ...item, quantity } : item
+          );
+          const newTotal = calculateTotalPrice(
+            updatedItems,
+            delivery.delivery_fee
+          );
+          const updateData = {
+            dish_items: updatedItems,
+            total_price: newTotal
+          };
+
+          return {
+            deliveries: state.deliveries.map((d) =>
+              d.id === deliveryId ? { ...d, ...updateData } : d
+            ),
+            deliveryHistory: {
+              ...state.deliveryHistory,
+              [deliveryId]: {
+                ...state.deliveryHistory[deliveryId],
+                ...updateData
+              }
+            }
+          };
+        });
+      },
+
+      addToDeliveryHistory: (delivery) => {
+        logWithLevel(
+          { action: "addToDeliveryHistory", delivery },
+          LOG_PATH,
+          "info",
+          3
+        );
+        set((state) => ({
+          deliveryHistory: {
+            ...state.deliveryHistory,
+            [delivery.id]: delivery
+          }
+        }));
+      },
+
+      getDeliveryHistory: () => {
+        return get().deliveryHistory;
+      },
+
+      getTotalDeliveredForDish: (dishId) => {
+        const history = Object.values(get().deliveryHistory);
+        return history.reduce((total, delivery) => {
+          const dishItem = delivery.dish_items.find(
+            (item) => item.dish_id === dishId
+          );
+          return total + (dishItem?.quantity || 0);
+        }, 0);
+      },
+
+      clearDelivery: (deliveryId) => {
+        logWithLevel(
+          { action: "clearDelivery", deliveryId },
+          LOG_PATH,
+          "info",
+          8
+        );
+        set((state) => {
+          const { [deliveryId]: removed, ...remainingHistory } =
+            state.deliveryHistory;
+          return {
+            deliveries: state.deliveries.filter(
+              (delivery) => delivery.id !== deliveryId
+            ),
+            deliveryHistory: remainingHistory
+          };
+        });
+      },
+
+      clearAllDeliveries: () => {
         set(INITIAL_STATE);
       },
 
-      getFormattedTotal: () => {
-        const state = get();
-        return formatCurrency(state.total_price);
+      clearDeliveryHistory: () => {
+        set((state) => ({ ...state, deliveryHistory: {} }));
+      },
+
+      getFormattedTotal: (deliveryId) => {
+        const delivery = get().deliveries.find((d) => d.id === deliveryId);
+        return delivery
+          ? formatCurrency(delivery.total_price)
+          : formatCurrency(0);
       },
 
       createDelivery: async ({
@@ -236,85 +404,88 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
         orderStore,
         deliveryDetails
       }) => {
-        // Validate required fields
-        if (!orderStore?.getOrderSummary) {
-          throw new Error("Order summary function is required");
-        }
-
-        if (!orderStore?.tableNumber) {
-          throw new Error("Table number is required");
-        }
-
-        // Get order summary first
-        const orderSummary = orderStore.getOrderSummary();
-        logWithLevel({ orderSummary }, LOG_PATH, "info", 9);
-
-        if (!orderSummary?.dishes?.length) {
-          throw new Error("No dishes found in order");
-        }
-
-        // Validate user/guest data
-        if (isGuest && (!guest || !guest.id)) {
-          throw new Error("Guest ID is required for guest orders");
-        }
-
-        if (!isGuest && (!user || !user.id)) {
-          throw new Error("User ID is required for user orders");
-        }
-
-        const dish_items = orderSummary.dishes.map((dish: any) => ({
-          dish_id: dish.id,
-          quantity: dish.quantity
-        }));
-
-        const deliveryData = {
-          guest_id: isGuest ? guest.id : null,
-          user_id: isGuest ? null : user.id,
-          is_guest: isGuest,
-          table_number: orderStore.tableNumber,
-          order_handler_id: 1,
-          status: "Pending",
-          total_price: calculateTotalPrice(
-            dish_items,
-            deliveryDetails.deliveryFee
-          ),
-          dish_items,
-          bow_chili: 0,
-          bow_no_chili: 0,
-          take_away: false,
-          chili_number: 0,
-          table_token: get().table_token,
-          client_name: isGuest ? guest?.name : user?.name,
-          delivery_address: deliveryDetails.deliveryAddress,
-          delivery_contact: deliveryDetails.deliveryContact,
-          delivery_notes: deliveryDetails.deliveryNotes,
-          scheduled_time: deliveryDetails.scheduledTime,
-          order_id: orderSummary.orderId,
-          delivery_fee: deliveryDetails.deliveryFee,
-          delivery_status: "Pending" as DeliveryStatus
-        };
-
-        logWithLevel({ deliveryData }, LOG_PATH, "info", 1);
-
-        set({ isLoading: true });
-
         try {
-          const deliveryEndpoint = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.Delivery_External_End_Point}`;
-          logWithLevel(
-            { endpoint: deliveryEndpoint, method: "POST", data: deliveryData },
-            LOG_PATH,
-            "info",
-            2
-          );
+          if (!orderStore?.getOrderSummary) {
+            throw new Error("Order summary function is required");
+          }
 
-          const response = await useApiStore
-            .getState()
-            .http.post(deliveryEndpoint, deliveryData);
+          if (!orderStore?.tableNumber) {
+            throw new Error("Table number is required");
+          }
+
+          const orderSummary = orderStore.getOrderSummary();
+          logWithLevel({ orderSummary }, LOG_PATH, "info", 9);
+
+          if (!orderSummary?.dishes?.length) {
+            throw new Error("No dishes found in order");
+          }
+
+          if (isGuest && (!guest || !guest.id)) {
+            throw new Error("Guest ID is required for guest orders");
+          }
+
+          if (!isGuest && (!user || !user.id)) {
+            throw new Error("User ID is required for user orders");
+          }
+
+          const dish_items = orderSummary.dishes.map((dish: any) => ({
+            dish_id: dish.id,
+            quantity: dish.quantity
+          }));
+
+          const newDelivery: SingleDeliveryState = {
+            id: `del_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            isLoading: false,
+            guest_id: isGuest ? guest.id : null,
+            user_id: isGuest ? null : user.id,
+            is_guest: isGuest,
+            table_number: orderStore.tableNumber,
+            order_handler_id: 1,
+            status: "Pending",
+            total_price: calculateTotalPrice(
+              dish_items,
+              deliveryDetails.deliveryFee
+            ),
+            dish_items,
+            bow_chili: 0,
+            bow_no_chili: 0,
+            take_away: false,
+            chili_number: 0,
+            table_token: "",
+            client_name: isGuest ? guest?.name : user?.name,
+            delivery_address: deliveryDetails.deliveryAddress,
+            delivery_contact: deliveryDetails.deliveryContact,
+            delivery_notes: deliveryDetails.deliveryNotes,
+            scheduled_time: deliveryDetails.scheduledTime,
+            order_id: orderSummary.orderId,
+            delivery_fee: deliveryDetails.deliveryFee,
+            delivery_status: "Pending",
+            created_at: new Date().toISOString()
+          };
 
           set((state) => ({
-            ...state,
-            ...deliveryData
+            deliveries: [...state.deliveries, newDelivery],
+            deliveryHistory: {
+              ...state.deliveryHistory,
+              [newDelivery.id]: newDelivery
+            }
           }));
+
+          const deliveryEndpoint = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.Delivery_External_End_Point}`;
+          const response = await useApiStore
+            .getState()
+            .http.post(deliveryEndpoint, newDelivery);
+
+          logWithLevel(
+            {
+              message: "Delivery created successfully",
+              deliveryData: newDelivery,
+              responseData: response.data
+            },
+            LOG_PATH,
+            "info",
+            1
+          );
 
           toast({
             title: "Success",
@@ -324,7 +495,18 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
           orderStore.clearOrder();
           return response.data;
         } catch (error) {
-          logWithLevel({ error }, LOG_PATH, "error", 7);
+          logWithLevel(
+            {
+              message: "Failed to create delivery",
+              error,
+              errorMessage:
+                error instanceof Error ? error.message : "Unknown error"
+            },
+            LOG_PATH,
+            "error",
+            7
+          );
+
           toast({
             variant: "destructive",
             title: "Error",
@@ -333,29 +515,18 @@ const useDeliveryStore = create<DeliveryState & DeliveryActions>()(
                 ? error.message
                 : "Failed to create delivery"
           });
+
           throw error;
-        } finally {
-          set({ isLoading: false });
         }
       }
     }),
     {
       name: "delivery-storage",
-      partialize: (state) => {
-        const partialState = {
-          dish_items: state.dish_items,
-          delivery_status: state.delivery_status,
-          total_price: state.total_price,
-          client_name: state.client_name,
-          delivery_address: state.delivery_address,
-          delivery_contact: state.delivery_contact,
-          delivery_notes: state.delivery_notes,
-          scheduled_time: state.scheduled_time,
-          order_id: state.order_id
-        };
-        logWithLevel({ persistedState: partialState }, LOG_PATH, "info", 6);
-        return partialState;
-      }
+      partialize: (state) => ({
+        deliveries: state.deliveries,
+        deliveryHistory: state.deliveryHistory
+      }),
+      version: 1 // Add version for potential future migrations
     }
   )
 );

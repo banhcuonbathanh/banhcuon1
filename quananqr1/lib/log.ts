@@ -17,71 +17,94 @@ export interface LogPath {
 export const loggerPaths: LogPath[] = [
   {
     path: "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
-    enabled: true,
+    enabled: false,
     description: "Restaurant Summary Component Logs",
-    enabledLogIds: [], // Only logs #1 and #2 are enabled
+    enabledLogIds: [1, 2, 3],
     logDescriptions: {
       1: {
-        description: "Initial dishMap state in aggregateDishes function",
-        location: "aggregateDishes function - before processing orders",
+        description: "Log initial dish aggregation state",
+        location: "aggregateDishes function - initialization",
         status: "enabled"
       },
       2: {
-        description: "Aggregated dishes result for each group",
-        location: "RestaurantSummary component - inside groupedOrders.map",
+        description: "Log aggregated dishes for order groups",
+        location: "RestaurantSummary component - groupedOrders processing",
+        status: "enabled"
+      },
+      3: {
+        description: "Log aggregation completion state",
+        location: "RestaurantSummary component - final state",
         status: "enabled"
       }
     }
   },
   {
     path: "/manage/admin/table",
-    enabled: true,
+    enabled: false,
     description: "Admin Table Management Logs",
     enabledLogIds: [1, 2, 3],
     logDescriptions: {
       1: {
-        description: "Table initialization",
-        location: "Table component initialization",
+        description: "Table component initialization state",
+        location: "Table component - mount phase",
         status: "enabled"
       },
       2: {
-        description: "Table data updates",
-        location: "Table data manipulation functions",
+        description: "Table data state changes",
+        location: "Table component - data updates",
         status: "enabled"
       },
       3: {
-        description: "Table error states",
-        location: "Error handling in table components",
+        description: "Table component error handling",
+        location: "Table component - error boundaries",
         status: "enabled"
       }
     }
   },
-
   {
     path: "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx",
     enabled: true,
-    description: "Restaurant Summary Component Logs",
-    enabledLogIds: [1, 2, 3, 4], // Only logs #1 and #2 are enabled
+    description: "Dishes Summary Component Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
     logDescriptions: {
       1: {
-        description: "Initial dishMap state in aggregateDishes function",
-        location: "aggregateDishes function - before processing orders",
+        description: "Delivery button click tracking",
+        location: "handleDeliveryClick function",
         status: "enabled"
       },
       2: {
-        description: "Initial dishMap state in aggregateDishes function",
-        location: "aggregateDishes function - before processing orders",
+        description: "Keypad submission attempt",
+        location: "handleKeypadSubmit function - initial validation",
         status: "enabled"
       },
-
       3: {
-        description: "handleDeliverySubmitn createDelivery",
-        location: "aggregateDishes function - before processing orders",
+        description: "Delivery quantity validation error",
+        location: "handleKeypadSubmit function - quantity validation",
         status: "enabled"
       },
       4: {
-        description: "link to server",
-        location: "aggregateDishes function - before processing orders",
+        description: "Delivery creation success",
+        location: "handleKeypadSubmit function - success path",
+        status: "enabled"
+      },
+      5: {
+        description: "Delivery creation error",
+        location: "handleKeypadSubmit function - error handling",
+        status: "enabled"
+      },
+      6: {
+        description: "Reference order validation",
+        location: "handleKeypadSubmit function - order validation",
+        status: "enabled"
+      },
+      7: {
+        description: "Guest order processing",
+        location: "handleKeypadSubmit function - guest handling",
+        status: "enabled"
+      },
+      8: {
+        description: "Delivery details compilation",
+        location: "handleKeypadSubmit function - delivery preparation",
         status: "enabled"
       }
     }
@@ -90,56 +113,66 @@ export const loggerPaths: LogPath[] = [
     path: "quananqr1/zusstand/delivery/delivery_zustand.ts",
     enabled: true,
     description: "Delivery Store State Management Logs",
-    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     logDescriptions: {
       1: {
-        description: "Initial delivery data preparation",
-        location: "createDelivery function - data preparation",
+        description: "Delivery creation - Initial data preparation",
+        location: "createDelivery function - initialization",
         status: "enabled"
       },
       2: {
-        description: "API request details",
-        location: "createDelivery function - API call",
+        description: "Delivery API request monitoring",
+        location: "createDelivery function - API communication",
         status: "enabled"
       },
       3: {
-        description: "Dish item manipulation",
-        location: "addDishItem/removeDishItem/updateDishQuantity functions",
+        description: "Dish items state changes",
+        location: "Dish manipulation functions",
         status: "enabled"
       },
       4: {
-        description: "Price calculations",
-        location: "calculateTotalPrice function",
+        description: "Price calculation events",
+        location: "Price calculation functions",
         status: "enabled"
       },
       5: {
-        description: "Delivery status updates",
-        location: "updateStatus/updateDriverInfo/completeDelivery functions",
+        description: "Delivery status change events",
+        location: "Status management functions",
         status: "enabled"
       },
       6: {
-        description: "State persistence operations",
-        location: "persist middleware operations",
+        description: "State persistence events",
+        location: "Persistence middleware",
         status: "enabled"
       },
       7: {
-        description: "Error handling in delivery creation",
-        location: "createDelivery function - error handling",
+        description: "Delivery creation error handling",
+        location: "Error handling middleware",
         status: "enabled"
       },
       8: {
-        description: "General state updates",
-        location: "updateDeliveryInfo function",
+        description: "General delivery state updates",
+        location: "State update functions",
         status: "enabled"
       },
       9: {
-        description: "Order summary processing",
-        location: "createDelivery function - order summary handling",
+        description: "Order summary state changes",
+        location: "Order summary processing",
         status: "enabled"
       },
       10: {
-        description: "Authentication validation",
-        location: "createDelivery function - auth validation",
+        description: "Authentication state validation",
+        location: "Auth validation middleware",
+        status: "enabled"
+      },
+      11: {
+        description: "Delivery data transformation",
+        location: "createDelivery function - data transformation",
+        status: "enabled"
+      },
+      12: {
+        description: "Delivery request validation",
+        location: "createDelivery function - request validation",
         status: "enabled"
       }
     }
@@ -263,25 +296,3 @@ export function logWithLevel(
       break;
   }
 }
-
-// Example usage in restaurant-summary.tsx:
-/*
-// Get log status for a specific file
-getLogStatus("quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx");
-
-// Log with ID 1
-logWithLevel(
-  { dishMap },
-  "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
-  "info",
-  1
-);
-
-// Log with ID 2
-logWithLevel(
-  { aggregatedDishes },
-  "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
-  "info",
-  2
-);
-*/

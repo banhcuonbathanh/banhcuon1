@@ -42,6 +42,13 @@ export const RestaurantSummary2: React.FC<RestaurantSummaryProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {groupedOrders.map((group) => {
           const aggregatedDishes = aggregateDishes(group.orders);
+
+          logWithLevel(
+            { group },
+            "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx group",
+            "info",
+            3
+          );
           logWithLevel(
             { aggregatedDishes },
             "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
@@ -67,7 +74,7 @@ export const RestaurantSummary2: React.FC<RestaurantSummaryProps> = ({
 
                 <CollapsibleSection title="Món Ăn">
                   {aggregatedDishes.map((dish, index) => (
-                    <DishSummary key={`${dish.dish_id}-${index}`} dish={dish} />
+                    <DishSummary key={`${dish.dish_id}-${index}`} dish={dish} orders={group.orders} />
                   ))}
                 </CollapsibleSection>
 

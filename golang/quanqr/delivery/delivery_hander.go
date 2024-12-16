@@ -32,29 +32,6 @@ func NewDeliveryHandler(client delivery.DeliveryServiceClient, secretKey string)
     }
 }
 
-func (h *DeliveryHandlerController) CreateDelivery(w http.ResponseWriter, r *http.Request) {
-    var deliveryReq CreateDeliveryRequest
-    h.logger.Info(fmt.Sprintf("Creating new delivery:222222 %+v", deliveryReq))
-    if err := json.NewDecoder(r.Body).Decode(&deliveryReq); err != nil {
-        http.Error(w, "error decoding request body", http.StatusBadRequest)
-        return
-    }
-
-
-    
-    pbReq := ToPBCreateDeliveryRequest(deliveryReq)
-    createdDeliveryResponse, err := h.client.CreateOrder(h.ctx, pbReq)
-    if err != nil {
-        h.logger.Error("Error creating delivery: " + err.Error())
-        http.Error(w, "error creating delivery", http.StatusInternalServerError)
-        return
-    }
-
-    res := ToDeliveryResFromPbDeliveryResponse(createdDeliveryResponse)
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(res)
-}
 
 func (h *DeliveryHandlerController) GetDeliveryDetail(w http.ResponseWriter, r *http.Request) {
     id := chi.URLParam(r, "id")
@@ -377,3 +354,56 @@ func (h *DeliveryHandlerController) CreateDelivery3(w http.ResponseWriter, r *ht
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(res)
 }
+
+
+func (h *DeliveryHandlerController) CreateDelivery(w http.ResponseWriter, r *http.Request) {
+    var deliveryReq CreateDeliveryRequest
+    
+    // First decode the request body
+    if err := json.NewDecoder(r.Body).Decode(&deliveryReq); err != nil {
+        h.logger.Error("Error decoding request body: " + err.Error())
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
+
+    // Log after decoding to see the actual data
+    h.logger.Info(fmt.Sprintf("Creating new delivery:222222 %+v", deliveryReq))
+    
+    pbReq := ToPBCreateDeliveryRequest(deliveryReq)
+    createdDeliveryResponse, err := h.client.CreateOrder(h.ctx, pbReq)
+    if err != nil {
+        h.logger.Error("Error creating delivery: " + err.Error())
+        http.Error(w, "error creating delivery", http.StatusInternalServerError)
+        return
+    }
+
+    res := ToDeliveryResFromPbDeliveryResponse(createdDeliveryResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(res)
+}
+
+
+// func (h *DeliveryHandlerController) CreateDelivery(w http.ResponseWriter, r *http.Request) {
+//     var deliveryReq CreateDeliveryRequest
+//     h.logger.Info(fmt.Sprintf("Creating new delivery:222222 %+v", deliveryReq))
+//     if err := json.NewDecoder(r.Body).Decode(&deliveryReq); err != nil {
+//         http.Error(w, "error decoding request body", http.StatusBadRequest)
+//         return
+//     }
+
+
+    
+//     pbReq := ToPBCreateDeliveryRequest(deliveryReq)
+//     createdDeliveryResponse, err := h.client.CreateOrder(h.ctx, pbReq)
+//     if err != nil {
+//         h.logger.Error("Error creating delivery: " + err.Error())
+//         http.Error(w, "error creating delivery", http.StatusInternalServerError)
+//         return
+//     }
+
+//     res := ToDeliveryResFromPbDeliveryResponse(createdDeliveryResponse)
+//     w.Header().Set("Content-Type", "application/json")
+//     w.WriteHeader(http.StatusCreated)
+//     json.NewEncoder(w).Encode(res)
+// }
