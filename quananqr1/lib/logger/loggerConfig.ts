@@ -1,25 +1,11 @@
-// config/loggerConfig.ts
-
-export interface LogPath {
-  path: string;
-  enabled: boolean;
-  description: string;
-  enabledLogIds: number[];
-  logDescriptions: {
-    [key: number]: {
-      description: string;
-      location: string;
-      status: "enabled" | "disabled";
-    };
-  };
-}
-
 export const loggerPaths: LogPath[] = [
   {
     path: "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
     enabled: false,
     description: "Restaurant Summary Component Logs",
     enabledLogIds: [1, 2, 3],
+    disabledLogIds: [],
+    logIds: [1, 2, 3],
     logDescriptions: {
       1: {
         description: "Log initial dish aggregation state",
@@ -43,6 +29,8 @@ export const loggerPaths: LogPath[] = [
     enabled: false,
     description: "Admin Table Management Logs",
     enabledLogIds: [1, 2, 3],
+    disabledLogIds: [],
+    logIds: [1, 2, 3],
     logDescriptions: {
       1: {
         description: "Table component initialization state",
@@ -66,6 +54,8 @@ export const loggerPaths: LogPath[] = [
     enabled: false,
     description: "Dishes Summary Component Logs",
     enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6, 7, 8],
     logDescriptions: {
       1: {
         description: "Delivery button click tracking",
@@ -111,9 +101,11 @@ export const loggerPaths: LogPath[] = [
   },
   {
     path: "quananqr1/app/(client)/table/[number]/component/order/logic.ts",
-    enabled: false,
+    enabled: true,
     description: "Order and Delivery Store State Management Logs",
     enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     logDescriptions: {
       1: {
         description: "Initial order/delivery data preparation",
@@ -197,6 +189,8 @@ export const loggerPaths: LogPath[] = [
     enabled: false,
     description: "WebSocket Store Management Logs",
     enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     logDescriptions: {
       1: {
         description: "WebSocket token fetch initialization",
@@ -255,6 +249,8 @@ export const loggerPaths: LogPath[] = [
     enabled: false,
     description: "Client Order Component Logs",
     enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6, 7, 8],
     logDescriptions: {
       1: {
         description: "Table token decode result",
@@ -303,6 +299,8 @@ export const loggerPaths: LogPath[] = [
     enabled: false,
     description: "Login Dialog Component Logs",
     enabledLogIds: [1, 2, 3, 4, 5, 6],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6],
     logDescriptions: {
       1: {
         description: "Component initialization and pathname changes",
@@ -341,6 +339,8 @@ export const loggerPaths: LogPath[] = [
     enabled: false,
     description: "Order Creation Component Logs",
     enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     logDescriptions: {
       1: {
         description: "Component initialization and authentication state",
@@ -394,6 +394,8 @@ export const loggerPaths: LogPath[] = [
     enabled: false,
     description: "WebSocket Service Logs",
     enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6, 7, 8],
     logDescriptions: {
       1: {
         description: "WebSocket initialization and connection attempts",
@@ -436,210 +438,94 @@ export const loggerPaths: LogPath[] = [
         status: "enabled"
       }
     }
+  },
+
+  {
+    path: "quananqr1/zusstand/new_auth/new_auth_controller.ts",
+    enabled: false,
+    description: "Authentication Controller Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    logDescriptions: {
+      1: {
+        description: "User registration attempt",
+        location: "register function - initialization",
+        status: "enabled"
+      },
+      2: {
+        description: "User registration success",
+        location: "register function - success path",
+        status: "enabled"
+      },
+      3: {
+        description: "User login attempt",
+        location: "login function - initialization",
+        status: "enabled"
+      },
+      4: {
+        description: "User login success",
+        location: "login function - success path",
+        status: "enabled"
+      },
+      5: {
+        description: "Guest login attempt",
+        location: "guestLogin function - initialization",
+        status: "enabled"
+      },
+      6: {
+        description: "Guest login success",
+        location: "guestLogin function - success path",
+        status: "enabled"
+      },
+      7: {
+        description: "Logout process",
+        location: "logout function - initialization",
+        status: "enabled"
+      },
+      8: {
+        description: "Guest logout process",
+        location: "guestLogout function - initialization",
+        status: "enabled"
+      },
+      9: {
+        description: "Token refresh attempt",
+        location: "refreshAccessToken function - initialization",
+        status: "enabled"
+      },
+      10: {
+        description: "Auth state synchronization",
+        location: "syncAuthState function",
+        status: "enabled"
+      },
+      11: {
+        description: "Cookie-based auth initialization",
+        location: "initializeAuthFromCookies function",
+        status: "enabled"
+      },
+      12: {
+        description: "Error state management",
+        location: "error handling across all functions",
+        status: "enabled"
+      }
+    }
   }
 ];
 
-const isDevelopment = process.env.NODE_ENV !== "production";
-
-type LogLevel = "debug" | "info" | "warn" | "error";
-
-function validateLogId(pathConfig: LogPath, logId: number): void {
-  if (!pathConfig.logDescriptions[logId]) {
-    throw new Error(`
-      Invalid log ID: ${logId}
-      Available log IDs for ${pathConfig.path}:
-      ${Object.keys(pathConfig.logDescriptions)
-        .map(
-          (id) =>
-            `\n- Log #${id}: ${
-              pathConfig.logDescriptions[Number(id)].description
-            }`
-        )
-        .join("")}
-    `);
-  }
+export interface LogPath {
+  path: string;
+  enabled: boolean;
+  description: string;
+  enabledLogIds: number[];
+  disabledLogIds: number[];
+  logIds: number[];
+  logDescriptions: {
+    [key: number]: LogDescription;
+  };
 }
 
-function validatePath(path: string): LogPath {
-  const pathConfig = loggerPaths.find((p) => path.startsWith(p.path));
-  if (!pathConfig) {
-    throw new Error(`
-      Invalid path: ${path}
-      Available paths:
-      ${loggerPaths.map((p) => `\n- ${p.path}`).join("")}
-    `);
-  }
-  return pathConfig;
+export interface LogDescription {
+  description: string;
+  location: string;
+  status: "enabled" | "disabled";
 }
-
-export function getLogStatus(path: string): void {
-  const pathConfig = validatePath(path);
-  console.log(`
-Log Status for: ${pathConfig.path}
-Description: ${pathConfig.description}
-Enabled: ${pathConfig.enabled}
-
-Available Logs:
-${Object.entries(pathConfig.logDescriptions)
-  .map(
-    ([id, log]) => `
-Log #${id}:
-- Description: ${log.description}
-- Location: ${log.location}
-- Status: ${log.status}
-- Enabled: ${pathConfig.enabledLogIds.includes(Number(id)) ? "Yes" : "No"}
-
-`
-  )
-  .join("")}
-  `);
-}
-
-export function logWithLevel(
-  message: Record<string, unknown>,
-  path: string,
-  level: LogLevel,
-  logId: number
-): void {
-  // Validate message
-  if (!message || typeof message !== "object") {
-    throw new Error(`
-      message: Must be an object (e.g., { dishMap }, { users })
-      Received: ${JSON.stringify(message)}
-    `);
-  }
-
-  // Validate path and get config
-  const pathConfig = validatePath(path);
-
-  // Validate log ID
-  validateLogId(pathConfig, logId);
-
-  // Check if logging is enabled for this path and log ID
-  if (!pathConfig.enabled || !pathConfig.enabledLogIds.includes(logId)) {
-    return;
-  }
-
-  // Get log description
-  const logInfo = pathConfig.logDescriptions[logId];
-
-  // Format the log prefix
-  const logIdPrefix = `[Log #${logId}]`;
-  const locationPrefix = `[${logInfo.location}]`;
-
-  // Log based on level
-  switch (level) {
-    case "debug":
-      isDevelopment &&
-        console.log(
-          `🔍 DEBUG ${logIdPrefix} ${locationPrefix} [${path}]:`,
-          message
-        );
-      break;
-    case "info":
-      isDevelopment &&
-        console.log(
-          `ℹ️ INFO ${logIdPrefix} ${locationPrefix} [${path}]:`,
-          message
-        );
-      break;
-    case "warn":
-      console.log(
-        `⚠️ WARN ${logIdPrefix} ${locationPrefix} [${path}]:`,
-        message
-      );
-      break;
-    case "error":
-      console.log(
-        `❌ ERROR ${logIdPrefix} ${locationPrefix} [${path}]:`,
-        message
-      );
-      break;
-  }
-}
-
-
-// summary 
-// # Logger Configuration Summary
-
-// ## System Overview 🔧
-// - **Global Status**: All paths currently disabled
-// - **Log Levels**: `debug`, `info`, `warn`, `error`
-// - **Environment Control**: Development logs controlled by `isDevelopment` flag
-
-// ## Components Breakdown 📑
-
-// ### 1. Restaurant Summary Component 🍽️
-// - **Path**: `quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx`
-// - **Status**: Disabled
-// - **Active Log IDs**: 1-3
-// - **Purpose**: Tracks dish aggregation and order group processing
-
-// ### 2. Admin Table Management 📊
-// - **Path**: `/manage/admin/table`
-// - **Status**: Disabled
-// - **Active Log IDs**: 1-3
-// - **Purpose**: Monitors table component lifecycle and data updates
-
-// ### 3. Dishes Summary Component 🍜
-// - **Path**: `quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx`
-// - **Status**: Disabled
-// - **Active Log IDs**: 1-8
-// - **Purpose**: Handles delivery tracking and order processing
-
-// ### 4. Order/Delivery Store Management 📦
-// - **Path**: `quananqr1/app/(client)/table/[number]/component/order/logic.ts`
-// - **Status**: Disabled
-// - **Active Log IDs**: 1-15
-// - **Purpose**: Complete order lifecycle management and state tracking
-
-// ### 5. WebSocket Store 🌐
-// - **Path**: `quananqr1/zusstand/web-socket/websocketStore.ts`
-// - **Status**: Disabled
-// - **Active Log IDs**: 1-10
-// - **Purpose**: WebSocket communication and token management
-
-// ### 6. Client Order Component 🛒
-// - **Path**: `quananqr1/app/(client)/table/[number]/component/order/order.tsx`
-// - **Status**: Disabled
-// - **Active Log IDs**: 1-8
-// - **Purpose**: Customer order management and UI state tracking
-
-// ### 7. Login Dialog 🔐
-// - **Path**: `quananqr1/components/form/login-dialog.tsx`
-// - **Status**: Disabled
-// - **Active Log IDs**: 1-6
-// - **Purpose**: Authentication flow and form submission tracking
-
-// ### 8. Order Creation Button 📝
-// - **Path**: `quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx`
-// - **Status**: Disabled
-// - **Active Log IDs**: 1-9
-// - **Purpose**: Order creation process and authentication state management
-
-// ### 9. WebSocket Service ⚡
-// - **Path**: `quananqr1/zusstand/web-socket/websoket-service.ts`
-// - **Status**: Disabled
-// - **Active Log IDs**: 1-8
-// - **Purpose**: Core WebSocket service functionality and connection management
-
-// ## Quick Reference Table 📋
-
-// | Component               | Log IDs | Status  | Path Type    |
-// |------------------------|---------|----------|-------------|
-// | Restaurant Summary     | 1-3     | Disabled | Admin       |
-// | Admin Table            | 1-3     | Disabled | Admin       |
-// | Dishes Summary         | 1-8     | Disabled | Admin       |
-// | Order Store            | 1-15    | Disabled | Client      |
-// | WebSocket Store        | 1-10    | Disabled | Core        |
-// | Client Order           | 1-8     | Disabled | Client      |
-// | Login Dialog           | 1-6     | Disabled | Auth        |
-// | Order Creation         | 1-9     | Disabled | Client      |
-// | WebSocket Service      | 1-8     | Disabled | Core        |
-
-// ## Notes 📌
-// 1. All components have properly configured log IDs
-// 2. Each path includes comprehensive error handling
-// 3. Logging levels are consistently implemented across components
-// 4. Development-mode specific logging is properly segregated
-// 5. All paths implement proper validation checks

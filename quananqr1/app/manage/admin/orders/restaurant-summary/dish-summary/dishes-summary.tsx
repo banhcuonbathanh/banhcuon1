@@ -5,7 +5,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
 
 import NumericKeypad from "./num-pad";
-import { logWithLevel } from "@/lib/log";
+import { logWithLevel } from "@/lib/logger/log";
 import {
   OrderDetailedResponse,
   Guest

@@ -1,8 +1,9 @@
-
 // utils/orderUtils.ts
-import { logWithLevel } from "@/lib/log";
-import { OrderDetailedDish, OrderDetailedResponse } from "@/schemaValidations/interface/type_order";
-
+import { logWithLevel } from "@/lib/logger/log";
+import {
+  OrderDetailedDish,
+  OrderDetailedResponse
+} from "@/schemaValidations/interface/type_order";
 
 export interface RestaurantSummaryProps {
   restaurantLayoutProps: OrderDetailedResponse[];
@@ -18,9 +19,9 @@ export interface GroupedOrder {
   hasTakeAway: boolean;
 }
 
-
-
-export const aggregateDishes = (orders: OrderDetailedResponse[]): AggregatedDish[] => {
+export const aggregateDishes = (
+  orders: OrderDetailedResponse[]
+): AggregatedDish[] => {
   const dishMap = new Map<number, AggregatedDish>();
   logWithLevel(
     { dishMap },
@@ -28,7 +29,7 @@ export const aggregateDishes = (orders: OrderDetailedResponse[]): AggregatedDish
     "info",
     1
   );
-  
+
   orders.forEach((order) => {
     // Add individual dishes
     order.data_dish.forEach((dish) => {
@@ -61,4 +62,3 @@ export const aggregateDishes = (orders: OrderDetailedResponse[]): AggregatedDish
 
   return Array.from(dishMap.values());
 };
-

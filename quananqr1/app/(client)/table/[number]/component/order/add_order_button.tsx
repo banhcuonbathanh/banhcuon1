@@ -8,7 +8,7 @@ import { useApiStore } from "@/zusstand/api/api-controller";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
-import { logWithLevel } from "@/lib/log";
+import { logWithLevel } from "@/lib/logger/log";
 
 const LOG_PATH =
   "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx";

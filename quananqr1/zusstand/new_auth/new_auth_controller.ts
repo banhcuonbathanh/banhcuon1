@@ -1,7 +1,24 @@
+// First add the logging utility
+const logAuth = (logId: number, message: string, data?: any) => {
+  const logPath = loggerPaths.find(
+    (path) => path.path === "quananqr1/zusstand/new_auth/new_auth_controller.ts"
+  );
+
+  if (!logPath || !logPath.enabled || !logPath.enabledLogIds.includes(logId)) {
+    return;
+  }
+
+  const logInfo = logPath.logDescriptions[logId];
+  if (!logInfo) {
+    return;
+  }
+
+  console.log(`[AUTH][${logInfo.location}] ${message}`, data || "");
+};
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import Cookies from "js-cookie";
-import { shallow } from "zustand/shallow";
 import envConfig from "@/config";
 
 import { User } from "@/schemaValidations/user.schema";
@@ -18,6 +35,7 @@ import {
 } from "@/schemaValidations/interface/type_guest";
 import { GuestLoginBodyType } from "@/schemaValidations/guest.schema";
 import { decodeToken } from "@/lib/utils";
+import { loggerPaths } from "@/lib/logger/loggerConfig";
 
 export interface AuthState {
   userId: string | null;
@@ -32,7 +50,7 @@ export interface AuthState {
   isRegisterDialogOpen: boolean;
   isGuest: boolean;
   isLogin: boolean;
-  persistedUser: User | null; // New field for persisted user data
+  persistedUser: User | null;
 }
 
 interface AuthActions {
@@ -54,7 +72,6 @@ interface AuthActions {
   closeRegisterDialog: () => void;
   syncAuthState: () => void;
   initializeAuthFromCookies: () => void;
-  // setPersistedUser: (user: User | null) => void; // New action
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -62,6 +79,7 @@ type AuthStore = AuthState & AuthActions;
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
+      // Initial state
       user: null,
       guest: null,
       accessToken: null,
@@ -74,31 +92,24 @@ export const useAuthStore = create<AuthStore>()(
       isGuest: false,
       userId: null,
       isLogin: false,
-      persistedUser: null, // Initialize persisted user
-      // setPersistedUser: (user: User | null) => {
-      //   set({ persistedUser: user });
-      // },
-      register: async (body: RegisterBodyType) => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts register function called with body:",
-          body
-        );
-        set({ loading: true, error: null });
+      persistedUser: null,
 
-        const formattedName = body.name;
+      register: async (body: RegisterBodyType) => {
+        logAuth(1, "Registration attempt initiated", { email: body.email });
+        set({ loading: true, error: null });
 
         try {
           const response = await useApiStore
             .getState()
             .http.post<User>(`${envConfig.NEXT_PUBLIC_API_Create_User}`, {
               ...body,
-              name: formattedName
+              name: body.name
             });
 
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts register successful, response:",
-            response.data
-          );
+          logAuth(2, "Registration successful", {
+            userId: response.data.id,
+            name: response.data.name
+          });
 
           set({
             user: response.data,
@@ -112,10 +123,7 @@ export const useAuthStore = create<AuthStore>()(
             isLogin: true
           });
         } catch (error) {
-          console.error(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts register error:",
-            error
-          );
+          logAuth(12, "Registration error", { error });
           set({
             error:
               error instanceof Error ? error.message : "Registration failed",
@@ -126,7 +134,9 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       login: async (body: LoginBodyType, fromPath?: string | null) => {
+        logAuth(3, "Login attempt initiated", { email: body.email });
         set({ loading: true, error: null });
+
         try {
           const response = await useApiStore
             .getState()
@@ -140,9 +150,14 @@ export const useAuthStore = create<AuthStore>()(
             password: body.password
           };
 
+          logAuth(4, "Login successful", {
+            userId: response.data.user.id,
+            email: response.data.user.email
+          });
+
           set({
             user: userData,
-            persistedUser: userData, // Store in persisted state
+            persistedUser: userData,
             userId: response.data.user.id.toString(),
             guest: null,
             isGuest: false,
@@ -164,6 +179,7 @@ export const useAuthStore = create<AuthStore>()(
             sameSite: "strict"
           });
         } catch (error) {
+          logAuth(12, "Login error", { error });
           set({
             error: error instanceof Error ? error.message : "Login failed",
             loading: false,
@@ -176,29 +192,36 @@ export const useAuthStore = create<AuthStore>()(
         body: GuestLoginBodyType,
         fromPath?: string | null
       ) => {
+        logAuth(5, "Guest login attempt initiated", {
+          name: body.name,
+          tableNumber: body.tableNumber
+        });
         set({ loading: true, error: null });
+
         try {
           useApiStore.getState().setTableToken(body.token);
-
-          const guest_login_link =
-            envConfig.NEXT_PUBLIC_API_ENDPOINT +
-            envConfig.NEXT_PUBLIC_API_Guest_Login;
+          const guest_login_link = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.NEXT_PUBLIC_API_Guest_Login}`;
 
           const response = await useApiStore
             .getState()
-            .http.post<GuestLoginResponse>(`${guest_login_link}`, {
+            .http.post<GuestLoginResponse>(guest_login_link, {
               name: body.name,
               table_number: body.tableNumber,
               token: body.token
             });
 
           const guestData = response.data.guest;
+          logAuth(6, "Guest login successful", {
+            guestId: guestData.id,
+            name: guestData.name,
+            tableNumber: guestData.table_number
+          });
 
           set({
             userId: guestData.id.toString(),
             user: null,
             guest: guestData,
-            persistedUser: null, // Clear persisted user when switching to guest
+            persistedUser: null,
             isGuest: true,
             accessToken: response.data.access_token,
             refreshToken: response.data.refresh_token,
@@ -222,6 +245,7 @@ export const useAuthStore = create<AuthStore>()(
 
           window.location.href = fromPath || "/";
         } catch (error) {
+          logAuth(12, "Guest login error", { error });
           set({
             error:
               error instanceof Error ? error.message : "Guest login failed",
@@ -232,21 +256,24 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: async () => {
+        logAuth(7, "User logout initiated");
         set({ loading: true, error: null });
+
         try {
           Cookies.remove("accessToken", { path: "/" });
           Cookies.remove("refreshToken", { path: "/" });
-
           useApiStore.getState().setAccessToken(null);
 
           await useApiStore
             .getState()
             .http.post(`${envConfig.NEXT_PUBLIC_API_Logout}`);
 
+          logAuth(7, "User logout successful");
+
           set({
             userId: null,
             user: null,
-            persistedUser: null, // Clear persisted user
+            persistedUser: null,
             guest: null,
             isGuest: false,
             accessToken: null,
@@ -256,6 +283,7 @@ export const useAuthStore = create<AuthStore>()(
             isLogin: false
           });
         } catch (error) {
+          logAuth(12, "Logout error", { error });
           Cookies.remove("accessToken", { path: "/" });
           Cookies.remove("refreshToken", { path: "/" });
           useApiStore.getState().setAccessToken(null);
@@ -263,7 +291,7 @@ export const useAuthStore = create<AuthStore>()(
           set({
             userId: null,
             user: null,
-            persistedUser: null, // Clear persisted user
+            persistedUser: null,
             guest: null,
             isGuest: false,
             accessToken: null,
@@ -276,6 +304,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       guestLogout: async (body: LogoutRequest) => {
+        logAuth(8, "Guest logout initiated");
         set({ loading: true, error: null });
         try {
           const guest_logout_link =
@@ -289,11 +318,13 @@ export const useAuthStore = create<AuthStore>()(
 
           await useApiStore.getState().http.post(`${guest_logout_link}`, body);
 
+          logAuth(8, "Guest logout successful");
+
           set({
             userId: null,
             user: null,
             guest: null,
-            persistedUser: null, // Clear persisted user on guest logout
+            persistedUser: null,
             isGuest: false,
             accessToken: null,
             refreshToken: null,
@@ -302,6 +333,7 @@ export const useAuthStore = create<AuthStore>()(
             isLogin: false
           });
         } catch (error) {
+          logAuth(12, "Guest logout error", { error });
           Cookies.remove("accessToken", { path: "/" });
           Cookies.remove("refreshToken", { path: "/" });
           useApiStore.getState().setAccessToken(null);
@@ -321,19 +353,16 @@ export const useAuthStore = create<AuthStore>()(
           });
         }
       },
+
       refreshAccessToken: async () => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts refreshAccessToken function called"
-        );
+        logAuth(9, "Token refresh initiated");
         set({ loading: true, error: null });
+
         try {
           await useApiStore.getState().refreshToken();
           const newAccessToken = useApiStore.getState().accessToken;
 
-          console.log(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts refreshAccessToken successful, new token:",
-            newAccessToken
-          );
+          logAuth(9, "Token refresh successful", { newAccessToken });
 
           set({
             accessToken: newAccessToken,
@@ -341,10 +370,7 @@ export const useAuthStore = create<AuthStore>()(
             loading: false
           });
         } catch (error) {
-          console.error(
-            "quananqr1/zusstand/new_auth/new_auth_controller.ts refreshAccessToken error:",
-            error
-          );
+          logAuth(12, "Token refresh error", { error });
           set({
             error:
               error instanceof Error ? error.message : "Token refresh failed",
@@ -354,16 +380,10 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       clearError: () => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts clearError function called"
-        );
         set({ error: null });
       },
 
       openLoginDialog: () => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts openLoginDialog function called"
-        );
         set({
           isLoginDialogOpen: true,
           isGuestDialogOpen: false,
@@ -372,16 +392,10 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       closeLoginDialog: () => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts closeLoginDialog function called"
-        );
         set({ isLoginDialogOpen: false });
       },
 
       openGuestDialog: () => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts openGuestDialog function called"
-        );
         set({
           isGuestDialogOpen: true,
           isLoginDialogOpen: false,
@@ -390,16 +404,10 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       closeGuestDialog: () => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts closeGuestDialog function called"
-        );
         set({ isGuestDialogOpen: false });
       },
 
       openRegisterDialog: () => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts openRegisterDialog function called"
-        );
         set({
           isRegisterDialogOpen: true,
           isLoginDialogOpen: false,
@@ -408,13 +416,11 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       closeRegisterDialog: () => {
-        console.log(
-          "quananqr1/zusstand/new_auth/new_auth_controller.ts closeRegisterDialog function called"
-        );
         set({ isRegisterDialogOpen: false });
       },
 
       syncAuthState: () => {
+        logAuth(10, "Auth state synchronization initiated");
         const accessToken = Cookies.get("accessToken");
         const refreshToken = Cookies.get("refreshToken");
         const currentState = get();
@@ -423,15 +429,21 @@ export const useAuthStore = create<AuthStore>()(
           try {
             const decoded = decodeToken(accessToken);
 
+            logAuth(10, "Auth state synchronized successfully", {
+              userId: decoded.id,
+              role: decoded.role
+            });
+
             set({
               accessToken,
               refreshToken,
               isLogin: true,
               isGuest: decoded.role === "Guest",
               userId: decoded.id.toString(),
-              user: currentState.persistedUser // Restore user from persisted state
+              user: currentState.persistedUser
             });
           } catch (error) {
+            logAuth(12, "Auth state sync error", { error });
             console.error("Token validation failed during sync:", error);
             set({
               userId: null,
@@ -447,6 +459,7 @@ export const useAuthStore = create<AuthStore>()(
             Cookies.remove("refreshToken");
           }
         } else {
+          logAuth(10, "No tokens found during auth sync");
           set({
             userId: null,
             user: null,
@@ -460,36 +473,22 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       initializeAuthFromCookies: () => {
-        // console.log(
-        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts initializeAuthFromCookies function called"
-        // );
+        logAuth(11, "Cookie-based auth initialization started");
         const accessToken = Cookies.get("accessToken");
         const refreshToken = Cookies.get("refreshToken");
 
-        // console.log(
-        //   "quananqr1/zusstand/new_auth/new_auth_controller.ts initializeAuthFromCookies accessToken, refreshToken:",
-        //   accessToken,
-        //   refreshToken
-        // );
-
         if (accessToken && refreshToken) {
+          logAuth(11, "Tokens found in cookies, syncing auth state");
           get().syncAuthState();
+        } else {
+          logAuth(11, "No tokens found in cookies during initialization");
         }
       }
     }),
     {
       name: "auth-storage"
-      // partialize: (state) => ({
-      //   persistedUser: state.persistedUser,
-      //   guest: state.guest
-      // })
     }
   )
 );
 
-// const { isLogin, user } = useAuthStore(state => {
-//   return {
-//     isLogin: state.isLogin,
-//     user: state.user
-//   };
-// });
+export default useAuthStore;

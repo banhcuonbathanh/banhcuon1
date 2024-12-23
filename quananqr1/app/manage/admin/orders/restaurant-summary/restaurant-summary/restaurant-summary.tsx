@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { logWithLevel } from "@/lib/log";
+import { logWithLevel } from "@/lib/logger/log";
 import { GroupedOrder, RestaurantSummaryProps } from "./rs-type";
 import { aggregateDishes, getOrdinalSuffix, parseOrderName } from "./ultil";
 import CollapsibleSection from "./colap-section";
@@ -74,7 +74,11 @@ export const RestaurantSummary2: React.FC<RestaurantSummaryProps> = ({
 
                 <CollapsibleSection title="Món Ăn">
                   {aggregatedDishes.map((dish, index) => (
-                    <DishSummary key={`${dish.dish_id}-${index}`} dish={dish} orders={group.orders} />
+                    <DishSummary
+                      key={`${dish.dish_id}-${index}`}
+                      dish={dish}
+                      orders={group.orders}
+                    />
                   ))}
                 </CollapsibleSection>
 

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { WebSocketService } from "./websoket-service";
 import envConfig from "@/config";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
-import { logWithLevel } from "@/lib/log";
+import { logWithLevel } from "@/lib/logger/log";
 
 const LOG_PATH = "quananqr1/zusstand/web-socket/websocketStore.ts";
 

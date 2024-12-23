@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { toast } from "@/components/ui/use-toast";
 import envConfig from "@/config";
 import { CreateOrderRequest } from "@/schemaValidations/interface/type_order";
-import { logWithLevel } from "@/lib/log";
+import { logWithLevel } from "@/lib/logger/log";
 
 const LOG_PATH =
   "quananqr1/app/(client)/table/[number]/component/order/logic.ts";

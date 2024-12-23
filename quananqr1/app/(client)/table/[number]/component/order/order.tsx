@@ -7,7 +7,7 @@ import useOrderStore from "@/zusstand/order/order_zustand";
 import OrderDetails from "../total-dishes-detail";
 import OrderCreationComponent from "./add_order_button";
 import { decodeTableToken } from "@/lib/utils";
-import { logWithLevel } from "@/lib/log";
+import { logWithLevel } from "@/lib/logger/log";
 
 interface OrderProps {
   number: string;

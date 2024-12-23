@@ -18,7 +18,7 @@ import { LoginBodyType, LoginBody } from "@/schemaValidations/auth.schema";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { usePathname, useRouter } from "next/navigation";
 import { handleErrorApi, handleLoginRedirect } from "@/lib/utils";
-import { logWithLevel } from "@/lib/log";
+import { logWithLevel } from "@/lib/logger/log";
 
 const LOG_PATH = "quananqr1/components/form/login-dialog.tsx";
 

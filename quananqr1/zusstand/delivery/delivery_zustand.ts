@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { toast } from "@/components/ui/use-toast";
 import envConfig from "@/config";
-import { logWithLevel } from "@/lib/log";
+import { logWithLevel } from "@/lib/logger/log";
 import { useApiStore } from "../api/api-controller";
 
 const LOG_PATH = "quananqr1/zusstand/delivery/delivery_zustand.ts";

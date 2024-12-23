@@ -1,4 +1,4 @@
-import { logWithLevel } from "@/lib/log";
+import { logWithLevel } from "@/lib/logger/log";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 
 const LOG_PATH = "quananqr1/zusstand/web-socket/websoket-service.ts";
