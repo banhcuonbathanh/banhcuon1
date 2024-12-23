@@ -65,7 +65,8 @@ export const loggerPaths: LogPath[] = [
     path: "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx",
     enabled: true,
     description: "Dishes Summary Component Logs",
-    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
+    enabledLogIds: [4],
+    // enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
     logDescriptions: {
       1: {
         description: "Delivery button click tracking",

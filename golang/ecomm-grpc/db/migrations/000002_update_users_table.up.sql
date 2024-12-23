@@ -217,13 +217,14 @@ CREATE TABLE orders (
     status VARCHAR(50) DEFAULT 'Pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    order_name VARCHAR(255),
     total_price INTEGER,
     topping VARCHAR(255),
     tracking_order VARCHAR(255),
     take_away BOOLEAN NOT NULL DEFAULT false,
     chili_number BIGINT DEFAULT 0,
     table_token VARCHAR(255) NOT NULL,
-    order_name VARCHAR(255),
+  
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
@@ -235,6 +236,9 @@ CREATE TABLE orders (
 );
 
 CREATE TABLE dish_order_items (
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    order_name VARCHAR(255),
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     dish_id BIGINT NOT NULL,
@@ -244,6 +248,9 @@ CREATE TABLE dish_order_items (
 );
 
 CREATE TABLE set_order_items (
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    order_name VARCHAR(255),
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     set_id BIGINT NOT NULL,

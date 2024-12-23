@@ -211,7 +211,7 @@ export const DishSummary: React.FC<DishSummaryProps> = ({ dish, orders }) => {
         8
       );
 
-      await createDelivery({
+      const response = await createDelivery({
         guest,
         user: referenceOrder.is_guest
           ? null
@@ -231,7 +231,7 @@ export const DishSummary: React.FC<DishSummaryProps> = ({ dish, orders }) => {
           deliveryNumber,
           success: true,
           orderId: referenceOrder.id,
-          timestamp: new Date().toISOString()
+          response: response
         },
         LOG_PATH,
         "info",

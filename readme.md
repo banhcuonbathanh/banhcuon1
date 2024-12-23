@@ -34,11 +34,12 @@ TRUNCATE TABLE schema\*migrations, users; delete all data
 \d reading_test_models;
 
 \d orders
+SELECT * FROM dish_order_items;
 SELECT * FROM tables;
 SELECT * FROM users;
 SELECT _ FROM users;
 SELECT \_ FROM dishes;
-SELECT _ FROM orders;
+SELECT * FROM orders;
 SELECT \_ FROM users;
 SELECT \* FROM sessions;
 DELETE FROM sessions;
