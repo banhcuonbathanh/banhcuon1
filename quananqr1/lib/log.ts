@@ -109,7 +109,6 @@ export const loggerPaths: LogPath[] = [
       }
     }
   },
-
   {
     path: "quananqr1/app/(client)/table/[number]/component/order/logic.ts",
     enabled: false,
@@ -251,7 +250,6 @@ export const loggerPaths: LogPath[] = [
       }
     }
   },
-
   {
     path: "quananqr1/app/(client)/table/[number]/component/order/order.tsx",
     enabled: false,
@@ -300,7 +298,6 @@ export const loggerPaths: LogPath[] = [
       }
     }
   },
-
   {
     path: "quananqr1/components/form/login-dialog.tsx",
     enabled: false,
@@ -392,7 +389,6 @@ export const loggerPaths: LogPath[] = [
       }
     }
   },
-
   {
     path: "quananqr1/zusstand/web-socket/websoket-service.ts",
     enabled: false,
@@ -492,6 +488,7 @@ Log #${id}:
 - Location: ${log.location}
 - Status: ${log.status}
 - Enabled: ${pathConfig.enabledLogIds.includes(Number(id)) ? "Yes" : "No"}
+
 `
   )
   .join("")}
@@ -560,3 +557,89 @@ export function logWithLevel(
       break;
   }
 }
+
+
+// summary 
+// # Logger Configuration Summary
+
+// ## System Overview 🔧
+// - **Global Status**: All paths currently disabled
+// - **Log Levels**: `debug`, `info`, `warn`, `error`
+// - **Environment Control**: Development logs controlled by `isDevelopment` flag
+
+// ## Components Breakdown 📑
+
+// ### 1. Restaurant Summary Component 🍽️
+// - **Path**: `quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx`
+// - **Status**: Disabled
+// - **Active Log IDs**: 1-3
+// - **Purpose**: Tracks dish aggregation and order group processing
+
+// ### 2. Admin Table Management 📊
+// - **Path**: `/manage/admin/table`
+// - **Status**: Disabled
+// - **Active Log IDs**: 1-3
+// - **Purpose**: Monitors table component lifecycle and data updates
+
+// ### 3. Dishes Summary Component 🍜
+// - **Path**: `quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx`
+// - **Status**: Disabled
+// - **Active Log IDs**: 1-8
+// - **Purpose**: Handles delivery tracking and order processing
+
+// ### 4. Order/Delivery Store Management 📦
+// - **Path**: `quananqr1/app/(client)/table/[number]/component/order/logic.ts`
+// - **Status**: Disabled
+// - **Active Log IDs**: 1-15
+// - **Purpose**: Complete order lifecycle management and state tracking
+
+// ### 5. WebSocket Store 🌐
+// - **Path**: `quananqr1/zusstand/web-socket/websocketStore.ts`
+// - **Status**: Disabled
+// - **Active Log IDs**: 1-10
+// - **Purpose**: WebSocket communication and token management
+
+// ### 6. Client Order Component 🛒
+// - **Path**: `quananqr1/app/(client)/table/[number]/component/order/order.tsx`
+// - **Status**: Disabled
+// - **Active Log IDs**: 1-8
+// - **Purpose**: Customer order management and UI state tracking
+
+// ### 7. Login Dialog 🔐
+// - **Path**: `quananqr1/components/form/login-dialog.tsx`
+// - **Status**: Disabled
+// - **Active Log IDs**: 1-6
+// - **Purpose**: Authentication flow and form submission tracking
+
+// ### 8. Order Creation Button 📝
+// - **Path**: `quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx`
+// - **Status**: Disabled
+// - **Active Log IDs**: 1-9
+// - **Purpose**: Order creation process and authentication state management
+
+// ### 9. WebSocket Service ⚡
+// - **Path**: `quananqr1/zusstand/web-socket/websoket-service.ts`
+// - **Status**: Disabled
+// - **Active Log IDs**: 1-8
+// - **Purpose**: Core WebSocket service functionality and connection management
+
+// ## Quick Reference Table 📋
+
+// | Component               | Log IDs | Status  | Path Type    |
+// |------------------------|---------|----------|-------------|
+// | Restaurant Summary     | 1-3     | Disabled | Admin       |
+// | Admin Table            | 1-3     | Disabled | Admin       |
+// | Dishes Summary         | 1-8     | Disabled | Admin       |
+// | Order Store            | 1-15    | Disabled | Client      |
+// | WebSocket Store        | 1-10    | Disabled | Core        |
+// | Client Order           | 1-8     | Disabled | Client      |
+// | Login Dialog           | 1-6     | Disabled | Auth        |
+// | Order Creation         | 1-9     | Disabled | Client      |
+// | WebSocket Service      | 1-8     | Disabled | Core        |
+
+// ## Notes 📌
+// 1. All components have properly configured log IDs
+// 2. Each path includes comprehensive error handling
+// 3. Logging levels are consistently implemented across components
+// 4. Development-mode specific logging is properly segregated
+// 5. All paths implement proper validation checks
