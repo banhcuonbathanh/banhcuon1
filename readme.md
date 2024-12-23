@@ -1,4 +1,4 @@
-http://localhost:3000/table/1?token=MTo0OkF2YWlsYWJsZTo0ODg3NDI2MzQz.0v1DNiYriLs
+http://localhost:3000/table/1?token=MTo0OkF2YWlsYWJsZTo0ODg4NTI2NzQ5.zOssQmB-QEM
 fmt.Printf("golang/quanqr/order/order_handler.go ordersResponse %v\n", ordersResponse)
 docker-compose up mypostgres_ai
 
@@ -34,12 +34,12 @@ TRUNCATE TABLE schema\*migrations, users; delete all data
 \d reading_test_models;
 
 \d orders
-SELECT * FROM dish_order_items;
-SELECT * FROM tables;
-SELECT * FROM users;
+SELECT _ FROM dish_order_items;
+SELECT _ FROM tables;
 SELECT _ FROM users;
+SELECT \_ FROM users;
 SELECT \_ FROM dishes;
-SELECT * FROM orders;
+SELECT _ FROM orders;
 SELECT \_ FROM users;
 SELECT \* FROM sessions;
 DELETE FROM sessions;
@@ -151,8 +151,8 @@ make stop-server
 go test -v test/test-api/test-api.go
 golang/
 ============================================== git hub ================================
-git branch make_order1
-git checkout make_order1
+git branch coffee
+git checkout coffee
 git branch -d web-sokcert-new-strtuchture delete branch
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/python_proto/claude/claude.proto
 

@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { WebSocketService } from "./websoket-service";
 import envConfig from "@/config";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
+import { logWithLevel } from "@/lib/log";
+
+const LOG_PATH = "quananqr1/zusstand/web-socket/websocketStore.ts";
 
 interface WebSocketState {
   socket: WebSocketService | null;
@@ -46,7 +49,19 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
 
   fetchWsToken: async ({ userId, email, role }) => {
     const serverEndpoint = envConfig.NEXT_PUBLIC_API_ENDPOINT;
-    // console.log("quananqr1/zusstand/web-socket/websocketStore.ts fetchWsToken");
+
+    logWithLevel(
+      {
+        action: "fetchWsToken",
+        userId,
+        email,
+        role
+      },
+      LOG_PATH,
+      "debug",
+      1
+    );
+
     try {
       const response = await fetch(`${serverEndpoint}${envConfig.wsAuth}`, {
         method: "POST",
@@ -61,10 +76,31 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       });
 
       if (!response.ok) {
+        logWithLevel(
+          {
+            error: "Failed to fetch WS token",
+            status: response.status,
+            statusText: response.statusText
+          },
+          LOG_PATH,
+          "error",
+          3
+        );
         throw new Error("Failed to fetch WS token");
       }
 
       const data: WsAuthResponse = await response.json();
+
+      logWithLevel(
+        {
+          action: "tokenReceived",
+          expiresAt: data.expiresAt,
+          role: data.role
+        },
+        LOG_PATH,
+        "info",
+        2
+      );
 
       set({
         wsToken: data.token,
@@ -73,15 +109,34 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
 
       return data;
     } catch (error) {
-      console.error("Error fetching WS token:", error);
+      logWithLevel(
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+          userId,
+          email
+        },
+        LOG_PATH,
+        "error",
+        3
+      );
       throw error;
     }
   },
 
   connect: async ({ userId, isGuest, userToken, tableToken, role, email }) => {
-    console.log("quananqr1/zusstand/web-socket/websocketStore.ts");
+    logWithLevel(
+      {
+        action: "connectAttempt",
+        userId,
+        isGuest,
+        role,
+        email
+      },
+      LOG_PATH,
+      "info",
+      4
+    );
 
-    // Check if token is expired and fetch new one if needed
     const currentTime = new Date();
     const wsTokenExpiry = get().wsTokenExpiry;
     const tokenExpiry = wsTokenExpiry ? new Date(wsTokenExpiry) : null;
@@ -92,6 +147,17 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       currentTime >= new Date(wsTokenExpiry);
 
     if (isTokenExpired) {
+      logWithLevel(
+        {
+          action: "tokenRefreshRequired",
+          currentTime: currentTime.toISOString(),
+          expiry: wsTokenExpiry
+        },
+        LOG_PATH,
+        "debug",
+        5
+      );
+
       try {
         await get().fetchWsToken({
           userId: parseInt(userId),
@@ -99,45 +165,86 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
           role
         });
       } catch (error) {
-        console.error("Failed to get WS token before connection:", error);
+        logWithLevel(
+          {
+            error: error instanceof Error ? error.message : "Unknown error",
+            userId,
+            role
+          },
+          LOG_PATH,
+          "error",
+          3
+        );
         return;
       }
     }
 
-    console.log(
-      "quananqr1/zusstand/web-socket/websocketStore.ts 121212121 userId role usertoek tabletoken ",
+    const socket = new WebSocketService(
       userId,
       role,
       userToken,
-      tableToken
+      tableToken,
+      email
     );
 
-    const socket = new WebSocketService(userId, role, userToken, tableToken, email);
-
     socket.onMessage((message: WebSocketMessage) => {
+      logWithLevel(
+        {
+          action: "messageReceived",
+          messageType: message.type
+        },
+        LOG_PATH,
+        "debug",
+        6
+      );
+
       const handlers = get().messageHandlers;
       handlers.forEach((handler) => handler(message));
     });
 
-    socket.onConnect(() => set({ isConnected: true }));
-    socket.onDisconnect(() => set({ isConnected: false }));
-
-    socket.onMessage((message: WebSocketMessage) => {
-      const handlers = get().messageHandlers;
-      handlers.forEach((handler) => handler(message));
+    socket.onConnect(() => {
+      logWithLevel(
+        {
+          action: "connected",
+          userId,
+          role
+        },
+        LOG_PATH,
+        "info",
+        7
+      );
+      set({ isConnected: true });
     });
-    // socket.onMessage((message: WebSocketMessage) => {
-    //   console.log(
-    //     "quananqr1/zusstand/web-socket/websocketStore.ts message",
-    //     message
-    //   );
-    // });
+
+    socket.onDisconnect(() => {
+      logWithLevel(
+        {
+          action: "disconnected",
+          userId,
+          role
+        },
+        LOG_PATH,
+        "info",
+        8
+      );
+      set({ isConnected: false });
+    });
+
     set({ socket });
   },
 
   disconnect: () => {
     const { socket } = get();
     if (socket) {
+      logWithLevel(
+        {
+          action: "manualDisconnect"
+        },
+        LOG_PATH,
+        "info",
+        8
+      );
+
       socket.disconnect();
       set({
         socket: null,
@@ -151,11 +258,30 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   sendMessage: (message: WebSocketMessage) => {
     const { socket } = get();
     if (socket) {
+      logWithLevel(
+        {
+          action: "sendMessage",
+          messageType: message.type
+        },
+        LOG_PATH,
+        "debug",
+        9
+      );
       socket.sendMessage(message);
     }
   },
 
   addMessageHandler: (handler) => {
+    logWithLevel(
+      {
+        action: "addMessageHandler",
+        handlersCount: get().messageHandlers.length + 1
+      },
+      LOG_PATH,
+      "debug",
+      10
+    );
+
     set((state) => ({
       messageHandlers: [...state.messageHandlers, handler]
     }));

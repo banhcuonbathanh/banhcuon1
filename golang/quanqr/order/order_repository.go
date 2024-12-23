@@ -755,15 +755,13 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         clientId = req.UserId
     }
     or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Processing for clientId: %d, isGuest: %v", clientId, req.IsGuest))
+    
     // Get tracking order information
     trackingOrder, err := or.getTrackingOrderInfo(ctx, or.db, now, req.IsGuest, clientId)
     if err != nil {
         or.logger.Error("Error getting tracking order info: " + err.Error())
         return nil, fmt.Errorf("error getting tracking order info: %w", err)
     }
-
-    // Format the order name
- 
 
     // Get client number for the order name
     clientNumber, err := or.getClientNumberForDay(ctx, or.db, now, req.IsGuest, clientId)
@@ -772,9 +770,6 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         return nil, fmt.Errorf("error getting client number: %w", err)
     }
     or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Got client number: %d", clientNumber))
-
-    
-
 
     var guestId, userId sql.NullInt64
     if req.IsGuest {
@@ -809,7 +804,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         now,
         req.TotalPrice,
         req.Topping,
-        trackingOrder, // Use the generated tracking order
+        trackingOrder,
         req.TakeAway,
         req.ChiliNumber,
         req.TableToken,
@@ -821,7 +816,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         return nil, fmt.Errorf("error creating order: %w", err)
     }
 
-    // Insert dish items
+    // Insert dish items with new fields
     for _, dish := range req.DishItems {
         var exists bool
         err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM dishes WHERE id = $1)", dish.DishId).Scan(&exists)
@@ -834,16 +829,19 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
             return nil, fmt.Errorf("dish with id %d does not exist", dish.DishId)
         }
 
-        _, err = tx.Exec(ctx, 
-            "INSERT INTO dish_order_items (order_id, dish_id, quantity) VALUES ($1, $2, $3)",
-            o.Id, dish.DishId, dish.Quantity)
+        _, err = tx.Exec(ctx, `
+            INSERT INTO dish_order_items (
+                order_id, dish_id, quantity, created_at, updated_at, order_name
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)`,
+            o.Id, dish.DishId, dish.Quantity, now, now, req.OrderName)
         if err != nil {
             or.logger.Error(fmt.Sprintf("Error inserting order dish: %s", err.Error()))
             return nil, fmt.Errorf("error inserting order dish: %w", err)
         }
     }
 
-    // Insert set items
+    // Insert set items with new fields
     for _, set := range req.SetItems {
         var exists bool
         err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM sets WHERE id = $1)", set.SetId).Scan(&exists)
@@ -856,9 +854,12 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
             return nil, fmt.Errorf("set with id %d does not exist", set.SetId)
         }
 
-        _, err = tx.Exec(ctx, 
-            "INSERT INTO set_order_items (order_id, set_id, quantity) VALUES ($1, $2, $3)",
-            o.Id, set.SetId, set.Quantity)
+        _, err = tx.Exec(ctx, `
+            INSERT INTO set_order_items (
+                order_id, set_id, quantity, created_at, updated_at, order_name
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)`,
+            o.Id, set.SetId, set.Quantity, now, now, req.OrderName)
         if err != nil {
             or.logger.Error(fmt.Sprintf("Error inserting order set: %s", err.Error()))
             return nil, fmt.Errorf("error inserting order set: %w", err)
@@ -891,9 +892,6 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
 
     return &o, nil
 }
-
-
-
 
 
 func (or *OrderRepository) getClientOrderCount(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {

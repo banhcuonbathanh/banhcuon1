@@ -63,10 +63,9 @@ export const loggerPaths: LogPath[] = [
   },
   {
     path: "quananqr1/app/manage/admin/orders/restaurant-summary/dishes-summary.tsx",
-    enabled: true,
+    enabled: false,
     description: "Dishes Summary Component Logs",
-    enabledLogIds: [4],
-    // enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
     logDescriptions: {
       1: {
         description: "Delivery button click tracking",
@@ -110,25 +109,26 @@ export const loggerPaths: LogPath[] = [
       }
     }
   },
+
   {
-    path: "quananqr1/zusstand/delivery/delivery_zustand.ts",
-    enabled: true,
-    description: "Delivery Store State Management Logs",
-    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    path: "quananqr1/app/(client)/table/[number]/component/order/logic.ts",
+    enabled: false,
+    description: "Order and Delivery Store State Management Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     logDescriptions: {
       1: {
-        description: "Delivery creation - Initial data preparation",
-        location: "createDelivery function - initialization",
+        description: "Initial order/delivery data preparation",
+        location: "createOrder/createDelivery function - initialization",
         status: "enabled"
       },
       2: {
-        description: "Delivery API request monitoring",
-        location: "createDelivery function - API communication",
+        description: "API request monitoring",
+        location: "createOrder/createDelivery function - API communication",
         status: "enabled"
       },
       3: {
-        description: "Dish items state changes",
-        location: "Dish manipulation functions",
+        description: "Item state changes",
+        location: "Item manipulation functions",
         status: "enabled"
       },
       4: {
@@ -137,7 +137,7 @@ export const loggerPaths: LogPath[] = [
         status: "enabled"
       },
       5: {
-        description: "Delivery status change events",
+        description: "Status change events",
         location: "Status management functions",
         status: "enabled"
       },
@@ -147,12 +147,12 @@ export const loggerPaths: LogPath[] = [
         status: "enabled"
       },
       7: {
-        description: "Delivery creation error handling",
+        description: "Error handling",
         location: "Error handling middleware",
         status: "enabled"
       },
       8: {
-        description: "General delivery state updates",
+        description: "General state updates",
         location: "State update functions",
         status: "enabled"
       },
@@ -167,13 +167,276 @@ export const loggerPaths: LogPath[] = [
         status: "enabled"
       },
       11: {
-        description: "Delivery data transformation",
-        location: "createDelivery function - data transformation",
+        description: "Data transformation",
+        location: "createOrder/createDelivery function - data transformation",
         status: "enabled"
       },
       12: {
-        description: "Delivery request validation",
-        location: "createDelivery function - request validation",
+        description: "Request validation",
+        location: "createOrder/createDelivery function - request validation",
+        status: "enabled"
+      },
+      13: {
+        description: "WebSocket communication",
+        location: "WebSocket message handling",
+        status: "enabled"
+      },
+      14: {
+        description: "User/Guest validation",
+        location: "Authentication validation",
+        status: "enabled"
+      },
+      15: {
+        description: "Order cleanup",
+        location: "Order completion and cleanup",
+        status: "enabled"
+      }
+    }
+  },
+  {
+    path: "quananqr1/zusstand/web-socket/websocketStore.ts",
+    enabled: false,
+    description: "WebSocket Store Management Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    logDescriptions: {
+      1: {
+        description: "WebSocket token fetch initialization",
+        location: "fetchWsToken function - start",
+        status: "enabled"
+      },
+      2: {
+        description: "WebSocket token received successfully",
+        location: "fetchWsToken function - success",
+        status: "enabled"
+      },
+      3: {
+        description: "WebSocket token fetch error",
+        location: "fetchWsToken function - error handling",
+        status: "enabled"
+      },
+      4: {
+        description: "WebSocket connection attempt",
+        location: "connect function - initialization",
+        status: "enabled"
+      },
+      5: {
+        description: "WebSocket token refresh check",
+        location: "connect function - token validation",
+        status: "enabled"
+      },
+      6: {
+        description: "WebSocket message received",
+        location: "socket.onMessage handler",
+        status: "enabled"
+      },
+      7: {
+        description: "WebSocket connection established",
+        location: "socket.onConnect handler",
+        status: "enabled"
+      },
+      8: {
+        description: "WebSocket disconnection",
+        location: "socket.onDisconnect/disconnect function",
+        status: "enabled"
+      },
+      9: {
+        description: "WebSocket message sent",
+        location: "sendMessage function",
+        status: "enabled"
+      },
+      10: {
+        description: "Message handler management",
+        location: "addMessageHandler function",
+        status: "enabled"
+      }
+    }
+  },
+
+  {
+    path: "quananqr1/app/(client)/table/[number]/component/order/order.tsx",
+    enabled: false,
+    description: "Client Order Component Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
+    logDescriptions: {
+      1: {
+        description: "Table token decode result",
+        location: "OrderSummary component - initialization",
+        status: "enabled"
+      },
+      2: {
+        description: "Table number and token state updates",
+        location: "OrderSummary useEffect hook",
+        status: "enabled"
+      },
+      3: {
+        description: "Bowl quantity changes",
+        location: "handleBowlChange function",
+        status: "enabled"
+      },
+      4: {
+        description: "Chili preference updates",
+        location: "Chili option click handler",
+        status: "enabled"
+      },
+      5: {
+        description: "Filling selection changes",
+        location: "Filling selection handlers",
+        status: "enabled"
+      },
+      6: {
+        description: "Order summary calculation",
+        location: "getOrderSummary function call",
+        status: "enabled"
+      },
+      7: {
+        description: "Table number conversion",
+        location: "addTableNumberconvert function",
+        status: "enabled"
+      },
+      8: {
+        description: "Component state changes",
+        location: "OrderSummary state updates",
+        status: "enabled"
+      }
+    }
+  },
+
+  {
+    path: "quananqr1/components/form/login-dialog.tsx",
+    enabled: false,
+    description: "Login Dialog Component Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6],
+    logDescriptions: {
+      1: {
+        description: "Component initialization and pathname changes",
+        location: "LoginDialog1 component - initialization and useEffect",
+        status: "enabled"
+      },
+      2: {
+        description: "Form submission attempts",
+        location: "onSubmit function",
+        status: "enabled"
+      },
+      3: {
+        description: "Login API response handling",
+        location: "onSubmit function - API response",
+        status: "enabled"
+      },
+      4: {
+        description: "Dialog state changes",
+        location: "Dialog state handlers",
+        status: "enabled"
+      },
+      5: {
+        description: "Form validation errors",
+        location: "Form validation and error handling",
+        status: "enabled"
+      },
+      6: {
+        description: "Navigation events",
+        location: "handleLoginRedirect and navigation handlers",
+        status: "enabled"
+      }
+    }
+  },
+  {
+    path: "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx",
+    enabled: false,
+    description: "Order Creation Component Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    logDescriptions: {
+      1: {
+        description: "Component initialization and authentication state",
+        location: "OrderCreationComponent - initialization",
+        status: "enabled"
+      },
+      2: {
+        description: "WebSocket connection management",
+        location: "initializeWebSocket function",
+        status: "enabled"
+      },
+      3: {
+        description: "Order creation process",
+        location: "handleCreateOrder function",
+        status: "enabled"
+      },
+      4: {
+        description: "WebSocket message handling",
+        location: "sendMessage1 function",
+        status: "enabled"
+      },
+      5: {
+        description: "Authentication state changes",
+        location: "Authentication state handlers",
+        status: "enabled"
+      },
+      6: {
+        description: "Order validation",
+        location: "Order validation checks",
+        status: "enabled"
+      },
+      7: {
+        description: "WebSocket token management",
+        location: "WebSocket token handling",
+        status: "enabled"
+      },
+      8: {
+        description: "Component cleanup",
+        location: "Cleanup useEffect",
+        status: "enabled"
+      },
+      9: {
+        description: "User identification process",
+        location: "getEmailIdentifier function",
+        status: "enabled"
+      }
+    }
+  },
+
+  {
+    path: "quananqr1/zusstand/web-socket/websoket-service.ts",
+    enabled: false,
+    description: "WebSocket Service Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
+    logDescriptions: {
+      1: {
+        description: "WebSocket initialization and connection attempts",
+        location: "WebSocketService constructor and connect method",
+        status: "enabled"
+      },
+      2: {
+        description: "WebSocket connection state changes",
+        location: "WebSocket event handlers (onopen, onclose)",
+        status: "enabled"
+      },
+      3: {
+        description: "Message handling and processing",
+        location: "onmessage handler and message processing",
+        status: "enabled"
+      },
+      4: {
+        description: "Reconnection attempts and backoff",
+        location: "attemptReconnect method",
+        status: "enabled"
+      },
+      5: {
+        description: "Message sending operations",
+        location: "sendMessage method",
+        status: "enabled"
+      },
+      6: {
+        description: "Event handler management",
+        location: "Handler registration methods",
+        status: "enabled"
+      },
+      7: {
+        description: "Error handling and validation",
+        location: "Error handlers and validation checks",
+        status: "enabled"
+      },
+      8: {
+        description: "Service cleanup and disconnection",
+        location: "disconnect method",
         status: "enabled"
       }
     }

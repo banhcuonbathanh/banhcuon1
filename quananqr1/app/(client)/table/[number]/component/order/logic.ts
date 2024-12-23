@@ -2,6 +2,10 @@ import { create } from "zustand";
 import { toast } from "@/components/ui/use-toast";
 import envConfig from "@/config";
 import { CreateOrderRequest } from "@/schemaValidations/interface/type_order";
+import { logWithLevel } from "@/lib/log";
+
+const LOG_PATH =
+  "quananqr1/app/(client)/table/[number]/component/order/logic.ts";
 
 interface OrderCreationState {
   isLoading: boolean;
@@ -25,7 +29,7 @@ interface OrderCreationState {
       sendMessage: (message: any) => void;
     };
     openLoginDialog: () => void;
-  }) => Promise<any>; // Changed return type to Promise<any>
+  }) => Promise<any>;
 }
 
 export const useOrderCreationStore = create<OrderCreationState>((set) => ({
@@ -40,12 +44,39 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
     websocket: { disconnect, isConnected, sendMessage },
     openLoginDialog
   }) => {
+    // Log initial state validation
+    logWithLevel(
+      {
+        isGuest,
+        hasUser: !!user,
+        hasGuest: !!guest,
+        tableNumber,
+        websocketConnected: isConnected
+      },
+      LOG_PATH,
+      "debug",
+      1
+    );
+
     if (!user && !guest) {
+      logWithLevel({ error: "No user or guest found" }, LOG_PATH, "warn", 7);
       openLoginDialog();
       return;
     }
 
     const orderSummary = getOrderSummary();
+
+    // Log order preparation
+    logWithLevel(
+      {
+        orderSummary,
+        dishCount: orderSummary.dishes.length,
+        setCount: orderSummary.sets.length
+      },
+      LOG_PATH,
+      "info",
+      11
+    );
 
     const dish_items = orderSummary.dishes.map((dish: any) => ({
       dish_id: dish.id,
@@ -78,7 +109,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
       total_price: orderSummary.totalPrice,
       dish_items,
       set_items,
-      topping: topping,
+      topping,
       tracking_order: "tracking_order",
       takeAway: false,
       chiliNumber: 0,
@@ -86,13 +117,57 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
       order_name
     };
 
+    // Log request validation
+    logWithLevel(
+      {
+        orderData,
+        validationStatus: "prepared"
+      },
+      LOG_PATH,
+      "debug",
+      12
+    );
+
     set({ isLoading: true });
 
     try {
+      // Log API request attempt
+      logWithLevel(
+        {
+          endpoint: `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.Order_External_End_Point}`,
+          requestData: orderData
+        },
+        LOG_PATH,
+        "info",
+        2
+      );
+
       const link_order = `${envConfig.NEXT_PUBLIC_API_ENDPOINT}${envConfig.Order_External_End_Point}`;
       const response = await http.post(link_order, orderData);
 
+      // Log successful order creation
+      logWithLevel(
+        {
+          orderId: response,
+          status: "order response"
+        },
+        LOG_PATH,
+        "info",
+        8
+      );
+
       if (isConnected) {
+        // Log websocket communication
+        logWithLevel(
+          {
+            messageType: "NEW_ORDER",
+            orderId: response.data.id
+          },
+          LOG_PATH,
+          "debug",
+          6
+        );
+
         sendMessage({
           type: "NEW_ORDER",
           data: {
@@ -109,8 +184,19 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
 
       clearOrder();
 
-      return response.data; // Return the response data
+      return response.data;
     } catch (error) {
+      // Log error details
+      logWithLevel(
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+          orderData
+        },
+        LOG_PATH,
+        "error",
+        7
+      );
+
       console.error("Order creation failed:", error);
       toast({
         variant: "destructive",
@@ -118,7 +204,7 @@ export const useOrderCreationStore = create<OrderCreationState>((set) => ({
         description:
           error instanceof Error ? error.message : "Failed to create order"
       });
-      throw error; // Re-throw the error so the caller knows something went wrong
+      throw error;
     } finally {
       set({ isLoading: false });
       disconnect();

@@ -8,10 +8,13 @@ import { useApiStore } from "@/zusstand/api/api-controller";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
+import { logWithLevel } from "@/lib/log";
+
+const LOG_PATH =
+  "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx";
 
 interface OrderCreationComponentProps {
   table_token: string;
-
   table_number: string;
 }
 
@@ -19,6 +22,14 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   table_number,
   table_token
 }) => {
+  // Log component initialization
+  logWithLevel(
+    { event: "component_init", table_number, table_token },
+    LOG_PATH,
+    "debug",
+    1
+  );
+
   const { isLoading, createOrder } = useOrderCreationStore();
   const {
     getOrderSummary,
@@ -41,10 +52,8 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     fetchWsToken
   } = useWebSocketStore();
 
-  // State to track authentication check status
   const [authChecked, setAuthChecked] = useState(false);
 
-  // If selectedFilling is an object with a name or value property:
   const getFillingString = (filling: {
     mocNhi: boolean;
     thit: boolean;
@@ -60,49 +69,68 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     selectedFilling
   )} -`;
 
-  // Or if selectedFilling should be a primitive value:
-  // Make sure selectedFilling is set as a string/number in your state management
   const orderSummary = getOrderSummary();
 
-  // Initialize auth state when component mounts
   useEffect(() => {
     const initializeAuth = async () => {
-      // Sync auth state from cookies
       useAuthStore.getState().syncAuthState();
       setAuthChecked(true);
+
+      logWithLevel(
+        { event: "auth_initialized", isLogin, userId },
+        LOG_PATH,
+        "info",
+        5
+      );
     };
 
     initializeAuth();
   }, []);
 
-  // Effect for WebSocket initialization after auth check
   useEffect(() => {
     if (authChecked && isLogin && userId) {
-      console.log("Initializing WebSocket connection for user:", userId);
+      logWithLevel(
+        { event: "websocket_init_attempt", userId, isGuest },
+        LOG_PATH,
+        "debug",
+        2
+      );
       initializeWebSocket();
     }
   }, [authChecked, isLogin, userId, user?.email, guest?.name]);
 
   const getEmailIdentifier = () => {
-    if (isGuest && guest) {
-      return guest.name;
-    }
-    // Use persisted user data if available
-    const persistedUser = useAuthStore.getState().persistedUser;
-    return persistedUser?.email || user?.email;
+    const result =
+      isGuest && guest
+        ? guest.name
+        : useAuthStore.getState().persistedUser?.email || user?.email;
+
+    logWithLevel(
+      { event: "email_identifier_lookup", isGuest, result },
+      LOG_PATH,
+      "debug",
+      9
+    );
+
+    return result;
   };
 
   const initializeWebSocket = async () => {
     const emailIdentifier = getEmailIdentifier();
-    console.log(
-      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx isLogin, userId, emailIdentifier",
-      isLogin,
-      userId,
-      emailIdentifier
+
+    logWithLevel(
+      { event: "websocket_init", userId, emailIdentifier },
+      LOG_PATH,
+      "info",
+      2
     );
+
     if (!isLogin || !userId || !emailIdentifier) {
-      console.log(
-        "WebSocket initialization failed: Missing required credentials"
+      logWithLevel(
+        { event: "websocket_init_failed", reason: "missing_credentials" },
+        LOG_PATH,
+        "error",
+        2
       );
       return;
     }
@@ -113,6 +141,13 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         email: emailIdentifier,
         role: isGuest ? "Guest" : "User"
       });
+
+      logWithLevel(
+        { event: "ws_token_fetch", success: !!wstoken1 },
+        LOG_PATH,
+        "debug",
+        7
+      );
 
       if (!wstoken1) {
         throw new Error("Failed to obtain WebSocket token");
@@ -126,74 +161,97 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         role: isGuest ? "Guest" : "User",
         email: emailIdentifier
       });
+
+      logWithLevel(
+        { event: "websocket_connected", userId },
+        LOG_PATH,
+        "info",
+        2
+      );
     } catch (error) {
-      console.error("[OrderCreation] Connection error:", error);
+      logWithLevel(
+        { event: "websocket_error", error: "error.message" },
+        LOG_PATH,
+        "error",
+        2
+      );
     }
   };
 
   const handleCreateOrder = async () => {
-    // Ensure auth state is synced before proceeding
     useAuthStore.getState().syncAuthState();
     const currentAuthState = useAuthStore.getState();
 
+    logWithLevel(
+      { event: "create_order_attempt", isLogin: currentAuthState.isLogin },
+      LOG_PATH,
+      "info",
+      3
+    );
+
     if (!currentAuthState.isLogin) {
-      console.log("[OrderCreation] User not logged in, showing login dialog");
+      logWithLevel(
+        { event: "order_creation_blocked", reason: "not_logged_in" },
+        LOG_PATH,
+        "warn",
+        3
+      );
       openLoginDialog();
       return;
     }
 
     if (!isConnected) {
-      console.log("Attempting to establish WebSocket connection");
+      logWithLevel({ event: "reconnection_attempt" }, LOG_PATH, "debug", 2);
       await initializeWebSocket();
     }
-    console.log(
-      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx orderSummary",
-      orderSummary
-    );
+
     if (orderSummary.totalItems === 0) {
-      console.log("[OrderCreation] No items in order, aborting 111111");
-      return;
-    }
-    if (table_number === null) {
-      console.log("[OrderCreation] No items in order, aborting 22222");
+      logWithLevel(
+        { event: "order_validation_failed", reason: "no_items" },
+        LOG_PATH,
+        "warn",
+        6
+      );
       return;
     }
 
-    console.log("[OrderCreation] Creating order with summary:", orderSummary);
+    try {
+      const order = await createOrder({
+        topping,
+        Table_token: table_token,
+        http,
+        auth: { guest, user, isGuest },
+        orderStore: {
+          tableNumber: Number(table_number),
+          getOrderSummary,
+          clearOrder
+        },
+        websocket: { disconnect, isConnected, sendMessage },
+        openLoginDialog
+      });
 
-    const order = await createOrder({
-      topping,
-      Table_token: table_token,
-      http,
-      auth: { guest, user, isGuest },
-      orderStore: {
-        tableNumber: Number(table_number),
-        getOrderSummary,
-        clearOrder
-      },
-      websocket: { disconnect, isConnected, sendMessage },
-      openLoginDialog
-    });
-    console.log(
-      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx done for creating order done order  121212",
-      order
-    );
-    sendMessage1();
-    console.log(
-      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx done for creating order done 121212"
-    );
+      logWithLevel(
+        { event: "order_created", orderId: order?.id },
+        LOG_PATH,
+        "info",
+        3
+      );
+
+      await sendMessage1();
+    } catch (error) {
+      logWithLevel(
+        { event: "order_creation_failed", error: "error.message" },
+        LOG_PATH,
+        "error",
+        3
+      );
+    }
   };
 
   const getButtonText = () => {
-    if (!authChecked) {
-      return "Loading...";
-    }
-    if (!isLogin) {
-      return "Login to Order";
-    }
-    if (orderSummary.totalItems === 0) {
-      return "Add Items to Order";
-    }
+    if (!authChecked) return "Loading...";
+    if (!isLogin) return "Login to Order";
+    if (orderSummary.totalItems === 0) return "Add Items to Order";
     return "Create Order";
   };
 
@@ -206,40 +264,43 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
 
   useEffect(() => {
     return () => {
-      console.log(
-        "[OrderCreation] Component unmounting, cleaning up connection"
-      );
+      logWithLevel({ event: "component_cleanup" }, LOG_PATH, "debug", 8);
       disconnect();
     };
   }, []);
-  //
+
   const sendMessage1 = async () => {
-    console.log(
-      "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx sendMessage1"
-    );
-    // Ensure auth state is synced before proceeding
+    logWithLevel({ event: "send_message_attempt" }, LOG_PATH, "debug", 4);
+
     useAuthStore.getState().syncAuthState();
     const currentAuthState = useAuthStore.getState();
 
     if (!currentAuthState.isLogin) {
-      console.log("[SendMessage] User not logged in, showing login dialog");
+      logWithLevel(
+        { event: "message_send_blocked", reason: "not_logged_in" },
+        LOG_PATH,
+        "warn",
+        4
+      );
       openLoginDialog();
       return;
     }
 
     if (!isConnected) {
-      console.log("Attempting to establish WebSocket connection");
+      logWithLevel({ event: "ws_reconnection_attempt" }, LOG_PATH, "debug", 2);
       await initializeWebSocket();
       if (!isConnected) {
-        console.log(
-          "[SendMessage] Failed to establish connection, aborting message send"
+        logWithLevel(
+          { event: "message_send_failed", reason: "connection_failed" },
+          LOG_PATH,
+          "error",
+          4
         );
         return;
       }
     }
 
     try {
-      // Get order summary from the store
       const { dishes, sets, totalPrice } = getOrderSummary();
 
       const messagePayload: WebSocketMessage = {
@@ -262,28 +323,13 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
             total_price: 5000,
             order_name: "test",
             dish_items: [
-              {
-                dish_id: 1,
-                quantity: 2
-              },
-              {
-                dish_id: 2,
-                quantity: 2
-              },
-              {
-                dish_id: 3,
-                quantity: 4
-              }
+              { dish_id: 1, quantity: 2 },
+              { dish_id: 2, quantity: 2 },
+              { dish_id: 3, quantity: 4 }
             ],
             set_items: [
-              {
-                set_id: 1,
-                quantity: 3
-              },
-              {
-                set_id: 2,
-                quantity: 3
-              }
+              { set_id: 1, quantity: 3 },
+              { set_id: 2, quantity: 3 }
             ],
             bow_chili: 1,
             bow_no_chili: 2,
@@ -297,12 +343,22 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       };
 
       sendMessage(messagePayload);
-      console.log("[SendMessage] Message sent successfully", messagePayload);
+      logWithLevel(
+        { event: "message_sent_success", messageType: messagePayload.type },
+        LOG_PATH,
+        "info",
+        4
+      );
     } catch (error) {
-      console.error("[SendMessage] Error sending message:", error);
+      logWithLevel(
+        { event: "message_send_error", error: "error.message" },
+        LOG_PATH,
+        "error",
+        4
+      );
     }
   };
-  //
+
   return (
     <div className="mt-4">
       <Button

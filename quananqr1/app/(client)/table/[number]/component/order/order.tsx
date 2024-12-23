@@ -7,20 +7,22 @@ import useOrderStore from "@/zusstand/order/order_zustand";
 import OrderDetails from "../total-dishes-detail";
 import OrderCreationComponent from "./add_order_button";
 import { decodeTableToken } from "@/lib/utils";
+import { logWithLevel } from "@/lib/log";
 
 interface OrderProps {
   number: string;
   token: string;
 }
 
+const LOG_PATH =
+  "quananqr1/app/(client)/table/[number]/component/order/order.tsx";
+
 export default function OrderSummary({ number, token }: OrderProps) {
   const decoded = decodeTableToken(token);
 
-  console.log(
-    "quananqr1/app/(client)/table/[number]/component/order/order.tsx table decode",
-    decoded,
-    token
-  );
+  // Log token decode result
+  logWithLevel({ decoded, token }, LOG_PATH, "debug", 1);
+
   const {
     addTableNumber,
     addTableToken,
@@ -38,12 +40,28 @@ export default function OrderSummary({ number, token }: OrderProps) {
   } = useOrderStore();
 
   useEffect(() => {
-    if (token) {
-      addTableToken(token);
-    }
-    if (number) {
-      const tableNumber = addTableNumberconvert(number);
-      addTableNumber(tableNumber);
+    try {
+      if (token) {
+        addTableToken(token);
+      }
+      if (number) {
+        const tableNumber = addTableNumberconvert(number);
+        addTableNumber(tableNumber);
+      }
+
+      // Log table number and token updates
+      logWithLevel(
+        {
+          token,
+          number,
+          tableNumber: number ? addTableNumberconvert(number) : null
+        },
+        LOG_PATH,
+        "info",
+        2
+      );
+    } catch (error) {
+      logWithLevel({ error, token, number }, LOG_PATH, "error", 2);
     }
   }, [token, addTableToken, number, addTableNumber]);
 
@@ -51,23 +69,102 @@ export default function OrderSummary({ number, token }: OrderProps) {
     type: "chili" | "noChili" | "small",
     change: number
   ) => {
+    const prevValues = {
+      canhKhongRau,
+      canhCoRau,
+      smallBowl
+    };
+
     switch (type) {
       case "chili":
         const newToppingValue = canhKhongRau + change;
-        if (newToppingValue >= 0) updateCanhKhongRau(newToppingValue);
+        if (newToppingValue >= 0) {
+          updateCanhKhongRau(newToppingValue);
+          logWithLevel(
+            {
+              type: "canhKhongRau",
+              previousValue: canhKhongRau,
+              newValue: newToppingValue,
+              change
+            },
+            LOG_PATH,
+            "debug",
+            3
+          );
+        }
         break;
       case "noChili":
         const newNoChiliValue = canhCoRau + change;
-        if (newNoChiliValue >= 0) updateCanhCoRau(newNoChiliValue);
+        if (newNoChiliValue >= 0) {
+          updateCanhCoRau(newNoChiliValue);
+          logWithLevel(
+            {
+              type: "canhCoRau",
+              previousValue: canhCoRau,
+              newValue: newNoChiliValue,
+              change
+            },
+            LOG_PATH,
+            "debug",
+            3
+          );
+        }
         break;
       case "small":
         const newSmallBowlValue = smallBowl + change;
-        if (newSmallBowlValue >= 0) updateSmallBowl(newSmallBowlValue);
+        if (newSmallBowlValue >= 0) {
+          updateSmallBowl(newSmallBowlValue);
+          logWithLevel(
+            {
+              type: "smallBowl",
+              previousValue: smallBowl,
+              newValue: newSmallBowlValue,
+              change
+            },
+            LOG_PATH,
+            "debug",
+            3
+          );
+        }
         break;
     }
   };
 
+  const handleChiliUpdate = (newValue: boolean) => {
+    updateWantChili(newValue);
+    logWithLevel(
+      {
+        previousValue: wantChili,
+        newValue
+      },
+      LOG_PATH,
+      "debug",
+      4
+    );
+  };
+
+  const handleFillingUpdate = (
+    fillingType: "mocNhi" | "thit" | "thitMocNhi"
+  ) => {
+    const prevFilling = { ...selectedFilling };
+    updateSelectedFilling(fillingType);
+    logWithLevel(
+      {
+        fillingType,
+        previousFilling: prevFilling,
+        newFilling: {
+          ...selectedFilling,
+          [fillingType]: !selectedFilling[fillingType]
+        }
+      },
+      LOG_PATH,
+      "debug",
+      5
+    );
+  };
+
   const orderSummary = getOrderSummary();
+  logWithLevel({ orderSummary }, LOG_PATH, "info", 6);
 
   return (
     <div className="container mx-auto px-4 py-5 space-y-5">
@@ -156,7 +253,7 @@ export default function OrderSummary({ number, token }: OrderProps) {
                   <Button
                     size="sm"
                     variant={wantChili ? "default" : "outline"}
-                    onClick={() => updateWantChili(!wantChili)}
+                    onClick={() => handleChiliUpdate(!wantChili)}
                   >
                     {wantChili ? "Selected" : "Select"}
                   </Button>
@@ -170,7 +267,7 @@ export default function OrderSummary({ number, token }: OrderProps) {
                   <Button
                     size="sm"
                     variant={selectedFilling.mocNhi ? "default" : "outline"}
-                    onClick={() => updateSelectedFilling("mocNhi")}
+                    onClick={() => handleFillingUpdate("mocNhi")}
                   >
                     {selectedFilling.mocNhi ? "Selected" : "Select"}
                   </Button>
@@ -184,7 +281,7 @@ export default function OrderSummary({ number, token }: OrderProps) {
                   <Button
                     size="sm"
                     variant={selectedFilling.thit ? "default" : "outline"}
-                    onClick={() => updateSelectedFilling("thit")}
+                    onClick={() => handleFillingUpdate("thit")}
                   >
                     {selectedFilling.thit ? "Selected" : "Select"}
                   </Button>
@@ -198,14 +295,12 @@ export default function OrderSummary({ number, token }: OrderProps) {
                   <Button
                     size="sm"
                     variant={selectedFilling.thitMocNhi ? "default" : "outline"}
-                    onClick={() => updateSelectedFilling("thitMocNhi")}
+                    onClick={() => handleFillingUpdate("thitMocNhi")}
                   >
                     {selectedFilling.thitMocNhi ? "Selected" : "Select"}
                   </Button>
                 </div>
               </div>
-
-              {/* Total summary */}
             </div>
           </div>
         </CardContent>
@@ -226,17 +321,40 @@ export default function OrderSummary({ number, token }: OrderProps) {
 function addTableNumberconvert(value: string): number {
   let tableNumber: number;
 
-  if (typeof value === "string") {
-    if (/^\d+$/.test(value)) {
-      tableNumber = parseInt(value, 10);
+  try {
+    if (typeof value === "string") {
+      if (/^\d+$/.test(value)) {
+        tableNumber = parseInt(value, 10);
+      } else {
+        throw new Error("Invalid input: expected a string of digits.");
+      }
+    } else if (typeof value === "number") {
+      tableNumber = value;
     } else {
-      throw new Error("Invalid input: expected a string of digits.");
+      throw new Error("Invalid input: expected a string or number.");
     }
-  } else if (typeof value === "number") {
-    tableNumber = value;
-  } else {
-    throw new Error("Invalid input: expected a string or number.");
-  }
 
-  return tableNumber;
+    logWithLevel(
+      {
+        inputValue: value,
+        convertedNumber: tableNumber
+      },
+      LOG_PATH,
+      "debug",
+      7
+    );
+
+    return tableNumber;
+  } catch (error) {
+    logWithLevel(
+      {
+        error,
+        inputValue: value
+      },
+      LOG_PATH,
+      "error",
+      7
+    );
+    throw error;
+  }
 }

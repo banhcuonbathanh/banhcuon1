@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,12 +16,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoginBodyType, LoginBody } from "@/schemaValidations/auth.schema";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
-// import { handleErrorApi, handleLoginRedirect } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 import { handleErrorApi, handleLoginRedirect } from "@/lib/utils";
+import { logWithLevel } from "@/lib/log";
+
+const LOG_PATH = "quananqr1/components/form/login-dialog.tsx";
 
 const LoginDialog1 = () => {
-  console.log("quananqr1/components/form/login-dialog.tsx LoginDialog1");
+  // Log component initialization
+  logWithLevel(
+    { component: "LoginDialog1", event: "initialization" },
+    LOG_PATH,
+    "debug",
+    1
+  );
+
   const {
     login,
     isLoginDialogOpen,
@@ -32,11 +42,10 @@ const LoginDialog1 = () => {
   const router = useRouter();
 
   useEffect(() => {
-    console.log(
-      "quananqr1/components/form/login-dialog.tsx pathname:",
-      pathname
-    );
-  }, [pathname]); // Only log when pathname changes
+    // Log pathname changes
+    logWithLevel({ pathname, event: "pathname_change" }, LOG_PATH, "debug", 1);
+  }, [pathname]);
+
   const form = useForm<LoginBodyType>({
     resolver: zodResolver(LoginBody),
     defaultValues: {
@@ -46,11 +55,57 @@ const LoginDialog1 = () => {
   });
 
   const onSubmit = async (data: LoginBodyType) => {
-    console.log("quananqr1/components/form/login-dialog.tsx onSubmit");
+    // Log form submission attempt
+    logWithLevel(
+      {
+        event: "form_submission",
+        email: data.email,
+        hasPassword: !!data.password
+      },
+      LOG_PATH,
+      "info",
+      2
+    );
+
     try {
       await login(data);
+
+      // Log successful login
+      logWithLevel(
+        {
+          event: "login_success",
+          email: data.email
+        },
+        LOG_PATH,
+        "info",
+        3
+      );
+
       handleLoginRedirect(pathname, router);
+
+      // Log navigation attempt
+      logWithLevel(
+        {
+          event: "navigation_redirect",
+          pathname
+        },
+        LOG_PATH,
+        "debug",
+        6
+      );
     } catch (error: any) {
+      // Log login error
+      logWithLevel(
+        {
+          event: "login_error",
+          error: error.message,
+          code: error.code
+        },
+        LOG_PATH,
+        "error",
+        5
+      );
+
       handleErrorApi({
         error,
         setError: form.setError
@@ -59,19 +114,68 @@ const LoginDialog1 = () => {
   };
 
   const handleRegisterClick = () => {
+    // Log dialog state change
+    logWithLevel(
+      {
+        event: "dialog_state_change",
+        action: "switch_to_register"
+      },
+      LOG_PATH,
+      "debug",
+      4
+    );
+
     closeLoginDialog();
     openRegisterDialog();
   };
 
   const handleGuestClick = () => {
+    // Log dialog state change
+    logWithLevel(
+      {
+        event: "dialog_state_change",
+        action: "switch_to_guest"
+      },
+      LOG_PATH,
+      "debug",
+      4
+    );
+
     closeLoginDialog();
     openGuestDialog();
   };
 
+  // Log dialog visibility changes
+  useEffect(() => {
+    logWithLevel(
+      {
+        event: "dialog_visibility_change",
+        isOpen: isLoginDialogOpen
+      },
+      LOG_PATH,
+      "debug",
+      4
+    );
+  }, [isLoginDialogOpen]);
+
   return (
     <Dialog
       open={isLoginDialogOpen}
-      onOpenChange={(open) => !open && closeLoginDialog()}
+      onOpenChange={(open) => {
+        if (!open) {
+          // Log dialog close
+          logWithLevel(
+            {
+              event: "dialog_close",
+              trigger: "user_action"
+            },
+            LOG_PATH,
+            "debug",
+            4
+          );
+          closeLoginDialog();
+        }
+      }}
     >
       <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800 shadow-lg">
         <DialogHeader>

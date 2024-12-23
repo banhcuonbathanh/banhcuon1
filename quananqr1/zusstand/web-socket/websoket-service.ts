@@ -1,20 +1,7 @@
-
+import { logWithLevel } from "@/lib/log";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 
-
-// export type WebSocketMessage =
-//   | {
-//       type: "NEW_ORDER";
-//       data: OrderPayload;
-//     }
-//   | {
-//       type: "ORDER_STATUS_UPDATE";
-//       data: {
-//         orderId: number;
-//         status: string;
-//         timestamp: string;
-//       };
-//     };
+const LOG_PATH = "quananqr1/zusstand/web-socket/websoket-service.ts";
 
 export class WebSocketService {
   private ws: WebSocket | null = null;
@@ -37,6 +24,20 @@ export class WebSocketService {
     tableToken: string,
     email: string
   ) {
+    logWithLevel(
+      {
+        event: "service_initialization",
+        userName,
+        role,
+        email,
+        hasToken: !!userToken,
+        hasTableToken: !!tableToken
+      },
+      LOG_PATH,
+      "info",
+      1
+    );
+
     this.email = email;
     this.userName = userName;
     this.role = role;
@@ -52,15 +53,32 @@ export class WebSocketService {
       }?token=${this.userToken}&tableToken=${this.tableToken}&email=${
         this.email
       }`;
-      console.log(
-        "quananqr1/zusstand/web-socket/websoket-service.ts wsUrl",
-        wsUrl
+
+      logWithLevel(
+        {
+          event: "connection_attempt",
+          wsUrl: wsUrl.replace(this.userToken, "***"),
+          role: this.role,
+          userName: this.userName
+        },
+        LOG_PATH,
+        "debug",
+        1
       );
 
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log("WebSocket connected successfully");
+        logWithLevel(
+          {
+            event: "connection_established",
+            userName: this.userName,
+            role: this.role
+          },
+          LOG_PATH,
+          "info",
+          2
+        );
         this.reconnectAttempts = 0;
         this.connectHandlers.forEach((handler) => handler());
       };
@@ -68,15 +86,42 @@ export class WebSocketService {
       this.ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data) as WebSocketMessage;
+          logWithLevel(
+            {
+              event: "message_received",
+              messageType: message.type,
+              action: message.action
+            },
+            LOG_PATH,
+            "debug",
+            3
+          );
           this.messageHandlers.forEach((handler) => handler(message));
         } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
+          logWithLevel(
+            {
+              event: "message_parse_error",
+              error: "error.message",
+              rawData: event.data.slice(0, 100) // Log only first 100 chars for safety
+            },
+            LOG_PATH,
+            "error",
+            7
+          );
         }
       };
 
       this.ws.onclose = (event) => {
-        console.log(
-          `WebSocket disconnected: code=${event.code}, reason=${event.reason}`
+        logWithLevel(
+          {
+            event: "connection_closed",
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean
+          },
+          LOG_PATH,
+          "info",
+          2
         );
         this.disconnectHandlers.forEach((handler) => handler());
         if (event.code !== 1000) {
@@ -85,71 +130,202 @@ export class WebSocketService {
       };
 
       this.ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
+        logWithLevel(
+          {
+            event: "websocket_error",
+            error: "WebSocket error occurred"
+          },
+          LOG_PATH,
+          "error",
+          7
+        );
       };
     } catch (error) {
-      console.error("Error creating WebSocket connection:", error);
+      logWithLevel(
+        {
+          event: "connection_creation_error",
+          error: "error.message"
+        },
+        LOG_PATH,
+        "error",
+        7
+      );
       this.attemptReconnect();
     }
   }
+
   private attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       const backoffTime =
         this.reconnectTimeout * Math.pow(2, this.reconnectAttempts - 1);
-      console.log(
-        `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${backoffTime}ms...`
+
+      logWithLevel(
+        {
+          event: "reconnection_attempt",
+          attempt: this.reconnectAttempts,
+          maxAttempts: this.maxReconnectAttempts,
+          backoffTime
+        },
+        LOG_PATH,
+        "info",
+        4
       );
+
       setTimeout(() => this.connect(), backoffTime);
     } else {
-      console.error(
-        "Max reconnection attempts reached. Please check your connection and try again."
+      logWithLevel(
+        {
+          event: "max_reconnection_attempts_reached",
+          attempts: this.reconnectAttempts
+        },
+        LOG_PATH,
+        "error",
+        4
       );
     }
   }
 
   public sendMessage(message: WebSocketMessage) {
     if (!this.ws) {
-      console.error("WebSocket instance not initialized");
+      logWithLevel(
+        {
+          event: "send_message_failed",
+          reason: "websocket_not_initialized"
+        },
+        LOG_PATH,
+        "error",
+        5
+      );
       return;
     }
 
     if (this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
+      logWithLevel(
+        {
+          event: "message_sent",
+          messageType: message.type,
+          action: message.action
+        },
+        LOG_PATH,
+        "debug",
+        5
+      );
     } else {
-      console.error(
-        `WebSocket is not open (current state: ${this.ws.readyState})`
+      logWithLevel(
+        {
+          event: "send_message_failed",
+          reason: "invalid_socket_state",
+          state: this.ws.readyState
+        },
+        LOG_PATH,
+        "error",
+        5
       );
     }
   }
 
   public onMessage(handler: (message: WebSocketMessage) => void) {
+    logWithLevel(
+      {
+        event: "message_handler_added",
+        totalHandlers: this.messageHandlers.length + 1
+      },
+      LOG_PATH,
+      "debug",
+      6
+    );
     this.messageHandlers.push(handler);
     return () => {
       this.messageHandlers = this.messageHandlers.filter((h) => h !== handler);
+      logWithLevel(
+        {
+          event: "message_handler_removed",
+          totalHandlers: this.messageHandlers.length
+        },
+        LOG_PATH,
+        "debug",
+        6
+      );
     };
   }
 
   public onConnect(handler: () => void) {
+    logWithLevel(
+      {
+        event: "connect_handler_added",
+        totalHandlers: this.connectHandlers.length + 1
+      },
+      LOG_PATH,
+      "debug",
+      6
+    );
     this.connectHandlers.push(handler);
     return () => {
       this.connectHandlers = this.connectHandlers.filter((h) => h !== handler);
+      logWithLevel(
+        {
+          event: "connect_handler_removed",
+          totalHandlers: this.connectHandlers.length
+        },
+        LOG_PATH,
+        "debug",
+        6
+      );
     };
   }
 
   public onDisconnect(handler: () => void) {
+    logWithLevel(
+      {
+        event: "disconnect_handler_added",
+        totalHandlers: this.disconnectHandlers.length + 1
+      },
+      LOG_PATH,
+      "debug",
+      6
+    );
     this.disconnectHandlers.push(handler);
     return () => {
       this.disconnectHandlers = this.disconnectHandlers.filter(
         (h) => h !== handler
       );
+      logWithLevel(
+        {
+          event: "disconnect_handler_removed",
+          totalHandlers: this.disconnectHandlers.length
+        },
+        LOG_PATH,
+        "debug",
+        6
+      );
     };
   }
 
   public disconnect() {
+    logWithLevel(
+      {
+        event: "manual_disconnect_initiated",
+        userName: this.userName
+      },
+      LOG_PATH,
+      "info",
+      8
+    );
+
     if (this.ws) {
       this.ws.close(1000, "Normal closure");
       this.ws = null;
+      logWithLevel(
+        {
+          event: "disconnect_completed",
+          userName: this.userName
+        },
+        LOG_PATH,
+        "info",
+        8
+      );
     }
   }
 }
