@@ -509,6 +509,56 @@ export const loggerPaths: LogPath[] = [
         status: "enabled"
       }
     }
+  },
+  {
+    path: "quananqr1/components/set/set_card.tsx",
+    enabled: false,
+    description: "Set Card Component Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6, 7, 8],
+    logDescriptions: {
+      1: {
+        description: "Component initialization and props",
+        location: "SetCard component - initialization",
+        status: "enabled"
+      },
+      2: {
+        description: "Current order state changes",
+        location: "SetCard component - order state updates",
+        status: "enabled"
+      },
+      3: {
+        description: "Set quantity modifications",
+        location: "handleIncrease/handleDecrease functions",
+        status: "enabled"
+      },
+      4: {
+        description: "Dish quantity modifications",
+        location: "handleDishIncrease/handleDishDecrease functions",
+        status: "enabled"
+      },
+      5: {
+        description: "Price calculations",
+        location: "totalPrice calculation",
+        status: "enabled"
+      },
+      6: {
+        description: "Set visibility toggle",
+        location: "toggleList function",
+        status: "enabled"
+      },
+      7: {
+        description: "Error boundary triggers",
+        location: "SetCard component - error handling",
+        status: "enabled"
+      },
+      8: {
+        description: "Order store interactions",
+        location: "useOrderStore hook interactions",
+        status: "enabled"
+      }
+    }
   }
 ];
 

@@ -3,6 +3,7 @@
 import { SetInterface } from "@/schemaValidations/interface/types_set";
 import SetCard from "./set";
 import React from "react";
+import GridContainer from "@/components/general-container-dish";
 
 interface SetCardListProps {
   sets: SetInterface[];
@@ -20,10 +21,10 @@ export default function SetCardList({ sets }: SetCardListProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <GridContainer>
       {sets.map((set) => (
         <SetCard key={set.id} set={set} />
       ))}
-    </div>
+    </GridContainer>
   );
 }

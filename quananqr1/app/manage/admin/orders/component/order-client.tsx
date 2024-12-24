@@ -16,8 +16,8 @@ import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 import { APP_CONSTANTS } from "@/config";
 
-
 import RestaurantSummary2 from "../restaurant-summary/restaurant-summary/restaurant-summary";
+import TableGrid from "../table-grid/table-grid";
 
 interface OrderClientProps {
   initialData: OrderDetailedResponse[];
@@ -131,9 +131,6 @@ export const OrderClient: React.FC<OrderClientProps> = ({
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <div className="space-y-2">
         <Card>
-          <CardHeader>
-            <CardTitle>dat ban</CardTitle>
-          </CardHeader>
           <CardContent>
             <div className="flex flex-col">
               <div className="flex flex-row justify-between items-center">
@@ -144,11 +141,9 @@ export const OrderClient: React.FC<OrderClientProps> = ({
               </div>
 
               <Separator className="my-4" />
-
+              <TableGrid restaurantLayoutProps={data} />
+              <Separator className="my-4" />
               <RestaurantSummary2 restaurantLayoutProps={data} />
-              {/* <RestaurantSummary restaurantLayoutProps={data} /> */}
-              {/* <RestaurantLayout restaurantLayoutProps={data} /> */}
-              {/* <YourComponent1 initialData={initialData} /> */}
 
               <div className="flex items-center justify-between space-x-2 py-4">
                 <div className="flex-1 text-sm text-muted-foreground">

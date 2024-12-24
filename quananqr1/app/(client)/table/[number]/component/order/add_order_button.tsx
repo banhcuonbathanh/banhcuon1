@@ -3,15 +3,14 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import useOrderStore from "@/zusstand/order/order_zustand";
-import { useOrderCreationStore } from "./logic";
+// import { useOrderCreationStore } from "./logic";
 import { useApiStore } from "@/zusstand/api/api-controller";
 import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 import { logWithLevel } from "@/lib/logger/log";
 
-const LOG_PATH =
-  "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx";
+const LOG_PATH = "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx";
 
 interface OrderCreationComponentProps {
   table_token: string;
@@ -22,7 +21,6 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   table_number,
   table_token
 }) => {
-  // Log component initialization
   logWithLevel(
     { event: "component_init", table_number, table_token },
     LOG_PATH,
@@ -30,19 +28,19 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     1
   );
 
-  const { isLoading, createOrder } = useOrderCreationStore();
+
   const {
     getOrderSummary,
-    clearOrder,
+    createOrder,
     canhKhongRau,
     canhCoRau,
     smallBowl,
     wantChili,
-    selectedFilling
+    selectedFilling,
+    isLoading
   } = useOrderStore();
   const { http } = useApiStore();
-  const { guest, user, isGuest, openLoginDialog, userId, isLogin } =
-    useAuthStore();
+  const { guest, user, isGuest, openLoginDialog, userId, isLogin } = useAuthStore();
   const {
     connect,
     disconnect,
@@ -224,7 +222,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         orderStore: {
           tableNumber: Number(table_number),
           getOrderSummary,
-          clearOrder
+    
         },
         websocket: { disconnect, isConnected, sendMessage },
         openLoginDialog
@@ -247,27 +245,6 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
       );
     }
   };
-
-  const getButtonText = () => {
-    if (!authChecked) return "Loading...";
-    if (!isLogin) return "Login to Order";
-    if (orderSummary.totalItems === 0) return "Add Items to Order";
-    return "Create Order";
-  };
-
-  const isButtonDisabled = () => {
-    if (!authChecked) return true;
-    if (!isLogin) return false;
-    if (orderSummary.totalItems === 0) return true;
-    return isLoading;
-  };
-
-  useEffect(() => {
-    return () => {
-      logWithLevel({ event: "component_cleanup" }, LOG_PATH, "debug", 8);
-      disconnect();
-    };
-  }, []);
 
   const sendMessage1 = async () => {
     logWithLevel({ event: "send_message_attempt" }, LOG_PATH, "debug", 4);
@@ -307,39 +284,38 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         type: "order",
         action: "create_message",
         payload: {
-          fromUserId: "1",
+          fromUserId: userId?.toString() || "1",
           toUserId: "2",
           type: "order",
           action: "new_order",
           payload: {
-            guest_id: null,
-            user_id: 1,
-            is_guest: false,
-            table_number: 1,
+            guest_id: isGuest ? guest?.id || null : null,
+            user_id: !isGuest ? user?.id || 1 : null,
+            is_guest: isGuest,
+            table_number: Number(table_number),
             order_handler_id: 1,
             status: "pending",
-            created_at: "2024-10-21T12:00:00Z",
-            updated_at: "2024-10-21T12:00:00Z",
-            total_price: 5000,
-            order_name: "test",
-            dish_items: [
-              { dish_id: 1, quantity: 2 },
-              { dish_id: 2, quantity: 2 },
-              { dish_id: 3, quantity: 4 }
-            ],
-            set_items: [
-              { set_id: 1, quantity: 3 },
-              { set_id: 2, quantity: 3 }
-            ],
-            bow_chili: 1,
-            bow_no_chili: 2,
-            take_away: true,
-            chili_number: 3,
-            Table_token: "MTp0YWJsZTo0ODgzMjc3NDQy.2AZhkuCtKB0"
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            total_price: totalPrice,
+            order_name: isGuest ? guest?.name || "Guest" : user?.name || "User",
+            dish_items: dishes.map(dish => ({
+              dish_id: dish.dish_id,
+              quantity: dish.quantity
+            })),
+            set_items: sets.map(set => ({
+              set_id: set.id,
+              quantity: set.quantity
+            })),
+            bow_chili: wantChili ? 1 : 0,
+            bow_no_chili: canhKhongRau,
+            take_away: false,
+            chili_number: wantChili ? 1 : 0,
+            Table_token: table_token
           }
         },
-        role: "User",
-        roomId: "1"
+        role: isGuest ? "Guest" : "User",
+        roomId: table_number.toString()
       };
 
       sendMessage(messagePayload);
@@ -359,6 +335,27 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     }
   };
 
+  const getButtonText = () => {
+    if (!authChecked) return "Loading...";
+    if (!isLogin) return "Login to Order";
+    if (orderSummary.totalItems === 0) return "Add Items to Order";
+    return "Create Order";
+  };
+
+  const isButtonDisabled = () => {
+    if (!authChecked) return true;
+    if (!isLogin) return false;
+    if (orderSummary.totalItems === 0) return true;
+    return isLoading;
+  };
+
+  useEffect(() => {
+    return () => {
+      logWithLevel({ event: "component_cleanup" }, LOG_PATH, "debug", 8);
+      disconnect();
+    };
+  }, []);
+
   return (
     <div className="mt-4">
       <Button
@@ -367,14 +364,6 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         disabled={isButtonDisabled()}
       >
         {getButtonText()}
-      </Button>
-
-      <Button
-        className="w-full"
-        onClick={sendMessage1}
-        disabled={isButtonDisabled()}
-      >
-        {"send message"}
       </Button>
     </div>
   );

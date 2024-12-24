@@ -12,26 +12,36 @@ interface DishCardProps {
 }
 
 export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
-  const { addDishItem, removeDishItem, updateDishQuantity, findDishOrderItem } =
-    useOrderStore();
+  const {
+    currentOrder,
+    addDishToCurrentOrder,
+    removeDishFromCurrentOrder,
+    updateDishQuantityInCurrentOrder
+  } = useOrderStore();
 
-  const currentDish = findDishOrderItem(dish.id);
+  // Find the dish in the current order
+  const currentDish = currentOrder?.dish_items.find(
+    (item) => item.dish_id === dish.id
+  );
   const quantity = currentDish ? currentDish.quantity : 0;
 
   const handleIncrease = () => {
     if (currentDish) {
-      updateDishQuantity(dish.id, currentDish.quantity + 1);
+      updateDishQuantityInCurrentOrder(dish.id, currentDish.quantity + 1);
     } else {
-      addDishItem(dish, 1);
+      addDishToCurrentOrder({
+        dish_id: dish.id,
+        quantity: 1
+      });
     }
   };
 
   const handleDecrease = () => {
     if (currentDish) {
       if (currentDish.quantity > 1) {
-        updateDishQuantity(dish.id, currentDish.quantity - 1);
+        updateDishQuantityInCurrentOrder(dish.id, currentDish.quantity - 1);
       } else {
-        removeDishItem(dish.id);
+        removeDishFromCurrentOrder(dish.id);
       }
     }
   };
@@ -54,11 +64,16 @@ export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
           </div>
           <div className="flex items-center justify-end mt-2">
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={handleDecrease}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDecrease}
+                disabled={!currentDish}
+              >
                 <Minus className="h-3 w-3" />
               </Button>
               <span className="w-8 text-center">{quantity}</span>
-              <Button variant="outline" size="sm" onClick={handleIncrease}>
+              <Button variant="default" size="sm" onClick={handleIncrease}>
                 <Plus className="h-3 w-3" />
               </Button>
             </div>

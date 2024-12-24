@@ -19,8 +19,6 @@ const LOG_PATH =
 
 export default function OrderSummary({ number, token }: OrderProps) {
   const decoded = decodeTableToken(token);
-
-  // Log token decode result
   logWithLevel({ decoded, token }, LOG_PATH, "debug", 1);
 
   const {
@@ -49,7 +47,6 @@ export default function OrderSummary({ number, token }: OrderProps) {
         addTableNumber(tableNumber);
       }
 
-      // Log table number and token updates
       logWithLevel(
         {
           token,
@@ -69,63 +66,51 @@ export default function OrderSummary({ number, token }: OrderProps) {
     type: "chili" | "noChili" | "small",
     change: number
   ) => {
-    const prevValues = {
-      canhKhongRau,
-      canhCoRau,
-      smallBowl
-    };
-
     switch (type) {
       case "chili":
-        const newToppingValue = canhKhongRau + change;
-        if (newToppingValue >= 0) {
-          updateCanhKhongRau(newToppingValue);
-          logWithLevel(
-            {
-              type: "canhKhongRau",
-              previousValue: canhKhongRau,
-              newValue: newToppingValue,
-              change
-            },
-            LOG_PATH,
-            "debug",
-            3
-          );
-        }
+        const newToppingValue = Math.max(0, canhKhongRau + change);
+        updateCanhKhongRau(newToppingValue);
+        logWithLevel(
+          {
+            type: "canhKhongRau",
+            previousValue: canhKhongRau,
+            newValue: newToppingValue,
+            change
+          },
+          LOG_PATH,
+          "debug",
+          3
+        );
         break;
       case "noChili":
-        const newNoChiliValue = canhCoRau + change;
-        if (newNoChiliValue >= 0) {
-          updateCanhCoRau(newNoChiliValue);
-          logWithLevel(
-            {
-              type: "canhCoRau",
-              previousValue: canhCoRau,
-              newValue: newNoChiliValue,
-              change
-            },
-            LOG_PATH,
-            "debug",
-            3
-          );
-        }
+        const newNoChiliValue = Math.max(0, canhCoRau + change);
+        updateCanhCoRau(newNoChiliValue);
+        logWithLevel(
+          {
+            type: "canhCoRau",
+            previousValue: canhCoRau,
+            newValue: newNoChiliValue,
+            change
+          },
+          LOG_PATH,
+          "debug",
+          3
+        );
         break;
       case "small":
-        const newSmallBowlValue = smallBowl + change;
-        if (newSmallBowlValue >= 0) {
-          updateSmallBowl(newSmallBowlValue);
-          logWithLevel(
-            {
-              type: "smallBowl",
-              previousValue: smallBowl,
-              newValue: newSmallBowlValue,
-              change
-            },
-            LOG_PATH,
-            "debug",
-            3
-          );
-        }
+        const newSmallBowlValue = Math.max(0, smallBowl + change);
+        updateSmallBowl(newSmallBowlValue);
+        logWithLevel(
+          {
+            type: "smallBowl",
+            previousValue: smallBowl,
+            newValue: newSmallBowlValue,
+            change
+          },
+          LOG_PATH,
+          "debug",
+          3
+        );
         break;
     }
   };
@@ -153,8 +138,9 @@ export default function OrderSummary({ number, token }: OrderProps) {
         fillingType,
         previousFilling: prevFilling,
         newFilling: {
-          ...selectedFilling,
-          [fillingType]: !selectedFilling[fillingType]
+          mocNhi: fillingType === "mocNhi",
+          thit: fillingType === "thit",
+          thitMocNhi: fillingType === "thitMocNhi"
         }
       },
       LOG_PATH,
@@ -260,47 +246,35 @@ export default function OrderSummary({ number, token }: OrderProps) {
                 </div>
               </div>
 
-              {/* Nhân mọc nhĩ */}
-              <div className="flex items-center justify-between">
-                <span>Nhân mọc nhĩ</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={selectedFilling.mocNhi ? "default" : "outline"}
-                    onClick={() => handleFillingUpdate("mocNhi")}
-                  >
-                    {selectedFilling.mocNhi ? "Selected" : "Select"}
-                  </Button>
+              {/* Filling options */}
+              {[
+                { key: "mocNhi", label: "Nhân mọc nhĩ" },
+                { key: "thit", label: "Nhân thịt" },
+                { key: "thitMocNhi", label: "Nhân thịt và mọc nhĩ" }
+              ].map(({ key, label }) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span>{label}</span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant={
+                        selectedFilling[key as keyof typeof selectedFilling]
+                          ? "default"
+                          : "outline"
+                      }
+                      onClick={() =>
+                        handleFillingUpdate(
+                          key as "mocNhi" | "thit" | "thitMocNhi"
+                        )
+                      }
+                    >
+                      {selectedFilling[key as keyof typeof selectedFilling]
+                        ? "Selected"
+                        : "Select"}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-
-              {/* Nhân thịt */}
-              <div className="flex items-center justify-between">
-                <span>Nhân thịt</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={selectedFilling.thit ? "default" : "outline"}
-                    onClick={() => handleFillingUpdate("thit")}
-                  >
-                    {selectedFilling.thit ? "Selected" : "Select"}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Nhân thịt và mọc nhĩ */}
-              <div className="flex items-center justify-between">
-                <span>Nhân thịt và mọc nhĩ</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={selectedFilling.thitMocNhi ? "default" : "outline"}
-                    onClick={() => handleFillingUpdate("thitMocNhi")}
-                  >
-                    {selectedFilling.thitMocNhi ? "Selected" : "Select"}
-                  </Button>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </CardContent>
