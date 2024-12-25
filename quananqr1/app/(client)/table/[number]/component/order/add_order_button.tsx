@@ -250,7 +250,7 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         openLoginDialog
       });
 
-      // addToListOfOrders(order);
+      addToListOfOrders(order);
 
       //------------------
 
