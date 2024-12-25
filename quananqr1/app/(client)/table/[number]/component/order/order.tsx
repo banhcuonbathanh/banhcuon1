@@ -8,6 +8,7 @@ import OrderDetails from "../total-dishes-detail";
 import OrderCreationComponent from "./add_order_button";
 import { decodeTableToken } from "@/lib/utils";
 import { logWithLevel } from "@/lib/logger/log";
+import OrdersList from "../order-list/list-order";
 
 interface OrderProps {
   number: string;
@@ -286,6 +287,11 @@ export default function OrderSummary({ number, token }: OrderProps) {
         totalPrice={orderSummary.totalPrice}
         totalItems={orderSummary.totalItems}
       />
+
+      <div>
+        <h1>Orders</h1>
+        <OrdersList />
+      </div>
 
       <OrderCreationComponent table_token={token} table_number={number} />
     </div>

@@ -9,8 +9,10 @@ import { useAuthStore } from "@/zusstand/new_auth/new_auth_controller";
 import { useWebSocketStore } from "@/zusstand/web-socket/websocketStore";
 import { WebSocketMessage } from "@/schemaValidations/interface/type_websocker";
 import { logWithLevel } from "@/lib/logger/log";
+import { useRouter } from "next/navigation";
 
-const LOG_PATH = "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx";
+const LOG_PATH =
+  "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx";
 
 interface OrderCreationComponentProps {
   table_token: string;
@@ -21,13 +23,13 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
   table_number,
   table_token
 }) => {
+  const router = useRouter();
   logWithLevel(
     { event: "component_init", table_number, table_token },
     LOG_PATH,
     "debug",
     1
   );
-
 
   const {
     getOrderSummary,
@@ -37,10 +39,17 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
     smallBowl,
     wantChili,
     selectedFilling,
-    isLoading
+    isLoading,
+
+    //
+
+    addToListOfOrders
+
+    //
   } = useOrderStore();
   const { http } = useApiStore();
-  const { guest, user, isGuest, openLoginDialog, userId, isLogin } = useAuthStore();
+  const { guest, user, isGuest, openLoginDialog, userId, isLogin } =
+    useAuthStore();
   const {
     connect,
     disconnect,
@@ -71,15 +80,29 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
 
   useEffect(() => {
     const initializeAuth = async () => {
-      useAuthStore.getState().syncAuthState();
-      setAuthChecked(true);
+      const authStore = useAuthStore.getState();
 
-      logWithLevel(
-        { event: "auth_initialized", isLogin, userId },
-        LOG_PATH,
-        "info",
-        5
-      );
+      // Set up a one-time subscription to catch the state update
+      const unsubscribe = useAuthStore.subscribe((state) => {
+        setAuthChecked(true);
+        logWithLevel(
+          {
+            event: "auth_initialized",
+            isLogin: state.isLogin,
+            userId: state.userId,
+            isGuest: state.isGuest
+          },
+          LOG_PATH,
+          "info",
+          5
+        );
+
+        // Unsubscribe after first update
+        unsubscribe();
+      });
+
+      // Trigger the state sync
+      authStore.syncAuthState();
     };
 
     initializeAuth();
@@ -221,13 +244,18 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         auth: { guest, user, isGuest },
         orderStore: {
           tableNumber: Number(table_number),
-          getOrderSummary,
-    
+          getOrderSummary
         },
         websocket: { disconnect, isConnected, sendMessage },
         openLoginDialog
       });
 
+      // addToListOfOrders(order);
+
+      //------------------
+
+      router.refresh();
+      //----------
       logWithLevel(
         { event: "order_created", orderId: order?.id },
         LOG_PATH,
@@ -299,11 +327,11 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
             updated_at: new Date().toISOString(),
             total_price: totalPrice,
             order_name: isGuest ? guest?.name || "Guest" : user?.name || "User",
-            dish_items: dishes.map(dish => ({
+            dish_items: dishes.map((dish) => ({
               dish_id: dish.dish_id,
               quantity: dish.quantity
             })),
-            set_items: sets.map(set => ({
+            set_items: sets.map((set) => ({
               set_id: set.id,
               quantity: set.quantity
             })),

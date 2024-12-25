@@ -19,11 +19,32 @@ interface DishState {
     description: string;
     image: string;
     status: string;
-  }
+  };
 }
-
-const LOG_PATH =
-  "quananqr1/app/(client)/table/[number]/component/order/logic.ts";
+interface SetState {
+  [key: number]: {
+    name: string;
+    price: number;
+    description: string;
+    image: string;
+    dishes: Array<{
+      dish_id: number;
+      name: string;
+      price: number;
+      quantity: number;
+      description: string;
+      image: string;
+      status: string;
+    }>;
+    userId: number;
+    created_at: string;
+    updated_at: string;
+    is_favourite: boolean;
+    like_by: number[] | null;
+    is_public: boolean;
+  };
+}
+const LOG_PATH = "quananqr1/zusstand/order/order_zustand.ts";
 
 interface BowlOptions {
   canhKhongRau: number;
@@ -44,11 +65,22 @@ interface OrderSummary {
   sets: OrderSetDetailed[];
 }
 
-interface OrderState extends BowlOptions {
+export interface OrderState extends BowlOptions {
+  //
+
+  setStore: SetState;
+  setSetDetails: (id: number, details: Omit<SetState[number], "id">) => void;
+  //
+
+  listOfOrders: Order[];
+
+  addToListOfOrders: (order: Order) => void;
+  deleteFromListOfOrders: (orderId: number) => void;
+  clearListOfOrders: () => void;
   //
 
   dishState: DishState;
-  setDishDetails: (id: number, details: Omit<DishState[number], 'id'>) => void;
+  setDishDetails: (id: number, details: Omit<DishState[number], "id">) => void;
   //
   orders: Record<string, Order[]>;
   currentOrder: Order | null;
@@ -146,6 +178,9 @@ const INITIAL_ORDER: Order = {
 
 const INITIAL_STATE: Omit<
   OrderState,
+  | "addToListOfOrders"
+  | "deleteFromListOfOrders"
+  | "clearListOfOrders"
   | "setOrders"
   | "addOrderToCategory"
   | "updateOrderInCategory"
@@ -174,6 +209,8 @@ const INITIAL_STATE: Omit<
   | "updateSelectedFilling"
   | "createOrder"
 > = {
+  setStore: {} as SetState,
+  listOfOrders: [],
   dishState: {} as DishState,
   orders: {},
   currentOrder: null,
@@ -195,21 +232,52 @@ const INITIAL_STATE: Omit<
     thitMocNhi: false
   },
   tableNumber: null,
-  tableToken: null
+  tableToken: null,
+  setDishDetails: function (
+    id: number,
+    details: Omit<DishState[number], "id">
+  ): void {
+    throw new Error("Function not implemented.");
+  },
+  setSetDetails: function (
+    id: number,
+    details: Omit<SetState[number], "id">
+  ): void {
+    throw new Error("Function not implemented.");
+  }
 };
 
 const useOrderStore = create<OrderState>()(
   persist(
     (set, get) => ({
       ...INITIAL_STATE,
-      setDishDetails: (id, details) => 
-        set(state => ({
+
+      //
+
+      setSetDetails: (id, details) =>
+        set((state) => ({
+          setStore: {
+            ...state.setStore,
+            [id]: {
+              ...details,
+              created_at: details.created_at || new Date().toISOString(),
+              updated_at: details.updated_at || new Date().toISOString(),
+              userId: details.userId || 0,
+              is_favourite: details.is_favourite || false,
+              like_by: details.like_by || [],
+              is_public: details.is_public || false
+            }
+          }
+        })),
+      //
+      setDishDetails: (id, details) =>
+        set((state) => ({
           dishState: {
             ...state.dishState,
             [id]: details
           }
         })),
-      
+
       createOrder: async ({
         topping,
         Table_token,
@@ -245,26 +313,27 @@ const useOrderStore = create<OrderState>()(
 
         const orderSummary = getOrderSummary();
 
+        const dish_items = orderSummary.dishes.map(
+          (dish: OrderDetailedDish) => ({
+            dish_id: dish.dish_id,
+            quantity: dish.quantity
+          })
+        );
+
+        const set_items = orderSummary.sets.map((set: OrderSetDetailed) => ({
+          set_id: set.id,
+          quantity: set.quantity
+        }));
         logWithLevel(
           {
             orderSummary,
-            dishCount: orderSummary.dishes.length,
-            setCount: orderSummary.sets.length
+            dish_items: dish_items,
+            set_items: set_items
           },
           LOG_PATH,
           "info",
           11
         );
-
-        const dish_items = orderSummary.dishes.map((dish: any) => ({
-          dish_id: dish.id,
-          quantity: dish.quantity
-        }));
-
-        const set_items = orderSummary.sets.map((set: any) => ({
-          set_id: set.id,
-          quantity: set.quantity
-        }));
 
         const user_id = isGuest ? null : user?.id ?? null;
         const guest_id = isGuest ? guest?.id ?? null : null;
@@ -355,7 +424,7 @@ const useOrderStore = create<OrderState>()(
             title: "Success",
             description: "Order has been created successfully"
           });
-
+          get().clearCurrentOrder();
           return response.data;
         } catch (error) {
           logWithLevel(
@@ -463,43 +532,67 @@ const useOrderStore = create<OrderState>()(
             sets: []
           };
         }
-      
-        const totalItems =
-          state.currentOrder.dish_items.reduce(
-            (acc, item) => acc + item.quantity,
+
+        // Transform DishOrderItem into OrderDetailedDish
+        const detailedDishes: OrderDetailedDish[] =
+          state.currentOrder.dish_items.map((item) => ({
+            dish_id: item.dish_id,
+            quantity: item.quantity,
+            name: state.dishState[item.dish_id]?.name || "",
+            price: state.dishState[item.dish_id]?.price || 0,
+            description: state.dishState[item.dish_id]?.description || "",
+            iamge: state.dishState[item.dish_id]?.image || "", // Note the "iamge" spelling
+            status: state.dishState[item.dish_id]?.status || "active"
+          }));
+
+        // Transform SetOrderItem into OrderSetDetailed using setStore
+        const detailedSets: OrderSetDetailed[] =
+          state.currentOrder.set_items.map((item) => {
+            const setDetails = state.setStore[item.set_id] || {};
+            return {
+              id: item.set_id,
+              quantity: item.quantity,
+              name: setDetails.name || "",
+              price: setDetails.price || 0,
+              description: setDetails.description || "",
+              image: setDetails.image || "",
+              dishes: (setDetails.dishes || []).map((dish) => ({
+                dish_id: dish.dish_id,
+                quantity: dish.quantity,
+                name: dish.name || "",
+                price: dish.price || 0,
+                description: dish.description || "",
+                iamge: dish.image || "", // Note the "iamge" spelling to match interface
+                status: dish.status || "active"
+              })),
+              userId: setDetails.userId || 0,
+              created_at: setDetails.created_at || new Date().toISOString(),
+              updated_at: setDetails.updated_at || new Date().toISOString(),
+              is_favourite: setDetails.is_favourite || false,
+              like_by: setDetails.like_by || [],
+              is_public: setDetails.is_public || false
+            };
+          });
+
+        // Calculate total price including sets
+        const totalPrice =
+          detailedDishes.reduce(
+            (acc, dish) => acc + dish.price * dish.quantity,
             0
           ) +
-          state.currentOrder.set_items.reduce(
-            (acc, item) => acc + item.quantity,
-            0
-          );
-      
-        // Transform DishOrderItem into OrderDetailedDish
-        const detailedDishes: OrderDetailedDish[] = state.currentOrder.dish_items.map(item => ({
-          id: item.dish_id,
-          quantity: item.quantity,
-          name: dishState[item.dish_id]?.name || "",
-          price: dishState[item.dish_id]?.price || 0,
-          description: dishState[item.dish_id]?.description || "",
-          image: dishState[item.dish_id]?.image || "",
-          status: dishState[item.dish_id]?.status || "active"
-        }));
-      
-        // Transform SetOrderItem into OrderSetDetailed
-        const detailedSets: OrderSetDetailed[] = state.currentOrder.set_items.map(item => ({
-          id: item.set_id,
-          quantity: item.quantity,
-          // Add other required set details here
-          name: "",  // Add set name from state
-          price: 0,  // Add set price from state
-          description: "", // Add set description from state
-          image: "",  // Add set image from state
-          status: "active"
-        }));
-      
+          detailedSets.reduce((acc, set) => acc + set.price * set.quantity, 0);
+
         return {
-          totalItems,
-          totalPrice: state.currentOrder.total_price,
+          totalItems:
+            state.currentOrder.dish_items.reduce(
+              (acc, item) => acc + item.quantity,
+              0
+            ) +
+            state.currentOrder.set_items.reduce(
+              (acc, item) => acc + item.quantity,
+              0
+            ),
+          totalPrice,
           dishes: detailedDishes,
           sets: detailedSets
         };
@@ -646,9 +739,34 @@ const useOrderStore = create<OrderState>()(
             ...INITIAL_ORDER,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
+          },
+          // Reset all bowl-related options
+          canhKhongRau: 0,
+          canhCoRau: 0,
+          smallBowl: 0,
+          wantChili: false,
+          selectedFilling: {
+            mocNhi: false,
+            thit: false,
+            thitMocNhi: false
           }
         }),
+      //
+      addToListOfOrders: (order) =>
+        set((state) => ({
+          listOfOrders: [...state.listOfOrders, order]
+        })),
 
+      deleteFromListOfOrders: (orderId) =>
+        set((state) => ({
+          listOfOrders: state.listOfOrders.filter(
+            (order) => order.id !== orderId
+          )
+        })),
+
+      clearListOfOrders: () => set({ listOfOrders: [] }),
+
+      //
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
       setPagination: (pagination) => set({ pagination })
@@ -665,7 +783,9 @@ const useOrderStore = create<OrderState>()(
         canhCoRau: state.canhCoRau,
         smallBowl: state.smallBowl,
         wantChili: state.wantChili,
-        selectedFilling: state.selectedFilling
+        selectedFilling: state.selectedFilling,
+
+        setStore: state.setStore // Add this
       })
     }
   )

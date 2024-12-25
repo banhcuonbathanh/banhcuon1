@@ -38,9 +38,35 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
     addSetToCurrentOrder,
     updateSetQuantityInCurrentOrder,
     removeSetFromCurrentOrder,
-    clearCurrentOrder
+    clearCurrentOrder,
+    setSetDetails  // Add this to the destructured imports
   } = useOrderStore();
-
+  // Update set details effect
+  useEffect(() => {
+    if (set) {
+      setSetDetails(set.id, {
+        name: set.name,
+        price: set.price,
+        description: set.description,
+        image: set.image,
+        dishes: set.dishes.map(dish => ({
+          dish_id: dish.dish_id,
+          name: dish.name,
+          price: dish.price,
+          quantity: dish.quantity,
+          description: dish.description || '',
+          image: dish.image || '',
+          status: dish.status || 'active'
+        })),
+        userId: set.userId,
+        created_at: set.created_at,
+        updated_at: set.updated_at,
+        is_favourite: set.is_favourite,
+        like_by: set.like_by,
+        is_public: set.is_public
+      });
+    }
+  }, [set, setSetDetails]);
   // Initialize currentOrder if it's null
   useEffect(() => {
     if (!currentOrder) {

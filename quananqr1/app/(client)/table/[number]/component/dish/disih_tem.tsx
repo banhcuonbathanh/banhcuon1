@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus } from "lucide-react";
@@ -16,9 +16,18 @@ export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
     currentOrder,
     addDishToCurrentOrder,
     removeDishFromCurrentOrder,
-    updateDishQuantityInCurrentOrder
+    updateDishQuantityInCurrentOrder,
+    setDishDetails
   } = useOrderStore();
-
+  useEffect(() => {
+    setDishDetails(dish.id, {
+      name: dish.name,
+      price: dish.price,
+      description: dish.description,
+      image: dish.image,
+      status: dish.status
+    });
+  }, [dish, setDishDetails]);
   // Find the dish in the current order
   const currentDish = currentOrder?.dish_items.find(
     (item) => item.dish_id === dish.id

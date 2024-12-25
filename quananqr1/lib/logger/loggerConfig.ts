@@ -100,8 +100,8 @@ export const loggerPaths: LogPath[] = [
     }
   },
   {
-    path: "quananqr1/app/(client)/table/[number]/component/order/logic.ts",
-    enabled: true,
+    path: "quananqr1/zusstand/order/order_zustand.ts",
+    enabled: false,
     description: "Order and Delivery Store State Management Logs",
     enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     disabledLogIds: [],
@@ -248,7 +248,7 @@ export const loggerPaths: LogPath[] = [
     path: "quananqr1/app/(client)/table/[number]/component/order/order.tsx",
     enabled: false,
     description: "Client Order Component Logs",
-    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8],
+    enabledLogIds: [6],
     disabledLogIds: [],
     logIds: [1, 2, 3, 4, 5, 6, 7, 8],
     logDescriptions: {
@@ -556,6 +556,109 @@ export const loggerPaths: LogPath[] = [
       8: {
         description: "Order store interactions",
         location: "useOrderStore hook interactions",
+        status: "enabled"
+      }
+    }
+  },
+
+  {
+    path: "quananqr1/app/manage/admin/orders/restaurant-summary/restaurant-summary.tsx",
+    enabled: false,
+    description: "Restaurant Summary Component Logs",
+    enabledLogIds: [1, 2, 3],
+    disabledLogIds: [],
+    logIds: [1, 2, 3],
+    logDescriptions: {
+      1: {
+        description: "Log initial dish aggregation state",
+        location: "aggregateDishes function - initialization",
+        status: "enabled"
+      },
+      2: {
+        description: "Log aggregated dishes for order groups",
+        location: "RestaurantSummary component - groupedOrders processing",
+        status: "enabled"
+      },
+      3: {
+        description: "Log aggregation completion state",
+        location: "RestaurantSummary component - final state",
+        status: "enabled"
+      }
+    }
+  },
+
+  {
+    path: "quananqr1/app/(client)/table/[number]/component/total-dishes-detail.tsx",
+    enabled: false,
+    description: "Total Dishes Detail Component Logs",
+    enabledLogIds: [1],
+    disabledLogIds: [1, 2, 3, 4, 5],
+    logIds: [1, 2, 3, 4, 5],
+    logDescriptions: {
+      1: {
+        description: "Component initialization state",
+        location: "OrderDetails component - initialization",
+        status: "enabled"
+      },
+      2: {
+        description: "Set expansion and price calculations",
+        location: "toggleSetExpansion and calculateSetPrice functions",
+        status: "enabled"
+      },
+      3: {
+        description: "Dish totals calculation",
+        location: "calculateDishTotals function",
+        status: "enabled"
+      },
+      4: {
+        description: "Price updates and state changes",
+        location: "Price calculation and state updates",
+        status: "enabled"
+      },
+      5: {
+        description: "Error handling",
+        location: "Error boundary and validation checks",
+        status: "enabled"
+      }
+    }
+  },
+
+  {
+    path: "quananqr1/app/(client)/table/[number]/component/order-list/list-order.tsx",
+    enabled: true,
+    description: "Orders List Component Logs",
+    enabledLogIds: [1, 2, 3, 4, 5, 6],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6],
+    logDescriptions: {
+      1: {
+        description: "Order summary generation started",
+        location: "getOrderSummaryForOrder function - initialization",
+        status: "enabled"
+      },
+      2: {
+        description: "Dish items transformation",
+        location: "getOrderSummaryForOrder function - dish transformation",
+        status: "enabled"
+      },
+      3: {
+        description: "Set items transformation",
+        location: "getOrderSummaryForOrder function - set transformation",
+        status: "enabled"
+      },
+      4: {
+        description: "Total calculations completed",
+        location: "getOrderSummaryForOrder function - totals calculation",
+        status: "enabled"
+      },
+      5: {
+        description: "Order list rendering state",
+        location: "OrdersList component - render phase",
+        status: "enabled"
+      },
+      6: {
+        description: "Empty orders list state",
+        location: "OrdersList component - empty state handling",
         status: "enabled"
       }
     }

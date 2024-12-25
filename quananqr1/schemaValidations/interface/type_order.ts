@@ -157,3 +157,10 @@ export interface PaginationInfo {
 }
 
 // -------
+
+
+// const LOG_PATH =
+//   "quananqr1/app/(client)/table/[number]/component/order-list/list-order.tsx";
+
+// const OrdersList = () => {
+//   const { listOfOrders, dishState, setStore } = useOrderStore();
