@@ -336,7 +336,7 @@ export const loggerPaths: LogPath[] = [
   },
   {
     path: "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx",
-    enabled: true,
+    enabled: false,
     description: "Order Creation Component Logs",
     enabledLogIds: [3],
     disabledLogIds: [],
@@ -659,6 +659,42 @@ export const loggerPaths: LogPath[] = [
       6: {
         description: "Empty orders list state",
         location: "OrdersList component - empty state handling",
+        status: "enabled"
+      }
+    }
+  },
+
+  {
+    path: "quananqr1/app/(client)/table/[number]/component/order-list/order.tsx",
+    enabled: true,
+    description: "Order Item Component Logs",
+    enabledLogIds: [1, 2, 3, 4, 5],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5],
+    logDescriptions: {
+      1: {
+        description: "Component initialization with order details",
+        location: "OrderItem component - initialization",
+        status: "enabled"
+      },
+      2: {
+        description: "Date formatting operations",
+        location: "OrderItem component - formattedDate memo",
+        status: "enabled"
+      },
+      3: {
+        description: "Item count calculations",
+        location: "OrderItem component - itemCount memo",
+        status: "enabled"
+      },
+      4: {
+        description: "Total price updates",
+        location: "OrderItem component - price effect",
+        status: "enabled"
+      },
+      5: {
+        description: "Order status changes",
+        location: "OrderItem component - status effect",
         status: "enabled"
       }
     }

@@ -1,13 +1,47 @@
+// export interface DishOrderItem {
+//   dish_id: number;
+//   quantity: number;
+// }
+
+// export interface SetOrderItem {
+//   set_id: number;
+//   quantity: number;
+// }
+
+//
+
 export interface DishOrderItem {
   dish_id: number;
   quantity: number;
+  name: string;
+  price: number;
+  description: string;
+  image: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  is_favourite: boolean;
+  like_by: number[];
 }
 
 export interface SetOrderItem {
   set_id: number;
   quantity: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  is_favourite: boolean;
+  like_by: number[];
+  is_public: boolean;
+  dishes: DishOrderItem[];
+  userId: number;
 }
 
+//
 export interface Order {
   id: number;
   guest_id: number;
@@ -157,7 +191,6 @@ export interface PaginationInfo {
 }
 
 // -------
-
 
 // const LOG_PATH =
 //   "quananqr1/app/(client)/table/[number]/component/order-list/list-order.tsx";

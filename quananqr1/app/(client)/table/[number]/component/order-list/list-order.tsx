@@ -26,11 +26,61 @@ const OrderItem = React.memo(
             <p>Table: {order.table_number}</p>
             <p>Status: {order.status}</p>
             <p>Total: ${order.total_price.toFixed(2)}</p>
+
+            <div className="mt-4">
+              <p className="font-medium">Order Summary:</p>
+              <div className="pl-4">
+                <p>
+                  Sets:{" "}
+                  {order.set_items.reduce(
+                    (sum, item) => sum + item.quantity,
+                    0
+                  )}{" "}
+                  items from {order.set_items.length} types ($
+                  {order.set_items
+                    .reduce((sum, item) => sum + item.price * item.quantity, 0)
+                    .toFixed(2)}
+                  )
+                </p>
+                <p>
+                  Dishes:{" "}
+                  {order.dish_items.reduce(
+                    (sum, item) => sum + item.quantity,
+                    0
+                  )}{" "}
+                  items from {order.dish_items.length} types ($
+                  {order.dish_items
+                    .reduce((sum, item) => sum + item.price * item.quantity, 0)
+                    .toFixed(2)}
+                  )
+                </p>
+              </div>
+            </div>
           </div>
+
           <div className="text-right">
             <p>{formattedDate}</p>
+            <p>Order Name: {order.order_name}</p>
+            <p>{order.takeAway ? "Take Away" : "Dine In"}</p>
 
-            <p>Items: {itemCount}</p>
+            <div className="mt-4 text-sm text-gray-600">
+              <p>
+                Set Items Total: $
+                {order.set_items
+                  .reduce((sum, item) => sum + item.price * item.quantity, 0)
+                  .toFixed(2)}
+              </p>
+              <p>
+                Individual Dishes Total: $
+                {order.dish_items
+                  .reduce((sum, item) => sum + item.price * item.quantity, 0)
+                  .toFixed(2)}
+              </p>
+              <p className="mt-2 text-xs">
+                Spice Level:{" "}
+                {order.chiliNumber > 0 ? "🌶".repeat(order.chiliNumber) : "None"}
+              </p>
+            </div>
           </div>
         </div>
       </CardContent>

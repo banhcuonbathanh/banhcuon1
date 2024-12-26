@@ -330,17 +330,65 @@ const useOrderStore = create<OrderState>()(
 
         const orderSummary = getOrderSummary();
 
+        //
+
         const dish_items = orderSummary.dishes.map(
           (dish: OrderDetailedDish) => ({
             dish_id: dish.dish_id,
-            quantity: dish.quantity
+            quantity: dish.quantity,
+            name: dish.name,
+            price: dish.price,
+            description: dish.description,
+            image: dish.iamge,
+            status: dish.status,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            is_favourite: false, // Default value since it's not in OrderDetailedDish
+            like_by: [] // Default empty array since it's not in OrderDetailedDish
           })
         );
 
         const set_items = orderSummary.sets.map((set: OrderSetDetailed) => ({
           set_id: set.id,
-          quantity: set.quantity
+          quantity: set.quantity,
+          name: set.name,
+          description: set.description,
+          price: set.price,
+          image: set.image,
+          status: "pending", // Default status since it's not in OrderSetDetailed
+          created_at: set.created_at,
+          updated_at: set.updated_at,
+          is_favourite: set.is_favourite,
+          like_by: set.like_by,
+          is_public: set.is_public,
+          dishes: set.dishes.map((dish) => ({
+            dish_id: dish.dish_id,
+            quantity: dish.quantity,
+            name: dish.name,
+            price: dish.price,
+            description: dish.description,
+            image: dish.iamge,
+            status: dish.status,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            is_favourite: false,
+            like_by: []
+          })),
+          userId: set.userId
         }));
+        //
+
+        // const dish_items = orderSummary.dishes.map(
+        //   (dish: OrderDetailedDish) => ({
+        //     dish_id: dish.dish_id,
+        //     quantity: dish.quantity
+        //   })
+        // );
+
+        // const set_items = orderSummary.sets.map((set: OrderSetDetailed) => ({
+        //   set_id: set.id,
+        //   quantity: set.quantity
+        // }));
         logWithLevel(
           {
             orderSummary,
