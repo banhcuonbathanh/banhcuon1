@@ -131,3 +131,25 @@ func (os *OrderServiceStruct) GetOrderProtoListDetail(ctx context.Context, req *
 
     return detailedList, nil
 }
+
+
+
+func (os *OrderServiceStruct) FetchOrdersByCriteria(ctx context.Context, req *order.FetchOrdersByCriteriaRequest) (*order.OrderDetailedListResponse, error) {
+    os.logger.Info("Fetching orders by criteria")
+    
+    // Validate pagination parameters
+    if req.Page < 1 {
+        req.Page = 1
+    }
+    if req.PageSize < 1 {
+        req.PageSize = 10 // Default page size
+    }
+    
+    detailedList, err := os.orderRepo.FetchOrdersByCriteria(ctx, req)
+    if err != nil {
+        os.logger.Error("Error fetching orders by criteria: " + err.Error())
+        return nil, fmt.Errorf("failed to fetch orders by criteria: %w", err)
+    }
+    
+    return detailedList, nil
+}

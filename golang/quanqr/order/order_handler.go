@@ -615,3 +615,75 @@ func (h *OrderHandlerController) CreateOrder2(w http.ResponseWriter, r *http.Req
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(res)
 }
+
+
+
+func (h *OrderHandlerController) FetchOrdersByCriteria(w http.ResponseWriter, r *http.Request) {
+    h.logger.Info("Fetching orders by criteria")
+
+    // Parse query parameters
+    query := r.URL.Query()
+    
+    // Get page parameter with default value 1
+    page := int32(1)
+    if pageStr := query.Get("page"); pageStr != "" {
+        if pageInt, err := strconv.ParseInt(pageStr, 10, 32); err == nil {
+            page = int32(pageInt)
+        }
+    }
+
+    // Get page_size parameter with default value 10
+    pageSize := int32(10)
+    if pageSizeStr := query.Get("page_size"); pageSizeStr != "" {
+        if pageSizeInt, err := strconv.ParseInt(pageSizeStr, 10, 32); err == nil {
+            pageSize = int32(pageSizeInt)
+        }
+    }
+
+    var req FetchOrdersByCriteriaRequestType
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        if err != io.EOF {
+            h.logger.Error("Error decoding request body: " + err.Error())
+            http.Error(w, "error decoding request body", http.StatusBadRequest)
+            return
+        }
+    }
+
+    // Override page and pageSize from query parameters if they exist
+    req.Page = page
+    req.PageSize = pageSize
+
+    // Convert request to protobuf
+    pbReq := &order.FetchOrdersByCriteriaRequest{
+        OrderIds:  req.OrderIds,
+        OrderName: req.OrderName,
+        Page:      req.Page,
+        PageSize:  req.PageSize,
+    }
+
+    // Add date filters if present
+    if req.StartDate != nil {
+        pbReq.StartDate = timestamppb.New(*req.StartDate)
+    }
+    if req.EndDate != nil {
+        pbReq.EndDate = timestamppb.New(*req.EndDate)
+    }
+
+    // Call the service
+    response, err := h.client.FetchOrdersByCriteria(h.ctx, pbReq)
+    if err != nil {
+        h.logger.Error("Error fetching orders by criteria: " + err.Error())
+        http.Error(w, "failed to fetch orders: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Convert and send response
+    res := ToOrderDetailedListResponseFromProto(response)
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        h.logger.Error("Error encoding response: " + err.Error())
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        return
+    }
+}
+

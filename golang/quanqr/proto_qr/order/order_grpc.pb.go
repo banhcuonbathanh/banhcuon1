@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	OrderService_FetchOrdersByCriteria_FullMethodName   = "/order_proto.OrderService/FetchOrdersByCriteria"
 	OrderService_CreateOrder_FullMethodName             = "/order_proto.OrderService/CreateOrder"
 	OrderService_GetOrders_FullMethodName               = "/order_proto.OrderService/GetOrders"
 	OrderService_GetOrderDetail_FullMethodName          = "/order_proto.OrderService/GetOrderDetail"
@@ -33,6 +34,7 @@ const (
 //
 // Service definition
 type OrderServiceClient interface {
+	FetchOrdersByCriteria(ctx context.Context, in *FetchOrdersByCriteriaRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*OrderResponse, error)
 	GetOrders(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error)
 	GetOrderDetail(ctx context.Context, in *OrderIdParam, opts ...grpc.CallOption) (*OrderResponse, error)
@@ -47,6 +49,16 @@ type orderServiceClient struct {
 
 func NewOrderServiceClient(cc grpc.ClientConnInterface) OrderServiceClient {
 	return &orderServiceClient{cc}
+}
+
+func (c *orderServiceClient) FetchOrdersByCriteria(ctx context.Context, in *FetchOrdersByCriteriaRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OrderDetailedListResponse)
+	err := c.cc.Invoke(ctx, OrderService_FetchOrdersByCriteria_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *orderServiceClient) CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*OrderResponse, error) {
@@ -115,6 +127,7 @@ func (c *orderServiceClient) GetOrderProtoListDetail(ctx context.Context, in *Ge
 //
 // Service definition
 type OrderServiceServer interface {
+	FetchOrdersByCriteria(context.Context, *FetchOrdersByCriteriaRequest) (*OrderDetailedListResponse, error)
 	CreateOrder(context.Context, *CreateOrderRequest) (*OrderResponse, error)
 	GetOrders(context.Context, *GetOrdersRequest) (*OrderListResponse, error)
 	GetOrderDetail(context.Context, *OrderIdParam) (*OrderResponse, error)
@@ -131,6 +144,9 @@ type OrderServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedOrderServiceServer struct{}
 
+func (UnimplementedOrderServiceServer) FetchOrdersByCriteria(context.Context, *FetchOrdersByCriteriaRequest) (*OrderDetailedListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchOrdersByCriteria not implemented")
+}
 func (UnimplementedOrderServiceServer) CreateOrder(context.Context, *CreateOrderRequest) (*OrderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOrder not implemented")
 }
@@ -168,6 +184,24 @@ func RegisterOrderServiceServer(s grpc.ServiceRegistrar, srv OrderServiceServer)
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&OrderService_ServiceDesc, srv)
+}
+
+func _OrderService_FetchOrdersByCriteria_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchOrdersByCriteriaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).FetchOrdersByCriteria(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_FetchOrdersByCriteria_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).FetchOrdersByCriteria(ctx, req.(*FetchOrdersByCriteriaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _OrderService_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -285,6 +319,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "order_proto.OrderService",
 	HandlerType: (*OrderServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "FetchOrdersByCriteria",
+			Handler:    _OrderService_FetchOrdersByCriteria_Handler,
+		},
 		{
 			MethodName: "CreateOrder",
 			Handler:    _OrderService_CreateOrder_Handler,

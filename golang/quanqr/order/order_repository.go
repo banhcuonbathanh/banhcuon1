@@ -1074,3 +1074,346 @@ func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpoo
     or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - clientNumber %v ", clientNumber))
     return clientNumber, nil
 }
+
+
+// Add this function to your OrderRepository struct
+
+func (or *OrderRepository) FetchOrdersByCriteria(ctx context.Context, req *order.FetchOrdersByCriteriaRequest) (*order.OrderDetailedListResponse, error) {
+    or.logger.Info("Fetching orders by criteria repository golang/quanqr/order/order_repository.go")
+
+    // Build dynamic conditions and params
+    var conditions []string
+    var params []interface{}
+    paramCount := 1
+
+    // Add order IDs condition if provided
+    if len(req.OrderIds) > 0 {
+        conditions = append(conditions, fmt.Sprintf("o.id = ANY($%d)", paramCount))
+        params = append(params, req.OrderIds)
+        paramCount++
+    }
+
+    // Add order name condition if provided
+    if req.OrderName != "" {
+        conditions = append(conditions, fmt.Sprintf("o.order_name ILIKE $%d", paramCount))
+        params = append(params, "%"+req.OrderName+"%")
+        paramCount++
+    }
+
+    // Add date range conditions if provided
+    if req.StartDate != nil {
+        conditions = append(conditions, fmt.Sprintf("o.created_at >= $%d", paramCount))
+        params = append(params, req.StartDate.AsTime())
+        paramCount++
+    }
+    if req.EndDate != nil {
+        conditions = append(conditions, fmt.Sprintf("o.created_at <= $%d", paramCount))
+        params = append(params, req.EndDate.AsTime())
+        paramCount++
+    }
+
+    // Build WHERE clause
+    whereClause := "WHERE 1=1"
+    for _, condition := range conditions {
+        whereClause += " AND " + condition
+    }
+
+    // Calculate pagination
+    offset := (req.Page - 1) * req.PageSize
+
+    // Combined query for both count and data
+    query := fmt.Sprintf(`
+        WITH filtered_orders AS (
+            SELECT 
+                o.id, 
+                o.guest_id, 
+                o.user_id, 
+                o.is_guest,
+                o.table_number, 
+                o.order_handler_id,
+                COALESCE(o.status, 'Pending') as status, 
+                o.total_price,
+                COALESCE(o.topping, '') as topping,
+                COALESCE(o.tracking_order, '') as tracking_order,
+                COALESCE(o.take_away, false) as take_away,
+                COALESCE(o.chili_number, 0) as chili_number,
+                o.table_token,
+                COALESCE(o.order_name, '') as order_name,
+                COUNT(*) OVER() as total_count
+            FROM orders o
+            %s
+            ORDER BY o.created_at DESC
+            LIMIT $%d OFFSET $%d
+        )
+        SELECT * FROM filtered_orders`,
+        whereClause,
+        paramCount,
+        paramCount+1,
+    )
+
+    // Add pagination parameters
+    params = append(params, req.PageSize, offset)
+
+    // Execute the query
+    rows, err := or.db.Query(ctx, query, params...)
+    if err != nil {
+        or.logger.Error("Error executing fetch orders query: " + err.Error())
+        return nil, fmt.Errorf("error executing fetch orders query: %w", err)
+    }
+    defer rows.Close()
+
+    var detailedOrders []*order.OrderDetailedResponse
+    var totalItems int64
+    for rows.Next() {
+        var o order.OrderDetailedResponse
+        var (
+            guestId        sql.NullInt64
+            userId         sql.NullInt64
+            tableNumber    sql.NullInt64
+            orderHandlerId sql.NullInt64
+            totalPrice     sql.NullInt32
+            status         sql.NullString
+            topping        sql.NullString
+            trackingOrder  sql.NullString
+            chiliNumber    sql.NullInt64
+            orderName      sql.NullString
+        )
+
+        err := rows.Scan(
+            &o.Id,
+            &guestId,
+            &userId,
+            &o.IsGuest,
+            &tableNumber,
+            &orderHandlerId,
+            &status,
+            &totalPrice,
+            &topping,
+            &trackingOrder,
+            &o.TakeAway,
+            &chiliNumber,
+            &o.TableToken,
+            &orderName,
+            &totalItems,
+        )
+        if err != nil {
+            or.logger.Error("Error scanning order: " + err.Error())
+            return nil, fmt.Errorf("error scanning order: %w", err)
+        }
+
+        // Handle NULL values
+        if guestId.Valid {
+            o.GuestId = guestId.Int64
+        }
+        if userId.Valid {
+            o.UserId = userId.Int64
+        }
+        if tableNumber.Valid {
+            o.TableNumber = tableNumber.Int64
+        }
+        if orderHandlerId.Valid {
+            o.OrderHandlerId = orderHandlerId.Int64
+        }
+        if totalPrice.Valid {
+            o.TotalPrice = totalPrice.Int32
+        }
+        if status.Valid {
+            o.Status = status.String
+        }
+        if topping.Valid {
+            o.Topping = topping.String
+        }
+        if trackingOrder.Valid {
+            o.TrackingOrder = trackingOrder.String
+        }
+        if chiliNumber.Valid {
+            o.ChiliNumber = chiliNumber.Int64
+        }
+        if orderName.Valid {
+            o.OrderName = orderName.String
+        }
+
+        // Fetch dish items for this order
+        dishItems, err := or.getOrderDishDetails(ctx, o.Id)
+        if err != nil {
+            return nil, err
+        }
+        o.DataDish = dishItems
+
+        // Fetch set items for this order
+        setItems, err := or.getOrderSetDetails(ctx, o.Id)
+        if err != nil {
+            return nil, err
+        }
+        o.DataSet = setItems
+
+        detailedOrders = append(detailedOrders, &o)
+    }
+
+    totalPages := int32(math.Ceil(float64(totalItems) / float64(req.PageSize)))
+
+    return &order.OrderDetailedListResponse{
+        Data: detailedOrders,
+        Pagination: &order.PaginationInfo{
+            CurrentPage: req.Page,
+            TotalPages: totalPages,
+            TotalItems: totalItems,
+            PageSize:   req.PageSize,
+        },
+    }, nil
+}
+
+// Helper function to get order dish details
+func (or *OrderRepository) getOrderDishDetails(ctx context.Context, orderID int64) ([]*order.OrderDetailedDish, error) {
+    query := `
+        SELECT 
+            d.id,
+            doi.quantity,
+            d.name,
+            d.price,
+            d.description,
+            d.image,
+            d.status
+        FROM dish_order_items doi
+        JOIN dishes d ON doi.dish_id = d.id
+        WHERE doi.order_id = $1
+    `
+    
+    rows, err := or.db.Query(ctx, query, orderID)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching dish details: %w", err)
+    }
+    defer rows.Close()
+
+    var dishes []*order.OrderDetailedDish
+    for rows.Next() {
+        var dish order.OrderDetailedDish
+        err := rows.Scan(
+            &dish.DishId,
+            &dish.Quantity,
+            &dish.Name,
+            &dish.Price,
+            &dish.Description,
+            &dish.Image,
+            &dish.Status,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning dish detail: %w", err)
+        }
+        dishes = append(dishes, &dish)
+    }
+
+    return dishes, nil
+}
+
+// Helper function to get order set details
+func (or *OrderRepository) getOrderSetDetails(ctx context.Context, orderID int64) ([]*order.OrderSetDetailed, error) {
+    query := `
+        SELECT 
+            s.id,
+            s.name,
+            s.description,
+            s.user_id,
+            s.is_favourite,
+            s.is_public,
+            s.image,
+            s.price,
+            soi.quantity,
+            s.created_at,
+            s.updated_at
+        FROM set_order_items soi
+        JOIN sets s ON soi.set_id = s.id
+        WHERE soi.order_id = $1
+    `
+    
+    rows, err := or.db.Query(ctx, query, orderID)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching set details: %w", err)
+    }
+    defer rows.Close()
+
+    var sets []*order.OrderSetDetailed
+    for rows.Next() {
+        var set order.OrderSetDetailed
+        var createdAt, updatedAt time.Time
+        var userID sql.NullInt32
+        
+        err := rows.Scan(
+            &set.Id,
+            &set.Name,
+            &set.Description,
+            &userID,
+            &set.IsFavourite,
+            &set.IsPublic,
+            &set.Image,
+            &set.Price,
+            &set.Quantity,
+            &createdAt,
+            &updatedAt,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning set detail: %w", err)
+        }
+
+        if userID.Valid {
+            set.UserId = userID.Int32
+        }
+        
+        set.CreatedAt = timestamppb.New(createdAt)
+        set.UpdatedAt = timestamppb.New(updatedAt)
+
+        // Get dishes for this set
+        dishes, err := or.getSetDishes(ctx, set.Id)
+        if err != nil {
+            return nil, err
+        }
+        set.Dishes = dishes
+
+        sets = append(sets, &set)
+    }
+
+    return sets, nil
+}
+
+// Helper function to get set dishes
+func (or *OrderRepository) getSetDishes(ctx context.Context, setID int64) ([]*order.OrderDetailedDish, error) {
+    query := `
+        SELECT 
+            d.id,
+            sd.quantity,
+            d.name,
+            d.price,
+            d.description,
+            d.image,
+            d.status
+        FROM set_dishes sd
+        JOIN dishes d ON sd.dish_id = d.id
+        WHERE sd.set_id = $1
+    `
+    
+    rows, err := or.db.Query(ctx, query, setID)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching set dish details: %w", err)
+    }
+    defer rows.Close()
+
+    var dishes []*order.OrderDetailedDish
+    for rows.Next() {
+        var dish order.OrderDetailedDish
+        err := rows.Scan(
+            &dish.DishId,
+            &dish.Quantity,
+            &dish.Name,
+            &dish.Price,
+            &dish.Description,
+            &dish.Image,
+            &dish.Status,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning set dish detail: %w", err)
+        }
+        dishes = append(dishes, &dish)
+    }
+
+    return dishes, nil
+}

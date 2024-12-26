@@ -249,19 +249,18 @@ const OrderCreationComponent: React.FC<OrderCreationComponentProps> = ({
         websocket: { disconnect, isConnected, sendMessage },
         openLoginDialog
       });
-
-      addToListOfOrders(order);
+      logWithLevel(
+        { event: "order_created 111", order: order.data },
+        LOG_PATH,
+        "info",
+        3
+      );
+      addToListOfOrders(order.data);
 
       //------------------
 
       router.refresh();
       //----------
-      logWithLevel(
-        { event: "order_created", orderId: order?.id },
-        LOG_PATH,
-        "info",
-        3
-      );
 
       await sendMessage1();
     } catch (error) {

@@ -194,3 +194,11 @@ type OrderDetailedListResponse struct {
       Pagination PaginationInfo `json:"pagination"`
 }
 
+type FetchOrdersByCriteriaRequestType struct {
+    OrderIds    []int64                `json:"order_ids,omitempty"`
+    OrderName   string                 `json:"order_name,omitempty"`
+    StartDate   *time.Time             `json:"start_date,omitempty"`
+    EndDate     *time.Time             `json:"end_date,omitempty"`
+    Page        int32                  `json:"page"`
+    PageSize    int32                  `json:"page_size"`
+}

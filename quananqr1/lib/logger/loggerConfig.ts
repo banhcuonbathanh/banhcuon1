@@ -336,9 +336,9 @@ export const loggerPaths: LogPath[] = [
   },
   {
     path: "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx",
-    enabled: false,
+    enabled: true,
     description: "Order Creation Component Logs",
-    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    enabledLogIds: [3],
     disabledLogIds: [],
     logIds: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     logDescriptions: {
@@ -625,7 +625,7 @@ export const loggerPaths: LogPath[] = [
 
   {
     path: "quananqr1/app/(client)/table/[number]/component/order-list/list-order.tsx",
-    enabled: true,
+    enabled: false,
     description: "Orders List Component Logs",
     enabledLogIds: [1, 2, 3, 4, 5, 6],
     disabledLogIds: [],

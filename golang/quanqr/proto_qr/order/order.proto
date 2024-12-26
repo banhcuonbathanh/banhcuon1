@@ -183,9 +183,18 @@ message PaginationInfo {
   int64 total_items = 3;
   int32 page_size = 4;
 }
-
+message FetchOrdersByCriteriaRequest {
+  repeated int64 order_ids = 1;        // List of order IDs to fetch
+  string order_name = 2;              // Optional order name filter
+  google.protobuf.Timestamp start_date = 3;  // Start date for date range
+  google.protobuf.Timestamp end_date = 4;    // End date for date range
+  int32 page = 5;                     // Page number for pagination
+  int32 page_size = 6;                // Items per page
+}
 // Service definition
 service OrderService {
+
+  rpc FetchOrdersByCriteria(FetchOrdersByCriteriaRequest) returns (OrderDetailedListResponse);
   rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
   rpc GetOrders(GetOrdersRequest) returns (OrderListResponse);
   rpc GetOrderDetail(OrderIdParam) returns (OrderResponse);

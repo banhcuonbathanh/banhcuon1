@@ -68,6 +68,10 @@ interface OrderSummary {
 export interface OrderState extends BowlOptions {
   //
 
+  isOrderListVisible: boolean; // Add this new field
+  toggleOrderListVisibility: () => void; // Add this new method
+  //
+
   setStore: SetState;
   setSetDetails: (id: number, details: Omit<SetState[number], "id">) => void;
   //
@@ -178,6 +182,10 @@ const INITIAL_ORDER: Order = {
 
 const INITIAL_STATE: Omit<
   OrderState,
+  //
+
+  | "toggleOrderListVisibility"
+  //
   | "addToListOfOrders"
   | "deleteFromListOfOrders"
   | "clearListOfOrders"
@@ -209,6 +217,10 @@ const INITIAL_STATE: Omit<
   | "updateSelectedFilling"
   | "createOrder"
 > = {
+  //
+  isOrderListVisible: true, // Add default value
+
+  //
   setStore: {} as SetState,
   listOfOrders: [],
   dishState: {} as DishState,
@@ -251,7 +263,12 @@ const useOrderStore = create<OrderState>()(
   persist(
     (set, get) => ({
       ...INITIAL_STATE,
-
+      //
+      // Add the new toggle method
+      toggleOrderListVisibility: () =>
+        set((state) => ({
+          isOrderListVisible: !state.isOrderListVisible
+        })),
       //
 
       setSetDetails: (id, details) =>
@@ -784,8 +801,10 @@ const useOrderStore = create<OrderState>()(
         smallBowl: state.smallBowl,
         wantChili: state.wantChili,
         selectedFilling: state.selectedFilling,
-
-        setStore: state.setStore // Add this
+        setStore: state.setStore,
+        dishState: state.dishState, // Add this
+        listOfOrders: state.listOfOrders, // Add this
+        isOrderListVisible: state.isOrderListVisible // Add this if you want to persist visibility state
       })
     }
   )

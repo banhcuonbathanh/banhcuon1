@@ -8,26 +8,29 @@ import (
 )
 
 func RegisterOrderRoutes(r *chi.Mux, handler *OrderHandlerController) *chi.Mux {
-	r.Get("/orders-test", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Server order is running"))
-	})
+    r.Get("/orders-test", func(w http.ResponseWriter, r *http.Request) {
+        w.Write([]byte("Server order is running"))
+    })
 
-	r.Route("/orders", func(r chi.Router) {
-		r.Group(func(r chi.Router) {
-			// If you need authentication middleware, uncomment and adjust the following line:
-			// r.Use(middleware.GetAuthMiddlewareFunc(handler.TokenMaker))
+    r.Route("/orders", func(r chi.Router) {
+        r.Group(func(r chi.Router) {
+            // If you need authentication middleware, uncomment and adjust the following line:
+            // r.Use(middleware.GetAuthMiddlewareFunc(handler.TokenMaker))
 
-			r.Post("/", handler.CreateOrder)
-			r.Get("/", handler.GetOrderProtoListDetail)
+            r.Post("/", handler.CreateOrder)
+            r.Get("/", handler.GetOrderProtoListDetail)
+            
+            // New filter endpoint
+            r.Post("/filter", handler.FetchOrdersByCriteria)
 
-			r.Route("/{id}", func(r chi.Router) {
-				r.Get("/", handler.GetOrderDetail)
-				r.Put("/", handler.UpdateOrder)
-			})
+            r.Route("/{id}", func(r chi.Router) {
+                r.Get("/", handler.GetOrderDetail)
+                r.Put("/", handler.UpdateOrder)
+            })
 
-			r.Post("/pay/{guest_id}", handler.PayOrders)
-		})
-	})
+            r.Post("/pay/{guest_id}", handler.PayOrders)
+        })
+    })
 
-	return r
+    return r
 }
