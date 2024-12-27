@@ -101,9 +101,9 @@ export const loggerPaths: LogPath[] = [
   },
   {
     path: "quananqr1/zusstand/order/order_zustand.ts",
-    enabled: false,
+    enabled: true,
     description: "Order and Delivery Store State Management Logs",
-    enabledLogIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    enabledLogIds: [1],
     disabledLogIds: [],
     logIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     logDescriptions: {
@@ -330,61 +330,6 @@ export const loggerPaths: LogPath[] = [
       6: {
         description: "Navigation events",
         location: "handleLoginRedirect and navigation handlers",
-        status: "enabled"
-      }
-    }
-  },
-  {
-    path: "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx",
-    enabled: false,
-    description: "Order Creation Component Logs",
-    enabledLogIds: [3],
-    disabledLogIds: [],
-    logIds: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    logDescriptions: {
-      1: {
-        description: "Component initialization and authentication state",
-        location: "OrderCreationComponent - initialization",
-        status: "enabled"
-      },
-      2: {
-        description: "WebSocket connection management",
-        location: "initializeWebSocket function",
-        status: "enabled"
-      },
-      3: {
-        description: "Order creation process",
-        location: "handleCreateOrder function",
-        status: "enabled"
-      },
-      4: {
-        description: "WebSocket message handling",
-        location: "sendMessage1 function",
-        status: "enabled"
-      },
-      5: {
-        description: "Authentication state changes",
-        location: "Authentication state handlers",
-        status: "enabled"
-      },
-      6: {
-        description: "Order validation",
-        location: "Order validation checks",
-        status: "enabled"
-      },
-      7: {
-        description: "WebSocket token management",
-        location: "WebSocket token handling",
-        status: "enabled"
-      },
-      8: {
-        description: "Component cleanup",
-        location: "Cleanup useEffect",
-        status: "enabled"
-      },
-      9: {
-        description: "User identification process",
-        location: "getEmailIdentifier function",
         status: "enabled"
       }
     }
@@ -666,7 +611,7 @@ export const loggerPaths: LogPath[] = [
 
   {
     path: "quananqr1/app/(client)/table/[number]/component/order-list/order.tsx",
-    enabled: true,
+    enabled: false,
     description: "Order Item Component Logs",
     enabledLogIds: [1, 2, 3, 4, 5],
     disabledLogIds: [],
@@ -695,6 +640,67 @@ export const loggerPaths: LogPath[] = [
       5: {
         description: "Order status changes",
         location: "OrderItem component - status effect",
+        status: "enabled"
+      }
+    }
+  },
+
+  {
+    path: "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx",
+    enabled: true, // Enable logging for this component
+    description: "Order Creation Component Logs",
+    enabledLogIds: [5, 6, 11],
+    disabledLogIds: [],
+    logIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    logDescriptions: {
+      1: {
+        description: "Authentication state initialization",
+        location: "initializeAuth function",
+        status: "enabled"
+      },
+      2: {
+        description: "WebSocket initialization attempt",
+        location: "initializeWebSocket function",
+        status: "enabled"
+      },
+      3: {
+        description: "WebSocket connection status",
+        location: "WebSocket connection handlers",
+        status: "enabled"
+      },
+      4: {
+        description: "Order validation results",
+        location: "validateOrder function",
+        status: "enabled"
+      },
+      5: {
+        description: "Order creation attempt",
+        location: "handleCreateOrder function",
+        status: "enabled"
+      },
+      6: {
+        description: "Order creation response",
+        location: "handleCreateOrder API response",
+        status: "enabled"
+      },
+      7: {
+        description: "Order notification status",
+        location: "sendOrderNotification function",
+        status: "enabled"
+      },
+      8: {
+        description: "Component cleanup",
+        location: "Cleanup useEffect",
+        status: "enabled"
+      },
+      9: {
+        description: "User identification process",
+        location: "getEmailIdentifier function",
+        status: "enabled"
+      },
+      10: {
+        description: "Order preparation state",
+        location: "prepareOrder function",
         status: "enabled"
       }
     }

@@ -5,10 +5,11 @@ import React, { useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, ChevronDown, ChevronUp } from "lucide-react";
-import { SetInterface } from "@/schemaValidations/interface/types_set";
-import useOrderStore from "@/zusstand/order/order_zustand";
 import DishList from "./set_dish";
 import { logWithLevel } from "@/lib/logger/log";
+import useCartStore from "@/zusstand/new-order/new-order-zustand";
+import { SetOrderItem } from "@/schemaValidations/interface/type_order";
+import { SetInterface } from "@/schemaValidations/interface/types_set";
 
 const LOG_PATH = "quananqr1/components/set/set_card.tsx";
 
@@ -17,263 +18,111 @@ interface SetSelectionProps {
 }
 
 const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
-  // Component initialization logging
-  useEffect(() => {
-    logWithLevel(
-      {
-        setId: set.id,
-        setName: set.name,
-        initialProps: set
-      },
-      LOG_PATH,
-      "info",
-      1
-    );
-  }, [set]);
-
   const [isListVisible, setIsListVisible] = React.useState(false);
+  const [localQuantity, setLocalQuantity] = React.useState(0);
 
-  const {
-    currentOrder,
-    addSetToCurrentOrder,
-    updateSetQuantityInCurrentOrder,
-    removeSetFromCurrentOrder,
-    clearCurrentOrder,
-    setSetDetails  // Add this to the destructured imports
-  } = useOrderStore();
-  // Update set details effect
+  const { current_order, addSetToCart, updateSetQuantity, removeSetFromCart } =
+    useCartStore();
+
+  // Debug logging for initial render
   useEffect(() => {
-    if (set) {
-      setSetDetails(set.id, {
+    console.log("Set Card Rendered:", {
+      setId: set.id,
+      currentOrder: current_order
+    });
+  }, [set.id, current_order]);
+
+  // Find current set in order with useMemo to optimize performance
+  const setOrderItem = useMemo(() => {
+    return current_order?.set_items.find((item) => item.set_id === set.id);
+  }, [current_order?.set_items, set.id]);
+
+  // Update local quantity when setOrderItem changes
+  useEffect(() => {
+    setLocalQuantity(setOrderItem?.quantity || 0);
+  }, [setOrderItem?.quantity]);
+
+  const handleIncrease = useCallback(() => {
+    console.log("Increase clicked for set:", set.id);
+
+    if (setOrderItem) {
+      updateSetQuantity("increment", set.id);
+    } else {
+      const newSet: SetOrderItem = {
+        set_id: set.id,
+        quantity: 1,
+        userId: set.userId,
         name: set.name,
+        description: set.description || "",
         price: set.price,
-        description: set.description,
-        image: set.image,
-        dishes: set.dishes.map(dish => ({
+        image: set.image || "",
+        status: "active",
+        created_at: set.created_at,
+        updated_at: set.updated_at,
+        is_favourite: set.is_favourite || false,
+        like_by: set.like_by || [],
+        is_public: set.is_public || false,
+        dishes: set.dishes.map((dish) => ({
           dish_id: dish.dish_id,
           name: dish.name,
           price: dish.price,
           quantity: dish.quantity,
-          description: dish.description || '',
-          image: dish.image || '',
-          status: dish.status || 'active'
-        })),
-        userId: set.userId,
-        created_at: set.created_at,
-        updated_at: set.updated_at,
-        is_favourite: set.is_favourite,
-        like_by: set.like_by,
-        is_public: set.is_public
-      });
+          description: dish.description || "",
+          image: dish.image || "",
+          status: dish.status || "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_favourite: false,
+          like_by: []
+        }))
+      };
+      addSetToCart(newSet);
     }
-  }, [set, setSetDetails]);
-  // Initialize currentOrder if it's null
-  useEffect(() => {
-    if (!currentOrder) {
-      logWithLevel({ action: "initializeCurrentOrder" }, LOG_PATH, "info", 2);
-      clearCurrentOrder();
-    }
-  }, [currentOrder, clearCurrentOrder]);
-
-  // Debug logging for store updates
-  useEffect(() => {
-    const unsubscribe = useOrderStore.subscribe((state) => {
-      logWithLevel(
-        {
-          currentOrder: state.currentOrder,
-          timestamp: new Date().toISOString()
-        },
-        LOG_PATH,
-        "debug",
-        2
-      );
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const setOrderItem = currentOrder?.set_items.find(
-    (item) => item.set_id === set.id
-  );
-
-  const [dishQuantities, setDishQuantities] = React.useState<
-    Record<number, number>
-  >({});
-
-  useEffect(() => {
-    setDishQuantities(
-      set.dishes.reduce(
-        (acc, dish) => ({ ...acc, [dish.dish_id]: dish.quantity }),
-        {}
-      )
-    );
-  }, [set.dishes]);
-
-  const totalPrice = useMemo(() => {
-    const price = set.dishes.reduce(
-      (sum, dish) => sum + dish.price * (dishQuantities[dish.dish_id] || 0),
-      0
-    );
-    logWithLevel(
-      {
-        setId: set.id,
-        totalPrice: price,
-        dishQuantities
-      },
-      LOG_PATH,
-      "debug",
-      5
-    );
-    return price;
-  }, [set.dishes, dishQuantities, set.id]);
-
-  const handleIncrease = useCallback(() => {
-    logWithLevel(
-      {
-        action: "increase",
-        setId: set.id,
-        currentQuantity: setOrderItem?.quantity || 0
-      },
-      LOG_PATH,
-      "info",
-      3
-    );
-
-    if (setOrderItem) {
-      updateSetQuantityInCurrentOrder(set.id, (setOrderItem.quantity || 0) + 1);
-    } else {
-      addSetToCurrentOrder({
-        set_id: set.id,
-        quantity: 1
-      });
-    }
-  }, [
-    set.id,
-    setOrderItem,
-    addSetToCurrentOrder,
-    updateSetQuantityInCurrentOrder
-  ]);
+  }, [set, setOrderItem, addSetToCart, updateSetQuantity]);
 
   const handleDecrease = useCallback(() => {
-    logWithLevel(
-      {
-        action: "decrease",
-        setId: set.id,
-        currentQuantity: setOrderItem?.quantity || 0
-      },
-      LOG_PATH,
-      "info",
-      3
-    );
+    console.log("Decrease clicked for set:", set.id);
 
-    if (setOrderItem) {
-      if ((setOrderItem.quantity || 0) > 1) {
-        updateSetQuantityInCurrentOrder(
-          set.id,
-          (setOrderItem.quantity || 0) - 1
-        );
-      } else {
-        removeSetFromCurrentOrder(set.id);
-      }
+    if (!setOrderItem) return;
+
+    if (setOrderItem.quantity <= 1) {
+      removeSetFromCart(set.id);
+    } else {
+      updateSetQuantity("decrement", set.id);
     }
-  }, [
-    set.id,
-    setOrderItem,
-    updateSetQuantityInCurrentOrder,
-    removeSetFromCurrentOrder
-  ]);
-
-  const handleDishIncrease = useCallback(
-    (dishId: number) => {
-      logWithLevel(
-        {
-          action: "increaseDish",
-          dishId,
-          currentQuantity: dishQuantities[dishId] || 0
-        },
-        LOG_PATH,
-        "info",
-        4
-      );
-
-      setDishQuantities((prev) => ({
-        ...prev,
-        [dishId]: (prev[dishId] || 0) + 1
-      }));
-    },
-    [dishQuantities]
-  );
-
-  const handleDishDecrease = useCallback(
-    (dishId: number) => {
-      logWithLevel(
-        {
-          action: "decreaseDish",
-          dishId,
-          currentQuantity: dishQuantities[dishId] || 0
-        },
-        LOG_PATH,
-        "info",
-        4
-      );
-
-      setDishQuantities((prev) => ({
-        ...prev,
-        [dishId]: Math.max(0, (prev[dishId] || 0) - 1)
-      }));
-    },
-    [dishQuantities]
-  );
+  }, [set.id, setOrderItem, updateSetQuantity, removeSetFromCart]);
 
   const toggleList = () => {
-    logWithLevel(
-      {
-        action: "toggleList",
-        setId: set.id,
-        newVisibility: !isListVisible
-      },
-      LOG_PATH,
-      "debug",
-      6
-    );
     setIsListVisible(!isListVisible);
   };
 
-  // Error boundary for rendering
-  if (!set) {
-    logWithLevel(
-      {
-        error: "Set prop is undefined",
-        component: "SetCard"
-      },
-      LOG_PATH,
-      "error",
-      7
-    );
-    return null;
-  }
+  // Safety check
+  if (!set) return null;
 
   return (
     <Card className="w-full">
-      <CardContent className="p-4 flex">
-        <div className="w-1/3 pr-4">
+      <CardContent className="p-4 flex flex-col md:flex-row">
+        <div className="w-full md:w-1/3 md:pr-4 mb-4 md:mb-0">
           <Image
             src={set.image || "/api/placeholder/300/400"}
             alt={set.name}
-            className="w-full h-full object-cover rounded-md"
-            width={200}
-            height={200}
+            className="w-full h-48 md:h-full object-cover rounded-md"
+            width={300}
+            height={400}
             priority
           />
         </div>
-        <div className="w-2/3 flex flex-col justify-between">
+
+        <div className="w-full md:w-2/3 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex flex-row justify-between items-center">
               <button
                 onClick={toggleList}
                 className="flex items-center gap-2 hover:opacity-75 transition-opacity"
               >
-                <h2 className="text-2xl font-bold">{set.name}</h2>
+                <h2 className="text-xl md:text-2xl font-bold">
+                  {set.name} (ID: {set.id})
+                </h2>
                 {isListVisible ? (
                   <ChevronUp className="h-4 w-4 mt-1" />
                 ) : (
@@ -284,6 +133,7 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
                 {typeof set.price === "number" ? `${set.price}k` : ""}
               </span>
             </div>
+
             <p className="text-sm text-gray-600">{set.description}</p>
           </div>
 
@@ -291,9 +141,19 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
             <div className="mt-4">
               <DishList
                 dishes={set.dishes}
-                dishQuantities={dishQuantities}
-                onIncrease={handleDishIncrease}
-                onDecrease={handleDishDecrease}
+                dishQuantities={set.dishes.reduce(
+                  (acc, dish) => ({
+                    ...acc,
+                    [dish.dish_id]: dish.quantity
+                  }),
+                  {}
+                )}
+                onIncrease={(dishId) => {
+                  console.log("Dish increase:", dishId);
+                }}
+                onDecrease={(dishId) => {
+                  console.log("Dish decrease:", dishId);
+                }}
               />
             </div>
           )}
@@ -304,13 +164,20 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
                 variant="outline"
                 onClick={handleDecrease}
                 disabled={!setOrderItem}
+                className="h-8 w-8 p-0"
               >
                 <Minus className="h-4 w-4" />
               </Button>
+
               <span className="font-semibold w-8 text-center">
-                {setOrderItem?.quantity || 0}
+                {localQuantity}
               </span>
-              <Button variant="default" onClick={handleIncrease} className=" ">
+
+              <Button
+                variant="default"
+                onClick={handleIncrease}
+                className="h-8 w-8 p-0"
+              >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>

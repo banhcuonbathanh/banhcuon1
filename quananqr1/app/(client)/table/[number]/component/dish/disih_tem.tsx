@@ -1,56 +1,54 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus } from "lucide-react";
 import { DishInterface } from "@/schemaValidations/interface/type_dish";
-import useOrderStore from "@/zusstand/order/order_zustand";
+
+import { DishOrderItem } from "@/schemaValidations/interface/type_order";
+import useCartStore from "@/zusstand/new-order/new-order-zustand";
 
 interface DishCardProps {
   dish: DishInterface;
 }
 
 export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
-  const {
-    currentOrder,
-    addDishToCurrentOrder,
-    removeDishFromCurrentOrder,
-    updateDishQuantityInCurrentOrder,
-    setDishDetails
-  } = useOrderStore();
-  useEffect(() => {
-    setDishDetails(dish.id, {
-      name: dish.name,
-      price: dish.price,
-      description: dish.description,
-      image: dish.image,
-      status: dish.status
-    });
-  }, [dish, setDishDetails]);
+  const { current_order, addDishToCart, updateDishQuantity, removeDishFromCart } = useCartStore();
+
   // Find the dish in the current order
-  const currentDish = currentOrder?.dish_items.find(
+  const currentDish = current_order?.dish_items.find(
     (item) => item.dish_id === dish.id
   );
   const quantity = currentDish ? currentDish.quantity : 0;
 
   const handleIncrease = () => {
     if (currentDish) {
-      updateDishQuantityInCurrentOrder(dish.id, currentDish.quantity + 1);
+      updateDishQuantity("increment", dish.id);
     } else {
-      addDishToCurrentOrder({
+      const newDishItem: DishOrderItem = {
         dish_id: dish.id,
-        quantity: 1
-      });
+        quantity: 1,
+        price: dish.price,
+        name: dish.name,
+        description: dish.description,
+        image: dish.image,
+        status: dish.status,
+        created_at: "",
+        updated_at: "",
+        is_favourite: false,
+        like_by: []
+      };
+      addDishToCart(newDishItem);
     }
   };
 
   const handleDecrease = () => {
     if (currentDish) {
       if (currentDish.quantity > 1) {
-        updateDishQuantityInCurrentOrder(dish.id, currentDish.quantity - 1);
+        updateDishQuantity("decrement", dish.id);
       } else {
-        removeDishFromCurrentOrder(dish.id);
+        removeDishFromCart(dish.id);
       }
     }
   };

@@ -4,6 +4,7 @@ import { SetInterface } from "@/schemaValidations/interface/types_set";
 import SetCard from "./set";
 import React from "react";
 import GridContainer from "@/components/general-container-dish";
+import { SetOrderItem } from "@/schemaValidations/interface/type_order";
 
 interface SetCardListProps {
   sets: SetInterface[];

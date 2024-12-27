@@ -3,61 +3,35 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import useOrderStore from "@/zusstand/order/order_zustand";
+import { Order, SetOrderItem } from "@/schemaValidations/interface/type_order";
+import useCartStore from "@/zusstand/new-order/new-order-zustand";
 
-import {
-  OrderDetailedDish,
-  OrderSetDetailed
-} from "@/schemaValidations/interface/type_order";
-import { logWithLevel } from "@/lib/logger/log";
-
-const LOG_PATH =
-  "quananqr1/app/(client)/table/[number]/component/total-dishes-detail.tsx";
-
-interface OrderDetailsProps {
-  dishes: OrderDetailedDish[];
-  sets: OrderSetDetailed[];
-  totalPrice: number;
-  totalItems: number;
-}
-
-export default function OrderDetails({
-  dishes,
-  sets,
-  totalPrice,
-  totalItems
-}: OrderDetailsProps) {
+export default function OrderDetails() {
   const [isMounted, setIsMounted] = useState(false);
-  const { tableNumber } = useOrderStore();
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
+
+  const cartStore = useCartStore();
+  const current_order = cartStore.current_order;
+  const tableNumber = cartStore.tableNumber;
 
   useEffect(() => {
     setIsMounted(true);
-    logWithLevel(
-      { event: "component_init", dishes, sets },
-      LOG_PATH,
-      "debug",
-      1
-    );
-  }, [tableNumber, totalItems, totalPrice]);
+  }, []);
 
   const toggleSetExpansion = (setId: number) => {
-    logWithLevel(
-      { event: "toggle_set", setId, currentState: expandedSets[setId] },
-      LOG_PATH,
-      "debug",
-      2
-    );
     setExpandedSets((prev) => ({
       ...prev,
       [setId]: !prev[setId]
     }));
   };
 
+  const sets = current_order?.set_items || [];
+  const dishes = current_order?.dish_items || [];
+
   const calculateDishTotals = () => {
     const dishTotals = new Map<
       string,
-      { quantity: number; totalPrice: number }
+      { quantity: number; totalPrice: number; dishId: number }
     >();
 
     // Calculate totals from sets
@@ -65,68 +39,43 @@ export default function OrderDetails({
       set.dishes.forEach((dish) => {
         const totalQuantity = set.quantity * dish.quantity;
         const totalPrice = totalQuantity * dish.price;
-        const current = dishTotals.get(dish.name) || {
+        const dishKey = `${dish.name}-${dish.dish_id}`;
+        const current = dishTotals.get(dishKey) || {
           quantity: 0,
-          totalPrice: 0
+          totalPrice: 0,
+          dishId: dish.dish_id
         };
-        dishTotals.set(dish.name, {
+        dishTotals.set(dishKey, {
           quantity: current.quantity + totalQuantity,
-          totalPrice: current.totalPrice + totalPrice
+          totalPrice: current.totalPrice + totalPrice,
+          dishId: dish.dish_id
         });
       });
     });
 
     // Add individual dishes to totals
     dishes.forEach((dish) => {
-      const current = dishTotals.get(dish.name) || {
+      const dishKey = `${dish.name}-${dish.dish_id}`;
+      const current = dishTotals.get(dishKey) || {
         quantity: 0,
-        totalPrice: 0
+        totalPrice: 0,
+        dishId: dish.dish_id
       };
-      dishTotals.set(dish.name, {
+      dishTotals.set(dishKey, {
         quantity: current.quantity + dish.quantity,
-        totalPrice: current.totalPrice + dish.quantity * dish.price
+        totalPrice: current.totalPrice + dish.quantity * dish.price,
+        dishId: dish.dish_id
       });
     });
-
-    logWithLevel(
-      {
-        event: "dish_totals_calculated",
-        totalDishes: dishTotals.size,
-        dishSummary: Array.from(dishTotals.entries()).map(
-          ([name, details]) => ({
-            name,
-            ...details
-          })
-        )
-      },
-      LOG_PATH,
-      "debug",
-      3
-    );
 
     return dishTotals;
   };
 
-  const calculateSetPrice = (set: OrderSetDetailed) => {
-    const price = set.dishes.reduce(
+  const calculateSetPrice = (set: SetOrderItem) => {
+    return set.dishes.reduce(
       (acc, dish) => acc + dish.price * dish.quantity,
       0
     );
-
-    logWithLevel(
-      {
-        event: "set_price_calculated",
-        setId: set.id,
-        setName: set.name,
-        totalPrice: price,
-        dishCount: set.dishes.length
-      },
-      LOG_PATH,
-      "debug",
-      2
-    );
-
-    return price;
   };
 
   const dishTotals = calculateDishTotals();
@@ -139,6 +88,8 @@ export default function OrderDetails({
     (acc, dish) => acc + dish.price * dish.quantity,
     0
   );
+
+  const totalPrice = setsTotalPrice + dishesTotalPrice;
 
   if (!isMounted) {
     return null;
@@ -161,10 +112,13 @@ export default function OrderDetails({
             </h3>
             <div className="space-y-2">
               {sets.map((set) => (
-                <div key={set.id} className="border rounded-lg p-3">
+                <div
+                  key={`set-${set.set_id}`}
+                  className="border rounded-lg p-3"
+                >
                   <div
                     className="flex justify-between items-center cursor-pointer"
-                    onClick={() => toggleSetExpansion(set.id)}
+                    onClick={() => toggleSetExpansion(set.set_id)}
                   >
                     <span className="text-gray-400 font-medium">
                       {set.name}
@@ -174,18 +128,18 @@ export default function OrderDetails({
                         {set.quantity} x {set.price} K =
                         {set.quantity * set.price} K
                       </span>
-                      {expandedSets[set.id] ? (
+                      {expandedSets[set.set_id] ? (
                         <ChevronUp className="h-4 w-4" />
                       ) : (
                         <ChevronDown className="h-4 w-4" />
                       )}
                     </div>
                   </div>
-                  {expandedSets[set.id] && (
+                  {expandedSets[set.set_id] && (
                     <div className="mt-2 ml-4 text-sm text-gray-400 space-y-1">
-                      {set.dishes.map((dish, idx) => (
+                      {set.dishes.map((dish) => (
                         <div
-                          key={idx}
+                          key={`set-${set.set_id}-dish-${dish.dish_id}`}
                           className="flex justify-between text-primary"
                         >
                           <span>{dish.name}</span>
@@ -211,7 +165,10 @@ export default function OrderDetails({
             </h3>
             <div className="space-y-2">
               {dishes.map((dish) => (
-                <div key={dish.dish_id} className="border rounded-lg p-3">
+                <div
+                  key={`dish-${dish.dish_id}`}
+                  className="border rounded-lg p-3"
+                >
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">{dish.name}</span>
                     <span className="text-sm text-primary">
@@ -230,13 +187,15 @@ export default function OrderDetails({
         </h3>
         <div className="border rounded-lg p-4">
           <div className="space-y-2">
-            {Array.from(dishTotals.entries()).map(([dishName, details]) => (
+            {Array.from(dishTotals.entries()).map(([dishKey, details]) => (
               <div
-                key={dishName}
+                key={`total-${details.dishId}-${dishKey}`}
                 className="flex justify-between items-center text-sm border-b pb-2"
               >
                 <div className="flex items-center space-x-2">
-                  <span className="text-gray-400 font-medium">{dishName}</span>
+                  <span className="text-gray-400 font-medium">
+                    {dishKey.split("-")[0]}
+                  </span>
                   <span className="text-gray-400">x {details.quantity}</span>
                 </div>
                 <span className="font-medium text-primary">
@@ -250,7 +209,3 @@ export default function OrderDetails({
     </Card>
   );
 }
-
-
-
-

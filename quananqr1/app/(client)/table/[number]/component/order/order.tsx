@@ -9,6 +9,8 @@ import OrderCreationComponent from "./add_order_button";
 import { decodeTableToken } from "@/lib/utils";
 import { logWithLevel } from "@/lib/logger/log";
 import OrdersList from "../order-list/list-order";
+import ChoosingTopping from "../topping/canh-banh-cuon";
+import useCartStore from "@/zusstand/new-order/new-order-zustand";
 
 interface OrderProps {
   number: string;
@@ -21,22 +23,8 @@ const LOG_PATH =
 export default function OrderSummary({ number, token }: OrderProps) {
   const decoded = decodeTableToken(token);
   logWithLevel({ decoded, token }, LOG_PATH, "debug", 1);
-
-  const {
-    addTableNumber,
-    addTableToken,
-    getOrderSummary,
-    canhKhongRau,
-    canhCoRau,
-    smallBowl,
-    wantChili,
-    selectedFilling,
-    updateCanhKhongRau,
-    updateCanhCoRau,
-    updateSmallBowl,
-    updateWantChili,
-    updateSelectedFilling
-  } = useOrderStore();
+  const { addTableToken, addTableNumber } = useCartStore();
+  // const { addTableNumber, addTableToken, getOrderSummary } = useOrderStore();
 
   useEffect(() => {
     try {
@@ -63,237 +51,17 @@ export default function OrderSummary({ number, token }: OrderProps) {
     }
   }, [token, addTableToken, number, addTableNumber]);
 
-  const handleBowlChange = (
-    type: "chili" | "noChili" | "small",
-    change: number
-  ) => {
-    switch (type) {
-      case "chili":
-        const newToppingValue = Math.max(0, canhKhongRau + change);
-        updateCanhKhongRau(newToppingValue);
-        logWithLevel(
-          {
-            type: "canhKhongRau",
-            previousValue: canhKhongRau,
-            newValue: newToppingValue,
-            change
-          },
-          LOG_PATH,
-          "debug",
-          3
-        );
-        break;
-      case "noChili":
-        const newNoChiliValue = Math.max(0, canhCoRau + change);
-        updateCanhCoRau(newNoChiliValue);
-        logWithLevel(
-          {
-            type: "canhCoRau",
-            previousValue: canhCoRau,
-            newValue: newNoChiliValue,
-            change
-          },
-          LOG_PATH,
-          "debug",
-          3
-        );
-        break;
-      case "small":
-        const newSmallBowlValue = Math.max(0, smallBowl + change);
-        updateSmallBowl(newSmallBowlValue);
-        logWithLevel(
-          {
-            type: "smallBowl",
-            previousValue: smallBowl,
-            newValue: newSmallBowlValue,
-            change
-          },
-          LOG_PATH,
-          "debug",
-          3
-        );
-        break;
-    }
-  };
-
-  const handleChiliUpdate = (newValue: boolean) => {
-    updateWantChili(newValue);
-    logWithLevel(
-      {
-        previousValue: wantChili,
-        newValue
-      },
-      LOG_PATH,
-      "debug",
-      4
-    );
-  };
-
-  const handleFillingUpdate = (
-    fillingType: "mocNhi" | "thit" | "thitMocNhi"
-  ) => {
-    const prevFilling = { ...selectedFilling };
-    updateSelectedFilling(fillingType);
-    logWithLevel(
-      {
-        fillingType,
-        previousFilling: prevFilling,
-        newFilling: {
-          mocNhi: fillingType === "mocNhi",
-          thit: fillingType === "thit",
-          thitMocNhi: fillingType === "thitMocNhi"
-        }
-      },
-      LOG_PATH,
-      "debug",
-      5
-    );
-  };
-
-  const orderSummary = getOrderSummary();
-  logWithLevel({ orderSummary }, LOG_PATH, "info", 6);
-
   return (
     <div className="container mx-auto px-4 py-5 space-y-5">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            Canh Banh Cuon
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="space-y-3">
-              {/* Bowl without vegetables */}
-              <div className="flex items-center justify-between">
-                <span>Canh không rau</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleBowlChange("chili", -1)}
-                    disabled={canhKhongRau === 0}
-                  >
-                    -
-                  </Button>
-                  <span className="mx-2 min-w-[2rem] text-center">
-                    {canhKhongRau}
-                  </span>
-                  <Button
-                    size="sm"
-                    onClick={() => handleBowlChange("chili", 1)}
-                  >
-                    +
-                  </Button>
-                </div>
-              </div>
-
-              {/* Bowl with vegetables */}
-              <div className="flex items-center justify-between">
-                <span>Canh rau</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleBowlChange("noChili", -1)}
-                    disabled={canhCoRau === 0}
-                  >
-                    -
-                  </Button>
-                  <span className="mx-2 min-w-[2rem] text-center">
-                    {canhCoRau}
-                  </span>
-                  <Button
-                    size="sm"
-                    onClick={() => handleBowlChange("noChili", 1)}
-                  >
-                    +
-                  </Button>
-                </div>
-              </div>
-
-              {/* Small bowl */}
-              <div className="flex items-center justify-between">
-                <span>Bát bé</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleBowlChange("small", -1)}
-                    disabled={smallBowl === 0}
-                  >
-                    -
-                  </Button>
-                  <span className="mx-2 min-w-[2rem] text-center">
-                    {smallBowl}
-                  </span>
-                  <Button
-                    size="sm"
-                    onClick={() => handleBowlChange("small", 1)}
-                  >
-                    +
-                  </Button>
-                </div>
-              </div>
-
-              {/* Chili option */}
-              <div className="flex items-center justify-between">
-                <span>Có ớt</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={wantChili ? "default" : "outline"}
-                    onClick={() => handleChiliUpdate(!wantChili)}
-                  >
-                    {wantChili ? "Selected" : "Select"}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Filling options */}
-              {[
-                { key: "mocNhi", label: "Nhân mọc nhĩ" },
-                { key: "thit", label: "Nhân thịt" },
-                { key: "thitMocNhi", label: "Nhân thịt và mọc nhĩ" }
-              ].map(({ key, label }) => (
-                <div key={key} className="flex items-center justify-between">
-                  <span>{label}</span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant={
-                        selectedFilling[key as keyof typeof selectedFilling]
-                          ? "default"
-                          : "outline"
-                      }
-                      onClick={() =>
-                        handleFillingUpdate(
-                          key as "mocNhi" | "thit" | "thitMocNhi"
-                        )
-                      }
-                    >
-                      {selectedFilling[key as keyof typeof selectedFilling]
-                        ? "Selected"
-                        : "Select"}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <OrderDetails
-        dishes={orderSummary.dishes}
-        sets={orderSummary.sets}
-        totalPrice={orderSummary.totalPrice}
-        totalItems={orderSummary.totalItems}
-      />
+      <ChoosingTopping />
+      <OrderDetails />
 
       <div>
         <h1>Orders</h1>
         <OrdersList />
       </div>
 
-      <OrderCreationComponent table_token={token} table_number={number} />
+      <OrderCreationComponent />
     </div>
   );
 }

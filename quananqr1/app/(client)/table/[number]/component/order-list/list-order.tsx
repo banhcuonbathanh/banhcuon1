@@ -1,204 +1,212 @@
-"use client";
+import React from "react";
 
-import React, { useState, useEffect } from "react";
-import useOrderStore from "@/zusstand/order/order_zustand";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import {
+  Clock,
+  UtensilsCrossed,
+  UserCircle,
+  CircleDollarSign,
+  Flame
+} from "lucide-react";
+import useCartStore from "@/zusstand/new-order/new-order-zustand";
 import { Order } from "@/schemaValidations/interface/type_order";
 
-// Stateless OrderItem component remains the same
-const OrderItem = React.memo(
-  ({
-    order,
-    formattedDate,
-    itemCount
-  }: {
-    order: Order;
-    formattedDate: string;
-    itemCount: number;
-  }) => (
-    <Card className="mb-4">
-      <CardContent className="p-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <h3 className="font-semibold">Order #{order.id}</h3>
-            <p>Table: {order.table_number}</p>
-            <p>Status: {order.status}</p>
-            <p>Total: ${order.total_price.toFixed(2)}</p>
+const OrderListPage = () => {
+  const {
+    new_order,
+    isLoading,
+    tableToken,
+    tableNumber,
+    current_order,
+    setIsLoading,
+    addToNewOrder,
+    clearCart
+  } = useCartStore();
 
-            <div className="mt-4">
-              <p className="font-medium">Order Summary:</p>
-              <div className="pl-4">
-                <p>
-                  Sets:{" "}
-                  {order.set_items.reduce(
-                    (sum, item) => sum + item.quantity,
-                    0
-                  )}{" "}
-                  items from {order.set_items.length} types ($
-                  {order.set_items
-                    .reduce((sum, item) => sum + item.price * item.quantity, 0)
-                    .toFixed(2)}
-                  )
-                </p>
-                <p>
-                  Dishes:{" "}
-                  {order.dish_items.reduce(
-                    (sum, item) => sum + item.quantity,
-                    0
-                  )}{" "}
-                  items from {order.dish_items.length} types ($
-                  {order.dish_items
-                    .reduce((sum, item) => sum + item.price * item.quantity, 0)
-                    .toFixed(2)}
-                  )
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-right">
-            <p>{formattedDate}</p>
-            <p>Order Name: {order.order_name}</p>
-            <p>{order.takeAway ? "Take Away" : "Dine In"}</p>
-
-            <div className="mt-4 text-sm text-gray-600">
-              <p>
-                Set Items Total: $
-                {order.set_items
-                  .reduce((sum, item) => sum + item.price * item.quantity, 0)
-                  .toFixed(2)}
-              </p>
-              <p>
-                Individual Dishes Total: $
-                {order.dish_items
-                  .reduce((sum, item) => sum + item.price * item.quantity, 0)
-                  .toFixed(2)}
-              </p>
-              <p className="mt-2 text-xs">
-                Spice Level:{" "}
-                {order.chiliNumber > 0 ? "🌶".repeat(order.chiliNumber) : "None"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-);
-
-OrderItem.displayName = "OrderItem";
-
-// Loading skeleton component remains the same
-const OrderItemSkeleton = () => (
-  <Card className="mb-4">
-    <CardContent className="p-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse"></div>
-          <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/4 animate-pulse"></div>
-        </div>
-        <div className="text-right space-y-2">
-          <div className="h-4 bg-gray-200 rounded w-1/2 ml-auto animate-pulse"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/3 ml-auto animate-pulse"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/4 ml-auto animate-pulse"></div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-const OrdersList = () => {
-  const zustandOrders = useOrderStore((state) => state?.listOfOrders) || [];
-  const [processedOrders, setProcessedOrders] = useState<
-    Array<{
-      order: Order;
-      formattedDate: string;
-      itemCount: number;
-    }>
-  >([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isOrderListVisible, setIsOrderListVisible] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (Array.isArray(zustandOrders) && zustandOrders.length > 0) {
-        // Modified filtering logic to handle null dish_items or set_items
-        const processed = zustandOrders
-          .filter((order) => order && order.created_at)
-          .map((order) => ({
-            order,
-            formattedDate: new Date(order.created_at).toLocaleDateString(),
-            itemCount:
-              (order.dish_items?.length || 0) +
-                (order.set_items?.length || 0) || 1 // Default to 1 if both are null/empty
-          }));
-
-        setProcessedOrders(processed);
-      }
-    } catch (error) {
-      console.error("Error processing orders:", error);
-    } finally {
-      setIsLoading(false);
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return "bg-yellow-500";
+      case "completed":
+        return "bg-green-500";
+      case "cancelled":
+        return "bg-red-500";
+      default:
+        return "bg-blue-500";
     }
-  }, [zustandOrders]);
-
-  const toggleOrderListVisibility = () => {
-    setIsOrderListVisible((prev) => !prev);
   };
 
-  return (
-    <div className="w-full max-w-2xl mx-auto p-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Orders List</CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleOrderListVisibility}
-            className="ml-2"
-          >
-            {isOrderListVisible ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </Button>
-        </CardHeader>
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
 
-        {isOrderListVisible && (
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, index) => (
-                  <OrderItemSkeleton key={index} />
-                ))}
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD"
+    }).format(price);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-4">
+        <div className="text-center">Loading orders...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4">
+      {tableToken && tableNumber && (
+        <div className="mb-4">
+          <h2 className="text-2xl font-bold">Table #{tableNumber}</h2>
+          <p className="text-sm text-gray-500">Token: {tableToken}</p>
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Current Order Section */}
+        {current_order && (
+          <Card className="w-full border-2 border-blue-500">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold">
+                  Current Order
+                </CardTitle>
+                <Badge className="bg-blue-500 text-white">Active</Badge>
               </div>
-            ) : processedOrders.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">
-                No orders available
-              </p>
-            ) : (
-              <div>
-                <p className="mb-4">Total Orders: {processedOrders.length}</p>
-                {processedOrders.map(({ order, formattedDate, itemCount }) => (
-                  <OrderItem
-                    key={`order-${order.id}`}
-                    order={order}
-                    formattedDate={formattedDate}
-                    itemCount={itemCount}
-                  />
-                ))}
-              </div>
-            )}
-          </CardContent>
+              <OrderContent order={current_order} />
+            </CardHeader>
+          </Card>
         )}
-      </Card>
+
+        {/* New Orders Section */}
+        {new_order.map((order) => (
+          <Card key={order.id} className="w-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold">
+                  Order #{order.id}
+                </CardTitle>
+                <Badge className={`${getStatusColor(order.status)} text-white`}>
+                  {order.status}
+                </Badge>
+              </div>
+              {/* <CardDescription className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <UserCircle className="h-4 w-4" />
+                  {order.is_guest
+                    ? `Guest #${order.guest_id}`
+                    : `User #${order.user_id}`}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  {formatDate(order.created_at)}
+                </div>
+                {order.chiliNumber > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-red-500" />
+                    Spice Level: {order.chiliNumber}
+                  </div>
+                )}
+              </CardDescription> */}
+            </CardHeader>
+            <CardContent>
+              <OrderContent order={order} />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
 
-export default OrdersList;
+// Separate component for order content to avoid repetition
+interface OrderContentProps {
+  order: Order;
+}
+
+const OrderContent = ({ order }: OrderContentProps) => {
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD"
+    }).format(price);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="max-h-64 overflow-y-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead className="text-right">Qty</TableHead>
+              <TableHead className="text-right">Price</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {order.dish_items.map((item) => (
+              <TableRow key={`dish-${item.dish_id}`}>
+                <TableCell>{item.name}</TableCell>
+                <TableCell className="text-right">{item.quantity}</TableCell>
+                <TableCell className="text-right">
+                  {formatPrice(item.price * item.quantity)}
+                </TableCell>
+              </TableRow>
+            ))}
+            {order.set_items.map((set) => (
+              <TableRow key={`set-${set.set_id}`} className="bg-slate-50">
+                <TableCell>
+                  <div>
+                    <span className="font-medium">{set.name}</span>
+                    <p className="text-xs text-gray-500">Set Menu</p>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">{set.quantity}</TableCell>
+                <TableCell className="text-right">
+                  {formatPrice(set.price * set.quantity)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex items-center justify-between border-t pt-4">
+        <div className="flex items-center gap-2">
+          <CircleDollarSign className="h-5 w-5" />
+          <span className="font-semibold">Total:</span>
+        </div>
+        <span className="text-lg font-bold">
+          {formatPrice(order.total_price)}
+        </span>
+      </div>
+      {order.takeAway && (
+        <Badge className="mt-2 bg-purple-500 text-white">Takeaway</Badge>
+      )}
+      {order.topping && (
+        <div className="mt-2 text-sm text-gray-500">
+          <span className="font-medium">Special Instructions:</span>{" "}
+          {order.topping}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default OrderListPage;

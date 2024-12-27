@@ -304,13 +304,16 @@ const useOrderStore = create<OrderState>()(
         websocket: { disconnect, isConnected, sendMessage },
         openLoginDialog
       }) => {
+        set({ isLoading: true });
         logWithLevel(
           {
             isGuest,
             hasUser: !!user,
             hasGuest: !!guest,
             tableNumber,
-            websocketConnected: isConnected
+            websocketConnected: isConnected,
+
+            isLoading: get().isLoading
           },
           LOG_PATH,
           "debug",
@@ -439,8 +442,6 @@ const useOrderStore = create<OrderState>()(
           12
         );
 
-        set({ isLoading: true });
-
         try {
           logWithLevel(
             {
@@ -468,8 +469,8 @@ const useOrderStore = create<OrderState>()(
           if (isConnected) {
             logWithLevel(
               {
-                messageType: "NEW_ORDER",
-                orderId: response.data.id
+                messageType: "NEW_ORDER  isLoading: false",
+                isLoading: false
               },
               LOG_PATH,
               "debug",
@@ -490,6 +491,7 @@ const useOrderStore = create<OrderState>()(
             description: "Order has been created successfully"
           });
           get().clearCurrentOrder();
+          set({ isLoading: false });
           return response.data;
         } catch (error) {
           logWithLevel(
@@ -517,7 +519,7 @@ const useOrderStore = create<OrderState>()(
       },
 
       // Table management
-      addTableNumber: (number) => set({ tableNumber: number }),
+      addTableNumber: (number: any) => set({ tableNumber: number }),
       addTableToken: (token) => set({ tableToken: token }),
 
       // Bowl options management
@@ -799,13 +801,12 @@ const useOrderStore = create<OrderState>()(
 
       // Utilities
       clearCurrentOrder: () =>
-        set({
+        set((state) => ({
           currentOrder: {
             ...INITIAL_ORDER,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           },
-          // Reset all bowl-related options
           canhKhongRau: 0,
           canhCoRau: 0,
           smallBowl: 0,
@@ -814,8 +815,10 @@ const useOrderStore = create<OrderState>()(
             mocNhi: false,
             thit: false,
             thitMocNhi: false
-          }
-        }),
+          },
+          // Preserve existing listOfOrders
+          listOfOrders: state.listOfOrders
+        })),
       //
       addToListOfOrders: (order) =>
         set((state) => ({
