@@ -8,9 +8,11 @@ import OrderDetails from "../total-dishes-detail";
 import OrderCreationComponent from "./add_order_button";
 import { decodeTableToken } from "@/lib/utils";
 import { logWithLevel } from "@/lib/logger/log";
-import OrdersList from "../order-list/list-order";
+
 import ChoosingTopping from "../topping/canh-banh-cuon";
 import useCartStore from "@/zusstand/new-order/new-order-zustand";
+import OrderListPage from "../order-list/orderlistpage";
+import OrdersDetails from "../order-list/listorderdetail";
 
 interface OrderProps {
   number: string;
@@ -55,11 +57,11 @@ export default function OrderSummary({ number, token }: OrderProps) {
     <div className="container mx-auto px-4 py-5 space-y-5">
       <ChoosingTopping />
       <OrderDetails />
-
-      <div>
+      <OrdersDetails />
+      {/* <div>
         <h1>Orders</h1>
-        <OrdersList />
-      </div>
+        <OrderListPage />
+      </div> */}
 
       <OrderCreationComponent />
     </div>
