@@ -25,12 +25,6 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
     useCartStore();
 
   // Debug logging for initial render
-  useEffect(() => {
-    console.log("Set Card Rendered:", {
-      setId: set.id,
-      currentOrder: current_order
-    });
-  }, [set.id, current_order]);
 
   // Find current set in order with useMemo to optimize performance
   const setOrderItem = useMemo(() => {
@@ -101,8 +95,8 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
 
   return (
     <Card className="w-full">
-      <CardContent className="p-4 flex flex-col md:flex-row">
-        <div className="w-full md:w-1/3 md:pr-4 mb-4 md:mb-0">
+      <CardContent className="p-4 flex md:flex-row">
+        <div className="w-full md:w-1/4 md:pr-4 mb-4 md:mb-0">
           <Image
             src={set.image || "/api/placeholder/300/400"}
             alt={set.name}
@@ -120,9 +114,7 @@ const SetCard: React.FC<SetSelectionProps> = ({ set }) => {
                 onClick={toggleList}
                 className="flex items-center gap-2 hover:opacity-75 transition-opacity"
               >
-                <h2 className="text-xl md:text-2xl font-bold">
-                  {set.name} (ID: {set.id})
-                </h2>
+                <h2 className="text-xl md:text-2xl font-bold">{set.name}</h2>
                 {isListVisible ? (
                   <ChevronUp className="h-4 w-4 mt-1" />
                 ) : (

@@ -1,18 +1,12 @@
 import {
   Order,
   DishOrderItem,
-  SetOrderItem
+  SetOrderItem,
+  PaginationInfo
 } from "@/schemaValidations/interface/type_order";
 import toast from "react-hot-toast";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-}
 
 interface CartState {
   new_order: Order[];
@@ -48,10 +42,10 @@ interface CartState {
 }
 
 const defaultPagination: PaginationInfo = {
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10
+  current_page: 1,
+  total_pages: 1,
+  total_items: 0,
+  page_size: 10
 };
 
 const defaultOrder: Order = {

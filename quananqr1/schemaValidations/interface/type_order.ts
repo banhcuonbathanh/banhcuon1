@@ -1,14 +1,4 @@
-// export interface DishOrderItem {
-//   dish_id: number;
-//   quantity: number;
-// }
 
-// export interface SetOrderItem {
-//   set_id: number;
-//   quantity: number;
-// }
-
-//
 
 export interface DishOrderItem {
   dish_id: number;
@@ -23,7 +13,15 @@ export interface DishOrderItem {
   is_favourite: boolean;
   like_by: number[];
 }
-
+export interface OrderDetailedDish {
+  dish_id: number;
+  quantity: number;
+  name: string;
+  price: number;
+  description: string;
+  iamge: string; // Note: This appears to be a typo in the original ("iamge")
+  status: string;
+}
 export interface SetOrderItem {
   set_id: number;
   quantity: number;
