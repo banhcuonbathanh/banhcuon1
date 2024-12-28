@@ -10,9 +10,7 @@ export default function OrdersDetails() {
   const [isMounted, setIsMounted] = useState(false);
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
 
-  const cartStore = useCartStore();
-  const orders = cartStore.new_order;
-  const tableNumber = cartStore.tableNumber;
+  const { new_order, isLoading, tableToken, tableNumber } = useCartStore();
 
   useEffect(() => {
     setIsMounted(true);
@@ -27,7 +25,7 @@ export default function OrdersDetails() {
   };
 
   const getAllSetsWithMetadata = () => {
-    return orders.flatMap((order, orderIndex) =>
+    return new_order.flatMap((order, orderIndex) =>
       (order.set_items || []).map((set) => ({
         ...set,
         orderIndex
@@ -36,7 +34,7 @@ export default function OrdersDetails() {
   };
 
   const getAllDishesWithMetadata = () => {
-    return orders.flatMap((order, orderIndex) =>
+    return new_order.flatMap((order, orderIndex) =>
       (order.dish_items || []).map((dish) => ({
         ...dish,
         orderIndex
@@ -46,10 +44,10 @@ export default function OrdersDetails() {
 
   const sets = getAllSetsWithMetadata();
   const dishes = getAllDishesWithMetadata();
-  console.log(
-    "quananqr1/app/(client)/table/[number]/component/order-list/listorderdetail.tsx dishes",
-    dishes.length
-  );
+  // console.log(
+  //   "quananqr1/app/(client)/table/[number]/component/order-list/listorderdetail.tsx dishes",
+  //   dishes.length
+  // );
   const calculateDishTotals = () => {
     const dishTotals = new Map<
       string,

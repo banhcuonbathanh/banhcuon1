@@ -500,7 +500,12 @@ const OrderCreationComponent: React.FC = () => {
         6
       );
       const response = await http.post(link_order, orderData);
+      console.log(
+        "quananqr1/app/(client)/table/[number]/component/order/add_order_button.tsx response.data.data.id",
+        response.data.data.id
+      );
 
+      // addToNewOrder(orderData);
       // logWithLevel(
       //   {
       //     event: "order_creation_response",
@@ -598,6 +603,10 @@ const OrderCreationComponent: React.FC = () => {
   };
 
   const validationMessage = getValidationMessage();
+  const handleCombinedActions = () => {
+    handleCreateOrder();
+    handleAddToNewOrders();
+  };
 
   return (
     <div className="mt-4 space-y-2">
@@ -608,7 +617,7 @@ const OrderCreationComponent: React.FC = () => {
       )}
       <Button
         className="w-full"
-        onClick={handleCreateOrder}
+        onClick={handleCombinedActions}
         disabled={isButtonDisabled()}
       >
         {getButtonText()}
