@@ -207,6 +207,33 @@ CREATE TABLE set_snapshot_dishes (
     UNIQUE (set_snapshot_id, dish_snapshot_id)
 );
 
+-- CREATE TABLE orders (
+--     id BIGSERIAL PRIMARY KEY,
+--     guest_id BIGINT,
+--     user_id BIGINT,
+--     is_guest BOOLEAN NOT NULL,
+--     table_number BIGINT,
+--     order_handler_id BIGINT,
+--     status VARCHAR(50) DEFAULT 'Pending',
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     order_name VARCHAR(255),
+--     total_price INTEGER,
+--     topping VARCHAR(255),
+--     tracking_order VARCHAR(255),
+--     take_away BOOLEAN NOT NULL DEFAULT false,
+--     chili_number BIGINT DEFAULT 0,
+--     table_token VARCHAR(255) NOT NULL,
+  
+--     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
+--     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+--     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
+--     FOREIGN KEY (order_handler_id) REFERENCES users(id) ON DELETE SET NULL,
+--     CONSTRAINT guest_or_user_check CHECK (
+--         (is_guest = TRUE AND guest_id IS NOT NULL AND user_id IS NULL) OR
+--         (is_guest = FALSE AND user_id IS NOT NULL AND guest_id IS NULL)
+--     )
+-- );
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     guest_id BIGINT,
@@ -224,11 +251,14 @@ CREATE TABLE orders (
     take_away BOOLEAN NOT NULL DEFAULT false,
     chili_number BIGINT DEFAULT 0,
     table_token VARCHAR(255) NOT NULL,
+    version INTEGER DEFAULT 1,  -- Added to track order versions
+    parent_order_id BIGINT,    -- Added to track original order
   
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
     FOREIGN KEY (order_handler_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (parent_order_id) REFERENCES orders(id) ON DELETE SET NULL,
     CONSTRAINT guest_or_user_check CHECK (
         (is_guest = TRUE AND guest_id IS NOT NULL AND user_id IS NULL) OR
         (is_guest = FALSE AND user_id IS NOT NULL AND guest_id IS NULL)
@@ -236,29 +266,74 @@ CREATE TABLE orders (
 );
 
 CREATE TABLE dish_order_items (
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    order_name VARCHAR(255),
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     dish_id BIGINT NOT NULL,
     quantity INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    order_name VARCHAR(255),
+    modification_type VARCHAR(20) DEFAULT 'INITIAL',  -- Added to track if item was part of initial order or added later
+    modification_number INTEGER DEFAULT 1,            -- Added to track which modification this was part of
+    
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE set_order_items (
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    order_name VARCHAR(255),
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     set_id BIGINT NOT NULL,
     quantity INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    order_name VARCHAR(255),
+    modification_type VARCHAR(20) DEFAULT 'INITIAL',  -- Added to track if item was part of initial order or added later
+    modification_number INTEGER DEFAULT 1,            -- Added to track which modification this was part of
+    
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (set_id) REFERENCES sets(id) ON DELETE CASCADE
 );
+CREATE TABLE order_modifications (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    modification_number INTEGER NOT NULL,
+    modification_type VARCHAR(50) NOT NULL,
+    modified_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    modified_by_user_id BIGINT,
+    order_name VARCHAR(255),
+    
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (modified_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
 
+CREATE TABLE dish_deliveries (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    order_name VARCHAR(255),
+    quantity_delivered INTEGER NOT NULL,
+    delivery_status VARCHAR(50) DEFAULT 'PENDING',  -- Status could be PENDING, DELIVERED, CANCELLED
+    delivered_at TIMESTAMP WITH TIME ZONE,
+    delivered_by_user_id BIGINT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    modification_number INTEGER NOT NULL,  -- To track which order modification this delivery belongs to
+    
+    -- Ensure delivered quantity is positive
+    CONSTRAINT valid_delivery_quantity CHECK (quantity_delivered > 0),
+    
+    -- Relationships to other tables
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (delivered_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Create an index to help with querying deliveries by order
+CREATE INDEX idx_dish_deliveries_order ON dish_deliveries(order_id);
+-- Create an index for tracking deliveries by dish order item
+
+CREATE INDEX idx_dish_order_items_modification ON dish_order_items(order_id, modification_number);
+CREATE INDEX idx_set_order_items_modification ON set_order_items(order_id, modification_number);
+CREATE INDEX idx_order_modifications_order ON order_modifications(order_id);
 -- Create indexes
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_sets_user_id ON sets(user_id) WHERE user_id IS NOT NULL;

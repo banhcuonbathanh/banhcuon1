@@ -679,45 +679,6 @@ func (or *OrderRepository) GetOrderDetail(ctx context.Context, id int64) (*order
 
 
 
-func (or *OrderRepository) getTrackingOrderInfo(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (string, error) {
-    or.logger.Info("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Starting")
-    
-    startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
-    endOfDay := startOfDay.Add(24 * time.Hour)
-    
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Processing for clientId: %d, isGuest: %v, date range: %v to %v", 
-        clientId, isGuest, startOfDay, endOfDay))
-
-    clientPosition, err := or.getClientPosition(ctx, tx, startOfDay, endOfDay, clientId, isGuest)
-    if err != nil {
-        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Error getting client position: %v", err))
-        return "", fmt.Errorf("error getting client position: %w", err)
-    }
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Got client position: %d", clientPosition))
-
-    orderCount, err := or.getClientOrderCount(ctx, tx, startOfDay, endOfDay, clientId, isGuest)
-    if err != nil {
-        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Error getting client order count: %v", err))
-        return "", fmt.Errorf("error getting client order count: %w", err)
-    }
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Got order count: %d", orderCount))
-
-    var clientType string
-    if isGuest {
-        clientType = "Guest"
-    } else {
-        clientType = "Client"
-    }
-
-    trackingOrder := fmt.Sprintf("%d%s %s - Order #%d", 
-        clientPosition,
-        getOrdinalSuffix(clientPosition),
-        clientType,
-        orderCount)
-
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Generated tracking order: %s", trackingOrder))
-    return trackingOrder, nil
-}
 
 
 
@@ -737,343 +698,15 @@ func getOrdinalSuffix(n int64) string {
     }
 }
 
-func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrderRequest) (*order.Order, error) {
-    or.logger.Info(fmt.Sprintf("Creating new order: %+v", req))
-    
-    tx, err := or.db.Begin(ctx)
-    if err != nil {
-        or.logger.Error("Error starting transaction: " + err.Error())
-        return nil, fmt.Errorf("error starting transaction: %w", err)
-    }
-    defer tx.Rollback(ctx)
-
-    now := time.Now()
-    
-    // Get client ID based on whether it's a guest or user
-    clientId := req.GuestId
-    if !req.IsGuest {
-        clientId = req.UserId
-    }
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Processing for clientId: %d, isGuest: %v", clientId, req.IsGuest))
-    
-    // Get tracking order information
-    trackingOrder, err := or.getTrackingOrderInfo(ctx, or.db, now, req.IsGuest, clientId)
-    if err != nil {
-        or.logger.Error("Error getting tracking order info: " + err.Error())
-        return nil, fmt.Errorf("error getting tracking order info: %w", err)
-    }
-
-    // Get client number for the order name
-    clientNumber, err := or.getClientNumberForDay(ctx, or.db, now, req.IsGuest, clientId)
-    if err != nil {
-        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Error getting client number: %v", err))
-        return nil, fmt.Errorf("error getting client number: %w", err)
-    }
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go CreateOrder - Got client number: %d", clientNumber))
-
-    var guestId, userId sql.NullInt64
-    if req.IsGuest {
-        guestId = sql.NullInt64{Int64: req.GuestId, Valid: true}
-        userId = sql.NullInt64{Valid: false}
-    } else {
-        userId = sql.NullInt64{Int64: req.UserId, Valid: true}
-        guestId = sql.NullInt64{Valid: false}
-    }
-
-    query := `
-        INSERT INTO orders (
-            guest_id, user_id, is_guest, table_number, order_handler_id,
-            status, created_at, updated_at, total_price, topping, tracking_order,
-            take_away, chili_number, table_token, order_name
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-        RETURNING id, created_at, updated_at
-    `
-    or.logger.Info("golang/quanqr/order/order_repository.go CreateOrder - Executing order insertion")
-    var o order.Order
-    var createdAt, updatedAt time.Time
-
-    err = tx.QueryRow(ctx, query,
-        guestId,
-        userId,
-        req.IsGuest,
-        req.TableNumber,
-        req.OrderHandlerId,
-        req.Status,
-        now,
-        now,
-        req.TotalPrice,
-        req.Topping,
-        trackingOrder,
-        req.TakeAway,
-        req.ChiliNumber,
-        req.TableToken,
-        req.OrderName,
-    ).Scan(&o.Id, &createdAt, &updatedAt)
-
-    if err != nil {
-        or.logger.Error("Error creating order: " + err.Error())
-        return nil, fmt.Errorf("error creating order: %w", err)
-    }
-
-    // Insert dish items with new fields
-    for _, dish := range req.DishItems {
-        var exists bool
-        err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM dishes WHERE id = $1)", dish.DishId).Scan(&exists)
-        if err != nil {
-            or.logger.Error(fmt.Sprintf("Error verifying dish existence: %s", err.Error()))
-            return nil, fmt.Errorf("error verifying dish existence: %w", err)
-        }
-        if !exists {
-            or.logger.Error(fmt.Sprintf("Dish with id %d does not exist", dish.DishId))
-            return nil, fmt.Errorf("dish with id %d does not exist", dish.DishId)
-        }
-
-        _, err = tx.Exec(ctx, `
-            INSERT INTO dish_order_items (
-                order_id, dish_id, quantity, created_at, updated_at, order_name
-            )
-            VALUES ($1, $2, $3, $4, $5, $6)`,
-            o.Id, dish.DishId, dish.Quantity, now, now, req.OrderName)
-        if err != nil {
-            or.logger.Error(fmt.Sprintf("Error inserting order dish: %s", err.Error()))
-            return nil, fmt.Errorf("error inserting order dish: %w", err)
-        }
-    }
-
-    // Insert set items with new fields
-    for _, set := range req.SetItems {
-        var exists bool
-        err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM sets WHERE id = $1)", set.SetId).Scan(&exists)
-        if err != nil {
-            or.logger.Error(fmt.Sprintf("Error verifying set existence: %s", err.Error()))
-            return nil, fmt.Errorf("error verifying set existence: %w", err)
-        }
-        if !exists {
-            or.logger.Error(fmt.Sprintf("Set with id %d does not exist", set.SetId))
-            return nil, fmt.Errorf("set with id %d does not exist", set.SetId)
-        }
-
-        _, err = tx.Exec(ctx, `
-            INSERT INTO set_order_items (
-                order_id, set_id, quantity, created_at, updated_at, order_name
-            )
-            VALUES ($1, $2, $3, $4, $5, $6)`,
-            o.Id, set.SetId, set.Quantity, now, now, req.OrderName)
-        if err != nil {
-            or.logger.Error(fmt.Sprintf("Error inserting order set: %s", err.Error()))
-            return nil, fmt.Errorf("error inserting order set: %w", err)
-        }
-    }
-
-    if err := tx.Commit(ctx); err != nil {
-        or.logger.Error("Error committing transaction: " + err.Error())
-        return nil, fmt.Errorf("error committing transaction: %w", err)
-    }
-
-    // Populate response
-    o.GuestId = req.GuestId
-    o.UserId = req.UserId
-    o.IsGuest = req.IsGuest
-    o.TableNumber = req.TableNumber
-    o.OrderHandlerId = req.OrderHandlerId
-    o.Status = req.Status
-    o.CreatedAt = timestamppb.New(createdAt)
-    o.UpdatedAt = timestamppb.New(updatedAt)
-    o.TotalPrice = req.TotalPrice
-    o.DishItems = req.DishItems
-    o.SetItems = req.SetItems
-    o.Topping = req.Topping
-    o.TrackingOrder = trackingOrder
-    o.TakeAway = req.TakeAway
-    o.ChiliNumber = req.ChiliNumber
-    o.TableToken = req.TableToken
-    o.OrderName = req.OrderName
-
-    return &o, nil
-}
 
 
-func (or *OrderRepository) getClientOrderCount(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientOrderCount - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientOrderCount - Date range: %v to %v", startOfDay, endOfDay))
-    var query string
-    if isGuest {
-        query = `
-            SELECT COUNT(*) + 1
-            FROM orders
-            WHERE guest_id = $1
-            AND created_at >= $2 AND created_at < $3
-        `
-    } else {
-        query = `
-            SELECT COUNT(*) + 1
-            FROM orders
-            WHERE user_id = $1
-            AND created_at >= $2 AND created_at < $3
-        `
-    }
 
-    var count int64
-    err := tx.QueryRow(ctx, query, clientId, startOfDay, endOfDay).Scan(&count)
-    if err != nil {
-        if err.Error() == "no rows in result set" {
-            return 1, nil
-        }
-        return 0, fmt.Errorf("error getting order count: %w", err)
-    }
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientOrderCount - Retrieved count: %d", count))
-    return count, nil
-}
 
 // 
 
 
-func (or *OrderRepository) getClientPosition(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientPosition - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientPosition - Date range: %v to %v", startOfDay, endOfDay))
-    
-    // First, let's debug the virtual table
-    debugQuery := `
-        WITH ordered_clients AS (
-            SELECT 
-                CASE 
-                    WHEN guest_id IS NOT NULL THEN guest_id 
-                    ELSE user_id 
-                END as client_id,
-                MIN(created_at) as first_order_time,
-                DENSE_RANK() OVER (ORDER BY MIN(created_at)) as position
-            FROM orders
-            WHERE created_at >= $1 AND created_at < $2
-            GROUP BY 
-                CASE 
-                    WHEN guest_id IS NOT NULL THEN guest_id 
-                    ELSE user_id 
-                END
-        )
-        SELECT client_id, first_order_time, position 
-        FROM ordered_clients
-        ORDER BY position;
-    `
-    
-    // Execute debug query to see the virtual table
-    rows, err := tx.Query(ctx, debugQuery, startOfDay, endOfDay)
-    if err != nil {
-        or.logger.Error(fmt.Sprintf("Debug query error: %v", err))
-    } else {
-        defer rows.Close()
-        or.logger.Info("Virtual Table Content:")
-        or.logger.Info("| Client ID | First Order Time | Position |")
-        or.logger.Info("|-----------|-----------------|-----------|")
-        
-        for rows.Next() {
-            var cid int64
-            var orderTime time.Time
-            var pos int64
-            if err := rows.Scan(&cid, &orderTime, &pos); err != nil {
-                or.logger.Error(fmt.Sprintf("Error scanning debug row: %v", err))
-                continue
-            }
-            or.logger.Info(fmt.Sprintf("| %9d | %s | %9d |", cid, orderTime.Format("15:04:05"), pos))
-        }
-    }
-
-    // Now execute the actual position query
-    query := `
-        WITH ordered_clients AS (
-            SELECT 
-                CASE 
-                    WHEN guest_id IS NOT NULL THEN guest_id 
-                    ELSE user_id 
-                END as client_id,
-                MIN(created_at) as first_order_time,
-                DENSE_RANK() OVER (ORDER BY MIN(created_at)) as position
-            FROM orders
-            WHERE created_at >= $1 AND created_at < $2
-            GROUP BY 
-                CASE 
-                    WHEN guest_id IS NOT NULL THEN guest_id 
-                    ELSE user_id 
-                END
-        )
-        SELECT position
-        FROM ordered_clients
-        WHERE client_id = $3
-        UNION ALL
-        SELECT COALESCE(
-            (SELECT MAX(position) + 1 
-            FROM ordered_clients),
-            1
-        )
-        WHERE NOT EXISTS (
-            SELECT 1 
-            FROM ordered_clients 
-            WHERE client_id = $3
-        )
-        LIMIT 1
-    `
-
-    var position int64
-    err = tx.QueryRow(ctx, query, startOfDay, endOfDay, clientId).Scan(&position)
-    if err != nil {
-        return 0, fmt.Errorf("error getting client position: %w", err)
-    }
-    
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientPosition - Retrieved position for client %d: %d", clientId, position))
-    return position, nil
-}
 
 
-
-func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (int64, error) {
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
-    
-    startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
-    endOfDay := startOfDay.Add(24 * time.Hour)
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Date range: %v to %v", startOfDay, endOfDay))
-
-    var query string
-    var args []interface{}
-
-    if isGuest {
-        query = `
-            SELECT COALESCE(
-                (SELECT COUNT(*) 
-                FROM orders 
-                WHERE guest_id = $1 
-                AND created_at >= $2 
-                AND created_at < $3),
-                0
-            ) + 1
-        `
-        args = []interface{}{clientId, startOfDay, endOfDay}
-    } else {
-        query = `
-            SELECT COALESCE(
-                (SELECT COUNT(*) 
-                FROM orders 
-                WHERE user_id = $1 
-                AND created_at >= $2 
-                AND created_at < $3),
-                0
-            ) + 1
-        `
-        args = []interface{}{clientId, startOfDay, endOfDay}
-    }
-
-    var clientNumber int64
-    err := tx.QueryRow(ctx, query, args...).Scan(&clientNumber)
-    if err != nil {
-        if err.Error() == "no rows in result set" {
-            or.logger.Info("golang/quanqr/order/order_repository.go getClientNumberForDay - No existing client number found, returning 1")
-            return 1, nil
-        }
-        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Error getting client number: %v", err))
-        return 0, fmt.Errorf("error getting client number: %w", err)
-    }
-    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - clientNumber %v ", clientNumber))
-    return clientNumber, nil
-}
 
 
 // Add this function to your OrderRepository struct
@@ -1417,3 +1050,422 @@ func (or *OrderRepository) getSetDishes(ctx context.Context, setID int64) ([]*or
 
     return dishes, nil
 }
+
+// -------------------------------------------------- create order start -----------------------
+
+func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrderRequest) (*order.Order, error) {
+    or.logger.Info(fmt.Sprintf("Creating new order: %+v", req))
+    
+    tx, err := or.db.Begin(ctx)
+    if err != nil {
+        or.logger.Error("Error starting transaction: " + err.Error())
+        return nil, fmt.Errorf("error starting transaction: %w", err)
+    }
+    defer tx.Rollback(ctx)
+
+    now := time.Now()
+    
+    // Get client ID based on whether it's a guest or user
+    clientId := req.GuestId
+    if !req.IsGuest {
+        clientId = req.UserId
+    }
+    or.logger.Info(fmt.Sprintf("Creating order for clientId: %d, isGuest: %v", clientId, req.IsGuest))
+    
+    // Get tracking order information
+    trackingOrder, err := or.getTrackingOrderInfo(ctx, or.db, now, req.IsGuest, clientId)
+    if err != nil {
+        or.logger.Error("Error getting tracking order info: " + err.Error())
+        return nil, fmt.Errorf("error getting tracking order info: %w", err)
+    }
+
+    // Get client number for the order name
+    clientNumber, err := or.getClientNumberForDay(ctx, or.db, now, req.IsGuest, clientId)
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("Error getting client number: %v", err))
+        return nil, fmt.Errorf("error getting client number: %w", err)
+    }
+    or.logger.Info(fmt.Sprintf("Got client number: %d", clientNumber))
+
+    var guestId, userId sql.NullInt64
+    if req.IsGuest {
+        guestId = sql.NullInt64{Int64: req.GuestId, Valid: true}
+        userId = sql.NullInt64{Valid: false}
+    } else {
+        userId = sql.NullInt64{Int64: req.UserId, Valid: true}
+        guestId = sql.NullInt64{Valid: false}
+    }
+
+    // Updated insert query with new fields
+    query := `
+        INSERT INTO orders (
+            guest_id, user_id, is_guest, table_number, order_handler_id,
+            status, created_at, updated_at, total_price, topping, tracking_order,
+            take_away, chili_number, table_token, order_name, version, parent_order_id
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        RETURNING id, created_at, updated_at
+    `
+    or.logger.Info("Executing order insertion")
+    var o order.Order
+    var createdAt, updatedAt time.Time
+
+    // Set initial version to 1 and parent_order_id to null for new orders
+    err = tx.QueryRow(ctx, query,
+        guestId,
+        userId,
+        req.IsGuest,
+        req.TableNumber,
+        req.OrderHandlerId,
+        req.Status,
+        now,
+        now,
+        req.TotalPrice,
+        req.Topping,
+        trackingOrder,
+        req.TakeAway,
+        req.ChiliNumber,
+        req.TableToken,
+        req.OrderName,
+        1,  // Initial version
+        nil, // No parent order for new orders
+    ).Scan(&o.Id, &createdAt, &updatedAt)
+
+    if err != nil {
+        or.logger.Error("Error creating order: " + err.Error())
+        return nil, fmt.Errorf("error creating order: %w", err)
+    }
+
+    // Create initial order modification record
+    modificationQuery := `
+        INSERT INTO order_modifications (
+            order_id, modification_number, modification_type, 
+            modified_by_user_id, order_name
+        )
+        VALUES ($1, $2, $3, $4, $5)
+    `
+    _, err = tx.Exec(ctx, modificationQuery,
+        o.Id,
+        1, // First modification
+        "INITIAL",
+        req.OrderHandlerId,
+        req.OrderName,
+    )
+    if err != nil {
+        or.logger.Error("Error creating order modification record: " + err.Error())
+        return nil, fmt.Errorf("error creating order modification record: %w", err)
+    }
+
+    // Insert dish items with new fields
+    for _, dish := range req.DishItems {
+        var exists bool
+        err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM dishes WHERE id = $1)", dish.DishId).Scan(&exists)
+        if err != nil {
+            or.logger.Error(fmt.Sprintf("Error verifying dish existence: %s", err.Error()))
+            return nil, fmt.Errorf("error verifying dish existence: %w", err)
+        }
+        if !exists {
+            or.logger.Error(fmt.Sprintf("Dish with id %d does not exist", dish.DishId))
+            return nil, fmt.Errorf("dish with id %d does not exist", dish.DishId)
+        }
+
+        _, err = tx.Exec(ctx, `
+            INSERT INTO dish_order_items (
+                order_id, dish_id, quantity, created_at, updated_at, 
+                order_name, modification_type, modification_number
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            o.Id, dish.DishId, dish.Quantity, now, now, 
+            req.OrderName, "INITIAL", 1)
+        if err != nil {
+            or.logger.Error(fmt.Sprintf("Error inserting order dish: %s", err.Error()))
+            return nil, fmt.Errorf("error inserting order dish: %w", err)
+        }
+
+        // Create initial delivery record for each dish
+        _, err = tx.Exec(ctx, `
+            INSERT INTO dish_deliveries (
+                order_id, order_name, quantity_delivered,
+                delivery_status, modification_number
+            )
+            VALUES ($1, $2, $3, $4, $5)`,
+            o.Id, req.OrderName, dish.Quantity, "PENDING", 1)
+        if err != nil {
+            or.logger.Error(fmt.Sprintf("Error creating dish delivery record: %s", err.Error()))
+            return nil, fmt.Errorf("error creating dish delivery record: %w", err)
+        }
+    }
+
+    // Insert set items with new fields
+    for _, set := range req.SetItems {
+        var exists bool
+        err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM sets WHERE id = $1)", set.SetId).Scan(&exists)
+        if err != nil {
+            or.logger.Error(fmt.Sprintf("Error verifying set existence: %s", err.Error()))
+            return nil, fmt.Errorf("error verifying set existence: %w", err)
+        }
+        if !exists {
+            or.logger.Error(fmt.Sprintf("Set with id %d does not exist", set.SetId))
+            return nil, fmt.Errorf("set with id %d does not exist", set.SetId)
+        }
+
+        _, err = tx.Exec(ctx, `
+            INSERT INTO set_order_items (
+                order_id, set_id, quantity, created_at, updated_at, 
+                order_name, modification_type, modification_number
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            o.Id, set.SetId, set.Quantity, now, now, 
+            req.OrderName, "INITIAL", 1)
+        if err != nil {
+            or.logger.Error(fmt.Sprintf("Error inserting order set: %s", err.Error()))
+            return nil, fmt.Errorf("error inserting order set: %w", err)
+        }
+    }
+
+    if err := tx.Commit(ctx); err != nil {
+        or.logger.Error("Error committing transaction: " + err.Error())
+        return nil, fmt.Errorf("error committing transaction: %w", err)
+    }
+
+    // Populate response
+    o.GuestId = req.GuestId
+    o.UserId = req.UserId
+    o.IsGuest = req.IsGuest
+    o.TableNumber = req.TableNumber
+    o.OrderHandlerId = req.OrderHandlerId
+    o.Status = req.Status
+    o.CreatedAt = timestamppb.New(createdAt)
+    o.UpdatedAt = timestamppb.New(updatedAt)
+    o.TotalPrice = req.TotalPrice
+    o.DishItems = req.DishItems
+    o.SetItems = req.SetItems
+    o.Topping = req.Topping
+    o.TrackingOrder = trackingOrder
+    o.TakeAway = req.TakeAway
+    o.ChiliNumber = req.ChiliNumber
+    o.TableToken = req.TableToken
+    o.OrderName = req.OrderName
+    o.Version = 1 // Set initial version
+
+    return &o, nil
+}
+
+
+func (or *OrderRepository) getTrackingOrderInfo(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (string, error) {
+    or.logger.Info("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Starting")
+    
+    startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
+    endOfDay := startOfDay.Add(24 * time.Hour)
+    
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Processing for clientId: %d, isGuest: %v, date range: %v to %v", 
+        clientId, isGuest, startOfDay, endOfDay))
+
+    clientPosition, err := or.getClientPosition(ctx, tx, startOfDay, endOfDay, clientId, isGuest)
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Error getting client position: %v", err))
+        return "", fmt.Errorf("error getting client position: %w", err)
+    }
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Got client position: %d", clientPosition))
+
+    orderCount, err := or.getClientOrderCount(ctx, tx, startOfDay, endOfDay, clientId, isGuest)
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Error getting client order count: %v", err))
+        return "", fmt.Errorf("error getting client order count: %w", err)
+    }
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Got order count: %d", orderCount))
+
+    var clientType string
+    if isGuest {
+        clientType = "Guest"
+    } else {
+        clientType = "Client"
+    }
+
+    trackingOrder := fmt.Sprintf("%d%s %s - Order #%d", 
+        clientPosition,
+        getOrdinalSuffix(clientPosition),
+        clientType,
+        orderCount)
+
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getTrackingOrderInfo - Generated tracking order: %s", trackingOrder))
+    return trackingOrder, nil
+}
+
+
+func (or *OrderRepository) getClientNumberForDay(ctx context.Context, tx *pgxpool.Pool, currentTime time.Time, isGuest bool, clientId int64) (int64, error) {
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
+    
+    startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
+    endOfDay := startOfDay.Add(24 * time.Hour)
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Date range: %v to %v", startOfDay, endOfDay))
+
+    var query string
+    var args []interface{}
+
+    if isGuest {
+        query = `
+            SELECT COALESCE(
+                (SELECT COUNT(*) 
+                FROM orders 
+                WHERE guest_id = $1 
+                AND created_at >= $2 
+                AND created_at < $3),
+                0
+            ) + 1
+        `
+        args = []interface{}{clientId, startOfDay, endOfDay}
+    } else {
+        query = `
+            SELECT COALESCE(
+                (SELECT COUNT(*) 
+                FROM orders 
+                WHERE user_id = $1 
+                AND created_at >= $2 
+                AND created_at < $3),
+                0
+            ) + 1
+        `
+        args = []interface{}{clientId, startOfDay, endOfDay}
+    }
+
+    var clientNumber int64
+    err := tx.QueryRow(ctx, query, args...).Scan(&clientNumber)
+    if err != nil {
+        if err.Error() == "no rows in result set" {
+            or.logger.Info("golang/quanqr/order/order_repository.go getClientNumberForDay - No existing client number found, returning 1")
+            return 1, nil
+        }
+        or.logger.Error(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - Error getting client number: %v", err))
+        return 0, fmt.Errorf("error getting client number: %w", err)
+    }
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientNumberForDay - clientNumber %v ", clientNumber))
+    return clientNumber, nil
+}
+func (or *OrderRepository) getClientPosition(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientPosition - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientPosition - Date range: %v to %v", startOfDay, endOfDay))
+    
+    // First, let's debug the virtual table
+    debugQuery := `
+        WITH ordered_clients AS (
+            SELECT 
+                CASE 
+                    WHEN guest_id IS NOT NULL THEN guest_id 
+                    ELSE user_id 
+                END as client_id,
+                MIN(created_at) as first_order_time,
+                DENSE_RANK() OVER (ORDER BY MIN(created_at)) as position
+            FROM orders
+            WHERE created_at >= $1 AND created_at < $2
+            GROUP BY 
+                CASE 
+                    WHEN guest_id IS NOT NULL THEN guest_id 
+                    ELSE user_id 
+                END
+        )
+        SELECT client_id, first_order_time, position 
+        FROM ordered_clients
+        ORDER BY position;
+    `
+    
+    // Execute debug query to see the virtual table
+    rows, err := tx.Query(ctx, debugQuery, startOfDay, endOfDay)
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("Debug query error: %v", err))
+    } else {
+        defer rows.Close()
+        or.logger.Info("Virtual Table Content:")
+        or.logger.Info("| Client ID | First Order Time | Position |")
+        or.logger.Info("|-----------|-----------------|-----------|")
+        
+        for rows.Next() {
+            var cid int64
+            var orderTime time.Time
+            var pos int64
+            if err := rows.Scan(&cid, &orderTime, &pos); err != nil {
+                or.logger.Error(fmt.Sprintf("Error scanning debug row: %v", err))
+                continue
+            }
+            or.logger.Info(fmt.Sprintf("| %9d | %s | %9d |", cid, orderTime.Format("15:04:05"), pos))
+        }
+    }
+
+    // Now execute the actual position query
+    query := `
+        WITH ordered_clients AS (
+            SELECT 
+                CASE 
+                    WHEN guest_id IS NOT NULL THEN guest_id 
+                    ELSE user_id 
+                END as client_id,
+                MIN(created_at) as first_order_time,
+                DENSE_RANK() OVER (ORDER BY MIN(created_at)) as position
+            FROM orders
+            WHERE created_at >= $1 AND created_at < $2
+            GROUP BY 
+                CASE 
+                    WHEN guest_id IS NOT NULL THEN guest_id 
+                    ELSE user_id 
+                END
+        )
+        SELECT position
+        FROM ordered_clients
+        WHERE client_id = $3
+        UNION ALL
+        SELECT COALESCE(
+            (SELECT MAX(position) + 1 
+            FROM ordered_clients),
+            1
+        )
+        WHERE NOT EXISTS (
+            SELECT 1 
+            FROM ordered_clients 
+            WHERE client_id = $3
+        )
+        LIMIT 1
+    `
+
+    var position int64
+    err = tx.QueryRow(ctx, query, startOfDay, endOfDay, clientId).Scan(&position)
+    if err != nil {
+        return 0, fmt.Errorf("error getting client position: %w", err)
+    }
+    
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientPosition - Retrieved position for client %d: %d", clientId, position))
+    return position, nil
+}
+
+func (or *OrderRepository) getClientOrderCount(ctx context.Context, tx *pgxpool.Pool, startOfDay, endOfDay time.Time, clientId int64, isGuest bool) (int64, error) {
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientOrderCount - Starting for clientId: %d, isGuest: %v", clientId, isGuest))
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientOrderCount - Date range: %v to %v", startOfDay, endOfDay))
+    var query string
+    if isGuest {
+        query = `
+            SELECT COUNT(*) + 1
+            FROM orders
+            WHERE guest_id = $1
+            AND created_at >= $2 AND created_at < $3
+        `
+    } else {
+        query = `
+            SELECT COUNT(*) + 1
+            FROM orders
+            WHERE user_id = $1
+            AND created_at >= $2 AND created_at < $3
+        `
+    }
+
+    var count int64
+    err := tx.QueryRow(ctx, query, clientId, startOfDay, endOfDay).Scan(&count)
+    if err != nil {
+        if err.Error() == "no rows in result set" {
+            return 1, nil
+        }
+        return 0, fmt.Errorf("error getting order count: %w", err)
+    }
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go getClientOrderCount - Retrieved count: %d", count))
+    return count, nil
+}
+
+// -------------------------------------------------- create order end  -----------------------

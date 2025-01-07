@@ -34,13 +34,16 @@ TRUNCATE TABLE schema\*migrations, users; delete all data
 \d reading_test_models;
 
 \d orders
+SELECT * FROM order_modifications;
+
 SELECT * FROM dish_order_items;
-SELECT * FROM orders;
+SELECT _ FROM dish_order_items;
+SELECT _ FROM orders;
 SELECT _ FROM tables;
 SELECT _ FROM users;
 SELECT \_ FROM users;
 SELECT \_ FROM dishes;
-SELECT _ FROM orders;
+SELECT \_ FROM orders;
 SELECT \_ FROM users;
 SELECT \* FROM sessions;
 DELETE FROM sessions;
@@ -152,9 +155,12 @@ make stop-server
 go test -v test/test-api/test-api.go
 golang/
 ============================================== git hub ================================
-git branch coffee
-git checkout coffee
-git branch -d web-sokcert-new-strtuchture delete branch
+coffee
+git branch trackingOrder1
+git checkout trackingOrder1
+trackingOrder
+
+git branch -d web-sokcert delete branch
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/python_proto/claude/claude.proto
 
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ecomm-grpc/proto/python_proto/helloworld.proto

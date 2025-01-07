@@ -6,8 +6,6 @@ option go_package = "english-ai-full/quanqr/proto_qr/order";
 
 import "google/protobuf/timestamp.proto";
 
-
-
 // Main Order message
 message Order {
   int64 id = 1;
@@ -27,20 +25,61 @@ message Order {
   bool take_away = 15;
   int64 chili_number = 16;
   string table_token = 17;
-  string order_name = 18;  // New field
+  string order_name = 18;
+  int32 version = 19;               // Added to track order versions
+  int64 parent_order_id = 20;       // Added to track original order
 }
-// Order items
+
+// Order items with modification tracking
 message DishOrderItem {
-  int64 dish_id = 1;
-  int64 quantity = 2;
+  int64 id = 1;                     // Added primary key
+  int64 dish_id = 2;
+  int64 quantity = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+  string order_name = 6;
+  string modification_type = 7;      // Track if item was initial or added later
+  int32 modification_number = 8;     // Track which modification this was part of
 }
 
 message SetOrderItem {
-  int64 set_id = 1;
-  int64 quantity = 2;
+  int64 id = 1;                     // Added primary key
+  int64 set_id = 2;
+  int64 quantity = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+  string order_name = 6;
+  string modification_type = 7;      // Track if item was initial or added later
+  int32 modification_number = 8;     // Track which modification this was part of
 }
 
-// Detailed order items
+// New message for order modifications
+message OrderModification {
+  int64 id = 1;
+  int64 order_id = 2;
+  int32 modification_number = 3;
+  string modification_type = 4;
+  google.protobuf.Timestamp modified_at = 5;
+  int64 modified_by_user_id = 6;
+  string order_name = 7;
+}
+
+// New message for dish deliveries
+message DishDelivery {
+  int64 id = 1;
+  int64 order_id = 2;
+  string order_name = 3;
+  int32 quantity_delivered = 4;
+  string delivery_status = 5;
+  google.protobuf.Timestamp delivered_at = 6;
+  int64 delivered_by_user_id = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  int32 modification_number = 10;
+  int64 dish_order_item_id = 11;
+}
+
+// Detailed order items (keeping existing structure)
 message OrderDetailedDish {
   int64 dish_id = 1;
   int64 quantity = 2;
@@ -64,11 +103,10 @@ message OrderSetDetailed {
   bool is_public = 10;
   string image = 11;
   int32 price = 12;
-
   int64 quantity = 13;
 }
 
-// Requests
+// Updated CreateOrderRequest with new fields
 message CreateOrderRequest {
   int64 guest_id = 1;
   int64 user_id = 2;
@@ -86,9 +124,12 @@ message CreateOrderRequest {
   bool take_away = 15;
   int64 chili_number = 16;
   string table_token = 17;
-  string order_name = 18;  // New field
+  string order_name = 18;
+  int32 version = 19;
+  int64 parent_order_id = 20;
 }
 
+// Updated UpdateOrderRequest with new fields
 message UpdateOrderRequest {
   int64 id = 1;
   int64 guest_id = 2;
@@ -102,10 +143,12 @@ message UpdateOrderRequest {
   bool is_guest = 10;
   string topping = 11;
   string tracking_order = 12;
-  bool takeAway = 15;
-  int64 chiliNumber = 16;
+  bool take_away = 15;
+  int64 chili_number = 16;
   string table_token = 17;
-  string order_name = 18;  // New field
+  string order_name = 18;
+  int32 version = 19;
+  int64 parent_order_id = 20;
 }
 
 message PayOrdersRequest {
@@ -129,7 +172,6 @@ message OrderResponse {
   Order data = 1;
 }
 
-
 message OrderDetailedResponse {
   int64 id = 1;
   int64 guest_id = 2;
@@ -143,35 +185,24 @@ message OrderDetailedResponse {
   bool is_guest = 10;
   string topping = 11;
   string tracking_order = 12;
-  bool takeAway = 15;
-  int64 chiliNumber = 16;
+  bool take_away = 15;
+  int64 chili_number = 16;
   string table_token = 17;
-  string order_name = 18;  // New field
+  string order_name = 18;
+  int32 version = 19;
+  int64 parent_order_id = 20;
 }
 
 message OrderDetailedListResponse {
-
   repeated OrderDetailedResponse data = 1;
   PaginationInfo pagination = 2;
-
 }
-
-// Guest
-// message Guest {
-//   int64 id = 1;
-//   string name = 2;
-//   int32 table_number = 3;
-//   google.protobuf.Timestamp created_at = 4;
-//   google.protobuf.Timestamp updated_at = 5;
-// }
-
-
-// ----------- new
 
 message GetOrdersRequest {
-  int32 page = 1;  // Page number (1-based)
-  int32 page_size = 2;  // Number of items per page
+  int32 page = 1;
+  int32 page_size = 2;
 }
+
 message OrderListResponse {
   repeated Order data = 1;
   PaginationInfo pagination = 2;
@@ -183,23 +214,23 @@ message PaginationInfo {
   int64 total_items = 3;
   int32 page_size = 4;
 }
-message FetchOrdersByCriteriaRequest {
-  repeated int64 order_ids = 1;        // List of order IDs to fetch
-  string order_name = 2;              // Optional order name filter
-  google.protobuf.Timestamp start_date = 3;  // Start date for date range
-  google.protobuf.Timestamp end_date = 4;    // End date for date range
-  int32 page = 5;                     // Page number for pagination
-  int32 page_size = 6;                // Items per page
-}
-// Service definition
-service OrderService {
 
+message FetchOrdersByCriteriaRequest {
+  repeated int64 order_ids = 1;
+  string order_name = 2;
+  google.protobuf.Timestamp start_date = 3;
+  google.protobuf.Timestamp end_date = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+}
+
+// Service definition with new methods for modifications and deliveries
+service OrderService {
   rpc FetchOrdersByCriteria(FetchOrdersByCriteriaRequest) returns (OrderDetailedListResponse);
   rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
   rpc GetOrders(GetOrdersRequest) returns (OrderListResponse);
   rpc GetOrderDetail(OrderIdParam) returns (OrderResponse);
   rpc UpdateOrder(UpdateOrderRequest) returns (OrderResponse);
   rpc PayOrders(PayOrdersRequest) returns (OrderListResponse);
-
   rpc GetOrderProtoListDetail(GetOrdersRequest) returns (OrderDetailedListResponse);
 }

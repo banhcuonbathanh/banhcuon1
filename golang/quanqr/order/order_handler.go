@@ -36,27 +36,61 @@ func NewOrderHandler(client order.OrderServiceClient, secretKey string) *OrderHa
 }
 
 func (h *OrderHandlerController) CreateOrder(w http.ResponseWriter, r *http.Request) {
+    // Parse and validate the request body
     var orderReq CreateOrderRequestType
-
     if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+        h.logger.Error("Error decoding request body: " + err.Error())
         http.Error(w, "error decoding request body", http.StatusBadRequest)
         return
     }
 
-    // h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go 2222 %+v", orderReq))
-    
-    pbReq := ToPBCreateOrderRequest(orderReq)
-    createdOrderResponse, err := h.client.CreateOrder(h.ctx, pbReq)
-    if err != nil {
-        h.logger.Error("Error creating order: " + err.Error())
-        http.Error(w, "error creating order", http.StatusInternalServerError)
+    // Set default values for new fields if they're not provided
+    if orderReq.Version == 0 {
+        orderReq.Version = 1 // Initial version for new orders
+    }
+
+    // Validate the request
+    if err := validateCreateOrderRequest(orderReq); err != nil {
+        h.logger.Error("Validation error: " + err.Error())
+        http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
 
+    // Add modification tracking information for dish items
+    for i := range orderReq.DishItems {
+        orderReq.DishItems[i].ModificationType = "INITIAL"
+        orderReq.DishItems[i].ModificationNumber = 1
+        orderReq.DishItems[i].OrderName = orderReq.OrderName
+    }
+
+    // Add modification tracking information for set items
+    for i := range orderReq.SetItems {
+        orderReq.SetItems[i].ModificationType = "INITIAL"
+        orderReq.SetItems[i].ModificationNumber = 1
+        orderReq.SetItems[i].OrderName = orderReq.OrderName
+    }
+
+    // Convert request to protobuf format
+    pbReq := ToPBCreateOrderRequest(orderReq)
+
+    // Call the service to create the order
+    h.logger.Info(fmt.Sprintf("Creating order with name: %s", orderReq.OrderName))
+    createdOrderResponse, err := h.client.CreateOrder(h.ctx, pbReq)
+    if err != nil {
+        h.logger.Error("Error creating order: " + err.Error())
+        http.Error(w, "error creating order: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Convert the response and send it back
     res := ToOrderResFromPbOrderResponse(createdOrderResponse)
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(res)
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        h.logger.Error("Error encoding response: " + err.Error())
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        return
+    }
 }
 
 func (h *OrderHandlerController) GetOrderDetail(w http.ResponseWriter, r *http.Request) {
@@ -687,3 +721,27 @@ func (h *OrderHandlerController) FetchOrdersByCriteria(w http.ResponseWriter, r 
     }
 }
 
+// validateCreateOrderRequest validates the create order request
+func validateCreateOrderRequest(req CreateOrderRequestType) error {
+    if req.OrderName == "" {
+        return fmt.Errorf("order_name is required")
+    }
+
+    if req.IsGuest && req.GuestID == 0 {
+        return fmt.Errorf("guest_id is required for guest orders")
+    }
+
+    if !req.IsGuest && req.UserID == 0 {
+        return fmt.Errorf("user_id is required for user orders")
+    }
+
+    if req.TableNumber == 0 {
+        return fmt.Errorf("table_number is required")
+    }
+
+    if len(req.DishItems) == 0 && len(req.SetItems) == 0 {
+        return fmt.Errorf("at least one dish or set item is required")
+    }
+
+    return nil
+}
