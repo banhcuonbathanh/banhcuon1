@@ -230,7 +230,7 @@ service OrderService {
   rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
   rpc GetOrders(GetOrdersRequest) returns (OrderListResponse);
   rpc GetOrderDetail(OrderIdParam) returns (OrderResponse);
-  rpc UpdateOrder(UpdateOrderRequest) returns (OrderResponse);
+  rpc UpdateOrder(UpdateOrderRequest) returns (OrderDetailedListResponse);
   rpc PayOrders(PayOrdersRequest) returns (OrderListResponse);
   rpc GetOrderProtoListDetail(GetOrdersRequest) returns (OrderDetailedListResponse);
 }

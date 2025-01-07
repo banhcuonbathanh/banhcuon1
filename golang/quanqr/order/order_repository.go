@@ -8,6 +8,7 @@ import (
 
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -436,79 +437,6 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
 
 
 
-func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.Order, error) {
-    or.logger.Info(fmt.Sprintf("Updating order with ID: %d", req.Id))
-    
-    tx, err := or.db.Begin(ctx)
-    if err != nil {
-        or.logger.Error("Error starting transaction: " + err.Error())
-        return nil, fmt.Errorf("error starting transaction: %w", err)
-    }
-    defer tx.Rollback(ctx)
-
-    query := `
-        UPDATE orders
-        SET guest_id = $2, user_id = $3, table_number = $4, order_handler_id = $5,
-            status = $6, updated_at = $7, total_price = $8, is_guest = $9,
-            topping = $10, tracking_order = $11, take_away = $12, 
-            chili_number = $13, table_token = $14, order_name = $15
-        WHERE id = $1
-        RETURNING created_at, updated_at
-    `
-
-    var o order.Order
-    var createdAt, updatedAt time.Time
-
-    err = tx.QueryRow(ctx, query,
-        req.Id,
-        req.GuestId,
-        req.UserId,
-        req.TableNumber,
-        req.OrderHandlerId,
-        req.Status,
-        time.Now(),
-        req.TotalPrice,
-        req.IsGuest,
-        req.Topping,
-        req.TrackingOrder,
-        req.TakeAway,
-        req.ChiliNumber,
-        req.TableToken,
-        req.OrderName,
-    ).Scan(&createdAt, &updatedAt)
-
-    if err != nil {
-        or.logger.Error(fmt.Sprintf("Error updating order: %s", err.Error()))
-        return nil, fmt.Errorf("error updating order: %w", err)
-    }
-
-    if err := tx.Commit(ctx); err != nil {
-        or.logger.Error("Error committing transaction: " + err.Error())
-        return nil, fmt.Errorf("error committing transaction: %w", err)
-    }
-
-    // Populate response
-    o.Id = req.Id
-    o.GuestId = req.GuestId
-    o.UserId = req.UserId
-    o.IsGuest = req.IsGuest
-    o.TableNumber = req.TableNumber
-    o.OrderHandlerId = req.OrderHandlerId
-    o.Status = req.Status
-    o.CreatedAt = timestamppb.New(createdAt)
-    o.UpdatedAt = timestamppb.New(updatedAt)
-    o.TotalPrice = req.TotalPrice
-    o.DishItems = req.DishItems
-    o.SetItems = req.SetItems
-    o.Topping = req.Topping
-    o.TrackingOrder = req.TrackingOrder
-    o.TakeAway = req.TakeAway
-    o.ChiliNumber = req.ChiliNumber
-    o.TableToken = req.TableToken
-    o.OrderName = req.OrderName
-
-    return &o, nil
-}
 
 func (or *OrderRepository) GetOrders(ctx context.Context, page, pageSize int32) ([]*order.Order, int64, error) {
     or.logger.Info("Fetching orders with pagination")
@@ -1469,3 +1397,309 @@ func (or *OrderRepository) getClientOrderCount(ctx context.Context, tx *pgxpool.
 }
 
 // -------------------------------------------------- create order end  -----------------------
+
+// -------------------------------------------------- update order start  -----------------------
+
+func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderDetailedListResponse, error) {
+    or.logger.Info(fmt.Sprintf("Updating order with ID: %d", req.Id))
+    
+    // Begin transaction using pgxpool
+    tx, err := or.db.Begin(ctx)
+    if err != nil {
+        or.logger.Error("Error starting transaction: " + err.Error())
+        return nil, fmt.Errorf("error starting transaction: %w", err)
+    }
+    defer tx.Rollback(ctx)
+
+    // Version control check
+    var currentVersion int32
+    err = tx.QueryRow(ctx, "SELECT version FROM orders WHERE id = $1", req.Id).Scan(&currentVersion)
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("Error fetching order version: %s", err.Error()))
+        return nil, fmt.Errorf("error fetching order version: %w", err)
+    }
+
+    if currentVersion != req.Version {
+        return nil, fmt.Errorf("order version mismatch: expected %d, got %d", currentVersion, req.Version)
+    }
+
+    // Update order with incremented version
+    newVersion := currentVersion + 1
+    query := `
+        UPDATE orders
+        SET guest_id = $2, user_id = $3, table_number = $4, order_handler_id = $5,
+            status = $6, updated_at = $7, total_price = $8, is_guest = $9,
+            topping = $10, tracking_order = $11, take_away = $12, 
+            chili_number = $13, table_token = $14, order_name = $15,
+            version = $16
+        WHERE id = $1
+        RETURNING created_at, updated_at
+    `
+
+    var createdAt, updatedAt time.Time
+    err = tx.QueryRow(ctx, query,
+        req.Id, req.GuestId, req.UserId, req.TableNumber, req.OrderHandlerId,
+        req.Status, time.Now(), req.TotalPrice, req.IsGuest,
+        req.Topping, req.TrackingOrder, req.TakeAway,
+        req.ChiliNumber, req.TableToken, req.OrderName, newVersion,
+    ).Scan(&createdAt, &updatedAt)
+
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("Error updating order: %s", err.Error()))
+        return nil, fmt.Errorf("error updating order: %w", err)
+    }
+
+    // Create modification record
+    _, err = tx.Exec(ctx, `
+        INSERT INTO order_modifications (
+            order_id, modification_number, modification_type, 
+            modified_by_user_id, order_name
+        ) VALUES ($1, $2, $3, $4, $5)
+    `,
+        req.Id, newVersion, "UPDATE", req.OrderHandlerId, req.OrderName,
+    )
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("Error creating modification record: %s", err.Error()))
+        return nil, fmt.Errorf("error creating modification record: %w", err)
+    }
+
+    // Handle dish items update
+    if len(req.DishItems) > 0 {
+        _, err = tx.Exec(ctx, "DELETE FROM dish_order_items WHERE order_id = $1", req.Id)
+        if err != nil {
+            return nil, fmt.Errorf("error deleting existing dish items: %w", err)
+        }
+
+        for _, item := range req.DishItems {
+            _, err = tx.Exec(ctx, `
+                INSERT INTO dish_order_items (
+                    order_id, dish_id, quantity, order_name,
+                    modification_type, modification_number
+                ) VALUES ($1, $2, $3, $4, $5, $6)
+            `,
+                req.Id, item.DishId, item.Quantity, item.OrderName,
+                "UPDATE", newVersion,
+            )
+            if err != nil {
+                return nil, fmt.Errorf("error inserting updated dish item: %w", err)
+            }
+        }
+    }
+
+    // Handle set items update
+    if len(req.SetItems) > 0 {
+        _, err = tx.Exec(ctx, "DELETE FROM set_order_items WHERE order_id = $1", req.Id)
+        if err != nil {
+            return nil, fmt.Errorf("error deleting existing set items: %w", err)
+        }
+
+        for _, item := range req.SetItems {
+            _, err = tx.Exec(ctx, `
+                INSERT INTO set_order_items (
+                    order_id, set_id, quantity, order_name,
+                    modification_type, modification_number
+                ) VALUES ($1, $2, $3, $4, $5, $6)
+            `,
+                req.Id, item.SetId, item.Quantity, item.OrderName,
+                "UPDATE", newVersion,
+            )
+            if err != nil {
+                return nil, fmt.Errorf("error inserting updated set item: %w", err)
+            }
+        }
+    }
+
+    // Fetch detailed information
+    detailedDishes, err := or.fetchDetailedDishes(ctx, tx, req.Id)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching detailed dishes: %w", err)
+    }
+
+    detailedSets, err := or.fetchDetailedSets(ctx, tx, req.Id)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching detailed sets: %w", err)
+    }
+
+    if err := tx.Commit(ctx); err != nil {
+        or.logger.Error("Error committing transaction: " + err.Error())
+        return nil, fmt.Errorf("error committing transaction: %w", err)
+    }
+
+    return &order.OrderDetailedListResponse{
+        Data: []*order.OrderDetailedResponse{
+            {
+                Id:             req.Id,
+                GuestId:        req.GuestId,
+                UserId:         req.UserId,
+                TableNumber:    req.TableNumber,
+                OrderHandlerId: req.OrderHandlerId,
+                Status:         req.Status,
+                TotalPrice:     req.TotalPrice,
+                DataSet:        detailedSets,
+                DataDish:       detailedDishes,
+                IsGuest:        req.IsGuest,
+                Topping:        req.Topping,
+                TrackingOrder:  req.TrackingOrder,
+                TakeAway:       req.TakeAway,
+                ChiliNumber:    req.ChiliNumber,
+                TableToken:     req.TableToken,
+                OrderName:      req.OrderName,
+                Version:        newVersion,
+                ParentOrderId:  req.ParentOrderId,
+            },
+        },
+        Pagination: &order.PaginationInfo{
+            CurrentPage: 1,
+            TotalPages:  1,
+            TotalItems:  1,
+            PageSize:    1,
+        },
+    }, nil
+}
+
+// Helper function with corrected transaction type
+func (or *OrderRepository) fetchDetailedSets(ctx context.Context,  tx pgx.Tx, orderID int64) ([]*order.OrderSetDetailed, error) {
+    // Query to fetch set details along with their order quantities
+    query := `
+        SELECT s.id, s.name, s.description, s.user_id, s.created_at, s.updated_at,
+               s.is_favourite, s.like_by, s.is_public, s.image, s.price, soi.quantity
+        FROM set_order_items soi
+        JOIN sets s ON soi.set_id = s.id
+        WHERE soi.order_id = $1
+    `
+    
+    // Execute the query within the transaction
+    rows, err := tx.Query(ctx, query, orderID)
+    if err != nil {
+        return nil, fmt.Errorf("error querying set details: %w", err)
+    }
+    defer rows.Close()
+
+    var sets []*order.OrderSetDetailed
+    for rows.Next() {
+        set := &order.OrderSetDetailed{}
+        var createdAt, updatedAt time.Time
+        var likeBy []int64
+        
+        // Scan all fields from the query into our struct
+        err := rows.Scan(
+            &set.Id,
+            &set.Name,
+            &set.Description,
+            &set.UserId,
+            &createdAt,
+            &updatedAt,
+            &set.IsFavourite,
+            &likeBy,
+            &set.IsPublic,
+            &set.Image,
+            &set.Price,
+            &set.Quantity,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning set row: %w", err)
+        }
+        
+        // Convert time fields to protobuf timestamp format
+        set.CreatedAt = timestamppb.New(createdAt)
+        set.UpdatedAt = timestamppb.New(updatedAt)
+        set.LikeBy = likeBy
+        
+        // Fetch associated dishes for this set
+        dishes, err := or.fetchSetDishes(ctx, tx, set.Id)
+        if err != nil {
+            return nil, fmt.Errorf("error fetching dishes for set %d: %w", set.Id, err)
+        }
+        set.Dishes = dishes
+        
+        sets = append(sets, set)
+    }
+
+    // Check for any errors during row iteration
+    if err = rows.Err(); err != nil {
+        return nil, fmt.Errorf("error iterating set rows: %w", err)
+    }
+
+    return sets, nil
+}
+
+// Helper function to fetch dishes for a set using pgxpool transaction
+func (or *OrderRepository) fetchSetDishes(ctx context.Context,  tx pgx.Tx, setID int64) ([]*order.OrderDetailedDish, error) {
+    query := `
+        SELECT d.id, sd.quantity, d.name, d.price, d.description, d.image, d.status
+        FROM set_dishes sd
+        JOIN dishes d ON sd.dish_id = d.id
+        WHERE sd.set_id = $1
+    `
+    
+    rows, err := tx.Query(ctx, query, setID)
+    if err != nil {
+        return nil, fmt.Errorf("error querying set dishes: %w", err)
+    }
+    defer rows.Close()
+
+    var dishes []*order.OrderDetailedDish
+    for rows.Next() {
+        dish := &order.OrderDetailedDish{}
+        err := rows.Scan(
+            &dish.DishId,
+            &dish.Quantity,
+            &dish.Name,
+            &dish.Price,
+            &dish.Description,
+            &dish.Image,
+            &dish.Status,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning dish row: %w", err)
+        }
+        dishes = append(dishes, dish)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, fmt.Errorf("error iterating dish rows: %w", err)
+    }
+
+    return dishes, nil
+}
+
+// Similarly, update the fetchDetailedDishes function
+func (or *OrderRepository) fetchDetailedDishes(ctx context.Context,  tx pgx.Tx, orderID int64) ([]*order.OrderDetailedDish, error) {
+    query := `
+        SELECT d.id, doi.quantity, d.name, d.price, d.description, d.image, d.status
+        FROM dish_order_items doi
+        JOIN dishes d ON doi.dish_id = d.id
+        WHERE doi.order_id = $1
+    `
+    
+    rows, err := tx.Query(ctx, query, orderID)
+    if err != nil {
+        return nil, fmt.Errorf("error querying order dishes: %w", err)
+    }
+    defer rows.Close()
+
+    var dishes []*order.OrderDetailedDish
+    for rows.Next() {
+        dish := &order.OrderDetailedDish{}
+        err := rows.Scan(
+            &dish.DishId,
+            &dish.Quantity,
+            &dish.Name,
+            &dish.Price,
+            &dish.Description,
+            &dish.Image,
+            &dish.Status,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning dish row: %w", err)
+        }
+        dishes = append(dishes, dish)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, fmt.Errorf("error iterating dish rows: %w", err)
+    }
+
+    return dishes, nil
+}
+// -------------------------------------------------- update order end  -----------------------

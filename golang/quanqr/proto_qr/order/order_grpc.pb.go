@@ -38,7 +38,7 @@ type OrderServiceClient interface {
 	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*OrderResponse, error)
 	GetOrders(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error)
 	GetOrderDetail(ctx context.Context, in *OrderIdParam, opts ...grpc.CallOption) (*OrderResponse, error)
-	UpdateOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderResponse, error)
+	UpdateOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 	PayOrders(ctx context.Context, in *PayOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error)
 	GetOrderProtoListDetail(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 }
@@ -91,9 +91,9 @@ func (c *orderServiceClient) GetOrderDetail(ctx context.Context, in *OrderIdPara
 	return out, nil
 }
 
-func (c *orderServiceClient) UpdateOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderResponse, error) {
+func (c *orderServiceClient) UpdateOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OrderResponse)
+	out := new(OrderDetailedListResponse)
 	err := c.cc.Invoke(ctx, OrderService_UpdateOrder_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ type OrderServiceServer interface {
 	CreateOrder(context.Context, *CreateOrderRequest) (*OrderResponse, error)
 	GetOrders(context.Context, *GetOrdersRequest) (*OrderListResponse, error)
 	GetOrderDetail(context.Context, *OrderIdParam) (*OrderResponse, error)
-	UpdateOrder(context.Context, *UpdateOrderRequest) (*OrderResponse, error)
+	UpdateOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error)
 	PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error)
 	GetOrderProtoListDetail(context.Context, *GetOrdersRequest) (*OrderDetailedListResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
@@ -156,7 +156,7 @@ func (UnimplementedOrderServiceServer) GetOrders(context.Context, *GetOrdersRequ
 func (UnimplementedOrderServiceServer) GetOrderDetail(context.Context, *OrderIdParam) (*OrderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrderDetail not implemented")
 }
-func (UnimplementedOrderServiceServer) UpdateOrder(context.Context, *UpdateOrderRequest) (*OrderResponse, error) {
+func (UnimplementedOrderServiceServer) UpdateOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateOrder not implemented")
 }
 func (UnimplementedOrderServiceServer) PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error) {
