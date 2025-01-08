@@ -34,9 +34,10 @@ TRUNCATE TABLE schema\*migrations, users; delete all data
 \d reading_test_models;
 
 \d orders
-SELECT * FROM order_modifications;
-
+SELECT * FROM orders;
 SELECT * FROM dish_order_items;
+SELECT * FROM set_order_items;
+SELECT * FROM order_modifications;
 SELECT _ FROM dish_order_items;
 SELECT _ FROM orders;
 SELECT _ FROM tables;

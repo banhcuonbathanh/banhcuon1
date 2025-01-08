@@ -26,6 +26,7 @@ func RegisterOrderRoutes(r *chi.Mux, handler *OrderHandlerController) *chi.Mux {
             r.Route("/{id}", func(r chi.Router) {
                 r.Get("/", handler.GetOrderDetail)
                 r.Put("/", handler.UpdateOrder)
+                r.Put("/addsetsdishestoorder", handler.AddingSetsDishesOrder)
             })
 
             r.Post("/pay/{guest_id}", handler.PayOrders)

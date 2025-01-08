@@ -1664,21 +1664,37 @@ func (or *OrderRepository) fetchSetDishes(ctx context.Context,  tx pgx.Tx, setID
 }
 
 // Similarly, update the fetchDetailedDishes function
-func (or *OrderRepository) fetchDetailedDishes(ctx context.Context,  tx pgx.Tx, orderID int64) ([]*order.OrderDetailedDish, error) {
+func (or *OrderRepository) fetchDetailedDishes(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.OrderDetailedDish, error) {
+    // We'll use a CTE (Common Table Expression) to ensure we get the latest modifications
     query := `
-        SELECT d.id, doi.quantity, d.name, d.price, d.description, d.image, d.status
-        FROM dish_order_items doi
-        JOIN dishes d ON doi.dish_id = d.id
-        WHERE doi.order_id = $1
+        WITH latest_modifications AS (
+            SELECT dish_id, quantity
+            FROM dish_order_items doi
+            WHERE doi.order_id = $1
+            AND doi.modification_number = (
+                SELECT MAX(modification_number)
+                FROM dish_order_items
+                WHERE order_id = $1 AND dish_id = doi.dish_id
+            )
+        )
+        SELECT d.id, lm.quantity, d.name, d.price, d.description, d.image, d.status
+        FROM latest_modifications lm
+        JOIN dishes d ON lm.dish_id = d.id
     `
     
-    rows, err := tx.Query(ctx, query, orderID)
+    // Add context timeout to prevent long-running queries
+    queryCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+    defer cancel()
+    
+    rows, err := tx.Query(queryCtx, query, orderID)
     if err != nil {
-        return nil, fmt.Errorf("error querying order dishes: %w", err)
+        return nil, fmt.Errorf("error querying order dishes (order_id=%d): %w", orderID, err)
     }
     defer rows.Close()
 
-    var dishes []*order.OrderDetailedDish
+    // Pre-allocate the slice with a reasonable capacity
+    dishes := make([]*order.OrderDetailedDish, 0, 10)
+    
     for rows.Next() {
         dish := &order.OrderDetailedDish{}
         err := rows.Scan(
@@ -1691,15 +1707,228 @@ func (or *OrderRepository) fetchDetailedDishes(ctx context.Context,  tx pgx.Tx, 
             &dish.Status,
         )
         if err != nil {
-            return nil, fmt.Errorf("error scanning dish row: %w", err)
+            // Include more context in error message
+            return nil, fmt.Errorf("error scanning dish row (order_id=%d): %w", orderID, err)
         }
         dishes = append(dishes, dish)
     }
 
+    // Check for errors from iteration
     if err = rows.Err(); err != nil {
-        return nil, fmt.Errorf("error iterating dish rows: %w", err)
+        return nil, fmt.Errorf("error iterating dish rows (order_id=%d): %w", orderID, err)
+    }
+
+    // Validate we got at least some results
+    if len(dishes) == 0 {
+        or.logger.Info(fmt.Sprintf("No dishes found for order_id=%d", orderID))
     }
 
     return dishes, nil
 }
 // -------------------------------------------------- update order end  -----------------------
+
+// -------------------------------------------------- update ordder adding set and dishes start  -----------------------
+func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderDetailedListResponse, error) {
+    or.logger.Info(fmt.Sprintf("addingSetsDishesOrder order with ID repository: %d", req.Id))
+    
+    // Start a database transaction
+    tx, err := or.db.Begin(ctx)
+    if err != nil {
+        or.logger.Error("Error starting transaction: " + err.Error())
+        return nil, fmt.Errorf("error starting transaction: %w", err)
+    }
+    defer tx.Rollback(ctx) // This will rollback if we don't commit
+
+    // First, let's check if the order exists and get its current version
+    var currentVersion int32
+    var isGuest bool
+    err = tx.QueryRow(ctx, `
+        SELECT version, is_guest 
+        FROM orders 
+        WHERE id = $1`, req.Id).Scan(&currentVersion, &isGuest)
+    if err != nil {
+        if err == pgx.ErrNoRows {
+            return nil, fmt.Errorf("order not found with ID: %d", req.Id)
+        }
+        or.logger.Error(fmt.Sprintf("Error fetching order: %s", err.Error()))
+        return nil, fmt.Errorf("error fetching order: %w", err)
+    }
+
+    // For new orders, we expect version to be 0
+    // For existing orders, the request version should match the database version
+    if req.Version != 0 && req.Version != currentVersion {
+        return nil, fmt.Errorf("order version mismatch: expected %d, got %d", currentVersion, req.Version)
+    }
+
+    // Increment version for the update
+    newVersion := currentVersion + 1
+
+    // Update the main order record
+    query := `
+        UPDATE orders
+        SET 
+            guest_id = CASE WHEN $2 = 0 THEN NULL ELSE $2 END,
+            user_id = CASE WHEN $3 = 0 THEN NULL ELSE $3 END,
+            table_number = $4,
+            order_handler_id = $5,
+            status = $6,
+            updated_at = $7,
+            total_price = $8,
+            is_guest = $9,
+            topping = $10,
+            tracking_order = $11,
+            take_away = $12,
+            chili_number = $13,
+            table_token = $14,
+            order_name = $15,
+            version = $16
+        WHERE id = $1
+        RETURNING created_at, updated_at`
+
+    var createdAt, updatedAt time.Time
+    err = tx.QueryRow(ctx, query,
+        req.Id,
+        req.GuestId,
+        req.UserId,
+        req.TableNumber,
+        req.OrderHandlerId,
+        req.Status,
+        time.Now(),
+        req.TotalPrice,
+        req.IsGuest,
+        req.Topping,
+        req.TrackingOrder,
+        req.TakeAway,
+        req.ChiliNumber,
+        req.TableToken,
+        req.OrderName,
+        newVersion,
+    ).Scan(&createdAt, &updatedAt)
+
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("Error updating order: %s", err.Error()))
+        return nil, fmt.Errorf("error updating order: %w", err)
+    }
+
+    // Record the modification
+    _, err = tx.Exec(ctx, `
+        INSERT INTO order_modifications (
+            order_id,
+            modification_number,
+            modification_type,
+            modified_by_user_id,
+            order_name
+        ) VALUES ($1, $2, $3, $4, $5)`,
+        req.Id,
+        newVersion,
+        "UPDATE",
+        req.OrderHandlerId,
+        req.OrderName,
+    )
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("Error creating modification record: %s", err.Error()))
+        return nil, fmt.Errorf("error creating modification record: %w", err)
+    }
+
+    // Handle dish items - Insert new records with the new version
+    if len(req.DishItems) > 0 {
+        for _, item := range req.DishItems {
+            _, err = tx.Exec(ctx, `
+                INSERT INTO dish_order_items (
+                    order_id,
+                    dish_id,
+                    quantity,
+                    order_name,
+                    modification_type,
+                    modification_number
+                ) VALUES ($1, $2, $3, $4, $5, $6)`,
+                req.Id,
+                item.DishId,
+                item.Quantity,
+                req.OrderName, // Using the order name from the request
+                "UPDATE",
+                newVersion,
+            )
+            if err != nil {
+                or.logger.Error(fmt.Sprintf("Error inserting dish item: %s", err.Error()))
+                return nil, fmt.Errorf("error inserting dish item: %w", err)
+            }
+        }
+    }
+
+    // Handle set items - Insert new records with the new version
+    if len(req.SetItems) > 0 {
+        for _, item := range req.SetItems {
+            _, err = tx.Exec(ctx, `
+                INSERT INTO set_order_items (
+                    order_id,
+                    set_id,
+                    quantity,
+                    order_name,
+                    modification_type,
+                    modification_number
+                ) VALUES ($1, $2, $3, $4, $5, $6)`,
+                req.Id,
+                item.SetId,
+                item.Quantity,
+                req.OrderName, // Using the order name from the request
+                "UPDATE",
+                newVersion,
+            )
+            if err != nil {
+                or.logger.Error(fmt.Sprintf("Error inserting set item: %s", err.Error()))
+                return nil, fmt.Errorf("error inserting set item: %w", err)
+            }
+        }
+    }
+
+    // Fetch updated details
+    detailedDishes, err := or.fetchDetailedDishes(ctx, tx, req.Id)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching detailed dishes: %w", err)
+    }
+
+    detailedSets, err := or.fetchDetailedSets(ctx, tx, req.Id)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching detailed sets: %w", err)
+    }
+
+    // Commit the transaction
+    if err := tx.Commit(ctx); err != nil {
+        or.logger.Error("Error committing transaction: " + err.Error())
+        return nil, fmt.Errorf("error committing transaction: %w", err)
+    }
+
+    // Return the response
+    return &order.OrderDetailedListResponse{
+        Data: []*order.OrderDetailedResponse{
+            {
+                Id:             req.Id,
+                GuestId:        req.GuestId,
+                UserId:         req.UserId,
+                TableNumber:    req.TableNumber,
+                OrderHandlerId: req.OrderHandlerId,
+                Status:         req.Status,
+                TotalPrice:     req.TotalPrice,
+                DataSet:        detailedSets,
+                DataDish:       detailedDishes,
+                IsGuest:        req.IsGuest,
+                Topping:        req.Topping,
+                TrackingOrder:  req.TrackingOrder,
+                TakeAway:       req.TakeAway,
+                ChiliNumber:    req.ChiliNumber,
+                TableToken:     req.TableToken,
+                OrderName:      req.OrderName,
+                Version:        newVersion,
+                ParentOrderId:  req.ParentOrderId,
+            },
+        },
+        Pagination: &order.PaginationInfo{
+            CurrentPage: 1,
+            TotalPages:  1,
+            TotalItems:  1,
+            PageSize:    1,
+        },
+    }, nil
+}
+// -------------------------------------------------- update ordder adding set and dishes end -----------------------

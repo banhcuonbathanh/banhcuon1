@@ -181,7 +181,6 @@ func (h *OrderHandlerController) UpdateOrder(w http.ResponseWriter, r *http.Requ
         return
     }
 
-    h.logger.Info(fmt.Sprintf("Updating order: %d", orderReq.ID))
     updatedOrderResponse, err := h.client.UpdateOrder(h.ctx, ToPBUpdateOrderRequest(orderReq))
     if err != nil {
         h.logger.Error("Error updating order: " + err.Error())
@@ -189,12 +188,32 @@ func (h *OrderHandlerController) UpdateOrder(w http.ResponseWriter, r *http.Requ
         return
     }
 
-    res := ToOrderResFromPbOrderResponse(updatedOrderResponse)
+    res := ToOrderDetailedListResponseFromPbResponse(updatedOrderResponse)
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(res)
 }
 
+func (h *OrderHandlerController) AddingSetsDishesOrder(w http.ResponseWriter, r *http.Request) {
+    var orderReq UpdateOrderRequestType
+    if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
+
+    // Fixed: Remove extra parentheses and pass the correct parameters
+    updatedOrderResponse, err := h.client.AddingSetsDishesOrder(h.ctx, ToPBUpdateOrderRequest(orderReq))
+    if err != nil {
+        h.logger.Error("Error updating order: " + err.Error())
+        http.Error(w, "error updating order", http.StatusInternalServerError)
+        return
+    }
+
+    res := ToOrderDetailedListResponseFromPbResponse(updatedOrderResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(res)
+}
 func (h *OrderHandlerController) PayOrders(w http.ResponseWriter, r *http.Request) {
     var req PayOrdersRequestType
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -744,4 +763,62 @@ func validateCreateOrderRequest(req CreateOrderRequestType) error {
     }
 
     return nil
+}
+
+
+func ToOrderDetailedListResponseFromPbResponse(pbRes *order.OrderDetailedListResponse) *OrderDetailedListResponse {
+    if pbRes == nil {
+        return nil
+    }
+    
+    return &OrderDetailedListResponse{
+        Data: ToOrderDetailedResponsesFromPbResponses(pbRes.Data),
+        Pagination: PaginationInfo{
+            CurrentPage: pbRes.GetPagination().GetCurrentPage(),
+            TotalPages: pbRes.GetPagination().GetTotalPages(),
+            TotalItems: pbRes.GetPagination().GetTotalItems(),
+            PageSize:   pbRes.GetPagination().GetPageSize(),
+        },
+    }
+}
+
+func ToOrderDetailedResponsesFromPbResponses(pbResponses []*order.OrderDetailedResponse) []OrderDetailedResponse {
+    // Handle nil input case to avoid panic
+    if pbResponses == nil {
+        return nil
+    }
+
+    // Create a slice with the same length as input
+    responses := make([]OrderDetailedResponse, len(pbResponses))
+
+    // Convert each protobuf response to domain model
+    for i, pbRes := range pbResponses {
+        // Skip nil entries to avoid panic
+        if pbRes == nil {
+            continue
+        }
+
+        // Convert each protobuf response to our domain model
+        responses[i] = OrderDetailedResponse{
+            ID:             pbRes.Id,
+            GuestID:        pbRes.GuestId,
+            UserID:         pbRes.UserId,
+            TableNumber:    pbRes.TableNumber,
+            OrderHandlerID: pbRes.OrderHandlerId,
+            Status:         pbRes.Status,
+            TotalPrice:     pbRes.TotalPrice,
+            IsGuest:        pbRes.IsGuest,
+            Topping:       pbRes.Topping,
+            TrackingOrder: pbRes.TrackingOrder,
+            TakeAway:      pbRes.TakeAway,
+            ChiliNumber:   pbRes.ChiliNumber,
+            TableToken:    pbRes.TableToken,
+            OrderName:     pbRes.OrderName,
+            // Convert nested data structures using existing helper functions
+            DataSet:       ToOrderSetsDetailedFromProto(pbRes.DataSet),
+            DataDish:      ToOrderDetailedDishesFromProto(pbRes.DataDish),
+        }
+    }
+
+    return responses
 }

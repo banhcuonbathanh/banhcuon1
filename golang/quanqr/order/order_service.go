@@ -81,7 +81,7 @@ func (os *OrderServiceStruct) GetOrderDetail(ctx context.Context, req *order.Ord
     }, nil
 }
 
-func (os *OrderServiceStruct) UpdateOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderResponse, error) {
+func (os *OrderServiceStruct) UpdateOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderDetailedListResponse, error) {
     os.logger.Info("Updating order: " + fmt.Sprint(req.Id))
     
     updatedOrder, err := os.orderRepo.UpdateOrder(ctx, req)
@@ -90,11 +90,9 @@ func (os *OrderServiceStruct) UpdateOrder(ctx context.Context, req *order.Update
         return nil, err
     }
     
-    return &order.OrderResponse{
-        Data: updatedOrder,
-    }, nil
+    // Assuming updatedOrder is already an OrderDetailedListResponse
+    return updatedOrder, nil
 }
-
 func (os *OrderServiceStruct) PayOrders(ctx context.Context, req *order.PayOrdersRequest) (*order.OrderListResponse, error) {
     os.logger.Info("Processing payment for orders")
     
@@ -152,4 +150,17 @@ func (os *OrderServiceStruct) FetchOrdersByCriteria(ctx context.Context, req *or
     }
     
     return detailedList, nil
+}
+
+
+func (os *OrderServiceStruct) AddingSetsDishesOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderDetailedListResponse, error) {
+    os.logger.Info("addingSetsDishesOrder order service: " + fmt.Sprint(req.Id))
+    
+    updatedOrder, err := os.orderRepo.AddingSetsDishesOrder(ctx, req)
+    if err != nil {
+        os.logger.Error("Error updating order: " + err.Error())
+        return nil, err
+    }
+    
+    return updatedOrder, nil
 }
