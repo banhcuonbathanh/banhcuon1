@@ -275,7 +275,7 @@ CREATE TABLE dish_order_items (
     order_name VARCHAR(255),
     modification_type VARCHAR(20) DEFAULT 'INITIAL',  -- Added to track if item was part of initial order or added later
     modification_number INTEGER DEFAULT 1,            -- Added to track which modification this was part of
-    
+     version INTEGER DEFAULT 1,  -- Added to track order versions
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE CASCADE
 );
@@ -290,7 +290,7 @@ CREATE TABLE set_order_items (
     order_name VARCHAR(255),
     modification_type VARCHAR(20) DEFAULT 'INITIAL',  -- Added to track if item was part of initial order or added later
     modification_number INTEGER DEFAULT 1,            -- Added to track which modification this was part of
-    
+     version INTEGER DEFAULT 1,  -- Added to track order versions
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (set_id) REFERENCES sets(id) ON DELETE CASCADE
 );
@@ -302,7 +302,7 @@ CREATE TABLE order_modifications (
     modified_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     modified_by_user_id BIGINT,
     order_name VARCHAR(255),
-    
+     version INTEGER DEFAULT 1,  -- Added to track order versions
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (modified_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
@@ -318,7 +318,7 @@ CREATE TABLE dish_deliveries (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     modification_number INTEGER NOT NULL,  -- To track which order modification this delivery belongs to
-    
+    version INTEGER DEFAULT 1,  -- Added to track order versions
     -- Ensure delivered quantity is positive
     CONSTRAINT valid_delivery_quantity CHECK (quantity_delivered > 0),
     
