@@ -172,31 +172,31 @@ message OrderResponse {
   Order data = 1;
 }
 
-message OrderDetailedResponse {
-  int64 id = 1;
-  int64 guest_id = 2;
-  int64 user_id = 3;
-  int64 table_number = 4;
-  int64 order_handler_id = 5;
-  string status = 6;
-  int32 total_price = 7;
-  repeated OrderSetDetailed data_set = 8;
-  repeated OrderDetailedDish data_dish = 9;
-  bool is_guest = 10;
-  string topping = 11;
-  string tracking_order = 12;
-  bool take_away = 15;
-  int64 chili_number = 16;
-  string table_token = 17;
-  string order_name = 18;
-  int32 version = 19;
-  int64 parent_order_id = 20;
-}
+// message OrderDetailedResponse {
+//   int64 id = 1;
+//   int64 guest_id = 2;
+//   int64 user_id = 3;
+//   int64 table_number = 4;
+//   int64 order_handler_id = 5;
+//   string status = 6;
+//   int32 total_price = 7;
+//   repeated OrderSetDetailed data_set = 8;
+//   repeated OrderDetailedDish data_dish = 9;
+//   bool is_guest = 10;
+//   string topping = 11;
+//   string tracking_order = 12;
+//   bool take_away = 15;
+//   int64 chili_number = 16;
+//   string table_token = 17;
+//   string order_name = 18;
+//   int32 version = 19;
+//   int64 parent_order_id = 20;
+// }
 
-message OrderDetailedListResponse {
-  repeated OrderDetailedResponse data = 1;
-  PaginationInfo pagination = 2;
-}
+// message OrderDetailedListResponse {
+//   repeated OrderDetailedResponse data = 1;
+//   PaginationInfo pagination = 2;
+// }
 
 message GetOrdersRequest {
   int32 page = 1;
@@ -223,6 +223,79 @@ message FetchOrdersByCriteriaRequest {
   int32 page = 5;
   int32 page_size = 6;
 }
+
+
+
+
+//  adding data start
+// Represents a summary of items in a specific order version
+message OrderVersionSummary {
+  int32 version_number = 1;                // The version number of this summary
+  int32 total_dishes_count = 2;            // Total number of dishes in this version
+  int32 total_sets_count = 3;              // Total number of sets in this version
+  int32 version_total_price = 4;           // Total price for this version
+  string modification_type = 5;            // Type of modification (INITIAL, ADD, REMOVE, etc.)
+  google.protobuf.Timestamp modified_at = 6; // When this version was created
+  repeated OrderItemChange changes = 7;     // Details of what changed in this version
+}
+
+// Represents changes made in a specific version
+message OrderItemChange {
+  string item_type = 1;        // Whether it's a "DISH" or "SET"
+  int64 item_id = 2;          // ID of the dish or set
+  string item_name = 3;       // Name of the dish or set
+  int32 quantity_changed = 4; // Positive for additions, negative for removals
+  int32 price = 5;           // Price of this item
+}
+
+// Modified OrderDetailedResponse to include version summaries
+message OrderDetailedResponse {
+  int64 id = 1;
+  int64 guest_id = 2;
+  int64 user_id = 3;
+  int64 table_number = 4;
+  int64 order_handler_id = 5;
+  string status = 6;
+  int32 total_price = 7;
+  repeated OrderSetDetailed data_set = 8;
+  repeated OrderDetailedDish data_dish = 9;
+  bool is_guest = 10;
+  string topping = 11;
+  string tracking_order = 12;
+  bool take_away = 15;
+  int64 chili_number = 16;
+  string table_token = 17;
+  string order_name = 18;
+  int32 current_version = 19;           // Renamed from version to be more clear
+  int64 parent_order_id = 20;
+  
+  // New fields for version tracking and summaries
+  repeated OrderVersionSummary version_history = 21;  // History of all versions
+  OrderTotalSummary total_summary = 22;              // Overall summary across all versions
+}
+
+// Represents the total summary across all versions
+message OrderTotalSummary {
+  int32 total_versions = 1;              // Total number of versions
+  int32 total_dishes_ordered = 2;        // Total dishes across all versions
+  int32 total_sets_ordered = 3;          // Total sets across all versions
+  int32 cumulative_total_price = 4;      // Sum of all version prices
+  repeated OrderItemCount most_ordered_items = 5; // Top ordered items across versions
+}
+
+// Helper message for tracking most ordered items
+message OrderItemCount {
+  string item_type = 1;    // "DISH" or "SET"
+  int64 item_id = 2;
+  string item_name = 3;
+  int32 total_quantity = 4;
+}
+
+message OrderDetailedListResponse {
+  repeated OrderDetailedResponse data = 1;
+  PaginationInfo pagination = 2;
+}
+//adding data end
 
 // Service definition with new methods for modifications and deliveries
 service OrderService {

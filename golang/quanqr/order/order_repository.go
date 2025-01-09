@@ -3,6 +3,7 @@ package order_grpc
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math"
 
@@ -1544,7 +1545,7 @@ func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrd
                 ChiliNumber:    req.ChiliNumber,
                 TableToken:     req.TableToken,
                 OrderName:      req.OrderName,
-                Version:        newVersion,
+                CurrentVersion:        newVersion,
                 ParentOrderId:  req.ParentOrderId,
             },
         },
@@ -1558,17 +1559,34 @@ func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrd
 }
 
 // Helper function with corrected transaction type
-func (or *OrderRepository) fetchDetailedSets(ctx context.Context,  tx pgx.Tx, orderID int64) ([]*order.OrderSetDetailed, error) {
-    // Query to fetch set details along with their order quantities
+func (or *OrderRepository) fetchDetailedSets(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.OrderSetDetailed, error) {
+    // First, fetch all sets with their basic information
     query := `
+        WITH set_dishes AS (
+            SELECT sd.set_id,
+                   jsonb_agg(
+                       jsonb_build_object(
+                           'id', d.id,
+                           'name', d.name,
+                           'description', d.description,
+                           'price', d.price,
+                           'image', d.image,
+                           'quantity', sd.quantity
+                       )
+                   ) as dishes
+            FROM set_dishes sd
+            JOIN dishes d ON sd.dish_id = d.id
+            GROUP BY sd.set_id
+        )
         SELECT s.id, s.name, s.description, s.user_id, s.created_at, s.updated_at,
-               s.is_favourite, s.like_by, s.is_public, s.image, s.price, soi.quantity
+               s.is_favourite, s.like_by, s.is_public, s.image, s.price, soi.quantity,
+               COALESCE(sd.dishes, '[]'::jsonb) as dishes
         FROM set_order_items soi
         JOIN sets s ON soi.set_id = s.id
+        LEFT JOIN set_dishes sd ON s.id = sd.set_id
         WHERE soi.order_id = $1
     `
     
-    // Execute the query within the transaction
     rows, err := tx.Query(ctx, query, orderID)
     if err != nil {
         return nil, fmt.Errorf("error querying set details: %w", err)
@@ -1580,8 +1598,8 @@ func (or *OrderRepository) fetchDetailedSets(ctx context.Context,  tx pgx.Tx, or
         set := &order.OrderSetDetailed{}
         var createdAt, updatedAt time.Time
         var likeBy []int64
+        var dishesJSON []byte
         
-        // Scan all fields from the query into our struct
         err := rows.Scan(
             &set.Id,
             &set.Name,
@@ -1595,27 +1613,26 @@ func (or *OrderRepository) fetchDetailedSets(ctx context.Context,  tx pgx.Tx, or
             &set.Image,
             &set.Price,
             &set.Quantity,
+            &dishesJSON,
         )
         if err != nil {
             return nil, fmt.Errorf("error scanning set row: %w", err)
         }
         
-        // Convert time fields to protobuf timestamp format
+        // Parse dishes JSON into the appropriate struct
+        var dishes []*order.OrderDetailedDish
+        if err := json.Unmarshal(dishesJSON, &dishes); err != nil {
+            return nil, fmt.Errorf("error unmarshaling dishes: %w", err)
+        }
+        
         set.CreatedAt = timestamppb.New(createdAt)
         set.UpdatedAt = timestamppb.New(updatedAt)
         set.LikeBy = likeBy
-        
-        // Fetch associated dishes for this set
-        dishes, err := or.fetchSetDishes(ctx, tx, set.Id)
-        if err != nil {
-            return nil, fmt.Errorf("error fetching dishes for set %d: %w", set.Id, err)
-        }
         set.Dishes = dishes
         
         sets = append(sets, set)
     }
 
-    // Check for any errors during row iteration
     if err = rows.Err(); err != nil {
         return nil, fmt.Errorf("error iterating set rows: %w", err)
     }
@@ -1731,15 +1748,15 @@ func (or *OrderRepository) fetchDetailedDishes(ctx context.Context, tx pgx.Tx, o
 func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderDetailedListResponse, error) {
     or.logger.Info(fmt.Sprintf("addingSetsDishesOrder order with ID repository: %d", req.Id))
     
-    // Start a database transaction
+    // Start a database transaction since we'll be making multiple related changes
     tx, err := or.db.Begin(ctx)
     if err != nil {
         or.logger.Error("Error starting transaction: " + err.Error())
         return nil, fmt.Errorf("error starting transaction: %w", err)
     }
-    defer tx.Rollback(ctx) // This will rollback if we don't commit
+    defer tx.Rollback(ctx) // Ensure rollback in case of errors
 
-    // First, let's check if the order exists and get its current version
+    // Check current version and guest status
     var currentVersion int32
     var isGuest bool
     err = tx.QueryRow(ctx, `
@@ -1754,135 +1771,108 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
         return nil, fmt.Errorf("error fetching order: %w", err)
     }
 
-    // For new orders, we expect version to be 0
-    // For existing orders, the request version should match the database version
+    // Validate version to prevent concurrent modifications
     if req.Version != 0 && req.Version != currentVersion {
         return nil, fmt.Errorf("order version mismatch: expected %d, got %d", currentVersion, req.Version)
     }
 
-    // Increment version for the update
     newVersion := currentVersion + 1
 
-    // Update the main order record
-    query := `
-        UPDATE orders
+    // Update the order's main record
+    _, err = tx.Exec(ctx, `
+        UPDATE orders 
         SET 
-            guest_id = CASE WHEN $2 = 0 THEN NULL ELSE $2 END,
-            user_id = CASE WHEN $3 = 0 THEN NULL ELSE $3 END,
-            table_number = $4,
-            order_handler_id = $5,
-            status = $6,
-            updated_at = $7,
-            total_price = $8,
-            is_guest = $9,
-            topping = $10,
-            tracking_order = $11,
-            take_away = $12,
-            chili_number = $13,
-            table_token = $14,
-            order_name = $15,
-            version = $16
-        WHERE id = $1
-        RETURNING created_at, updated_at`
-
-    var createdAt, updatedAt time.Time
-    err = tx.QueryRow(ctx, query,
-        req.Id,
-        req.GuestId,
-        req.UserId,
-        req.TableNumber,
-        req.OrderHandlerId,
+            version = $1,
+            status = $2,
+            total_price = $3,
+            topping = $4,
+            tracking_order = $5,
+            take_away = $6,
+            chili_number = $7,
+            table_token = $8,
+            order_name = $9,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $10`,
+        newVersion,
         req.Status,
-        time.Now(),
         req.TotalPrice,
-        req.IsGuest,
         req.Topping,
         req.TrackingOrder,
         req.TakeAway,
         req.ChiliNumber,
         req.TableToken,
         req.OrderName,
-        newVersion,
-    ).Scan(&createdAt, &updatedAt)
-
+        req.Id)
     if err != nil {
-        or.logger.Error(fmt.Sprintf("Error updating order: %s", err.Error()))
         return nil, fmt.Errorf("error updating order: %w", err)
     }
 
-    // Record the modification
+    // Record the modification in order_modifications table
     _, err = tx.Exec(ctx, `
         INSERT INTO order_modifications (
-            order_id,
-            modification_number,
-            modification_type,
-            modified_by_user_id,
-            order_name
-        ) VALUES ($1, $2, $3, $4, $5)`,
-        req.Id,
-        newVersion,
-        "UPDATE",
-        req.OrderHandlerId,
-        req.OrderName,
-    )
+            order_id, 
+            modification_number, 
+            modification_type, 
+            modified_at, 
+            modified_by_user_id
+        ) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, $4)`,
+        req.Id, 
+        newVersion, 
+        "UPDATE", // or could be "ADD_ITEMS" depending on your business logic
+        req.UserId)
     if err != nil {
-        or.logger.Error(fmt.Sprintf("Error creating modification record: %s", err.Error()))
-        return nil, fmt.Errorf("error creating modification record: %w", err)
+        return nil, fmt.Errorf("error recording modification: %w", err)
     }
 
-    // Handle dish items - Insert new records with the new version
-    if len(req.DishItems) > 0 {
-        for _, item := range req.DishItems {
-            _, err = tx.Exec(ctx, `
-                INSERT INTO dish_order_items (
-                    order_id,
-                    dish_id,
-                    quantity,
-                    order_name,
-                    modification_type,
-                    modification_number
-                ) VALUES ($1, $2, $3, $4, $5, $6)`,
-                req.Id,
-                item.DishId,
-                item.Quantity,
-                req.OrderName, // Using the order name from the request
-                "UPDATE",
-                newVersion,
-            )
-            if err != nil {
-                or.logger.Error(fmt.Sprintf("Error inserting dish item: %s", err.Error()))
-                return nil, fmt.Errorf("error inserting dish item: %w", err)
-            }
+    // Record dish items for this version
+    for _, dish := range req.DishItems {
+        _, err = tx.Exec(ctx, `
+            INSERT INTO dish_order_items (
+                order_id, 
+                dish_id, 
+                quantity, 
+                modification_number
+            ) VALUES ($1, $2, $3, $4)`,
+            req.Id,
+            dish.DishId,
+            dish.Quantity,
+            newVersion)
+        if err != nil {
+            return nil, fmt.Errorf("error recording dish item: %w", err)
         }
     }
 
-    // Handle set items - Insert new records with the new version
-    if len(req.SetItems) > 0 {
-        for _, item := range req.SetItems {
-            _, err = tx.Exec(ctx, `
-                INSERT INTO set_order_items (
-                    order_id,
-                    set_id,
-                    quantity,
-                    order_name,
-                    modification_type,
-                    modification_number
-                ) VALUES ($1, $2, $3, $4, $5, $6)`,
-                req.Id,
-                item.SetId,
-                item.Quantity,
-                req.OrderName, // Using the order name from the request
-                "UPDATE",
-                newVersion,
-            )
-            if err != nil {
-                or.logger.Error(fmt.Sprintf("Error inserting set item: %s", err.Error()))
-                return nil, fmt.Errorf("error inserting set item: %w", err)
-            }
+    // Record set items for this version
+    for _, set := range req.SetItems {
+        _, err = tx.Exec(ctx, `
+            INSERT INTO set_order_items (
+                order_id, 
+                set_id, 
+                quantity, 
+                modification_number
+            ) VALUES ($1, $2, $3, $4)`,
+            req.Id,
+            set.SetId,
+            set.Quantity,
+            newVersion)
+        if err != nil {
+            return nil, fmt.Errorf("error recording set item: %w", err)
         }
     }
 
-    // Fetch updated details
+    // Fetch version history and summaries
+    versionHistory, err := or.fetchVersionHistory(ctx, tx, req.Id)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching version history: %w", err)
+    }
+
+    // Calculate total summary across all versions
+    totalSummary, err := or.calculateTotalSummary(ctx, tx, req.Id)
+    if err != nil {
+        return nil, fmt.Errorf("error calculating total summary: %w", err)
+    }
+
+    // Fetch detailed items for the response
     detailedDishes, err := or.fetchDetailedDishes(ctx, tx, req.Id)
     if err != nil {
         return nil, fmt.Errorf("error fetching detailed dishes: %w", err)
@@ -1899,7 +1889,7 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
         return nil, fmt.Errorf("error committing transaction: %w", err)
     }
 
-    // Return the response
+    // Construct and return the response
     return &order.OrderDetailedListResponse{
         Data: []*order.OrderDetailedResponse{
             {
@@ -1919,8 +1909,10 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
                 ChiliNumber:    req.ChiliNumber,
                 TableToken:     req.TableToken,
                 OrderName:      req.OrderName,
-                Version:        newVersion,
+                CurrentVersion: newVersion,
                 ParentOrderId:  req.ParentOrderId,
+                VersionHistory: versionHistory,
+                TotalSummary:  totalSummary,
             },
         },
         Pagination: &order.PaginationInfo{
@@ -1931,4 +1923,276 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
         },
     }, nil
 }
+
+// Helper function to calculate total summary
+func (or *OrderRepository) calculateTotalSummary(ctx context.Context, tx pgx.Tx, orderID int64) (*order.OrderTotalSummary, error) {
+    var summary order.OrderTotalSummary
+    
+    err := tx.QueryRow(ctx, `
+        WITH order_stats AS (
+            SELECT 
+                COUNT(DISTINCT modification_number) as total_versions,
+                SUM(CASE WHEN item_type = 'DISH' THEN quantity ELSE 0 END) as total_dishes,
+                SUM(CASE WHEN item_type = 'SET' THEN quantity ELSE 0 END) as total_sets,
+                SUM(price * quantity) as total_price
+            FROM (
+                SELECT 
+                    di.modification_number,
+                    'DISH' as item_type,
+                    di.quantity,
+                    d.price
+                FROM dish_order_items di
+                JOIN dishes d ON di.dish_id = d.id
+                WHERE di.order_id = $1
+                UNION ALL
+                SELECT 
+                    si.modification_number,
+                    'SET' as item_type,
+                    si.quantity,
+                    s.price
+                FROM set_order_items si
+                JOIN sets s ON si.set_id = s.id
+                WHERE si.order_id = $1
+            ) all_items
+        )
+        SELECT 
+            total_versions,
+            total_dishes,
+            total_sets,
+            total_price
+        FROM order_stats`,
+        orderID).Scan(
+            &summary.TotalVersions,
+            &summary.TotalDishesOrdered,
+            &summary.TotalSetsOrdered,
+            &summary.CumulativeTotalPrice,
+        )
+    if err != nil {
+        return nil, fmt.Errorf("error calculating total summary: %w", err)
+    }
+
+    // Fetch most ordered items
+    summary.MostOrderedItems, err = or.fetchMostOrderedItems(ctx, tx, orderID)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching most ordered items: %w", err)
+    }
+
+    return &summary, nil
+}
+
+// Helper function to fetch version changes
+
+
+// fetchMostOrderedItems retrieves the most frequently ordered items (both dishes and sets)
+// across all versions of an order, combining quantities from different modifications
+func (or *OrderRepository) fetchMostOrderedItems(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.OrderItemCount, error) {
+    // Query both dishes and sets, combining their quantities across all modifications
+    rows, err := tx.Query(ctx, `
+        WITH combined_items AS (
+            -- First, get all dish orders with their quantities
+            SELECT 
+                'DISH' as item_type,
+                d.id as item_id,
+                d.name as item_name,
+                SUM(di.quantity) as total_quantity
+            FROM dish_order_items di
+            JOIN dishes d ON di.dish_id = d.id
+            WHERE di.order_id = $1
+            GROUP BY d.id, d.name
+            
+            UNION ALL
+            
+            -- Then get all set orders with their quantities
+            SELECT 
+                'SET' as item_type,
+                s.id as item_id,
+                s.name as item_name,
+                SUM(si.quantity) as total_quantity
+            FROM set_order_items si
+            JOIN sets s ON si.set_id = s.id
+            WHERE si.order_id = $1
+            GROUP BY s.id, s.name
+        )
+        -- Select top ordered items, ordered by quantity
+        SELECT 
+            item_type,
+            item_id,
+            item_name,
+            total_quantity
+        FROM combined_items
+        ORDER BY total_quantity DESC
+        LIMIT 5  -- Limit to top 5 most ordered items; adjust as needed
+    `, orderID)
+    if err != nil {
+        return nil, fmt.Errorf("error querying most ordered items: %w", err)
+    }
+    defer rows.Close()
+
+    var items []*order.OrderItemCount
+    for rows.Next() {
+        var item order.OrderItemCount
+        err := rows.Scan(
+            &item.ItemType,
+            &item.ItemId,
+            &item.ItemName,
+            &item.TotalQuantity,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning most ordered item: %w", err)
+        }
+        items = append(items, &item)
+    }
+
+    return items, nil
+}
 // -------------------------------------------------- update ordder adding set and dishes end -----------------------
+
+
+// fetchVersionHistory fetches the complete history of changes for an order
+func (or *OrderRepository) fetchVersionHistory(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.OrderVersionSummary, error) {
+    var summaries []*order.OrderVersionSummary
+    
+    rows, err := tx.Query(ctx, `
+        WITH version_items AS (
+            SELECT 
+                m.modification_number,
+                m.modification_type,
+                m.modified_at,
+                COUNT(DISTINCT d.id) as dishes_count,
+                COUNT(DISTINCT s.id) as sets_count,
+                SUM(CASE 
+                    WHEN d.id IS NOT NULL THEN d.price * di.quantity
+                    WHEN s.id IS NOT NULL THEN s.price * si.quantity
+                    ELSE 0
+                END) as version_total_price
+            FROM order_modifications m
+            LEFT JOIN dish_order_items di ON m.order_id = di.order_id AND m.modification_number = di.modification_number
+            LEFT JOIN set_order_items si ON m.order_id = si.order_id AND m.modification_number = si.modification_number
+            LEFT JOIN dishes d ON di.dish_id = d.id
+            LEFT JOIN sets s ON si.set_id = s.id
+            WHERE m.order_id = $1
+            GROUP BY m.modification_number, m.modification_type, m.modified_at
+        )
+        SELECT 
+            modification_number,
+            modification_type,
+            modified_at,
+            dishes_count,
+            sets_count,
+            version_total_price
+        FROM version_items
+        ORDER BY modification_number ASC`,
+        orderID)
+    if err != nil {
+        return nil, fmt.Errorf("error querying version history: %w", err)
+    }
+    defer rows.Close()
+    
+    // Create a slice to store our version data
+    type versionInfo struct {
+        summary    *order.OrderVersionSummary  // Note the pointer here
+        modifiedAt time.Time
+    }
+    var versionsToProcess []versionInfo
+    
+    // Collect all rows
+    for rows.Next() {
+        // Create new instances for each iteration
+        versionData := versionInfo{
+            summary: &order.OrderVersionSummary{}, // Initialize a new pointer
+        }
+        
+        err := rows.Scan(
+            &versionData.summary.VersionNumber,
+            &versionData.summary.ModificationType,
+            &versionData.modifiedAt,
+            &versionData.summary.TotalDishesCount,
+            &versionData.summary.TotalSetsCount,
+            &versionData.summary.VersionTotalPrice,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning version history: %w", err)
+        }
+        versionsToProcess = append(versionsToProcess, versionData)
+    }
+    
+    // Process each version
+    for _, versionData := range versionsToProcess {
+        // Set the timestamp using the modified time
+        versionData.summary.ModifiedAt = timestamppb.New(versionData.modifiedAt)
+        
+        // Get the changes for this version
+        changes, err := or.getVersionChanges(ctx, tx, orderID, versionData.summary.VersionNumber)
+        if err != nil {
+            return nil, fmt.Errorf("error getting version changes: %w", err)
+        }
+        versionData.summary.Changes = changes
+        
+        // Append the pointer to the summary
+        summaries = append(summaries, versionData.summary)
+    }
+
+    return summaries, nil
+}
+
+// getVersionChanges retrieves the specific changes made in a particular version of the order
+func (or *OrderRepository) getVersionChanges(ctx context.Context, tx pgx.Tx, orderID int64, version int32) ([]*order.OrderItemChange, error) {
+    // Query to get all changes (both dishes and sets) for a specific version
+    rows, err := tx.Query(ctx, `
+        WITH version_changes AS (
+            -- Get dish changes
+            SELECT 
+                'DISH' as item_type,
+                d.id as item_id,
+                d.name as item_name,
+                di.quantity as quantity_changed,
+                d.price as price
+            FROM dish_order_items di
+            JOIN dishes d ON di.dish_id = d.id
+            WHERE di.order_id = $1 AND di.modification_number = $2
+            
+            UNION ALL
+            
+            -- Get set changes
+            SELECT 
+                'SET' as item_type,
+                s.id as item_id,
+                s.name as item_name,
+                si.quantity as quantity_changed,
+                s.price as price
+            FROM set_order_items si
+            JOIN sets s ON si.set_id = s.id
+            WHERE si.order_id = $1 AND si.modification_number = $2
+        )
+        SELECT 
+            item_type,
+            item_id,
+            item_name,
+            quantity_changed,
+            price
+        FROM version_changes
+        ORDER BY item_type, item_name`,
+        orderID, version)
+    if err != nil {
+        return nil, fmt.Errorf("error querying version changes: %w", err)
+    }
+    defer rows.Close()
+
+    var changes []*order.OrderItemChange
+    for rows.Next() {
+        var change order.OrderItemChange
+        err := rows.Scan(
+            &change.ItemType,
+            &change.ItemId,
+            &change.ItemName,
+            &change.QuantityChanged,
+            &change.Price,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning version change: %w", err)
+        }
+        changes = append(changes, &change)
+    }
+
+    return changes, nil
+}

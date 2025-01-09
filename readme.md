@@ -54,6 +54,11 @@ SELECT \* FROM reading_tests;
 DROP TABLE schema_migrations;
 DELETE FROM schema_migrations;
 DELETE FROM reading_tests;
+
+DELETE FROM orders;
+DELETE FROM dish_order_items;
+DELETE FROM set_order_items;
+DELETE FROM order_modifications;
 \l
 \c testdb
 testdb=# \dT+ paragraph_content
