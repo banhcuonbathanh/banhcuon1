@@ -269,9 +269,9 @@ message OrderDetailedResponse {
   int32 current_version = 19;           // Renamed from version to be more clear
   int64 parent_order_id = 20;
   
-  // New fields for version tracking and summaries
+   // New fields for version tracking and summaries
   repeated OrderVersionSummary version_history = 21;  // History of all versions
-  OrderTotalSummary total_summary = 22;              // Overall summary across all versions
+  OrderTotalSummary total_summary = 22;             // Overall summary across all versions
 }
 
 // Represents the total summary across all versions

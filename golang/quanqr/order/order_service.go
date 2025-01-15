@@ -154,13 +154,61 @@ func (os *OrderServiceStruct) FetchOrdersByCriteria(ctx context.Context, req *or
 
 
 func (os *OrderServiceStruct) AddingSetsDishesOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderDetailedListResponse, error) {
-    os.logger.Info("addingSetsDishesOrder order service: " + fmt.Sprint(req.Id))
+    // Log the incoming request ID with context for order modifications
+    os.logger.Info(fmt.Sprintf("Starting addingSetsDishesOrder with order service 1212 ID: %d, table: %d, order name: %s, version: %d",
+        req.Id, req.TableNumber, req.OrderName, req.Version))
     
-    updatedOrder, err := os.orderRepo.AddingSetsDishesOrder(ctx, req)
-    if err != nil {
-        os.logger.Error("Error updating order: " + err.Error())
-        return nil, err
+    // Log the details of dishes and sets being added
+    os.logger.Info(fmt.Sprintf("Adding order items - Dishes: %d, Sets: %d",
+        len(req.DishItems), len(req.SetItems)))
+    
+    // Detailed logging of dish items
+    for _, dish := range req.DishItems {
+        os.logger.Info(fmt.Sprintf("Dish item details - ID: %d, Quantity: %d, Order Name: %s, Modification: %s, Mod Number: %d",
+            dish.DishId, dish.Quantity, dish.OrderName, dish.ModificationType, dish.ModificationNumber))
     }
     
-    return updatedOrder, nil
+    // Detailed logging of set items
+    for _, set := range req.SetItems {
+        os.logger.Info(fmt.Sprintf("Set item details - ID: %d, Quantity: %d, Order Name: %s, Modification: %s, Mod Number: %d",
+            set.SetId, set.Quantity, set.OrderName, set.ModificationType, set.ModificationNumber))
+    }
+    
+    // Attempt to update the order through repository
+    updatedOrderResponse, err := os.orderRepo.AddingSetsDishesOrder(ctx, req)
+    if err != nil {
+        errMsg := fmt.Sprintf("Failed to update order %d (version %d): %s",
+            req.Id, req.Version, err.Error())
+        os.logger.Info(errMsg)
+        return nil, fmt.Errorf("dsfg")
+    }
+    
+    // Log successful update with detailed order information
+    if updatedOrderResponse != nil && len(updatedOrderResponse.Data) > 0 {
+        latestOrder := updatedOrderResponse.Data[0]
+        os.logger.Info(fmt.Sprintf("Successfully updated order - ID: %d, Status: %s, Version: %d, Total Price: %d",
+            latestOrder.Id, latestOrder.Status, latestOrder.CurrentVersion, latestOrder.TotalPrice))
+        
+        // Log version history if available
+        if len(latestOrder.VersionHistory) > 0 {
+            latestVersion := latestOrder.VersionHistory[len(latestOrder.VersionHistory)-1]
+            os.logger.Info(fmt.Sprintf("Version update details - Number: %d, Dishes: %d, Sets: %d, Price: %d, Type: %s",
+                latestVersion.VersionNumber,
+                latestVersion.TotalDishesCount,
+                latestVersion.TotalSetsCount,
+                latestVersion.VersionTotalPrice,
+                latestVersion.ModificationType))
+        }
+        
+        // Log total summary for the order
+        if latestOrder.TotalSummary != nil {
+            os.logger.Info(fmt.Sprintf("Order total summary - Versions: %d, Total Dishes: %d, Total Sets: %d, Total Price: %d",
+                latestOrder.TotalSummary.TotalVersions,
+                latestOrder.TotalSummary.TotalDishesOrdered,
+                latestOrder.TotalSummary.TotalSetsOrdered,
+                latestOrder.TotalSummary.CumulativeTotalPrice))
+        }
+    }
+    
+    return updatedOrderResponse, nil
 }

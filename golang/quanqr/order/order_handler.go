@@ -293,28 +293,9 @@ func ToPBPayOrdersRequest(req PayOrdersRequestType) *order.PayOrdersRequest {
     return pbReq
 }
 
-func ToPBDishOrderItems(items []OrderDish) []*order.DishOrderItem {
-    pbItems := make([]*order.DishOrderItem, len(items))
-    for i, item := range items {
-        pbItems[i] = &order.DishOrderItem{
-            DishId:   item.DishID,
-            Quantity: item.Quantity,
-        }
-    }
-    return pbItems
-}
 
 
-func ToPBSetOrderItems(items []OrderSet) []*order.SetOrderItem {
-    pbItems := make([]*order.SetOrderItem, len(items))
-    for i, item := range items {
-        pbItems[i] = &order.SetOrderItem{
-            SetId:    item.SetID,
-            Quantity: item.Quantity,
-        }
-    }
-    return pbItems
-}
+
 
 
 func ToOrderResFromPbOrderResponse(pbRes *order.OrderResponse) OrderResponse {
@@ -516,27 +497,7 @@ func ToOrderDetailedDishesFromProto(pbDishes []*order.OrderDetailedDish) []Order
 // -------------------
 
 // Conversion functions
-func ToPBCreateOrderRequest(req CreateOrderRequestType) *order.CreateOrderRequest {
-    return &order.CreateOrderRequest{
-        GuestId:        req.GuestID,
-        UserId:         req.UserID,
-        IsGuest:        req.IsGuest,
-        TableNumber:    req.TableNumber,
-        OrderHandlerId: req.OrderHandlerID,
-        Status:         req.Status,
-        CreatedAt:      timestamppb.New(req.CreatedAt),
-        UpdatedAt:      timestamppb.New(req.UpdatedAt),
-        TotalPrice:     req.TotalPrice,
-        DishItems:      ToPBDishOrderItems(req.DishItems),
-        SetItems:       ToPBSetOrderItems(req.SetItems),
-        Topping:       req.Topping,
-        TrackingOrder:     req.TrackingOrder,
-        TakeAway:       req.TakeAway,
-        ChiliNumber:    req.ChiliNumber,
-        TableToken:     req.TableToken,
-        OrderName:      req.OrderName,  // Added new field
-    }
-}
+
 
 func ToPBUpdateOrderRequest(req UpdateOrderRequestType) *order.UpdateOrderRequest {
     return &order.UpdateOrderRequest{
@@ -594,43 +555,7 @@ func ToOrderFromPbOrder(pbOrder *order.Order) OrderType {
     }
 }
 
-func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
-    if pbRes == nil {
-        return OrderDetailedListResponse{}
-    }
 
-    detailedResponses := make([]OrderDetailedResponse, len(pbRes.Data))
-    for i, pbDetailedRes := range pbRes.Data {
-        detailedResponses[i] = OrderDetailedResponse{
-            ID:             pbDetailedRes.Id,
-            GuestID:        pbDetailedRes.GuestId,
-            UserID:         pbDetailedRes.UserId,
-            TableNumber:    pbDetailedRes.TableNumber,
-            OrderHandlerID: pbDetailedRes.OrderHandlerId,
-            Status:         pbDetailedRes.Status,
-            TotalPrice:     pbDetailedRes.TotalPrice,
-            IsGuest:        pbDetailedRes.IsGuest,
-            Topping:       pbDetailedRes.Topping,
-            TrackingOrder:     pbDetailedRes.TrackingOrder,
-            TakeAway:       pbDetailedRes.TakeAway,
-            ChiliNumber:    pbDetailedRes.ChiliNumber,
-            TableToken:     pbDetailedRes.TableToken,
-            OrderName:      pbDetailedRes.OrderName,  // Added new field
-            DataSet:        ToOrderSetsDetailedFromProto(pbDetailedRes.DataSet),
-            DataDish:       ToOrderDetailedDishesFromProto(pbDetailedRes.DataDish),
-        }
-    }
-
-    return OrderDetailedListResponse{
-        Data: detailedResponses,
-        Pagination: PaginationInfo{
-            CurrentPage: pbRes.Pagination.CurrentPage,
-            TotalPages: pbRes.Pagination.TotalPages,
-            TotalItems: pbRes.Pagination.TotalItems,
-            PageSize:   pbRes.Pagination.PageSize,
-        },
-    }
-}
 
 func (h *OrderHandlerController) CreateOrder2(w http.ResponseWriter, r *http.Request) {
     var orderReq CreateOrderRequestType
@@ -822,3 +747,220 @@ func ToOrderDetailedResponsesFromPbResponses(pbResponses []*order.OrderDetailedR
 
     return responses
 }
+
+// new --------------------------
+
+
+
+
+
+func (h *OrderHandlerController) CreateOrder3(w http.ResponseWriter, r *http.Request) {
+    // Parse and validate the request body
+    var orderReq CreateOrderRequestType
+    if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+        h.logger.Error("Error decoding request body: " + err.Error())
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
+
+    // Set default values for new fields
+    if orderReq.Version == 0 {
+        orderReq.Version = 1 // Initial version for new orders
+    }
+
+    // Validate the request
+    if err := validateCreateOrderRequest(orderReq); err != nil {
+        h.logger.Error("Validation error: " + err.Error())
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    // Add modification tracking information for dish items
+    for i := range orderReq.DishItems {
+        orderReq.DishItems[i].ModificationType = "INITIAL"
+        orderReq.DishItems[i].ModificationNumber = 1
+        orderReq.DishItems[i].OrderName = orderReq.OrderName
+        // Set timestamps for modification tracking
+        orderReq.DishItems[i].CreatedAt = time.Now()
+        orderReq.DishItems[i].UpdatedAt = time.Now()
+    }
+
+    // Add modification tracking information for set items
+    for i := range orderReq.SetItems {
+        orderReq.SetItems[i].ModificationType = "INITIAL"
+        orderReq.SetItems[i].ModificationNumber = 1
+        orderReq.SetItems[i].OrderName = orderReq.OrderName
+        // Set timestamps for modification tracking
+        orderReq.SetItems[i].CreatedAt = time.Now()
+        orderReq.SetItems[i].UpdatedAt = time.Now()
+    }
+
+    // Convert request to protobuf format
+    pbReq := ToPBCreateOrderRequest(orderReq)
+
+    // Call the service to create the order
+    h.logger.Info(fmt.Sprintf("Creating order with name: %s", orderReq.OrderName))
+    createdOrderResponse, err := h.client.CreateOrder(h.ctx, pbReq)
+    if err != nil {
+        h.logger.Error("Error creating order: " + err.Error())
+        http.Error(w, "error creating order: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Convert the response and send it back
+    res := ToOrderResFromPbOrderResponse(createdOrderResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        h.logger.Error("Error encoding response: " + err.Error())
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        return
+    }
+}
+
+// Updated conversion functions to handle new fields and structures
+func ToPBCreateOrderRequest(req CreateOrderRequestType) *order.CreateOrderRequest {
+    return &order.CreateOrderRequest{
+        GuestId:        req.GuestID,
+        UserId:         req.UserID,
+        IsGuest:        req.IsGuest,
+        TableNumber:    req.TableNumber,
+        OrderHandlerId: req.OrderHandlerID,
+        Status:         req.Status,
+        CreatedAt:      timestamppb.New(req.CreatedAt),
+        UpdatedAt:      timestamppb.New(req.UpdatedAt),
+        TotalPrice:     req.TotalPrice,
+        DishItems:      ToPBDishOrderItems(req.DishItems),
+        SetItems:       ToPBSetOrderItems(req.SetItems),
+        Topping:        req.Topping,
+        TrackingOrder:  req.TrackingOrder,
+        TakeAway:       req.TakeAway,
+        ChiliNumber:    req.ChiliNumber,
+        TableToken:     req.TableToken,
+        OrderName:      req.OrderName,
+        Version:        req.Version,
+        ParentOrderId:  req.ParentOrderID,
+    }
+}
+
+func ToPBDishOrderItems(items []OrderDish) []*order.DishOrderItem {
+    pbItems := make([]*order.DishOrderItem, len(items))
+    for i, item := range items {
+        pbItems[i] = &order.DishOrderItem{
+            Id:                item.ID,
+            DishId:           item.DishID,
+            Quantity:         item.Quantity,
+            CreatedAt:        timestamppb.New(item.CreatedAt),
+            UpdatedAt:        timestamppb.New(item.UpdatedAt),
+            OrderName:        item.OrderName,
+            ModificationType: item.ModificationType,
+            ModificationNumber: item.ModificationNumber,
+        }
+    }
+    return pbItems
+}
+
+func ToPBSetOrderItems(items []OrderSet) []*order.SetOrderItem {
+    pbItems := make([]*order.SetOrderItem, len(items))
+    for i, item := range items {
+        pbItems[i] = &order.SetOrderItem{
+            Id:                item.ID,
+            SetId:            item.SetID,
+            Quantity:         item.Quantity,
+            CreatedAt:        timestamppb.New(item.CreatedAt),
+            UpdatedAt:        timestamppb.New(item.UpdatedAt),
+            OrderName:        item.OrderName,
+            ModificationType: item.ModificationType,
+            ModificationNumber: item.ModificationNumber,
+        }
+    }
+    return pbItems
+}
+
+func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
+    if pbRes == nil {
+        return OrderDetailedListResponse{}
+    }
+
+    detailedResponses := make([]OrderDetailedResponse, len(pbRes.Data))
+    for i, pbDetailedRes := range pbRes.Data {
+        // Convert version history
+        versionHistory := make([]OrderVersionSummary, len(pbDetailedRes.VersionHistory))
+        for j, pbVersion := range pbDetailedRes.VersionHistory {
+            changes := make([]OrderItemChange, len(pbVersion.Changes))
+            for k, pbChange := range pbVersion.Changes {
+                changes[k] = OrderItemChange{
+                    ItemType:        pbChange.ItemType,
+                    ItemID:          pbChange.ItemId,
+                    ItemName:        pbChange.ItemName,
+                    QuantityChanged: pbChange.QuantityChanged,
+                    Price:           pbChange.Price,
+                }
+            }
+            
+            versionHistory[j] = OrderVersionSummary{
+                VersionNumber:     pbVersion.VersionNumber,
+                TotalDishesCount: pbVersion.TotalDishesCount,
+                TotalSetsCount:   pbVersion.TotalSetsCount,
+                VersionTotalPrice: pbVersion.VersionTotalPrice,
+                ModificationType: pbVersion.ModificationType,
+                ModifiedAt:      pbVersion.ModifiedAt.AsTime(),
+                Changes:         changes,
+            }
+        }
+
+        // Convert total summary
+        mostOrderedItems := make([]OrderItemCount, len(pbDetailedRes.TotalSummary.MostOrderedItems))
+        for j, pbItem := range pbDetailedRes.TotalSummary.MostOrderedItems {
+            mostOrderedItems[j] = OrderItemCount{
+                ItemType:      pbItem.ItemType,
+                ItemID:        pbItem.ItemId,
+                ItemName:      pbItem.ItemName,
+                TotalQuantity: pbItem.TotalQuantity,
+            }
+        }
+
+        totalSummary := OrderTotalSummary{
+            TotalVersions:        pbDetailedRes.TotalSummary.TotalVersions,
+            TotalDishesOrdered:  pbDetailedRes.TotalSummary.TotalDishesOrdered,
+            TotalSetsOrdered:    pbDetailedRes.TotalSummary.TotalSetsOrdered,
+            CumulativeTotalPrice: pbDetailedRes.TotalSummary.CumulativeTotalPrice,
+            MostOrderedItems:     mostOrderedItems,
+        }
+
+        detailedResponses[i] = OrderDetailedResponse{
+            ID:             pbDetailedRes.Id,
+            GuestID:        pbDetailedRes.GuestId,
+            UserID:         pbDetailedRes.UserId,
+            TableNumber:    pbDetailedRes.TableNumber,
+            OrderHandlerID: pbDetailedRes.OrderHandlerId,
+            Status:         pbDetailedRes.Status,
+            TotalPrice:     pbDetailedRes.TotalPrice,
+            IsGuest:        pbDetailedRes.IsGuest,
+            Topping:        pbDetailedRes.Topping,
+            TrackingOrder:  pbDetailedRes.TrackingOrder,
+            TakeAway:       pbDetailedRes.TakeAway,
+            ChiliNumber:    pbDetailedRes.ChiliNumber,
+            TableToken:     pbDetailedRes.TableToken,
+            OrderName:      pbDetailedRes.OrderName,
+            CurrentVersion: pbDetailedRes.CurrentVersion,
+            ParentOrderID:  pbDetailedRes.ParentOrderId,
+            DataSet:        ToOrderSetsDetailedFromProto(pbDetailedRes.DataSet),
+            DataDish:       ToOrderDetailedDishesFromProto(pbDetailedRes.DataDish),
+            VersionHistory: versionHistory,
+            TotalSummary:   totalSummary,
+        }
+    }
+
+    return OrderDetailedListResponse{
+        Data: detailedResponses,
+        Pagination: PaginationInfo{
+            CurrentPage: pbRes.Pagination.CurrentPage,
+            TotalPages: pbRes.Pagination.TotalPages,
+            TotalItems: pbRes.Pagination.TotalItems,
+            PageSize:   pbRes.Pagination.PageSize,
+        },
+    }
+}
+
+// The rest of the file remains largely unchanged...
