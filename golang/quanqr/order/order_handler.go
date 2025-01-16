@@ -24,9 +24,11 @@ type OrderHandlerController struct {
     client     order.OrderServiceClient
     TokenMaker *token.JWTMaker
     logger     *logger.Logger
+    NewLoggerType     *logger.NewLoggerType  
 }
 
 func NewOrderHandler(client order.OrderServiceClient, secretKey string) *OrderHandlerController {
+ 
     return &OrderHandlerController{
         ctx:        context.Background(),
         client:     client,
