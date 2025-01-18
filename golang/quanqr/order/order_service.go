@@ -154,23 +154,23 @@ func (os *OrderServiceStruct) FetchOrdersByCriteria(ctx context.Context, req *or
 
 
 func (os *OrderServiceStruct) AddingSetsDishesOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderDetailedListResponse, error) {
-    // Log the incoming request ID with context for order modifications
-    os.logger.Info(fmt.Sprintf("Starting addingSetsDishesOrder with order service 1212 ID: %d, table: %d, order name: %s, version: %d",
-        req.Id, req.TableNumber, req.OrderName, req.Version))
+    // // Log the incoming request ID with context for order modifications
+    // os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Starting addingSetsDishesOrder with order service 1212 ID: %d, table: %d, order name: %s, version: %d",
+    //     req.Id, req.TableNumber, req.OrderName, req.Version))
     
-    // Log the details of dishes and sets being added
-    os.logger.Info(fmt.Sprintf("Adding order items - Dishes: %d, Sets: %d",
-        len(req.DishItems), len(req.SetItems)))
+    // // Log the details of dishes and sets being added
+    // os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Adding order items - Dishes: %d, Sets: %d",
+    //     len(req.DishItems), len(req.SetItems)))
     
     // Detailed logging of dish items
     for _, dish := range req.DishItems {
-        os.logger.Info(fmt.Sprintf("Dish item details - ID: %d, Quantity: %d, Order Name: %s, Modification: %s, Mod Number: %d",
+        os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Dish item details - ID: %d, Quantity: %d, Order Name: %s, Modification: %s, Mod Number: %d",
             dish.DishId, dish.Quantity, dish.OrderName, dish.ModificationType, dish.ModificationNumber))
     }
     
     // Detailed logging of set items
     for _, set := range req.SetItems {
-        os.logger.Info(fmt.Sprintf("Set item details - ID: %d, Quantity: %d, Order Name: %s, Modification: %s, Mod Number: %d",
+        os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Set item details - ID: %d, Quantity: %d, Order Name: %s, Modification: %s, Mod Number: %d",
             set.SetId, set.Quantity, set.OrderName, set.ModificationType, set.ModificationNumber))
     }
     
@@ -186,13 +186,13 @@ func (os *OrderServiceStruct) AddingSetsDishesOrder(ctx context.Context, req *or
     // Log successful update with detailed order information
     if updatedOrderResponse != nil && len(updatedOrderResponse.Data) > 0 {
         latestOrder := updatedOrderResponse.Data[0]
-        os.logger.Info(fmt.Sprintf("Successfully updated order - ID: %d, Status: %s, Version: %d, Total Price: %d",
+        os.logger.Info(fmt.Sprintf(" [Order Service.AddingSetsDishesOrder] Successfully updated order - ID: %d, Status: %s, Version: %d, Total Price: %d",
             latestOrder.Id, latestOrder.Status, latestOrder.CurrentVersion, latestOrder.TotalPrice))
         
         // Log version history if available
         if len(latestOrder.VersionHistory) > 0 {
             latestVersion := latestOrder.VersionHistory[len(latestOrder.VersionHistory)-1]
-            os.logger.Info(fmt.Sprintf("Version update details - Number: %d, Dishes: %d, Sets: %d, Price: %d, Type: %s",
+            os.logger.Info(fmt.Sprintf(" [Order Service.AddingSetsDishesOrder] Version update details - Number: %d, Dishes: %d, Sets: %d, Price: %d, Type: %s",
                 latestVersion.VersionNumber,
                 latestVersion.TotalDishesCount,
                 latestVersion.TotalSetsCount,
@@ -202,13 +202,20 @@ func (os *OrderServiceStruct) AddingSetsDishesOrder(ctx context.Context, req *or
         
         // Log total summary for the order
         if latestOrder.TotalSummary != nil {
-            os.logger.Info(fmt.Sprintf("Order total summary - Versions: %d, Total Dishes: %d, Total Sets: %d, Total Price: %d",
+            os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Order total summary - Versions: %d, Total Dishes: %d, Total Sets: %d, Total Price: %d",
                 latestOrder.TotalSummary.TotalVersions,
                 latestOrder.TotalSummary.TotalDishesOrdered,
                 latestOrder.TotalSummary.TotalSetsOrdered,
                 latestOrder.TotalSummary.CumulativeTotalPrice))
         }
     }
-    
+//     os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Final order details - Current Version: %d", 
+//     updatedOrderResponse.Data[0].CurrentVersion))
+
+// os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Version History: %+v", 
+//     updatedOrderResponse.Data[0].VersionHistory))
+
+// os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Total Summary: %+v", 
+//     updatedOrderResponse.Data[0].TotalSummary))
     return updatedOrderResponse, nil
 }

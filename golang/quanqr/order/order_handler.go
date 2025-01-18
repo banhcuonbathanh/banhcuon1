@@ -196,26 +196,26 @@ func (h *OrderHandlerController) UpdateOrder(w http.ResponseWriter, r *http.Requ
     json.NewEncoder(w).Encode(res)
 }
 
-func (h *OrderHandlerController) AddingSetsDishesOrder(w http.ResponseWriter, r *http.Request) {
-    var orderReq UpdateOrderRequestType
-    if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
-        http.Error(w, "error decoding request body", http.StatusBadRequest)
-        return
-    }
+// func (h *OrderHandlerController) AddingSetsDishesOrder(w http.ResponseWriter, r *http.Request) {
+//     var orderReq UpdateOrderRequestType
+//     if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+//         http.Error(w, "error decoding request body", http.StatusBadRequest)
+//         return
+//     }
 
-    // Fixed: Remove extra parentheses and pass the correct parameters
-    updatedOrderResponse, err := h.client.AddingSetsDishesOrder(h.ctx, ToPBUpdateOrderRequest(orderReq))
-    if err != nil {
-        h.logger.Error("Error updating order: " + err.Error())
-        http.Error(w, "error updating order", http.StatusInternalServerError)
-        return
-    }
+//     // Fixed: Remove extra parentheses and pass the correct parameters
+//     updatedOrderResponse, err := h.client.AddingSetsDishesOrder(h.ctx, ToPBUpdateOrderRequest(orderReq))
+//     if err != nil {
+//         h.logger.Error("Error updating order: " + err.Error())
+//         http.Error(w, "error updating order", http.StatusInternalServerError)
+//         return
+//     }
 
-    res := ToOrderDetailedListResponseFromPbResponse(updatedOrderResponse)
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(res)
-}
+//     res := ToOrderDetailedListResponseFromPbResponse(updatedOrderResponse)
+//     w.Header().Set("Content-Type", "application/json")
+//     w.WriteHeader(http.StatusOK)
+//     json.NewEncoder(w).Encode(res)
+// }
 func (h *OrderHandlerController) PayOrders(w http.ResponseWriter, r *http.Request) {
     var req PayOrdersRequestType
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -693,21 +693,6 @@ func validateCreateOrderRequest(req CreateOrderRequestType) error {
 }
 
 
-func ToOrderDetailedListResponseFromPbResponse(pbRes *order.OrderDetailedListResponse) *OrderDetailedListResponse {
-    if pbRes == nil {
-        return nil
-    }
-    
-    return &OrderDetailedListResponse{
-        Data: ToOrderDetailedResponsesFromPbResponses(pbRes.Data),
-        Pagination: PaginationInfo{
-            CurrentPage: pbRes.GetPagination().GetCurrentPage(),
-            TotalPages: pbRes.GetPagination().GetTotalPages(),
-            TotalItems: pbRes.GetPagination().GetTotalItems(),
-            PageSize:   pbRes.GetPagination().GetPageSize(),
-        },
-    }
-}
 
 func ToOrderDetailedResponsesFromPbResponses(pbResponses []*order.OrderDetailedResponse) []OrderDetailedResponse {
     // Handle nil input case to avoid panic
@@ -966,3 +951,242 @@ func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse
 }
 
 // The rest of the file remains largely unchanged...
+func (h *OrderHandlerController) AddingSetsDishesOrder(w http.ResponseWriter, r *http.Request) {
+    h.logger.Info("[Order Handler.AddingSetsDishesOrder] Starting to process adding sets/dishes request")
+
+    var orderReq UpdateOrderRequestType
+    if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+        h.logger.Error(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Error decoding request body: %v", err))
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Processing request for Order ID: %d, Table: %d, Order Name: %s",
+        orderReq.ID, orderReq.TableNumber, orderReq.OrderName))
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Request contains %d dish items and %d set items",
+        len(orderReq.DishItems), len(orderReq.SetItems)))
+
+    for _, dish := range orderReq.DishItems {
+        h.logger.Info(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Dish details - ID: %d, Quantity: %d, Order Name: %s",
+            dish.DishID, dish.Quantity, dish.OrderName))
+    }
+
+    for _, set := range orderReq.SetItems {
+        h.logger.Info(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Set details - ID: %d, Quantity: %d, Order Name: %s",
+            set.SetID, set.Quantity, set.OrderName))
+    }
+
+    pbReq := ToPBUpdateOrderRequest(orderReq)
+    h.logger.Info("[Order Handler.AddingSetsDishesOrder] Converting request to protobuf format completed")
+
+    updatedOrderResponse, err := h.client.AddingSetsDishesOrder(h.ctx, pbReq)
+    if err != nil {
+        h.logger.Error(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Error updating order: %v", err))
+        http.Error(w, "error updating order", http.StatusInternalServerError)
+        return
+    }
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Proto Response: \nPagination: %+v", 
+        updatedOrderResponse.GetPagination()))
+
+    for i, order := range updatedOrderResponse.GetData() {
+        h.logger.Info(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Proto Order %d: \n"+
+            "ID: %d\n"+
+            "OrderName: %s\n"+
+            "TableNumber: %d\n"+
+            "Status: %s\n"+
+            "TotalPrice: %d\n"+
+            "GuestID: %d\n"+
+            "UserID: %d\n"+
+            "OrderHandlerID: %d\n"+
+            "IsGuest: %v\n"+
+            "Topping: %s\n"+
+            "TrackingOrder: %s\n"+
+            "TakeAway: %v\n"+
+            "ChiliNumber: %d\n"+
+            "TableToken: %s\n"+
+            "CurrentVersion: %d\n"+
+            "ParentOrderID: %d\n"+
+            "Dish Items Count: %d\n"+
+            "Set Items Count: %d",
+            i+1,
+            order.GetId(),
+            order.GetOrderName(),
+            order.GetTableNumber(),
+            order.GetStatus(),
+            order.GetTotalPrice(),
+            order.GetGuestId(),
+            order.GetUserId(),
+            order.GetOrderHandlerId(),
+            order.GetIsGuest(),
+            order.GetTopping(),
+            order.GetTrackingOrder(),
+            order.GetTakeAway(),
+            order.GetChiliNumber(),
+            order.GetTableToken(),
+            order.GetCurrentVersion(),
+            order.GetParentOrderId(),
+            len(order.GetDataDish()),
+            len(order.GetDataSet())))
+    }
+
+    res := ToOrderDetailedListResponseFromPbResponse(updatedOrderResponse)
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Converted Response: \nPagination: %+v", 
+        res.Pagination))
+
+    for i, order := range res.Data {
+        h.logger.Info(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Converted Order %d: \n"+
+            "ID: %d\n"+
+            "OrderName: %s\n"+
+            "TableNumber: %d\n"+
+            "Status: %s\n"+
+            "TotalPrice: %d\n"+
+            "GuestID: %d\n"+
+            "UserID: %d\n"+
+            "OrderHandlerID: %d\n"+
+            "IsGuest: %v\n"+
+            "Topping: %s\n"+
+            "TrackingOrder: %s\n"+
+            "TakeAway: %v\n"+
+            "ChiliNumber: %d\n"+
+            "TableToken: %s\n"+
+            "CurrentVersion: %d\n"+
+            "ParentOrderID: %d\n"+
+            "Version History Count: %d\n"+
+            "Dish Items Count: %d\n"+
+            "Set Items Count: %d",
+            i+1,
+            order.ID,
+            order.OrderName,
+            order.TableNumber,
+            order.Status,
+            order.TotalPrice,
+            order.GuestID,
+            order.UserID,
+            order.OrderHandlerID,
+            order.IsGuest,
+            order.Topping,
+            order.TrackingOrder,
+            order.TakeAway,
+            order.ChiliNumber,
+            order.TableToken,
+            order.CurrentVersion,
+            order.ParentOrderID,
+            len(order.VersionHistory),
+            len(order.DataDish),
+            len(order.DataSet)))
+
+        h.logger.Info(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Order %d Total Summary: %+v",
+            i+1, order.TotalSummary))
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        h.logger.Error(fmt.Sprintf("[Order Handler.AddingSetsDishesOrder] Error encoding response: %v", err))
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        return
+    }
+
+    h.logger.Info("[Order Handler.AddingSetsDishesOrder] Request completed successfully")
+}
+
+
+func ToOrderDetailedListResponseFromPbResponse(pbRes *order.OrderDetailedListResponse) *OrderDetailedListResponse {
+    if pbRes == nil {
+        return nil
+    }
+    
+    responses := make([]OrderDetailedResponse, len(pbRes.Data))
+    for i, pbDetailedRes := range pbRes.Data {
+        if pbDetailedRes == nil {
+            continue
+        }
+
+        // Convert version history
+        versionHistory := make([]OrderVersionSummary, len(pbDetailedRes.VersionHistory))
+        for j, pbVersion := range pbDetailedRes.VersionHistory {
+            changes := make([]OrderItemChange, len(pbVersion.Changes))
+            for k, pbChange := range pbVersion.Changes {
+                changes[k] = OrderItemChange{
+                    ItemType:        pbChange.ItemType,
+                    ItemID:          pbChange.ItemId,
+                    ItemName:        pbChange.ItemName,
+                    QuantityChanged: pbChange.QuantityChanged,
+                    Price:           pbChange.Price,
+                }
+            }
+            
+            versionHistory[j] = OrderVersionSummary{
+                VersionNumber:     pbVersion.VersionNumber,
+                TotalDishesCount: pbVersion.TotalDishesCount,
+                TotalSetsCount:   pbVersion.TotalSetsCount,
+                VersionTotalPrice: pbVersion.VersionTotalPrice,
+                ModificationType: pbVersion.ModificationType,
+                ModifiedAt:      pbVersion.ModifiedAt.AsTime(),
+                Changes:         changes,
+            }
+        }
+
+        // Convert most ordered items
+        var mostOrderedItems []OrderItemCount
+        if pbDetailedRes.TotalSummary != nil {
+            mostOrderedItems = make([]OrderItemCount, len(pbDetailedRes.TotalSummary.MostOrderedItems))
+            for j, pbItem := range pbDetailedRes.TotalSummary.MostOrderedItems {
+                mostOrderedItems[j] = OrderItemCount{
+                    ItemType:      pbItem.ItemType,
+                    ItemID:        pbItem.ItemId,
+                    ItemName:      pbItem.ItemName,
+                    TotalQuantity: pbItem.TotalQuantity,
+                }
+            }
+        }
+
+        // Convert total summary
+        var totalSummary OrderTotalSummary
+        if pbDetailedRes.TotalSummary != nil {
+            totalSummary = OrderTotalSummary{
+                TotalVersions:        pbDetailedRes.TotalSummary.TotalVersions,
+                TotalDishesOrdered:  pbDetailedRes.TotalSummary.TotalDishesOrdered,
+                TotalSetsOrdered:    pbDetailedRes.TotalSummary.TotalSetsOrdered,
+                CumulativeTotalPrice: pbDetailedRes.TotalSummary.CumulativeTotalPrice,
+                MostOrderedItems:     mostOrderedItems,
+            }
+        }
+
+        responses[i] = OrderDetailedResponse{
+            ID:             pbDetailedRes.Id,
+            GuestID:        pbDetailedRes.GuestId,
+            UserID:         pbDetailedRes.UserId,
+            TableNumber:    pbDetailedRes.TableNumber,
+            OrderHandlerID: pbDetailedRes.OrderHandlerId,
+            Status:         pbDetailedRes.Status,
+            TotalPrice:     pbDetailedRes.TotalPrice,
+            IsGuest:        pbDetailedRes.IsGuest,
+            Topping:        pbDetailedRes.Topping,
+            TrackingOrder:  pbDetailedRes.TrackingOrder,
+            TakeAway:       pbDetailedRes.TakeAway,
+            ChiliNumber:    pbDetailedRes.ChiliNumber,
+            TableToken:     pbDetailedRes.TableToken,
+            OrderName:      pbDetailedRes.OrderName,
+            CurrentVersion: pbDetailedRes.CurrentVersion,
+            ParentOrderID:  pbDetailedRes.ParentOrderId,
+            DataSet:        ToOrderSetsDetailedFromProto(pbDetailedRes.DataSet),
+            DataDish:       ToOrderDetailedDishesFromProto(pbDetailedRes.DataDish),
+            VersionHistory: versionHistory,
+            TotalSummary:   totalSummary,
+        }
+    }
+
+    return &OrderDetailedListResponse{
+        Data: responses,
+        Pagination: PaginationInfo{
+            CurrentPage: pbRes.GetPagination().GetCurrentPage(),
+            TotalPages: pbRes.GetPagination().GetTotalPages(),
+            TotalItems: pbRes.GetPagination().GetTotalItems(),
+            PageSize:   pbRes.GetPagination().GetPageSize(),
+        },
+    }
+}

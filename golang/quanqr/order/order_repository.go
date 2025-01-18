@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strings"
 
 	"time"
 
@@ -1561,126 +1560,126 @@ func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrd
 }
 
 // Helper function with corrected transaction type
-func (or *OrderRepository) fetchDetailedSets(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.OrderSetDetailed, error) {
-    // First, fetch all sets with their basic information
-    query := `
-        WITH set_dishes AS (
-            SELECT sd.set_id,
-                   jsonb_agg(
-                       jsonb_build_object(
-                           'id', d.id,
-                           'name', d.name,
-                           'description', d.description,
-                           'price', d.price,
-                           'image', d.image,
-                           'quantity', sd.quantity
-                       )
-                   ) as dishes
-            FROM set_dishes sd
-            JOIN dishes d ON sd.dish_id = d.id
-            GROUP BY sd.set_id
-        )
-        SELECT s.id, s.name, s.description, s.user_id, s.created_at, s.updated_at,
-               s.is_favourite, s.like_by, s.is_public, s.image, s.price, soi.quantity,
-               COALESCE(sd.dishes, '[]'::jsonb) as dishes
-        FROM set_order_items soi
-        JOIN sets s ON soi.set_id = s.id
-        LEFT JOIN set_dishes sd ON s.id = sd.set_id
-        WHERE soi.order_id = $1
-    `
+// func (or *OrderRepository) fetchDetailedSets(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.OrderSetDetailed, error) {
+//     // First, fetch all sets with their basic information
+//     query := `
+//         WITH set_dishes AS (
+//             SELECT sd.set_id,
+//                    jsonb_agg(
+//                        jsonb_build_object(
+//                            'id', d.id,
+//                            'name', d.name,
+//                            'description', d.description,
+//                            'price', d.price,
+//                            'image', d.image,
+//                            'quantity', sd.quantity
+//                        )
+//                    ) as dishes
+//             FROM set_dishes sd
+//             JOIN dishes d ON sd.dish_id = d.id
+//             GROUP BY sd.set_id
+//         )
+//         SELECT s.id, s.name, s.description, s.user_id, s.created_at, s.updated_at,
+//                s.is_favourite, s.like_by, s.is_public, s.image, s.price, soi.quantity,
+//                COALESCE(sd.dishes, '[]'::jsonb) as dishes
+//         FROM set_order_items soi
+//         JOIN sets s ON soi.set_id = s.id
+//         LEFT JOIN set_dishes sd ON s.id = sd.set_id
+//         WHERE soi.order_id = $1
+//     `
     
-    rows, err := tx.Query(ctx, query, orderID)
-    if err != nil {
-        return nil, fmt.Errorf("error querying set details: %w", err)
-    }
-    defer rows.Close()
+//     rows, err := tx.Query(ctx, query, orderID)
+//     if err != nil {
+//         return nil, fmt.Errorf("error querying set details: %w", err)
+//     }
+//     defer rows.Close()
 
-    var sets []*order.OrderSetDetailed
-    for rows.Next() {
-        set := &order.OrderSetDetailed{}
-        var createdAt, updatedAt time.Time
-        var likeBy []int64
-        var dishesJSON []byte
+//     var sets []*order.OrderSetDetailed
+//     for rows.Next() {
+//         set := &order.OrderSetDetailed{}
+//         var createdAt, updatedAt time.Time
+//         var likeBy []int64
+//         var dishesJSON []byte
         
-        err := rows.Scan(
-            &set.Id,
-            &set.Name,
-            &set.Description,
-            &set.UserId,
-            &createdAt,
-            &updatedAt,
-            &set.IsFavourite,
-            &likeBy,
-            &set.IsPublic,
-            &set.Image,
-            &set.Price,
-            &set.Quantity,
-            &dishesJSON,
-        )
-        if err != nil {
-            return nil, fmt.Errorf("error scanning set row: %w", err)
-        }
+//         err := rows.Scan(
+//             &set.Id,
+//             &set.Name,
+//             &set.Description,
+//             &set.UserId,
+//             &createdAt,
+//             &updatedAt,
+//             &set.IsFavourite,
+//             &likeBy,
+//             &set.IsPublic,
+//             &set.Image,
+//             &set.Price,
+//             &set.Quantity,
+//             &dishesJSON,
+//         )
+//         if err != nil {
+//             return nil, fmt.Errorf("error scanning set row: %w", err)
+//         }
         
-        // Parse dishes JSON into the appropriate struct
-        var dishes []*order.OrderDetailedDish
-        if err := json.Unmarshal(dishesJSON, &dishes); err != nil {
-            return nil, fmt.Errorf("error unmarshaling dishes: %w", err)
-        }
+//         // Parse dishes JSON into the appropriate struct
+//         var dishes []*order.OrderDetailedDish
+//         if err := json.Unmarshal(dishesJSON, &dishes); err != nil {
+//             return nil, fmt.Errorf("error unmarshaling dishes: %w", err)
+//         }
         
-        set.CreatedAt = timestamppb.New(createdAt)
-        set.UpdatedAt = timestamppb.New(updatedAt)
-        set.LikeBy = likeBy
-        set.Dishes = dishes
+//         set.CreatedAt = timestamppb.New(createdAt)
+//         set.UpdatedAt = timestamppb.New(updatedAt)
+//         set.LikeBy = likeBy
+//         set.Dishes = dishes
         
-        sets = append(sets, set)
-    }
+//         sets = append(sets, set)
+//     }
 
-    if err = rows.Err(); err != nil {
-        return nil, fmt.Errorf("error iterating set rows: %w", err)
-    }
+//     if err = rows.Err(); err != nil {
+//         return nil, fmt.Errorf("error iterating set rows: %w", err)
+//     }
 
-    return sets, nil
-}
+//     return sets, nil
+// }
 
 // Helper function to fetch dishes for a set using pgxpool transaction
-func (or *OrderRepository) fetchSetDishes(ctx context.Context,  tx pgx.Tx, setID int64) ([]*order.OrderDetailedDish, error) {
-    query := `
-        SELECT d.id, sd.quantity, d.name, d.price, d.description, d.image, d.status
-        FROM set_dishes sd
-        JOIN dishes d ON sd.dish_id = d.id
-        WHERE sd.set_id = $1
-    `
+// func (or *OrderRepository) fetchSetDishes(ctx context.Context,  tx pgx.Tx, setID int64) ([]*order.OrderDetailedDish, error) {
+//     query := `
+//         SELECT d.id, sd.quantity, d.name, d.price, d.description, d.image, d.status
+//         FROM set_dishes sd
+//         JOIN dishes d ON sd.dish_id = d.id
+//         WHERE sd.set_id = $1
+//     `
     
-    rows, err := tx.Query(ctx, query, setID)
-    if err != nil {
-        return nil, fmt.Errorf("error querying set dishes: %w", err)
-    }
-    defer rows.Close()
+//     rows, err := tx.Query(ctx, query, setID)
+//     if err != nil {
+//         return nil, fmt.Errorf("error querying set dishes: %w", err)
+//     }
+//     defer rows.Close()
 
-    var dishes []*order.OrderDetailedDish
-    for rows.Next() {
-        dish := &order.OrderDetailedDish{}
-        err := rows.Scan(
-            &dish.DishId,
-            &dish.Quantity,
-            &dish.Name,
-            &dish.Price,
-            &dish.Description,
-            &dish.Image,
-            &dish.Status,
-        )
-        if err != nil {
-            return nil, fmt.Errorf("error scanning dish row: %w", err)
-        }
-        dishes = append(dishes, dish)
-    }
+//     var dishes []*order.OrderDetailedDish
+//     for rows.Next() {
+//         dish := &order.OrderDetailedDish{}
+//         err := rows.Scan(
+//             &dish.DishId,
+//             &dish.Quantity,
+//             &dish.Name,
+//             &dish.Price,
+//             &dish.Description,
+//             &dish.Image,
+//             &dish.Status,
+//         )
+//         if err != nil {
+//             return nil, fmt.Errorf("error scanning dish row: %w", err)
+//         }
+//         dishes = append(dishes, dish)
+//     }
 
-    if err = rows.Err(); err != nil {
-        return nil, fmt.Errorf("error iterating dish rows: %w", err)
-    }
+//     if err = rows.Err(); err != nil {
+//         return nil, fmt.Errorf("error iterating dish rows: %w", err)
+//     }
 
-    return dishes, nil
-}
+//     return dishes, nil
+// }
 
 // Similarly, update the fetchDetailedDishes function
 func (or *OrderRepository) fetchDetailedDishes(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.OrderDetailedDish, error) {
@@ -1825,23 +1824,10 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
         return nil, fmt.Errorf("error committing transaction: %w", err)
     }
 
-    // Log the completion with detailed information
-//     or.logger.Info(fmt.Sprintf(`[OrderRepository.AddingSetsDishesOrder] Successfully completed order update:
-// Order ID: %d
-// Current Version: %d
-
-// Version History:
-// %s
-
-// Summary Information:
-// %s`,
-//         req.Id,
-//         newVersion,
-//         formatVersionHistory(versionHistory),
-//         formatTotalSummary(totalSummary)))
-
-
-    // Updated response with new version tracking fields
+    or.logger.Info(fmt.Sprintf("[OrderRepository.AddingSetsDishesOrder] 121212 Returning order details - CurrentVersion: %d, VersionHistory: %+v, TotalSummary: %+v", 
+    newVersion, 
+    versionHistory, 
+    totalSummary))
     return &order.OrderDetailedListResponse{
         Data: []*order.OrderDetailedResponse{
             {
@@ -1878,33 +1864,9 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
     }, nil
 }
 
-// Helper function to calculate total s
 
-// fetchMostOrderedItems retrieves the most frequently ordered items (both dishes and sets)
-// across all versions of an order, combining quantities from different modifications
-func (or *OrderRepository) fetchMostOrderedItems(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.OrderItemCount, error) {
-    or.logger.Info(fmt.Sprintf("[OrderRepository.fetchMostOrderedItems] Fetching most ordered items for order %d", orderID))
-    
-    rows, err := tx.Query(ctx, `/* SQL query */`)
-    if err != nil {
-        or.logger.Error(fmt.Sprintf("[OrderRepository.fetchMostOrderedItems] Query error: %s", err.Error()))
-        return nil, fmt.Errorf("error querying most ordered items: %w", err)
-    }
-    defer rows.Close()
 
-    var items []*order.OrderItemCount
-    for rows.Next() {
-        var item order.OrderItemCount
-        if err := rows.Scan(&item.ItemType, &item.ItemId, &item.ItemName, &item.TotalQuantity); err != nil {
-            or.logger.Error(fmt.Sprintf("[OrderRepository.fetchMostOrderedItems] Error scanning row: %s", err.Error()))
-            return nil, fmt.Errorf("error scanning most ordered item: %w", err)
-        }
-        items = append(items, &item)
-    }
 
-    or.logger.Info(fmt.Sprintf("[OrderRepository.fetchMostOrderedItems] Found %d most ordered items", len(items)))
-    return items, nil
-}
 // -------------------------------------------------- update ordder adding set and dishes end -----------------------
 
 
@@ -2250,45 +2212,138 @@ func (or *OrderRepository) calculateTotalSummary(ctx context.Context, tx pgx.Tx,
     return &summary, nil
 }
 
-func formatVersionHistory(history []*order.OrderVersionSummary) string {
-    var details strings.Builder
-    details.WriteString(fmt.Sprintf("Total Versions: %d\n", len(history)))
-    
-    for i, version := range history {
-        details.WriteString(fmt.Sprintf("  Version #%d:\n", i+1))
-        details.WriteString(fmt.Sprintf("    Version Number: %d\n", version.VersionNumber))
-        details.WriteString(fmt.Sprintf("    Modification Type: %s\n", version.ModificationType))
-        details.WriteString(fmt.Sprintf("    Total Dishes: %d\n", version.TotalDishesCount))
-        details.WriteString(fmt.Sprintf("    Total Sets: %d\n", version.TotalSetsCount))
-        details.WriteString(fmt.Sprintf("    Version Total Price: %d\n", version.VersionTotalPrice))
-        
-        // Format changes
-        details.WriteString("    Changes:\n")
-        for _, change := range version.Changes {
-            details.WriteString(fmt.Sprintf("      - %s %s (ID: %d) Quantity: %d Price: %d\n",
-                change.ItemType, change.ItemName, change.ItemId, change.QuantityChanged, change.Price))
-        }
-    }
-    return details.String()
-}
 
-// Helper function to format total summary for logging
-func formatTotalSummary(summary *order.OrderTotalSummary) string {
-    if summary == nil {
-        return "Total Summary: nil"
-    }
+
+func (or *OrderRepository) fetchDetailedSets(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.OrderSetDetailed, error) {
+    // Start logging
+    or.logger.Info(fmt.Sprintf("[fetchDetailedSets] Starting to fetch sets for order ID: %d", orderID))
+
+    query := `
+        WITH set_dishes AS (
+            -- First CTE: Aggregate dishes for each set into a JSONB array
+            SELECT sd.set_id,
+                   jsonb_agg(
+                       jsonb_build_object(
+                           'dish_id', d.id,  -- Changed 'id' to 'dish_id' to match the struct
+                           'name', d.name,
+                           'description', d.description,
+                           'price', d.price,
+                           'image', d.image,
+                           'quantity', sd.quantity
+                       ) ORDER BY d.id  -- Added ordering for consistency
+                   ) as dishes
+            FROM set_dishes sd
+            JOIN dishes d ON sd.dish_id = d.id
+            GROUP BY sd.set_id
+        ),
+        unique_set_orders AS (
+            -- Second CTE: Get unique set orders to prevent duplicates
+            SELECT DISTINCT ON (soi.set_id) 
+                   soi.set_id,
+                   soi.quantity,
+                   soi.order_id  -- Added for logging
+            FROM set_order_items soi
+            WHERE soi.order_id = $1
+            ORDER BY soi.set_id, soi.created_at DESC  -- Added ordering for consistent results
+        )
+        SELECT s.id, 
+               s.name, 
+               s.description, 
+               s.user_id, 
+               s.created_at, 
+               s.updated_at,
+               s.is_favourite, 
+               s.like_by, 
+               s.is_public, 
+               s.image, 
+               s.price, 
+               uso.quantity,
+               COALESCE(sd.dishes, '[]'::jsonb) as dishes
+        FROM unique_set_orders uso
+        JOIN sets s ON uso.set_id = s.id
+        LEFT JOIN set_dishes sd ON s.id = sd.set_id
+        ORDER BY s.id  -- Added ordering for consistent results
+    `
     
-    var details strings.Builder
-    details.WriteString("Total Summary:\n")
-    details.WriteString(fmt.Sprintf("  Total Versions: %d\n", summary.TotalVersions))
-    details.WriteString(fmt.Sprintf("  Total Dishes Ordered: %d\n", summary.TotalDishesOrdered))
-    details.WriteString(fmt.Sprintf("  Total Sets Ordered: %d\n", summary.TotalSetsOrdered))
-    details.WriteString(fmt.Sprintf("  Cumulative Total Price: %d\n", summary.CumulativeTotalPrice))
+    // Log query execution
+    or.logger.Info(fmt.Sprintf("[fetchDetailedSets] Executing query for order ID: %d", orderID))
     
-    details.WriteString("  Most Ordered Items:\n")
-    for _, item := range summary.MostOrderedItems {
-        details.WriteString(fmt.Sprintf("    - %s %s (ID: %d) Total Quantity: %d\n",
-            item.ItemType, item.ItemName, item.ItemId, item.TotalQuantity))
+    rows, err := tx.Query(ctx, query, orderID)
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("[fetchDetailedSets] Failed to execute query: %v", err))
+        return nil, fmt.Errorf("error querying set details: %w", err)
     }
-    return details.String()
+    defer rows.Close()
+
+    var sets []*order.OrderSetDetailed
+    
+    setCount := 0
+    for rows.Next() {
+        setCount++
+        or.logger.Info(fmt.Sprintf("[fetchDetailedSets] Processing set #%d", setCount))
+        
+        set := &order.OrderSetDetailed{}
+        var createdAt, updatedAt time.Time
+        var likeBy []int64
+        var dishesJSON []byte
+        
+        err := rows.Scan(
+            &set.Id,
+            &set.Name,
+            &set.Description,
+            &set.UserId,
+            &createdAt,
+            &updatedAt,
+            &set.IsFavourite,
+            &likeBy,
+            &set.IsPublic,
+            &set.Image,
+            &set.Price,
+            &set.Quantity,
+            &dishesJSON,
+        )
+        if err != nil {
+            or.logger.Error(fmt.Sprintf("[fetchDetailedSets] Error scanning set row: %v", err))
+            return nil, fmt.Errorf("error scanning set row: %w", err)
+        }
+        
+        // Log set details before processing dishes
+        or.logger.Info(fmt.Sprintf("[fetchDetailedSets] Successfully scanned set ID: %d, Name: %s, Quantity: %d", 
+            set.Id, set.Name, set.Quantity))
+
+        // Log raw dishes JSON for debugging
+
+        
+        var dishes []*order.OrderDetailedDish
+        if err := json.Unmarshal(dishesJSON, &dishes); err != nil {
+            or.logger.Error(fmt.Sprintf("[fetchDetailedSets] Error unmarshaling dishes for set %d: %v", set.Id, err))
+            return nil, fmt.Errorf("error unmarshaling dishes: %w", err)
+        }
+        
+        // Log dishes count and details
+        or.logger.Info(fmt.Sprintf("[fetchDetailedSets] Set %d contains %d dishes", set.Id, len(dishes)))
+
+        
+        set.CreatedAt = timestamppb.New(createdAt)
+        set.UpdatedAt = timestamppb.New(updatedAt)
+        set.LikeBy = likeBy
+        set.Dishes = dishes
+        
+        sets = append(sets, set)
+    }
+
+    if err = rows.Err(); err != nil {
+        or.logger.Error(fmt.Sprintf("[fetchDetailedSets] Error during row iteration: %v", err))
+        return nil, fmt.Errorf("error iterating set rows: %w", err)
+    }
+
+    or.logger.Info(fmt.Sprintf("[fetchDetailedSets] Successfully fetched %d sets for order %d", len(sets), orderID))
+
+    // Log final result summary
+    for _, set := range sets {
+        or.logger.Info(fmt.Sprintf("[fetchDetailedSets] Final set summary - ID: %d, Name: %s, Dishes: %d, Quantity: %d", 
+            set.Id, set.Name, len(set.Dishes), set.Quantity))
+    }
+
+    return sets, nil
 }
