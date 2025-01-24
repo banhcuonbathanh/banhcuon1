@@ -209,13 +209,64 @@ func (os *OrderServiceStruct) AddingSetsDishesOrder(ctx context.Context, req *or
                 latestOrder.TotalSummary.CumulativeTotalPrice))
         }
     }
-//     os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Final order details - Current Version: %d", 
-//     updatedOrderResponse.Data[0].CurrentVersion))
 
-// os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Version History: %+v", 
-//     updatedOrderResponse.Data[0].VersionHistory))
+    return updatedOrderResponse, nil
+}
 
-// os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Total Summary: %+v", 
-//     updatedOrderResponse.Data[0].TotalSummary))
+
+func (os *OrderServiceStruct) RemovingSetsDishesOrder(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderDetailedListResponse, error) {
+    // Log initiation of removal process
+    os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Starting removal for OrderID: %d, Table: %d, Version: %d",
+        req.Id, req.TableNumber, req.Version))
+
+    // Log quantities being removed
+    os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Removing items - Dishes: %d, Sets: %d",
+        len(req.DishItems), len(req.SetItems)))
+
+    // Detailed logging for dish removals
+    for _, dish := range req.DishItems {
+        os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Dish removal details - ID: %d, Quantity: %d, Order Name: %s",
+            dish.DishId, dish.Quantity, dish.OrderName))
+    }
+
+    // Detailed logging for set removals
+    for _, set := range req.SetItems {
+        os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Set removal details - ID: %d, Quantity: %d, Order Name: %s",
+            set.SetId, set.Quantity, set.OrderName))
+    }
+
+    // Execute removal through repository
+    updatedOrderResponse, err := os.orderRepo.RemovingSetsDishesOrder(ctx, req)
+    if err != nil {
+        errMsg := fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Failed to remove items from order %d: %s",
+            req.Id, err.Error())
+        os.logger.Error(errMsg)
+        return nil, fmt.Errorf("failed to remove items from order: %w", err)
+    }
+
+    // Log successful removal details
+    if updatedOrderResponse != nil && len(updatedOrderResponse.Data) > 0 {
+        latestOrder := updatedOrderResponse.Data[0]
+        os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Successfully removed items - OrderID: %d, NewVersion: %d, TotalPrice: %d",
+            latestOrder.Id, latestOrder.CurrentVersion, latestOrder.TotalPrice))
+
+        // Log version history changes
+        if len(latestOrder.VersionHistory) > 0 {
+            latestVersion := latestOrder.VersionHistory[len(latestOrder.VersionHistory)-1]
+            os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Version update - Number: %d, Type: %s, PriceImpact: %d",
+                latestVersion.VersionNumber,
+                latestVersion.ModificationType,
+                latestVersion.VersionTotalPrice))
+        }
+
+        // Log post-removal summary
+        if latestOrder.TotalSummary != nil {
+            os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Post-removal summary - TotalDishes: %d, TotalSets: %d, TotalPrice: %d",
+                latestOrder.TotalSummary.TotalDishesOrdered,
+                latestOrder.TotalSummary.TotalSetsOrdered,
+                latestOrder.TotalSummary.CumulativeTotalPrice))
+        }
+    }
+
     return updatedOrderResponse, nil
 }

@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -18,8 +20,13 @@ import useCartStore from "@/zusstand/new-order/new-order-zustand";
 import { Package, UtensilsCrossed } from "lucide-react";
 
 const OrderSummaryPage = () => {
+  const [isMounted, setIsMounted] = useState(false);
   const { getOrderSummary } = useCartStore();
   const summary = getOrderSummary();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -27,6 +34,12 @@ const OrderSummaryPage = () => {
       currency: "USD"
     }).format(price);
   };
+
+  if (!isMounted) return null;
+
+  // check hidration start
+
+  // check hidrationi end
 
   return (
     <div className="p-4 max-w-4xl mx-auto">

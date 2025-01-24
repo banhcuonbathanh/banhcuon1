@@ -1190,3 +1190,94 @@ func ToOrderDetailedListResponseFromPbResponse(pbRes *order.OrderDetailedListRes
         },
     }
 }
+
+// new removing 
+
+
+
+func (h *OrderHandlerController) RemovingSetsDishesOrder(w http.ResponseWriter, r *http.Request) {
+    h.logger.Info("[Order Handler.RemovingSetsDishesOrder] Starting to process removal request")
+
+    var orderReq UpdateOrderRequestType
+    if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+        h.logger.Error(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Error decoding request body: %v", err))
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Processing removal for Order ID: %d, Table: %d, Order Name: %s",
+        orderReq.ID, orderReq.TableNumber, orderReq.OrderName))
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Request contains %d dish removals and %d set removals",
+        len(orderReq.DishItems), len(orderReq.SetItems)))
+
+    for _, dish := range orderReq.DishItems {
+        h.logger.Info(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Dish removal details - ID: %d, Quantity: %d, Order Name: %s",
+            dish.DishID, dish.Quantity, dish.OrderName))
+    }
+
+    for _, set := range orderReq.SetItems {
+        h.logger.Info(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Set removal details - ID: %d, Quantity: %d, Order Name: %s",
+            set.SetID, set.Quantity, set.OrderName))
+    }
+
+    pbReq := ToPBUpdateOrderRequest(orderReq)
+    h.logger.Info("[Order Handler.RemovingSetsDishesOrder] Converting request to protobuf format completed")
+
+    updatedOrderResponse, err := h.client.RemovingSetsDishesOrder(h.ctx, pbReq)
+    if err != nil {
+        h.logger.Error(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Error removing items: %v", err))
+        http.Error(w, "error removing items from order", http.StatusInternalServerError)
+        return
+    }
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Proto Response: \nPagination: %+v", 
+        updatedOrderResponse.GetPagination()))
+
+    for i, order := range updatedOrderResponse.GetData() {
+        h.logger.Info(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Proto Order %d: \n"+
+            "ID: %d\n"+
+            "Remaining Dish Items: %d\n"+
+            "Remaining Set Items: %d\n"+
+            "Current Version: %d\n"+
+            "Total Price: %d",
+            i+1,
+            order.GetId(),
+            len(order.GetDataDish()),
+            len(order.GetDataSet()),
+            order.GetCurrentVersion(),
+            order.GetTotalPrice()))
+    }
+
+    res := ToOrderDetailedListResponseFromPbResponse(updatedOrderResponse)
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Converted Response: \nPagination: %+v", 
+        res.Pagination))
+
+    for i, order := range res.Data {
+        h.logger.Info(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Converted Order %d: \n"+
+            "ID: %d\n"+
+            "Final Version: %d\n"+
+            "Remaining Dishes: %d\n"+
+            "Remaining Sets: %d\n"+
+            "Adjusted Total Price: %d",
+            i+1,
+            order.ID,
+            order.CurrentVersion,
+            len(order.DataDish),
+            len(order.DataSet),
+            order.TotalPrice))
+
+   
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        h.logger.Error(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Error encoding response: %v", err))
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        return
+    }
+
+    h.logger.Info("[Order Handler.RemovingSetsDishesOrder] Item removal completed successfully")
+}
