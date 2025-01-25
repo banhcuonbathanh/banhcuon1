@@ -270,3 +270,64 @@ func (os *OrderServiceStruct) RemovingSetsDishesOrder(ctx context.Context, req *
 
     return updatedOrderResponse, nil
 }
+
+func (os *OrderServiceStruct) MarkDishesDelivered(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderDetailedListResponse, error) {
+    // Log delivery initiation with version check
+    os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Initiating delivery for OrderID: %d, Handler: %d, Version: %d",
+        req.Id, req.OrderHandlerId, req.Version))
+
+    // Validate mandatory delivery fields
+    if req.OrderHandlerId == 0 {
+        os.logger.Error("[OrderService.MarkDishesDelivered] Missing order handler ID")
+        return nil, fmt.Errorf("delivery requires valid handler identification")
+    }
+
+    if len(req.DishItems) == 0 {
+        os.logger.Warning(fmt.Sprintf("[OrderService.MarkDishesDelivered] Empty delivery attempt OrderID: %d", req.Id))
+        return nil, fmt.Errorf("at least one dish must be specified for delivery")
+    }
+
+    // Log delivery details with quantity validation
+    totalDelivered := 0
+    for _, dish := range req.DishItems {
+        if dish.Quantity <= 0 {
+            os.logger.Error(fmt.Sprintf("[OrderService.MarkDishesDelivered] Invalid quantity %d for DishID: %d",
+                dish.Quantity, dish.DishId))
+            return nil, fmt.Errorf("invalid quantity for dish %d: must be positive", dish.DishId)
+        }
+        
+        os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Scheduling delivery - DishID: %d, Qty: %d, Handler: %d",
+            dish.DishId, dish.Quantity, req.OrderHandlerId))
+        
+        totalDelivered += int(dish.Quantity)
+    }
+
+    os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Total items to deliver: %d", totalDelivered))
+
+    // Execute delivery through repository
+    deliveryResponse, err := os.orderRepo.MarkDishesDelivered(ctx, req)
+    if err != nil {
+        errMsg := fmt.Sprintf("[OrderService.MarkDishesDelivered] Delivery failed for OrderID: %d - %s",
+            req.Id, err.Error())
+        os.logger.Error(errMsg)
+        return nil, fmt.Errorf("delivery processing failed: %w", err)
+    }
+
+    // Log delivery outcome
+    if deliveryResponse != nil && len(deliveryResponse.Data) > 0 {
+        orderDetails := deliveryResponse.Data[0]
+        
+        os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Successfully delivered - OrderID: %d, NewVersion: %d, TotalPrice: %d",
+            orderDetails.Id, orderDetails.CurrentVersion, orderDetails.TotalPrice))
+
+        // Log delivery audit trail
+ 
+
+        // Log delivery impact analysis
+  
+
+ 
+    }
+
+    return deliveryResponse, nil
+}

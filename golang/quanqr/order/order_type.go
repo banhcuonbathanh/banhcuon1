@@ -41,19 +41,23 @@ type OrderModification struct {
 
 // New type for tracking dish deliveries
 type DishDelivery struct {
-    ID                int64     `json:"id"`
-    OrderID          int64     `json:"order_id"`
-    OrderName        string    `json:"order_name"`
-    QuantityDelivered int32    `json:"quantity_delivered"`
-    DeliveryStatus   string    `json:"delivery_status"`
-    DeliveredAt      time.Time `json:"delivered_at"`
-    DeliveredByUserID int64    `json:"delivered_by_user_id"`
-    CreatedAt        time.Time `json:"created_at"`
-    UpdatedAt        time.Time `json:"updated_at"`
-    ModificationNumber int32   `json:"modification_number"`
-    DishOrderItemID  int64     `json:"dish_order_item_id"`
+    ID                  int64     `json:"id"`
+    OrderID             int64     `json:"order_id"`
+    OrderName           string    `json:"order_name"`
+    GuestID             int64     `json:"guest_id,omitempty"`
+    UserID              int64     `json:"user_id,omitempty"`
+    TableNumber         int64     `json:"table_number,omitempty"`
+    DishID              int64     `json:"dish_id"`
+    QuantityDelivered   int32     `json:"quantity_delivered"`
+    DeliveryStatus      string    `json:"delivery_status"`
+    DeliveredAt         time.Time `json:"delivered_at,omitempty"`
+    DeliveredByUserID   int64     `json:"delivered_by_user_id,omitempty"`
+    CreatedAt           time.Time `json:"created_at"`
+    UpdatedAt           time.Time `json:"updated_at"`
+    ModificationNumber  int32     `json:"modification_number"`
+    Version             int32     `json:"version"`
+    IsGuest             bool      `json:"is_guest"`
 }
-
 // CreateOrderRequestType updated with new fields
 type CreateOrderRequestType struct {
     GuestID        int64           `json:"guest_id"`

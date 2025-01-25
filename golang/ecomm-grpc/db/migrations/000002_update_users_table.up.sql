@@ -311,6 +311,10 @@ CREATE TABLE dish_deliveries (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     order_name VARCHAR(255),
+        guest_id BIGINT,
+    user_id BIGINT,
+  table_number BIGINT,
+    dish_id BIGINT NOT NULL,
     quantity_delivered INTEGER NOT NULL,
     delivery_status VARCHAR(50) DEFAULT 'PENDING',  -- Status could be PENDING, DELIVERED, CANCELLED
     delivered_at TIMESTAMP WITH TIME ZONE,
@@ -324,7 +328,12 @@ CREATE TABLE dish_deliveries (
     
     -- Relationships to other tables
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (delivered_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (delivered_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE CASCADE,
+        CONSTRAINT guest_or_user_check CHECK (
+        (is_guest = TRUE AND guest_id IS NOT NULL AND user_id IS NULL) OR
+        (is_guest = FALSE AND user_id IS NOT NULL AND guest_id IS NULL)
+    ),
 );
 
 -- Create an index to help with querying deliveries by order

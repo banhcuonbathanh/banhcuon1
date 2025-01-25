@@ -1281,3 +1281,83 @@ func (h *OrderHandlerController) RemovingSetsDishesOrder(w http.ResponseWriter, 
 
     h.logger.Info("[Order Handler.RemovingSetsDishesOrder] Item removal completed successfully")
 }
+
+
+
+func (h *OrderHandlerController) MarkDishesDelivered(w http.ResponseWriter, r *http.Request) {
+    h.logger.Info("[Order Handler.MarkDishesDelivered] Starting to process delivery marking")
+
+    var orderReq UpdateOrderRequestType
+    if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Error decoding request body: %v", err))
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Processing delivery for Order ID: %d, Handler: %d, Version: %d",
+        orderReq.ID, orderReq.OrderHandlerID, orderReq.Version))
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Request contains %d dish deliveries",
+        len(orderReq.DishItems)))
+
+    for _, dish := range orderReq.DishItems {
+        h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Dish delivery details - ID: %d, Quantity: %d, Order Name: %s",
+            dish.DishID, dish.Quantity, dish.OrderName))
+    }
+
+    pbReq := ToPBUpdateOrderRequest(orderReq)
+    h.logger.Info("[Order Handler.MarkDishesDelivered] Converting request to protobuf format completed")
+
+    deliveryResponse, err := h.client.MarkDishesDelivered(h.ctx, pbReq)
+    if err != nil {
+        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Error marking deliveries: %v", err))
+        http.Error(w, "error processing dish deliveries", http.StatusInternalServerError)
+        return
+    }
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Proto Response: \nPagination: %+v", 
+        deliveryResponse.GetPagination()))
+
+    for i, order := range deliveryResponse.GetData() {
+        h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Proto Order %d: \n"+
+            "ID: %d\n"+
+            "Current Version: %d\n"+
+            "Total Price: %d\n"+
+            "Delivered Dishes: %d",
+            i+1,
+            order.GetId(),
+            order.GetCurrentVersion(),
+            order.GetTotalPrice(),
+            len(order.GetDataDish())))
+    }
+
+    res := ToOrderDetailedListResponseFromPbResponse(deliveryResponse)
+
+    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Converted Response: \nPagination: %+v", 
+        res.Pagination))
+
+    for i, order := range res.Data {
+        h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Converted Order %d: \n"+
+            "ID: %d\n"+
+            "New Version: %d\n"+
+            "Total Delivered Items: %d\n"+
+            "Delivery Timestamp: %v",
+            i+1,
+            order.ID,
+            order.CurrentVersion,
+            len(order.DataDish),
+            time.Now().UTC().Format(time.RFC3339)))
+
+       
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Error encoding response: %v", err))
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        return
+    }
+
+    h.logger.Info("[Order Handler.MarkDishesDelivered] Delivery marking completed successfully")
+}

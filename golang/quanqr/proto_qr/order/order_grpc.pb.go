@@ -26,6 +26,7 @@ const (
 	OrderService_UpdateOrder_FullMethodName             = "/order_proto.OrderService/UpdateOrder"
 	OrderService_AddingSetsDishesOrder_FullMethodName   = "/order_proto.OrderService/AddingSetsDishesOrder"
 	OrderService_RemovingSetsDishesOrder_FullMethodName = "/order_proto.OrderService/RemovingSetsDishesOrder"
+	OrderService_MarkDishesDelivered_FullMethodName     = "/order_proto.OrderService/MarkDishesDelivered"
 	OrderService_PayOrders_FullMethodName               = "/order_proto.OrderService/PayOrders"
 	OrderService_GetOrderProtoListDetail_FullMethodName = "/order_proto.OrderService/GetOrderProtoListDetail"
 )
@@ -43,6 +44,7 @@ type OrderServiceClient interface {
 	UpdateOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 	AddingSetsDishesOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 	RemovingSetsDishesOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
+	MarkDishesDelivered(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 	PayOrders(ctx context.Context, in *PayOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error)
 	GetOrderProtoListDetail(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 }
@@ -125,6 +127,16 @@ func (c *orderServiceClient) RemovingSetsDishesOrder(ctx context.Context, in *Up
 	return out, nil
 }
 
+func (c *orderServiceClient) MarkDishesDelivered(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OrderDetailedListResponse)
+	err := c.cc.Invoke(ctx, OrderService_MarkDishesDelivered_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *orderServiceClient) PayOrders(ctx context.Context, in *PayOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(OrderListResponse)
@@ -158,6 +170,7 @@ type OrderServiceServer interface {
 	UpdateOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error)
 	AddingSetsDishesOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error)
 	RemovingSetsDishesOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error)
+	MarkDishesDelivered(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error)
 	PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error)
 	GetOrderProtoListDetail(context.Context, *GetOrdersRequest) (*OrderDetailedListResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
@@ -190,6 +203,9 @@ func (UnimplementedOrderServiceServer) AddingSetsDishesOrder(context.Context, *U
 }
 func (UnimplementedOrderServiceServer) RemovingSetsDishesOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemovingSetsDishesOrder not implemented")
+}
+func (UnimplementedOrderServiceServer) MarkDishesDelivered(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkDishesDelivered not implemented")
 }
 func (UnimplementedOrderServiceServer) PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PayOrders not implemented")
@@ -344,6 +360,24 @@ func _OrderService_RemovingSetsDishesOrder_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_MarkDishesDelivered_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).MarkDishesDelivered(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_MarkDishesDelivered_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).MarkDishesDelivered(ctx, req.(*UpdateOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _OrderService_PayOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PayOrdersRequest)
 	if err := dec(in); err != nil {
@@ -414,6 +448,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemovingSetsDishesOrder",
 			Handler:    _OrderService_RemovingSetsDishesOrder_Handler,
+		},
+		{
+			MethodName: "MarkDishesDelivered",
+			Handler:    _OrderService_MarkDishesDelivered_Handler,
 		},
 		{
 			MethodName: "PayOrders",
