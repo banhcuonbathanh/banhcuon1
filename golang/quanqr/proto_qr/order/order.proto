@@ -64,25 +64,7 @@ message OrderModification {
   string order_name = 7;
 }
 
-// New message for dish deliveries
-message DishDelivery {
-  int64 id = 1;
-  int64 order_id = 2;
-  string order_name = 3;
-  int64 guest_id = 4;
-  int64 user_id = 5;
-  int64 table_number = 6;
-  int64 dish_id = 7;
-  int32 quantity_delivered = 8;
-  string delivery_status = 9;
-  google.protobuf.Timestamp delivered_at = 10;
-  int64 delivered_by_user_id = 11;
-  google.protobuf.Timestamp created_at = 12;
-  google.protobuf.Timestamp updated_at = 13;
-  int32 modification_number = 14;
-  int32 version = 15;
-  bool is_guest = 16;
-}
+
 
 // Detailed order items (keeping existing structure)
 message OrderDetailedDish {
@@ -277,6 +259,78 @@ message OrderDetailedListResponse {
 }
 //adding data end
 
+// New message for dish deliveries
+
+message DishDelivery {
+  int64 id = 1;
+  int64 order_id = 2;
+  string order_name = 3;
+  int64 guest_id = 4;
+  int64 user_id = 5;
+  int64 table_number = 6;
+  repeated DishOrderItem dish_items = 7;
+  int32 quantity_delivered = 8;
+  string delivery_status = 9;
+  google.protobuf.Timestamp delivered_at = 10;
+  int64 delivered_by_user_id = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+
+  bool is_guest = 16;
+}
+message CreateDishDeliveryRequest {
+ 
+  int64 order_id = 2;
+  string order_name = 3;
+  int64 guest_id = 4;
+  int64 user_id = 5;
+  int64 table_number = 6;
+  repeated DishOrderItem dish_items = 7;
+  int32 quantity_delivered = 8;
+  string delivery_status = 9;
+  google.protobuf.Timestamp delivered_at = 10;
+  int64 delivered_by_user_id = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+
+  bool is_guest = 16;
+}
+enum DeliveryStatus {
+  PENDING = 0;
+  PARTIALLY_DELIVERED = 1;
+  FULLY_DELIVERED = 2;
+  CANCELLED = 3;
+}
+
+message OrderDetailedResponseWithDelivery {
+  int64 id = 1;
+  int64 guest_id = 2;
+  int64 user_id = 3;
+  int64 table_number = 4;
+  int64 order_handler_id = 5;
+  string status = 6;
+  int32 total_price = 7;
+  repeated OrderSetDetailed data_set = 8;
+  repeated OrderDetailedDish data_dish = 9;
+  bool is_guest = 10;
+  string topping = 11;
+  string tracking_order = 12;
+  bool take_away = 15;
+  int64 chili_number = 16;
+  string table_token = 17;
+  string order_name = 18;
+  int32 current_version = 19;
+  int64 parent_order_id = 20;
+  
+  repeated OrderVersionSummary version_history = 21;
+  OrderTotalSummary total_summary = 22;
+
+  // New delivery-related fields
+  repeated DishDelivery delivery_history = 23;     // Complete delivery log
+  DeliveryStatus current_delivery_status = 24;     // Overall delivery status
+  int32 total_items_delivered = 25;                // Total items delivered
+  google.protobuf.Timestamp last_delivery_at = 26; // Most recent delivery timestamp
+}
 // Service definition with new methods for modifications and deliveries
 service OrderService {
   rpc FetchOrdersByCriteria(FetchOrdersByCriteriaRequest) returns (OrderDetailedListResponse);
@@ -287,7 +341,9 @@ service OrderService {
   rpc AddingSetsDishesOrder(UpdateOrderRequest) returns (OrderDetailedListResponse);
 
   rpc RemovingSetsDishesOrder(UpdateOrderRequest) returns (OrderDetailedListResponse);
-  rpc MarkDishesDelivered(UpdateOrderRequest) returns (OrderDetailedListResponse);
+  rpc MarkDishesDelivered(CreateDishDeliveryRequest) returns (OrderDetailedResponseWithDelivery);
   rpc PayOrders(PayOrdersRequest) returns (OrderListResponse);
   rpc GetOrderProtoListDetail(GetOrdersRequest) returns (OrderDetailedListResponse);
 }
+
+

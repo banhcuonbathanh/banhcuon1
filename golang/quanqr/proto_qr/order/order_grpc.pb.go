@@ -44,7 +44,7 @@ type OrderServiceClient interface {
 	UpdateOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 	AddingSetsDishesOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 	RemovingSetsDishesOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
-	MarkDishesDelivered(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
+	MarkDishesDelivered(ctx context.Context, in *CreateDishDeliveryRequest, opts ...grpc.CallOption) (*OrderDetailedResponseWithDelivery, error)
 	PayOrders(ctx context.Context, in *PayOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error)
 	GetOrderProtoListDetail(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
 }
@@ -127,9 +127,9 @@ func (c *orderServiceClient) RemovingSetsDishesOrder(ctx context.Context, in *Up
 	return out, nil
 }
 
-func (c *orderServiceClient) MarkDishesDelivered(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error) {
+func (c *orderServiceClient) MarkDishesDelivered(ctx context.Context, in *CreateDishDeliveryRequest, opts ...grpc.CallOption) (*OrderDetailedResponseWithDelivery, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OrderDetailedListResponse)
+	out := new(OrderDetailedResponseWithDelivery)
 	err := c.cc.Invoke(ctx, OrderService_MarkDishesDelivered_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ type OrderServiceServer interface {
 	UpdateOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error)
 	AddingSetsDishesOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error)
 	RemovingSetsDishesOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error)
-	MarkDishesDelivered(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error)
+	MarkDishesDelivered(context.Context, *CreateDishDeliveryRequest) (*OrderDetailedResponseWithDelivery, error)
 	PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error)
 	GetOrderProtoListDetail(context.Context, *GetOrdersRequest) (*OrderDetailedListResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
@@ -204,7 +204,7 @@ func (UnimplementedOrderServiceServer) AddingSetsDishesOrder(context.Context, *U
 func (UnimplementedOrderServiceServer) RemovingSetsDishesOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemovingSetsDishesOrder not implemented")
 }
-func (UnimplementedOrderServiceServer) MarkDishesDelivered(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error) {
+func (UnimplementedOrderServiceServer) MarkDishesDelivered(context.Context, *CreateDishDeliveryRequest) (*OrderDetailedResponseWithDelivery, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarkDishesDelivered not implemented")
 }
 func (UnimplementedOrderServiceServer) PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error) {
@@ -361,7 +361,7 @@ func _OrderService_RemovingSetsDishesOrder_Handler(srv interface{}, ctx context.
 }
 
 func _OrderService_MarkDishesDelivered_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateOrderRequest)
+	in := new(CreateDishDeliveryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func _OrderService_MarkDishesDelivered_Handler(srv interface{}, ctx context.Cont
 		FullMethod: OrderService_MarkDishesDelivered_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrderServiceServer).MarkDishesDelivered(ctx, req.(*UpdateOrderRequest))
+		return srv.(OrderServiceServer).MarkDishesDelivered(ctx, req.(*CreateDishDeliveryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

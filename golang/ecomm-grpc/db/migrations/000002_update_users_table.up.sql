@@ -207,33 +207,7 @@ CREATE TABLE set_snapshot_dishes (
     UNIQUE (set_snapshot_id, dish_snapshot_id)
 );
 
--- CREATE TABLE orders (
---     id BIGSERIAL PRIMARY KEY,
---     guest_id BIGINT,
---     user_id BIGINT,
---     is_guest BOOLEAN NOT NULL,
---     table_number BIGINT,
---     order_handler_id BIGINT,
---     status VARCHAR(50) DEFAULT 'Pending',
---     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
---     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
---     order_name VARCHAR(255),
---     total_price INTEGER,
---     topping VARCHAR(255),
---     tracking_order VARCHAR(255),
---     take_away BOOLEAN NOT NULL DEFAULT false,
---     chili_number BIGINT DEFAULT 0,
---     table_token VARCHAR(255) NOT NULL,
-  
---     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
---     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
---     FOREIGN KEY (table_number) REFERENCES tables(number) ON DELETE SET NULL,
---     FOREIGN KEY (order_handler_id) REFERENCES users(id) ON DELETE SET NULL,
---     CONSTRAINT guest_or_user_check CHECK (
---         (is_guest = TRUE AND guest_id IS NOT NULL AND user_id IS NULL) OR
---         (is_guest = FALSE AND user_id IS NOT NULL AND guest_id IS NULL)
---     )
--- );
+
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     guest_id BIGINT,
@@ -311,34 +285,36 @@ CREATE TABLE dish_deliveries (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     order_name VARCHAR(255),
-        guest_id BIGINT,
+    guest_id BIGINT,
     user_id BIGINT,
-  table_number BIGINT,
-    dish_id BIGINT NOT NULL,
+    table_number BIGINT,
     quantity_delivered INTEGER NOT NULL,
-    delivery_status VARCHAR(50) DEFAULT 'PENDING',  -- Status could be PENDING, DELIVERED, CANCELLED
+    delivery_status VARCHAR(50) DEFAULT 'PENDING',
     delivered_at TIMESTAMP WITH TIME ZONE,
     delivered_by_user_id BIGINT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    modification_number INTEGER NOT NULL,  -- To track which order modification this delivery belongs to
-    version INTEGER DEFAULT 1,  -- Added to track order versions
+    is_guest BOOLEAN NOT NULL,
+
     -- Ensure delivered quantity is positive
     CONSTRAINT valid_delivery_quantity CHECK (quantity_delivered > 0),
     
     -- Relationships to other tables
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (delivered_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE CASCADE,
-        CONSTRAINT guest_or_user_check CHECK (
+    
+    -- Guest or user check constraint
+    CONSTRAINT guest_or_user_check CHECK (
         (is_guest = TRUE AND guest_id IS NOT NULL AND user_id IS NULL) OR
         (is_guest = FALSE AND user_id IS NOT NULL AND guest_id IS NULL)
-    ),
+    )
 );
 
--- Create an index to help with querying deliveries by order
+-- Create indexes to improve query performance
 CREATE INDEX idx_dish_deliveries_order ON dish_deliveries(order_id);
--- Create an index for tracking deliveries by dish order item
+CREATE INDEX idx_dish_deliveries_user ON dish_deliveries(user_id);
+CREATE INDEX idx_dish_deliveries_guest ON dish_deliveries(guest_id);
+-- Create an index for tracking deliveries by dish order item asdfasfasdfasdfasfasdfasfas
 
 CREATE INDEX idx_dish_order_items_modification ON dish_order_items(order_id, modification_number);
 CREATE INDEX idx_set_order_items_modification ON set_order_items(order_id, modification_number);

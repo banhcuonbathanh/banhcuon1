@@ -3,7 +3,8 @@ package order_grpc
 import (
 	"context"
 	"fmt"
-
+    "google.golang.org/grpc/codes"
+    "google.golang.org/grpc/status"
 	"english-ai-full/logger"
 	"english-ai-full/quanqr/proto_qr/order"
 )
@@ -271,62 +272,53 @@ func (os *OrderServiceStruct) RemovingSetsDishesOrder(ctx context.Context, req *
     return updatedOrderResponse, nil
 }
 
-func (os *OrderServiceStruct) MarkDishesDelivered(ctx context.Context, req *order.UpdateOrderRequest) (*order.OrderDetailedListResponse, error) {
-    // Log delivery initiation with version check
-    os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Initiating delivery for OrderID: %d, Handler: %d, Version: %d",
-        req.Id, req.OrderHandlerId, req.Version))
 
-    // Validate mandatory delivery fields
-    if req.OrderHandlerId == 0 {
-        os.logger.Error("[OrderService.MarkDishesDelivered] Missing order handler ID")
-        return nil, fmt.Errorf("delivery requires valid handler identification")
+func (os *OrderServiceStruct) MarkDishesDelivered(ctx context.Context, req *order.CreateDishDeliveryRequest) (*order.OrderDetailedResponseWithDelivery, error) {
+    // Log initiation with delivery context
+    os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Init OrderID: %d, User: %d, Items: %d",
+        req.OrderId, req.DeliveredByUserId, len(req.DishItems)))
+
+    // Validate required fields
+    if req.OrderId == 0 {
+        os.logger.Error("[OrderService.MarkDishesDelivered] Missing order ID")
+        return nil, status.Error(codes.InvalidArgument, "order ID required")
+    }
+
+    if req.DeliveredByUserId == 0 {
+        os.logger.Error("[OrderService.MarkDishesDelivered] Missing delivery user ID")
+        return nil, status.Error(codes.InvalidArgument, "delivery user ID required")
     }
 
     if len(req.DishItems) == 0 {
-        os.logger.Warning(fmt.Sprintf("[OrderService.MarkDishesDelivered] Empty delivery attempt OrderID: %d", req.Id))
-        return nil, fmt.Errorf("at least one dish must be specified for delivery")
+        os.logger.Warning(fmt.Sprintf("[OrderService.MarkDishesDelivered] Empty delivery OrderID: %d", req.OrderId))
+        return nil, status.Error(codes.InvalidArgument, "at least one dish required")
     }
 
-    // Log delivery details with quantity validation
-    totalDelivered := 0
+    // Validate dish quantities
+    var totalItems int32
     for _, dish := range req.DishItems {
         if dish.Quantity <= 0 {
-            os.logger.Error(fmt.Sprintf("[OrderService.MarkDishesDelivered] Invalid quantity %d for DishID: %d",
+            os.logger.Error(fmt.Sprintf("[OrderService.MarkDishesDelivered] Invalid quantity %d DishID: %d",
                 dish.Quantity, dish.DishId))
-            return nil, fmt.Errorf("invalid quantity for dish %d: must be positive", dish.DishId)
+            return nil, status.Errorf(codes.InvalidArgument, "invalid quantity for dish %d", dish.DishId)
         }
-        
-        os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Scheduling delivery - DishID: %d, Qty: %d, Handler: %d",
-            dish.DishId, dish.Quantity, req.OrderHandlerId))
-        
-        totalDelivered += int(dish.Quantity)
+        totalItems += int32(dish.Quantity)
     }
 
-    os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Total items to deliver: %d", totalDelivered))
-
-    // Execute delivery through repository
+    // Execute delivery operation
     deliveryResponse, err := os.orderRepo.MarkDishesDelivered(ctx, req)
     if err != nil {
-        errMsg := fmt.Sprintf("[OrderService.MarkDishesDelivered] Delivery failed for OrderID: %d - %s",
-            req.Id, err.Error())
-        os.logger.Error(errMsg)
-        return nil, fmt.Errorf("delivery processing failed: %w", err)
+        os.logger.Error(fmt.Sprintf("[OrderService.MarkDishesDelivered] Failed OrderID: %d - %s",
+            req.OrderId, err.Error()))
+        return nil, status.Errorf(codes.Internal, "delivery processing failed: %v", err)
     }
 
-    // Log delivery outcome
-    if deliveryResponse != nil && len(deliveryResponse.Data) > 0 {
-        orderDetails := deliveryResponse.Data[0]
-        
-        os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Successfully delivered - OrderID: %d, NewVersion: %d, TotalPrice: %d",
-            orderDetails.Id, orderDetails.CurrentVersion, orderDetails.TotalPrice))
-
-        // Log delivery audit trail
- 
-
-        // Log delivery impact analysis
-  
-
- 
+    // Post-delivery logging
+    if deliveryResponse != nil {
+        os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Completed OrderID: %d, Version: %d, Status: %s",
+            deliveryResponse.Id, 
+            deliveryResponse.CurrentVersion,
+            deliveryResponse.CurrentDeliveryStatus.String()))
     }
 
     return deliveryResponse, nil

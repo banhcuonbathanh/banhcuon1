@@ -435,3 +435,6 @@ grep -r "from.\*login-dialog" . ---> ok
 
 -------------------------- zustand optimization -----------------------------
 how to optimize Zustand store subscriptions to prevent unnecessary rerenders.
+
+
+// data 

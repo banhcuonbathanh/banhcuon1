@@ -15,6 +15,8 @@ import (
 
 	"github.com/go-chi/chi"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -1282,82 +1284,99 @@ func (h *OrderHandlerController) RemovingSetsDishesOrder(w http.ResponseWriter, 
     h.logger.Info("[Order Handler.RemovingSetsDishesOrder] Item removal completed successfully")
 }
 
-
-
 func (h *OrderHandlerController) MarkDishesDelivered(w http.ResponseWriter, r *http.Request) {
-    h.logger.Info("[Order Handler.MarkDishesDelivered] Starting to process delivery marking")
+    // Initiation logging with core identifiers
+    h.logger.Info("[Order Handler.MarkDishesDelivered] Starting delivery processing")
 
     var orderReq UpdateOrderRequestType
     if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
-        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Error decoding request body: %v", err))
-        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Decode failure: %v", err))
+        http.Error(w, "invalid request format", http.StatusBadRequest)
         return
     }
 
-    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Processing delivery for Order ID: %d, Handler: %d, Version: %d",
-        orderReq.ID, orderReq.OrderHandlerID, orderReq.Version))
+    // Structured validation logging
+    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Processing OrderID: %d, User: %d, Items: %d",
+        orderReq.ID, orderReq.OrderHandlerID, len(orderReq.DishItems)))
 
-    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Request contains %d dish deliveries",
-        len(orderReq.DishItems)))
-
-    for _, dish := range orderReq.DishItems {
-        h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Dish delivery details - ID: %d, Quantity: %d, Order Name: %s",
-            dish.DishID, dish.Quantity, dish.OrderName))
+    // Validation pipeline
+    if orderReq.ID == 0 {
+        h.logger.Error("[Order Handler.MarkDishesDelivered] Missing order ID")
+        http.Error(w, "order ID required", http.StatusBadRequest)
+        return
     }
 
-    pbReq := ToPBUpdateOrderRequest(orderReq)
-    h.logger.Info("[Order Handler.MarkDishesDelivered] Converting request to protobuf format completed")
+    if orderReq.OrderHandlerID == 0 {
+        h.logger.Error("[Order Handler.MarkDishesDelivered] Missing delivery user ID")
+        http.Error(w, "delivery user ID required", http.StatusBadRequest)
+        return
+    }
 
+    if len(orderReq.DishItems) == 0 {
+        h.logger.Warning(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Empty dishes OrderID: %d", orderReq.ID))
+        http.Error(w, "at least one dish required", http.StatusBadRequest)
+        return
+    }
+
+    var totalItems int64
+    for _, dish := range orderReq.DishItems {
+        if dish.Quantity <= 0 {
+            h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Invalid quantity %d DishID: %d",
+                dish.Quantity, dish.DishID))
+            http.Error(w, fmt.Sprintf("invalid quantity for dish %d", dish.DishID), http.StatusBadRequest)
+            return
+        }
+        totalItems += dish.Quantity
+    }
+
+    // Convert to protobuf after validation
+    pbReq := ToPBUpdateOrderRequest(orderReq)
+    h.logger.Warning(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Protobuf conversion complete OrderID: %d", orderReq.ID))
+
+    // Service call with error translation
     deliveryResponse, err := h.client.MarkDishesDelivered(h.ctx, pbReq)
     if err != nil {
-        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Error marking deliveries: %v", err))
-        http.Error(w, "error processing dish deliveries", http.StatusInternalServerError)
+        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Service failure OrderID: %d - %v", orderReq.ID, err))
+        
+        // Handle gRPC status errors
+        if st, ok := status.FromError(err); ok {
+            switch st.Code() {
+            case codes.InvalidArgument:
+                http.Error(w, st.Message(), http.StatusBadRequest)
+            case codes.NotFound:
+                http.Error(w, st.Message(), http.StatusNotFound)
+            case codes.Internal:
+                http.Error(w, st.Message(), http.StatusInternalServerError)
+            default:
+                http.Error(w, "processing error", http.StatusInternalServerError)
+            }
+        } else {
+            http.Error(w, "unexpected error", http.StatusInternalServerError)
+        }
         return
     }
 
-    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Proto Response: \nPagination: %+v", 
-        deliveryResponse.GetPagination()))
-
-    for i, order := range deliveryResponse.GetData() {
-        h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Proto Order %d: \n"+
-            "ID: %d\n"+
-            "Current Version: %d\n"+
-            "Total Price: %d\n"+
-            "Delivered Dishes: %d",
-            i+1,
-            order.GetId(),
-            order.GetCurrentVersion(),
-            order.GetTotalPrice(),
-            len(order.GetDataDish())))
+    // Response validation and logging
+    if deliveryResponse == nil {
+        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Empty response OrderID: %d", orderReq.ID))
+        http.Error(w, "empty service response", http.StatusInternalServerError)
+        return
     }
 
+    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Success OrderID: %d, NewVersion: %d",
+        orderReq.ID, deliveryResponse.GetCurrentVersion()))
+
+    // Convert and serialize response
     res := ToOrderDetailedListResponseFromPbResponse(deliveryResponse)
-
-    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Converted Response: \nPagination: %+v", 
-        res.Pagination))
-
-    for i, order := range res.Data {
-        h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Converted Order %d: \n"+
-            "ID: %d\n"+
-            "New Version: %d\n"+
-            "Total Delivered Items: %d\n"+
-            "Delivery Timestamp: %v",
-            i+1,
-            order.ID,
-            order.CurrentVersion,
-            len(order.DataDish),
-            time.Now().UTC().Format(time.RFC3339)))
-
-       
-    }
-
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusOK)
+
     if err := json.NewEncoder(w).Encode(res); err != nil {
-        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Error encoding response: %v", err))
-        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Encoding failure OrderID: %d - %v",
+            orderReq.ID, err))
+        http.Error(w, "response serialization error", http.StatusInternalServerError)
         return
     }
 
-    h.logger.Info("[Order Handler.MarkDishesDelivered] Delivery marking completed successfully")
+    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Completed OrderID: %d", orderReq.ID))
 }
