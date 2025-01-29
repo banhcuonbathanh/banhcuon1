@@ -2585,8 +2585,12 @@ func (or *OrderRepository) MarkDishesDelivered(ctx context.Context, req *order.C
     const (
         deliveryStatus    = "DELIVERED"
         modificationType  = "DELIVER_ITEMS"
-        validOrderStatus  = "IN_PROGRESS"
     )
+    
+    // var validOrderStatuses = map[string]bool{
+    //     "IN_PROGRESS": true,
+    //     "PENDING":     true,
+    // }
 
     // Initial validation
  
@@ -2601,33 +2605,34 @@ func (or *OrderRepository) MarkDishesDelivered(ctx context.Context, req *order.C
     var (
         currentOrder      order.Order
         guestID           sql.NullInt64
-        userID            sql.NullInt64
-        tableNumber       sql.NullInt64
+        userID           sql.NullInt64
+        tableNumber      sql.NullInt64
+        parentOrderID    sql.NullInt64  // Add this to handle NULL parent_order_id
     )
     err = tx.QueryRow(ctx, `
-        SELECT 
-            id, version, is_guest, guest_id, user_id, table_number, status,
-            total_price, order_handler_id, topping, tracking_order, take_away,
-            chili_number, table_token, order_name, parent_order_id
-        FROM orders 
-        WHERE id = $1`, req.OrderId).Scan(
-            &currentOrder.Id,
-            &currentOrder.Version,
-            &currentOrder.IsGuest,
-            &guestID,
-            &userID,
-            &tableNumber,
-            &currentOrder.Status,
-            &currentOrder.TotalPrice,
-            &currentOrder.OrderHandlerId,
-            &currentOrder.Topping,
-            &currentOrder.TrackingOrder,
-            &currentOrder.TakeAway,
-            &currentOrder.ChiliNumber,
-            &currentOrder.TableToken,
-            &currentOrder.OrderName,
-            &currentOrder.ParentOrderId,
-        )
+    SELECT 
+        id, version, is_guest, guest_id, user_id, table_number, status,
+        total_price, order_handler_id, topping, tracking_order, take_away,
+        chili_number, table_token, order_name, COALESCE(parent_order_id, 0)
+    FROM orders 
+    WHERE id = $1`, req.OrderId).Scan(
+        &currentOrder.Id,
+        &currentOrder.Version,
+        &currentOrder.IsGuest,
+        &guestID,
+        &userID,
+        &tableNumber,
+        &currentOrder.Status,
+        &currentOrder.TotalPrice,
+        &currentOrder.OrderHandlerId,
+        &currentOrder.Topping,
+        &currentOrder.TrackingOrder,
+        &currentOrder.TakeAway,
+        &currentOrder.ChiliNumber,
+        &currentOrder.TableToken,
+        &currentOrder.OrderName,
+        &parentOrderID,
+    )
     if err != nil {
         if err == pgx.ErrNoRows {
             or.logger.Error(fmt.Sprintf("[MarkDishesDelivered] Order not found. ID: %d", req.OrderId))
@@ -2639,14 +2644,15 @@ func (or *OrderRepository) MarkDishesDelivered(ctx context.Context, req *order.C
     currentOrder.GuestId = nullInt64ToProtoInt64(guestID)
     currentOrder.UserId = nullInt64ToProtoInt64(userID)
     currentOrder.TableNumber = nullInt64ToProtoInt64(tableNumber)
+    currentOrder.ParentOrderId = nullInt64ToProtoInt64(parentOrderID)
     
     // Validate order state
-    if currentOrder.Status != validOrderStatus {
-        or.logger.Warning(fmt.Sprintf(
-            "[MarkDishesDelivered] Invalid order status. OrderID: %d, Status: %s",
-            req.OrderId, currentOrder.Status))
-        return nil, fmt.Errorf("order cannot be modified in current status: %s", currentOrder.Status)
-    }
+    // if !validOrderStatuses[currentOrder.Status] {
+    //     or.logger.Warning(fmt.Sprintf(
+    //         "[MarkDishesDelivered] Invalid order status. OrderID: %d, Status: %s",
+    //         req.OrderId, currentOrder.Status))
+    //     return nil, fmt.Errorf("order cannot be modified in current status: %s", currentOrder.Status)
+    // }
 
     // Strict version check
 

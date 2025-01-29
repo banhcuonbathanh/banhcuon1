@@ -41,7 +41,12 @@ message DishOrderItem {
   string modification_type = 7;      // Track if item was initial or added later
   int32 modification_number = 8;     // Track which modification this was part of
 }
+message CreateDishOrderItem {
+                   // Added primary key
+  int64 dish_id = 2;
+  int64 quantity = 3;
 
+}
 message SetOrderItem {
   int64 id = 1;                     // Added primary key
   int64 set_id = 2;
@@ -285,7 +290,7 @@ message CreateDishDeliveryRequest {
   int64 guest_id = 4;
   int64 user_id = 5;
   int64 table_number = 6;
-  repeated DishOrderItem dish_items = 7;
+  repeated CreateDishOrderItem dish_items = 7;
   int32 quantity_delivered = 8;
   string delivery_status = 9;
   google.protobuf.Timestamp delivered_at = 10;

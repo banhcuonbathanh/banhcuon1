@@ -1288,38 +1288,38 @@ func (h *OrderHandlerController) MarkDishesDelivered(w http.ResponseWriter, r *h
     // Initiation logging with core identifiers
     h.logger.Info("[Order Handler.MarkDishesDelivered] Starting delivery processing")
 
-    var orderReq UpdateOrderRequestType
-    if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+    var dishDeliveryReq CreateDishDeliveryRequestType
+    if err := json.NewDecoder(r.Body).Decode(&dishDeliveryReq); err != nil {
         h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Decode failure: %v", err))
         http.Error(w, "invalid request format", http.StatusBadRequest)
         return
     }
 
     // Structured validation logging
-    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Processing OrderID: %d, User: %d, Items: %d",
-        orderReq.ID, orderReq.OrderHandlerID, len(orderReq.DishItems)))
+    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Processing OrderID: %d, DeliveredByUser: %d, Items: %d",
+        dishDeliveryReq.OrderID, dishDeliveryReq.DeliveredByUserID, len(dishDeliveryReq.DishItems)))
 
     // Validation pipeline
-    if orderReq.ID == 0 {
+    if dishDeliveryReq.OrderID == 0 {
         h.logger.Error("[Order Handler.MarkDishesDelivered] Missing order ID")
         http.Error(w, "order ID required", http.StatusBadRequest)
         return
     }
 
-    if orderReq.OrderHandlerID == 0 {
+    if dishDeliveryReq.DeliveredByUserID == 0 {
         h.logger.Error("[Order Handler.MarkDishesDelivered] Missing delivery user ID")
         http.Error(w, "delivery user ID required", http.StatusBadRequest)
         return
     }
 
-    if len(orderReq.DishItems) == 0 {
-        h.logger.Warning(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Empty dishes OrderID: %d", orderReq.ID))
+    if len(dishDeliveryReq.DishItems) == 0 {
+        h.logger.Warning(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Empty dishes OrderID: %d", dishDeliveryReq.OrderID))
         http.Error(w, "at least one dish required", http.StatusBadRequest)
         return
     }
 
     var totalItems int64
-    for _, dish := range orderReq.DishItems {
+    for _, dish := range dishDeliveryReq.DishItems {
         if dish.Quantity <= 0 {
             h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Invalid quantity %d DishID: %d",
                 dish.Quantity, dish.DishID))
@@ -1329,14 +1329,28 @@ func (h *OrderHandlerController) MarkDishesDelivered(w http.ResponseWriter, r *h
         totalItems += dish.Quantity
     }
 
+    // Set default values if not provided
+    if dishDeliveryReq.DeliveryStatus == "" {
+        dishDeliveryReq.DeliveryStatus = "DELIVERED"
+    }
+    if dishDeliveryReq.CreatedAt.IsZero() {
+        dishDeliveryReq.CreatedAt = time.Now()
+    }
+    if dishDeliveryReq.UpdatedAt.IsZero() {
+        dishDeliveryReq.UpdatedAt = time.Now()
+    }
+    if dishDeliveryReq.DeliveredAt.IsZero() {
+        dishDeliveryReq.DeliveredAt = time.Now()
+    }
+    
     // Convert to protobuf after validation
-    pbReq := ToPBUpdateOrderRequest(orderReq)
-    h.logger.Warning(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Protobuf conversion complete OrderID: %d", orderReq.ID))
+    pbReq := ToPBCreateDishDeliveryRequest(&dishDeliveryReq)
+    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Protobuf conversion complete OrderID: %d", dishDeliveryReq.OrderID))
 
     // Service call with error translation
     deliveryResponse, err := h.client.MarkDishesDelivered(h.ctx, pbReq)
     if err != nil {
-        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Service failure OrderID: %d - %v", orderReq.ID, err))
+        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Service failure OrderID: %d - %v", dishDeliveryReq.OrderID, err))
         
         // Handle gRPC status errors
         if st, ok := status.FromError(err); ok {
@@ -1358,25 +1372,181 @@ func (h *OrderHandlerController) MarkDishesDelivered(w http.ResponseWriter, r *h
 
     // Response validation and logging
     if deliveryResponse == nil {
-        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Empty response OrderID: %d", orderReq.ID))
+        h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Empty response OrderID: %d", dishDeliveryReq.OrderID))
         http.Error(w, "empty service response", http.StatusInternalServerError)
         return
     }
 
     h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Success OrderID: %d, NewVersion: %d",
-        orderReq.ID, deliveryResponse.GetCurrentVersion()))
+        dishDeliveryReq.OrderID, deliveryResponse.GetCurrentVersion()))
 
     // Convert and serialize response
-    res := ToOrderDetailedListResponseFromPbResponse(deliveryResponse)
+    res := ToOrderDetailedListResponseFromDeliveryResponse(deliveryResponse)
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusOK)
 
     if err := json.NewEncoder(w).Encode(res); err != nil {
         h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Encoding failure OrderID: %d - %v",
-            orderReq.ID, err))
+            dishDeliveryReq.OrderID, err))
         http.Error(w, "response serialization error", http.StatusInternalServerError)
         return
     }
 
-    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Completed OrderID: %d", orderReq.ID))
+    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Completed OrderID: %d", dishDeliveryReq.OrderID))
+}
+
+// func ToPBCreateDishDeliveryRequest(req *CreateDishDeliveryRequestType) *order.CreateDishDeliveryRequest {
+//     if req == nil {
+//         return nil
+//     }
+
+//     return &order.CreateDishDeliveryRequest{
+//         OrderId:           req.OrderID,
+//         OrderName:         req.OrderName,
+//         GuestId:          req.GuestID,
+//         UserId:           req.UserID,
+//         TableNumber:      req.TableNumber,
+//         DishItems:        req.DishItems,
+//         QuantityDelivered: req.QuantityDelivered,
+//         DeliveryStatus:    req.DeliveryStatus,
+//         DeliveredAt:      timestamppb.New(req.DeliveredAt),
+//         DeliveredByUserId: req.DeliveredByUserID,
+//         CreatedAt:        timestamppb.New(req.CreatedAt),
+//         UpdatedAt:        timestamppb.New(req.UpdatedAt),
+//         IsGuest:          req.IsGuest,
+//     }
+// }
+func ToOrderDetailedListResponseFromDeliveryResponse(pbRes *order.OrderDetailedResponseWithDelivery) *OrderDetailedListResponse {
+    if pbRes == nil {
+        return nil
+    }
+    
+    // Create a single response since OrderDetailedResponseWithDelivery represents one order
+    response := OrderDetailedResponse{
+        ID:             pbRes.Id,
+        GuestID:        pbRes.GuestId,
+        UserID:         pbRes.UserId,
+        TableNumber:    pbRes.TableNumber,
+        OrderHandlerID: pbRes.OrderHandlerId,
+        Status:         pbRes.Status,
+        TotalPrice:     pbRes.TotalPrice,
+        IsGuest:        pbRes.IsGuest,
+        Topping:        pbRes.Topping,
+        TrackingOrder:  pbRes.TrackingOrder,
+        TakeAway:       pbRes.TakeAway,
+        ChiliNumber:    pbRes.ChiliNumber,
+        TableToken:     pbRes.TableToken,
+        OrderName:      pbRes.OrderName,
+        CurrentVersion: pbRes.CurrentVersion,
+        ParentOrderID:  pbRes.ParentOrderId,
+        DataSet:        ToOrderSetsDetailedFromProto(pbRes.DataSet),
+        DataDish:       ToOrderDetailedDishesFromProto(pbRes.DataDish),
+    }
+
+    // Convert version history
+    versionHistory := make([]OrderVersionSummary, len(pbRes.VersionHistory))
+    for j, pbVersion := range pbRes.VersionHistory {
+        changes := make([]OrderItemChange, len(pbVersion.Changes))
+        for k, pbChange := range pbVersion.Changes {
+            changes[k] = OrderItemChange{
+                ItemType:        pbChange.ItemType,
+                ItemID:         pbChange.ItemId,
+                ItemName:       pbChange.ItemName,
+                QuantityChanged: pbChange.QuantityChanged,
+                Price:          pbChange.Price,
+            }
+        }
+        
+        versionHistory[j] = OrderVersionSummary{
+            VersionNumber:     pbVersion.VersionNumber,
+            TotalDishesCount: pbVersion.TotalDishesCount,
+            TotalSetsCount:   pbVersion.TotalSetsCount,
+            VersionTotalPrice: pbVersion.VersionTotalPrice,
+            ModificationType: pbVersion.ModificationType,
+            ModifiedAt:      pbVersion.ModifiedAt.AsTime(),
+            Changes:         changes,
+        }
+    }
+    response.VersionHistory = versionHistory
+
+    // Convert total summary if exists
+    if pbRes.TotalSummary != nil {
+        mostOrderedItems := make([]OrderItemCount, len(pbRes.TotalSummary.MostOrderedItems))
+        for j, pbItem := range pbRes.TotalSummary.MostOrderedItems {
+            mostOrderedItems[j] = OrderItemCount{
+                ItemType:      pbItem.ItemType,
+                ItemID:        pbItem.ItemId,
+                ItemName:      pbItem.ItemName,
+                TotalQuantity: pbItem.TotalQuantity,
+            }
+        }
+
+        response.TotalSummary = OrderTotalSummary{
+            TotalVersions:        pbRes.TotalSummary.TotalVersions,
+            TotalDishesOrdered:  pbRes.TotalSummary.TotalDishesOrdered,
+            TotalSetsOrdered:    pbRes.TotalSummary.TotalSetsOrdered,
+            CumulativeTotalPrice: pbRes.TotalSummary.CumulativeTotalPrice,
+            MostOrderedItems:     mostOrderedItems,
+        }
+    }
+
+    // Create DeliveryInfo struct if it doesn't exist in your models
+
+
+    // Add delivery information to response if needed
+    // You might want to add this to your OrderDetailedResponse struct
+
+
+    // Return as a single-item list response
+    return &OrderDetailedListResponse{
+        Data: []OrderDetailedResponse{response},
+        Pagination: PaginationInfo{
+            CurrentPage: 1,
+            TotalPages: 1,
+            TotalItems: 1,
+            PageSize:   1,
+        },
+    }
+}
+
+func ToPBCreateDishDeliveryRequest(req *CreateDishDeliveryRequestType) *order.CreateDishDeliveryRequest {
+    if req == nil {
+        return nil
+    }
+
+    // Calculate total quantity delivered if not provided
+    quantityDelivered := req.QuantityDelivered
+    if quantityDelivered == 0 {
+        for _, item := range req.DishItems {
+            quantityDelivered += int32(item.Quantity)
+        }
+    }
+
+    // Convert DishItems to []*order.DishOrderItem
+    pbDishItems := make([]*order.CreateDishOrderItem, len(req.DishItems))
+    for i, item := range req.DishItems {
+        pbDishItems[i] = &order.CreateDishOrderItem{
+        
+            DishId:           item.DishID,
+            Quantity:         item.Quantity,
+
+        }
+    }
+
+    // Convert to CreateDishDeliveryRequest format
+    return &order.CreateDishDeliveryRequest{
+        OrderId:           req.OrderID,
+        OrderName:         req.OrderName,
+        GuestId:          req.GuestID,
+        UserId:           req.UserID,
+        TableNumber:      req.TableNumber,
+        DishItems:        pbDishItems,
+        QuantityDelivered: quantityDelivered,
+        DeliveryStatus:    req.DeliveryStatus,
+        DeliveredAt:       timestamppb.New(req.DeliveredAt),
+        DeliveredByUserId: req.DeliveredByUserID,
+        CreatedAt:         timestamppb.New(req.CreatedAt),
+        UpdatedAt:         timestamppb.New(req.UpdatedAt),
+        IsGuest:          req.IsGuest,
+    }
 }
