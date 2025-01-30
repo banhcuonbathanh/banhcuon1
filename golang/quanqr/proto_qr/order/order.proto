@@ -280,8 +280,9 @@ message DishDelivery {
   int64 delivered_by_user_id = 11;
   google.protobuf.Timestamp created_at = 12;
   google.protobuf.Timestamp updated_at = 13;
-
+  int64 dish_id = 17;
   bool is_guest = 16;
+  int32 modification_number = 18; 
 }
 message CreateDishDeliveryRequest {
  

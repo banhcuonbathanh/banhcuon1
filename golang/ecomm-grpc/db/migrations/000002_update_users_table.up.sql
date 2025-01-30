@@ -282,6 +282,8 @@ CREATE TABLE order_modifications (
 );
 
 CREATE TABLE dish_deliveries (
+    modification_number INTEGER NOT NULL,
+    dish_id BIGINT NOT NULL,
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     order_name VARCHAR(255),

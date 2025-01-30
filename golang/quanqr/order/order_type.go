@@ -105,7 +105,6 @@
 
 // // OrderDetailedResponse updated with new fields
 
-
 // // Existing support types that remain unchanged
 // type GetOrdersRequestType struct {
 //     Page     int32 `json:"page"`
@@ -182,8 +181,6 @@
 // }
 
 // // new
-
-
 
 // // OrderType represents the main order structure
 // type OrderType struct {
@@ -272,12 +269,10 @@
 
 // // Rest of the existing types remain unchanged
 
-
-
 package order_grpc
 
 import (
-    "time"
+	"time"
 )
 
 // OrderDish matches DishOrderItem from proto
@@ -338,6 +333,7 @@ type DishDelivery struct {
     CreatedAt         time.Time   `json:"created_at"`
     UpdatedAt         time.Time   `json:"updated_at"`
     IsGuest           bool        `json:"is_guest"`
+    ModificationNumber int32   `json:"modification_number"`
 }
 
 // CreateOrderRequestType matches CreateOrderRequest from proto
@@ -573,4 +569,5 @@ type CreateDishDeliveryRequestType struct {
     CreatedAt         time.Time   `json:"created_at"`
     UpdatedAt         time.Time   `json:"updated_at"`
     IsGuest           bool        `json:"is_guest"`
+    DishID      int64  `json:"dish_id"`
 }
