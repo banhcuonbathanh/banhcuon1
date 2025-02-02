@@ -1621,11 +1621,35 @@ func ToOrderDetailedListResponseFromDeliveryResponse(pbRes *order.OrderDetailedR
     }
 
 
-    fmt.Printf("[Summary] Sets: %d, Dishes: %d, Versions: %d, Deliveries: %d\n",
-        len(dataSet),
-        len(dataDish),
-        len(versionHistory),
-        len(deliveryHistory))
+    fmt.Printf("\n=== DeliveryHistory Details golang/quanqr/order/order_handler.go ===\n")
+    for i, delivery := range deliveryHistory {
+        fmt.Printf("\nDelivery #%d:\n", i+1)
+        // fmt.Printf("------------------------\n")
+        // fmt.Printf("ID: %d\n", delivery.ID)
+        // fmt.Printf("OrderID: %d\n", delivery.OrderID)
+        // fmt.Printf("OrderName: %s\n", delivery.OrderName)
+        // fmt.Printf("GuestID: %d\n", delivery.GuestID)
+        // fmt.Printf("UserID: %d\n", delivery.UserID)
+        // fmt.Printf("TableNumber: %d\n", delivery.TableNumber)
+        // fmt.Printf("QuantityDelivered: %d\n", delivery.QuantityDelivered)
+        // fmt.Printf("DeliveryStatus: %s\n", delivery.DeliveryStatus)
+        // fmt.Printf("DeliveredAt: %v\n", delivery.DeliveredAt)
+        // fmt.Printf("DeliveredByUserID: %d\n", delivery.DeliveredByUserID)
+        // fmt.Printf("CreatedAt: %v\n", delivery.CreatedAt)
+        // fmt.Printf("UpdatedAt: %v\n", delivery.UpdatedAt)
+        // fmt.Printf("IsGuest: %v\n", delivery.IsGuest)
+        fmt.Printf("ModificationNumber: %d\n", delivery.ModificationNumber)
+        
+        fmt.Printf("DishItems:\n")
+        for j, item := range delivery.DishItems {
+            fmt.Printf("  Item #%d:\n", j+1)
+            fmt.Printf("    - ID: %d\n", item.ID)
+            fmt.Printf("    - Quantity: %d\n", item.Quantity)
+            // Add any other DishItems fields you want to see
+        }
+        fmt.Printf("\n")
+    }
+    fmt.Printf("=== End of DeliveryHistory Details golang/quanqr/order/order_handler.go ===\n\n")
 
     return response
 }

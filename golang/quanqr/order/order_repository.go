@@ -2495,9 +2495,7 @@ if err != nil {
     return nil, fmt.Errorf("error calculating delivery status: %w", err)
 }
 
-// or.logger.Info(fmt.Sprintf("[MarkDishesDelivered] Delivery History: %+v", deliveryHistory))
-// or.logger.Info(fmt.Sprintf("[MarkDishesDelivered] Order Delivery Status: %s", orderDeliveryStatus))
-// or.logger.Info(fmt.Sprintf("[MarkDishesDelivered] Total Items Delivered: %d", totalDelivered))
+
 var pbLastDeliveryAt *timestamppb.Timestamp
 if lastDeliveryAt != nil {
     pbLastDeliveryAt = timestamppb.New(*lastDeliveryAt)
@@ -2511,8 +2509,15 @@ if err != nil {
 }
 // for delivery end ---------------
 
-    or.logger.Info(fmt.Sprintf("[MarkDishesDelivered] Delivery successful. OrderID: %d, NewVersion: %d", 
-        req.OrderId, newVersion))
+fmt.Printf("\n=== Delivery History golang/quanqr/order/order_repository.go for Order ID: %d ===\n", req.OrderId)
+
+for i, delivery := range deliveryHistory {
+    fmt.Printf("\nDelivery #%d:\n", i+1)
+    fmt.Printf("  Modification Number: %d\n", delivery.ModificationNumber)
+    fmt.Printf("  Quantity Delivered: %d\n", delivery.QuantityDelivered)
+
+    fmt.Printf("  ---------------------------\n")
+}
 
         return &order.OrderDetailedResponseWithDelivery{
             Id:                  currentOrder.Id,
@@ -2558,99 +2563,110 @@ func getTableNumber(tableNumber sql.NullInt64) interface{} {
     return nil
 }
 // 1. Add these methods to your OrderRepository
-func (or *OrderRepository) fetchDeliveryHistory(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.DishDelivery, error) {
-    rows, err := tx.Query(ctx, `
-        SELECT 
-            dd.id, 
-            dd.order_id, 
-            dd.order_name, 
-            dd.guest_id, 
-            dd.user_id, 
-            dd.table_number,
-            dd.dish_id, 
-            dd.quantity_delivered, 
-            dd.delivery_status, 
-            dd.delivered_at,
-            dd.delivered_by_user_id, 
-            dd.is_guest, 
-            dd.created_at, 
-            dd.updated_at,
-            dd.modification_number
-        FROM dish_deliveries dd
-        WHERE dd.order_id = $1
-        ORDER BY dd.delivered_at`, orderID)
-    if err != nil {
-        return nil, fmt.Errorf("error fetching delivery history: %w", err)
-    }
-    defer rows.Close()
+// func (or *OrderRepository) fetchDeliveryHistory(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.DishDelivery, error) {
+//     rows, err := tx.Query(ctx, `
+//         SELECT 
+//             dd.id, 
+//             dd.order_id, 
+//             dd.order_name, 
+//             dd.guest_id, 
+//             dd.user_id, 
+//             dd.table_number,
+//             dd.dish_id, 
+//             dd.quantity_delivered, 
+//             dd.delivery_status, 
+//             dd.delivered_at,
+//             dd.delivered_by_user_id, 
+//             dd.is_guest, 
+//             dd.created_at, 
+//             dd.updated_at,
+//             dd.modification_number
+//         FROM dish_deliveries dd
+//         WHERE dd.order_id = $1
+//         ORDER BY dd.delivered_at`, orderID)
+//     if err != nil {
+//         return nil, fmt.Errorf("error fetching delivery history: %w", err)
+//     }
+//     defer rows.Close()
 
-    deliveries := make([]*order.DishDelivery, 0) // Initialize as empty slice
-    for rows.Next() {
-        var (
-            dd                  order.DishDelivery
-            guestID            sql.NullInt64
-            userID             sql.NullInt64
-            tableNumber        sql.NullInt64
-            dishID             int64
-            quantityDelivered  int32
-            deliveredAt        time.Time
-            createdAt         time.Time
-            updatedAt         time.Time
-            modNumber         int32
-        )
-        err := rows.Scan(
-            &dd.Id,
-            &dd.OrderId,
-            &dd.OrderName,
-            &guestID,
-            &userID,
-            &tableNumber,
-            &dishID,
-            &quantityDelivered,
-            &dd.DeliveryStatus,
-            &deliveredAt,
-            &dd.DeliveredByUserId,
-            &dd.IsGuest,
-            &createdAt,
-            &updatedAt,
-            &modNumber,
-        )
-        if err != nil {
-            return nil, fmt.Errorf("error scanning delivery row: %w", err)
-        }
+//     deliveries := make([]*order.DishDelivery, 0) // Initialize as empty slice
+//     for rows.Next() {
+//         var (
+//             dd                  order.DishDelivery
+//             guestID            sql.NullInt64
+//             userID             sql.NullInt64
+//             tableNumber        sql.NullInt64
+//             dishID             int64
+//             quantityDelivered  int32
+//             deliveredAt        time.Time
+//             createdAt         time.Time
+//             updatedAt         time.Time
+//             modNumber         int32
+//         )
+//         err := rows.Scan(
+//             &dd.Id,
+//             &dd.OrderId,
+//             &dd.OrderName,
+//             &guestID,
+//             &userID,
+//             &tableNumber,
+//             &dishID,
+//             &quantityDelivered,
+//             &dd.DeliveryStatus,
+//             &deliveredAt,
+//             &dd.DeliveredByUserId,
+//             &dd.IsGuest,
+//             &createdAt,
+//             &updatedAt,
+//             &modNumber,
+//         )
+//         if err != nil {
+//             return nil, fmt.Errorf("error scanning delivery row: %w", err)
+//         }
 
-        // Handle nullable fields using nullInt64ToProtoInt64
-        dd.GuestId = nullInt64ToProtoInt64(guestID)
-        dd.UserId = nullInt64ToProtoInt64(userID)
-        dd.TableNumber = nullInt64ToProtoInt64(tableNumber)
+//         // Handle nullable fields using nullInt64ToProtoInt64
+//         dd.GuestId = nullInt64ToProtoInt64(guestID)
+//         dd.UserId = nullInt64ToProtoInt64(userID)
+//         dd.TableNumber = nullInt64ToProtoInt64(tableNumber)
 
-        // Convert timestamps to protobuf format
-        dd.DeliveredAt = timestamppb.New(deliveredAt)
-        dd.CreatedAt = timestamppb.New(createdAt)
-        dd.UpdatedAt = timestamppb.New(updatedAt)
+//         // Convert timestamps to protobuf format
+//         dd.DeliveredAt = timestamppb.New(deliveredAt)
+//         dd.CreatedAt = timestamppb.New(createdAt)
+//         dd.UpdatedAt = timestamppb.New(updatedAt)
 
-        // Build DishOrderItem with delivery context
-        dishItem := &order.DishOrderItem{
-            Id:                 dd.Id,  // Using delivery ID as proxy
-            DishId:             dishID,
-            Quantity:           int64(quantityDelivered),
-            CreatedAt:          timestamppb.New(createdAt),
-            UpdatedAt:          timestamppb.New(updatedAt),
-            OrderName:          dd.OrderName,
-            ModificationType:   "DELIVER_ITEMS",  // Static type for deliveries
-            ModificationNumber: modNumber,
-        }
-
-        dd.DishItems = []*order.DishOrderItem{dishItem}
-        deliveries = append(deliveries, &dd)
-    }
+//         // Build DishOrderItem with delivery context
+//         dishItem := &order.DishOrderItem{
+//             Id:                 dd.Id,  // Using delivery ID as proxy
+//             DishId:             dishID,
+//             Quantity:           int64(quantityDelivered),
+//             CreatedAt:          timestamppb.New(createdAt),
+//             UpdatedAt:          timestamppb.New(updatedAt),
+//             OrderName:          dd.OrderName,
+//             ModificationType:   "DELIVER_ITEMS",  // Static type for deliveries
+//             ModificationNumber: modNumber,
+//         }
+//         fmt.Printf("Modification Number: 12121golang/quanqr/order/order_repository.go %d\n", modNumber)
+//         fmt.Printf(" int64(quantityDelivered): 12121golang/quanqr/order/order_repository.go %d\n",  int64(quantityDelivered))
+//         // fmt.Printf("Delivery Details:\n")
+//         // fmt.Printf("  ID: %d\n", dd.Id)
+//         // fmt.Printf("  Order ID: %d\n", dd.OrderId)
+//         // fmt.Printf("  Order Name: %s\n", dd.OrderName)
+//         // fmt.Printf("  Delivery Status: %s\n", dd.DeliveryStatus)
+//         // fmt.Printf("  Delivered At: %s\n", deliveredAt)
+//         // fmt.Printf("---------------------------\n")
+//         // fmt.Printf("Total deliveries found: %d\n", len(deliveries))
+//         dd.DishItems = []*order.DishOrderItem{dishItem}
+//         deliveries = append(deliveries, &dd)
+//     }
     
-    if err := rows.Err(); err != nil {
-        return nil, fmt.Errorf("error after scanning rows: %w", err)
-    }
+//     if err := rows.Err(); err != nil {
+//         return nil, fmt.Errorf("error after scanning rows: %w", err)
+//     }
 
-    return deliveries, nil
-}
+//     return deliveries, nil
+// }
+
+
 func (or *OrderRepository) calculateDeliveryStatus(ctx context.Context, tx pgx.Tx, orderID int64) (order.DeliveryStatus, int32, *time.Time, error) {
     // Query to get net ordered and delivered quantities per dish
     netOrderedDeliveredQuery := `
@@ -3094,3 +3110,106 @@ func (or *OrderRepository) fetchVersionHistoryDelivery(ctx context.Context, tx p
     return history, nil
 }
 // fetch version of delivery ------------- end 
+
+
+func (or *OrderRepository) fetchDeliveryHistory(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.DishDelivery, error) {
+    rows, err := tx.Query(ctx, `
+        SELECT 
+            dd.id, 
+            dd.order_id, 
+            dd.order_name, 
+            dd.guest_id, 
+            dd.user_id, 
+            dd.table_number,
+            dd.dish_id, 
+            dd.quantity_delivered, 
+            dd.delivery_status, 
+            dd.delivered_at,
+            dd.delivered_by_user_id, 
+            dd.is_guest, 
+            dd.created_at, 
+            dd.updated_at,
+            dd.modification_number
+        FROM dish_deliveries dd
+        WHERE dd.order_id = $1
+        ORDER BY dd.delivered_at`, orderID)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching delivery history: %w", err)
+    }
+    defer rows.Close()
+
+    deliveries := make([]*order.DishDelivery, 0)
+    for rows.Next() {
+        var (
+            dd                  order.DishDelivery
+            guestID            sql.NullInt64
+            userID             sql.NullInt64
+            tableNumber        sql.NullInt64
+            dishID             int64
+            quantityDelivered  int32
+            deliveredAt        time.Time
+            createdAt         time.Time
+            updatedAt         time.Time
+            modNumber         int32
+        )
+        err := rows.Scan(
+            &dd.Id,
+            &dd.OrderId,
+            &dd.OrderName,
+            &guestID,
+            &userID,
+            &tableNumber,
+            &dishID,
+            &quantityDelivered,
+            &dd.DeliveryStatus,
+            &deliveredAt,
+            &dd.DeliveredByUserId,
+            &dd.IsGuest,
+            &createdAt,
+            &updatedAt,
+            &modNumber,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning delivery row: %w", err)
+        }
+
+        // Handle nullable fields
+        dd.GuestId = nullInt64ToProtoInt64(guestID)
+        dd.UserId = nullInt64ToProtoInt64(userID)
+        dd.TableNumber = nullInt64ToProtoInt64(tableNumber)
+
+        // Convert timestamps
+        dd.DeliveredAt = timestamppb.New(deliveredAt)
+        dd.CreatedAt = timestamppb.New(createdAt)
+        dd.UpdatedAt = timestamppb.New(updatedAt)
+
+        // Assign modification number directly to DishDelivery
+        dd.ModificationNumber = modNumber
+        
+        // Assign quantity delivered directly to DishDelivery
+        dd.QuantityDelivered = quantityDelivered
+
+        // Build DishOrderItem with delivery context
+        dishItem := &order.DishOrderItem{
+            Id:                 dd.Id,
+            DishId:             dishID,
+            Quantity:           int64(quantityDelivered),
+            CreatedAt:          timestamppb.New(createdAt),
+            UpdatedAt:          timestamppb.New(updatedAt),
+            OrderName:          dd.OrderName,
+            ModificationType:   "DELIVER_ITEMS",
+            ModificationNumber: modNumber,
+        }
+
+        dd.DishItems = []*order.DishOrderItem{dishItem}
+        deliveries = append(deliveries, &dd)
+    }
+    
+    if err := rows.Err(); err != nil {
+        return nil, fmt.Errorf("error after scanning rows: %w", err)
+    }
+
+    return deliveries, nil
+}
+
+
