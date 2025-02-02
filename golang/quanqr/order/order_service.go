@@ -2,11 +2,12 @@ package order_grpc
 
 import (
 	"context"
-	"fmt"
-    "google.golang.org/grpc/codes"
-    "google.golang.org/grpc/status"
 	"english-ai-full/logger"
 	"english-ai-full/quanqr/proto_qr/order"
+	"fmt"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 type OrderServiceStruct struct {
     orderRepo *OrderRepository
@@ -312,7 +313,7 @@ func (os *OrderServiceStruct) MarkDishesDelivered(ctx context.Context, req *orde
             req.OrderId, err.Error()))
         return nil, status.Errorf(codes.Internal, "delivery processing failed: %v", err)
     }
-
+// os.logger.Info(fmt.Sprintf("[MarkDishesDelivered] Delivery History service1212: %+v", deliveryResponse.DeliveryHistory))
     // Post-delivery logging
     if deliveryResponse != nil {
         os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Completed OrderID: %d, Version: %d, Status: %s",

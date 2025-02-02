@@ -2494,6 +2494,10 @@ if err != nil {
     or.logger.Error(fmt.Sprintf("[MarkDishesDelivered] Delivery status calculation failed: %s", err.Error()))
     return nil, fmt.Errorf("error calculating delivery status: %w", err)
 }
+
+// or.logger.Info(fmt.Sprintf("[MarkDishesDelivered] Delivery History: %+v", deliveryHistory))
+// or.logger.Info(fmt.Sprintf("[MarkDishesDelivered] Order Delivery Status: %s", orderDeliveryStatus))
+// or.logger.Info(fmt.Sprintf("[MarkDishesDelivered] Total Items Delivered: %d", totalDelivered))
 var pbLastDeliveryAt *timestamppb.Timestamp
 if lastDeliveryAt != nil {
     pbLastDeliveryAt = timestamppb.New(*lastDeliveryAt)

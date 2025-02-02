@@ -1345,10 +1345,11 @@ func (h *OrderHandlerController) MarkDishesDelivered(w http.ResponseWriter, r *h
     
     // Convert to protobuf after validation
     pbReq := ToPBCreateDishDeliveryRequest(&dishDeliveryReq)
-    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Protobuf conversion complete OrderID: %d", dishDeliveryReq.OrderID))
+    // h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Protobuf conversion complete OrderID: %d", dishDeliveryReq.OrderID))
 
     // Service call with error translation
     deliveryResponse, err := h.client.MarkDishesDelivered(h.ctx, pbReq)
+ 
     if err != nil {
         h.logger.Error(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Service failure OrderID: %d - %v", dishDeliveryReq.OrderID, err))
         
@@ -1377,11 +1378,12 @@ func (h *OrderHandlerController) MarkDishesDelivered(w http.ResponseWriter, r *h
         return
     }
 
-    h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Success OrderID: %d, NewVersion: %d",
-        dishDeliveryReq.OrderID, deliveryResponse.GetCurrentVersion()))
+    // h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Success OrderID: %d, NewVersion: %d",
+    //     dishDeliveryReq.OrderID, deliveryResponse.GetCurrentVersion()))
 
     // Convert and serialize response
     res := ToOrderDetailedListResponseFromDeliveryResponse(deliveryResponse)
+    // h.logger.Info(fmt.Sprintf("[MarkDishesDelivered] Delivery History handler 12121212: %+v", res.Data))
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusOK)
 
@@ -1393,120 +1395,6 @@ func (h *OrderHandlerController) MarkDishesDelivered(w http.ResponseWriter, r *h
     }
 
     h.logger.Info(fmt.Sprintf("[Order Handler.MarkDishesDelivered] Completed OrderID: %d", dishDeliveryReq.OrderID))
-}
-
-// func ToPBCreateDishDeliveryRequest(req *CreateDishDeliveryRequestType) *order.CreateDishDeliveryRequest {
-//     if req == nil {
-//         return nil
-//     }
-
-//     return &order.CreateDishDeliveryRequest{
-//         OrderId:           req.OrderID,
-//         OrderName:         req.OrderName,
-//         GuestId:          req.GuestID,
-//         UserId:           req.UserID,
-//         TableNumber:      req.TableNumber,
-//         DishItems:        req.DishItems,
-//         QuantityDelivered: req.QuantityDelivered,
-//         DeliveryStatus:    req.DeliveryStatus,
-//         DeliveredAt:      timestamppb.New(req.DeliveredAt),
-//         DeliveredByUserId: req.DeliveredByUserID,
-//         CreatedAt:        timestamppb.New(req.CreatedAt),
-//         UpdatedAt:        timestamppb.New(req.UpdatedAt),
-//         IsGuest:          req.IsGuest,
-//     }
-// }
-func ToOrderDetailedListResponseFromDeliveryResponse(pbRes *order.OrderDetailedResponseWithDelivery) *OrderDetailedListResponse {
-    if pbRes == nil {
-        return nil
-    }
-    
-    // Create a single response since OrderDetailedResponseWithDelivery represents one order
-    response := OrderDetailedResponse{
-        ID:             pbRes.Id,
-        GuestID:        pbRes.GuestId,
-        UserID:         pbRes.UserId,
-        TableNumber:    pbRes.TableNumber,
-        OrderHandlerID: pbRes.OrderHandlerId,
-        Status:         pbRes.Status,
-        TotalPrice:     pbRes.TotalPrice,
-        IsGuest:        pbRes.IsGuest,
-        Topping:        pbRes.Topping,
-        TrackingOrder:  pbRes.TrackingOrder,
-        TakeAway:       pbRes.TakeAway,
-        ChiliNumber:    pbRes.ChiliNumber,
-        TableToken:     pbRes.TableToken,
-        OrderName:      pbRes.OrderName,
-        CurrentVersion: pbRes.CurrentVersion,
-        ParentOrderID:  pbRes.ParentOrderId,
-        DataSet:        ToOrderSetsDetailedFromProto(pbRes.DataSet),
-        DataDish:       ToOrderDetailedDishesFromProto(pbRes.DataDish),
-    }
-
-    // Convert version history
-    versionHistory := make([]OrderVersionSummary, len(pbRes.VersionHistory))
-    for j, pbVersion := range pbRes.VersionHistory {
-        changes := make([]OrderItemChange, len(pbVersion.Changes))
-        for k, pbChange := range pbVersion.Changes {
-            changes[k] = OrderItemChange{
-                ItemType:        pbChange.ItemType,
-                ItemID:         pbChange.ItemId,
-                ItemName:       pbChange.ItemName,
-                QuantityChanged: pbChange.QuantityChanged,
-                Price:          pbChange.Price,
-            }
-        }
-        
-        versionHistory[j] = OrderVersionSummary{
-            VersionNumber:     pbVersion.VersionNumber,
-            TotalDishesCount: pbVersion.TotalDishesCount,
-            TotalSetsCount:   pbVersion.TotalSetsCount,
-            VersionTotalPrice: pbVersion.VersionTotalPrice,
-            ModificationType: pbVersion.ModificationType,
-            ModifiedAt:      pbVersion.ModifiedAt.AsTime(),
-            Changes:         changes,
-        }
-    }
-    response.VersionHistory = versionHistory
-
-    // Convert total summary if exists
-    if pbRes.TotalSummary != nil {
-        mostOrderedItems := make([]OrderItemCount, len(pbRes.TotalSummary.MostOrderedItems))
-        for j, pbItem := range pbRes.TotalSummary.MostOrderedItems {
-            mostOrderedItems[j] = OrderItemCount{
-                ItemType:      pbItem.ItemType,
-                ItemID:        pbItem.ItemId,
-                ItemName:      pbItem.ItemName,
-                TotalQuantity: pbItem.TotalQuantity,
-            }
-        }
-
-        response.TotalSummary = OrderTotalSummary{
-            TotalVersions:        pbRes.TotalSummary.TotalVersions,
-            TotalDishesOrdered:  pbRes.TotalSummary.TotalDishesOrdered,
-            TotalSetsOrdered:    pbRes.TotalSummary.TotalSetsOrdered,
-            CumulativeTotalPrice: pbRes.TotalSummary.CumulativeTotalPrice,
-            MostOrderedItems:     mostOrderedItems,
-        }
-    }
-
-    // Create DeliveryInfo struct if it doesn't exist in your models
-
-
-    // Add delivery information to response if needed
-    // You might want to add this to your OrderDetailedResponse struct
-
-
-    // Return as a single-item list response
-    return &OrderDetailedListResponse{
-        Data: []OrderDetailedResponse{response},
-        Pagination: PaginationInfo{
-            CurrentPage: 1,
-            TotalPages: 1,
-            TotalItems: 1,
-            PageSize:   1,
-        },
-    }
 }
 
 func ToPBCreateDishDeliveryRequest(req *CreateDishDeliveryRequestType) *order.CreateDishDeliveryRequest {
@@ -1549,4 +1437,195 @@ func ToPBCreateDishDeliveryRequest(req *CreateDishDeliveryRequestType) *order.Cr
         UpdatedAt:         timestamppb.New(req.UpdatedAt),
         IsGuest:          req.IsGuest,
     }
+}
+
+
+// new -----------
+func ToOrderDetailedListResponseFromDeliveryResponse(pbRes *order.OrderDetailedResponseWithDelivery) *OrderDetailedListResponse {
+ 
+
+    if pbRes == nil {
+        fmt.Printf("[ToOrderDetailedListResponseFromDeliveryResponse] Warning: received nil protobuf response\n")
+        return nil
+    }
+
+
+
+    // Convert DataSet
+
+    dataSet := make([]OrderSetDetailed, len(pbRes.DataSet))
+    for i, set := range pbRes.DataSet {
+        dishes := make([]OrderDetailedDish, len(set.Dishes))
+        for j, dish := range set.Dishes {
+            dishes[j] = OrderDetailedDish{
+                DishID:      dish.DishId,
+                Quantity:    dish.Quantity,
+                Name:        dish.Name,
+                Price:       dish.Price,
+                Description: dish.Description,
+                Image:       dish.Image,
+                Status:      dish.Status,
+            }
+        }
+
+
+
+        dataSet[i] = OrderSetDetailed{
+            ID:          set.Id,
+            Name:        set.Name,
+            Description: set.Description,
+            Dishes:      dishes,
+            UserID:      set.UserId,
+            CreatedAt:   set.CreatedAt.AsTime(),
+            UpdatedAt:   set.UpdatedAt.AsTime(),
+            IsFavourite: set.IsFavourite,
+            LikeBy:      set.LikeBy,
+            IsPublic:    set.IsPublic,
+            Image:       set.Image,
+            Price:       set.Price,
+            Quantity:    set.Quantity,
+        }
+    }
+
+    // Convert DataDish
+
+    dataDish := make([]OrderDetailedDish, len(pbRes.DataDish))
+    for i, dish := range pbRes.DataDish {
+        dataDish[i] = OrderDetailedDish{
+            DishID:      dish.DishId,
+            Quantity:    dish.Quantity,
+            Name:        dish.Name,
+            Price:       dish.Price,
+            Description: dish.Description,
+            Image:       dish.Image,
+            Status:      dish.Status,
+        }
+    }
+
+    // Convert VersionHistory
+
+    versionHistory := make([]OrderVersionSummary, len(pbRes.VersionHistory))
+    for i, vh := range pbRes.VersionHistory {
+        changes := make([]OrderItemChange, len(vh.Changes))
+        for j, change := range vh.Changes {
+            changes[j] = OrderItemChange{
+                ItemType:        change.ItemType,
+                ItemID:          change.ItemId,
+                ItemName:        change.ItemName,
+                QuantityChanged: change.QuantityChanged,
+                Price:          change.Price,
+            }
+        }
+
+
+        versionHistory[i] = OrderVersionSummary{
+            VersionNumber:     vh.VersionNumber,
+            TotalDishesCount: vh.TotalDishesCount,
+            TotalSetsCount:   vh.TotalSetsCount,
+            VersionTotalPrice: vh.VersionTotalPrice,
+            ModificationType: vh.ModificationType,
+            ModifiedAt:      vh.ModifiedAt.AsTime(),
+            Changes:         changes,
+        }
+    }
+
+    // Convert MostOrderedItems
+
+    mostOrderedItems := make([]OrderItemCount, len(pbRes.TotalSummary.MostOrderedItems))
+    for i, item := range pbRes.TotalSummary.MostOrderedItems {
+        mostOrderedItems[i] = OrderItemCount{
+            ItemType:     item.ItemType,
+            ItemID:       item.ItemId,
+            ItemName:     item.ItemName,
+            TotalQuantity: item.TotalQuantity,
+        }
+    }
+
+    // Convert DeliveryHistory
+
+    deliveryHistory := make([]DishDelivery, len(pbRes.DeliveryHistory))
+    for i, dh := range pbRes.DeliveryHistory {
+        dishItems := make([]OrderDish, len(dh.DishItems))
+        for j, item := range dh.DishItems {
+            dishItems[j] = OrderDish{
+                ID:                item.Id,
+                DishID:           item.DishId,
+                Quantity:         item.Quantity,
+                CreatedAt:        item.CreatedAt.AsTime(),
+                UpdatedAt:        item.UpdatedAt.AsTime(),
+                OrderName:        item.OrderName,
+                ModificationType: item.ModificationType,
+                ModificationNumber: item.ModificationNumber,
+            }
+        }
+
+
+
+        deliveryHistory[i] = DishDelivery{
+            ID:                dh.Id,
+            OrderID:           dh.OrderId,
+            OrderName:         dh.OrderName,
+            GuestID:           dh.GuestId,
+            UserID:            dh.UserId,
+            TableNumber:       dh.TableNumber,
+            DishItems:         dishItems,
+            QuantityDelivered: dh.QuantityDelivered,
+            DeliveryStatus:    dh.DeliveryStatus,
+            DeliveredAt:       dh.DeliveredAt.AsTime(),
+            DeliveredByUserID: dh.DeliveredByUserId,
+            CreatedAt:         dh.CreatedAt.AsTime(),
+            UpdatedAt:         dh.UpdatedAt.AsTime(),
+            IsGuest:           dh.IsGuest,
+            ModificationNumber: dh.ModificationNumber, 
+        }
+
+        fmt.Printf("[DeliveryHistory] 12121212121  Details: %+v\n", deliveryHistory)
+    }
+
+    response := &OrderDetailedListResponse{
+        Data: []OrderDetailedResponse{
+            {
+                DataSet:              dataSet,
+                DataDish:            dataDish,
+                ID:                  pbRes.Id,
+                GuestID:             pbRes.GuestId,
+                UserID:              pbRes.UserId,
+                TableNumber:         pbRes.TableNumber,
+                OrderHandlerID:      pbRes.OrderHandlerId,
+                Status:              pbRes.Status,
+                TotalPrice:          pbRes.TotalPrice,
+                IsGuest:             pbRes.IsGuest,
+                Topping:             pbRes.Topping,
+                TrackingOrder:       pbRes.TrackingOrder,
+                TakeAway:            pbRes.TakeAway,
+                ChiliNumber:         pbRes.ChiliNumber,
+                TableToken:          pbRes.TableToken,
+                OrderName:           pbRes.OrderName,
+                CurrentVersion:      pbRes.CurrentVersion,
+                ParentOrderID:       pbRes.ParentOrderId,
+                VersionHistory:     versionHistory,
+                TotalSummary: OrderTotalSummary{
+                    TotalVersions:        pbRes.TotalSummary.TotalVersions,
+                    TotalDishesOrdered:   pbRes.TotalSummary.TotalDishesOrdered,
+                    TotalSetsOrdered:     pbRes.TotalSummary.TotalSetsOrdered,
+                    CumulativeTotalPrice: pbRes.TotalSummary.CumulativeTotalPrice,
+                    MostOrderedItems:     mostOrderedItems,
+                },
+                DeliveryHistory:      deliveryHistory,
+                CurrentDeliveryStatus: DeliveryStatus(pbRes.CurrentDeliveryStatus.String()),
+                TotalItemsDelivered:   pbRes.TotalItemsDelivered,
+                LastDeliveryAt:        pbRes.LastDeliveryAt.AsTime(),
+            },
+        },
+        Pagination: PaginationInfo{},
+    }
+
+
+    fmt.Printf("[Summary] Sets: %d, Dishes: %d, Versions: %d, Deliveries: %d\n",
+        len(dataSet),
+        len(dataDish),
+        len(versionHistory),
+        len(deliveryHistory))
+
+    return response
 }
