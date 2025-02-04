@@ -240,25 +240,25 @@ func (h *OrderHandlerController) PayOrders(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *OrderHandlerController) GetOrderProtoListDetail(w http.ResponseWriter, r *http.Request) {
-    h.logger.Info("Fetching detailed order list")
+    h.logger.Info("Fetching detailed order list golang/quanqr/order/order_handler.go 1")
 
     // Parse query parameters for pagination
     page, err := strconv.Atoi(r.URL.Query().Get("page"))
     if err != nil || page < 1 {
         page = 1 // Default to first page if invalid
     }
-    
+    h.logger.Info("Fetching detailed order list golang/quanqr/order/order_handler.go 2")
     pageSize, err := strconv.Atoi(r.URL.Query().Get("page_size"))
     if err != nil || pageSize < 1 {
         pageSize = 10 // Default page size if invalid
     }
-
+    h.logger.Info("Fetching detailed order list golang/quanqr/order/order_handler.go 3")
     // Create the request with pagination parameters
     req := &order.GetOrdersRequest{
         Page:     int32(page),
         PageSize: int32(pageSize),
     }
-
+    h.logger.Info("Fetching detailed order list golang/quanqr/order/order_handler.go 4")
     // Call the service
     ordersResponse, err := h.client.GetOrderProtoListDetail(h.ctx, req)
     if err != nil {
@@ -266,11 +266,14 @@ func (h *OrderHandlerController) GetOrderProtoListDetail(w http.ResponseWriter, 
         http.Error(w, "failed to fetch detailed orders: "+err.Error(), http.StatusInternalServerError)
         return
     }
-  
+    h.logger.Info("Fetching detailed order list golang/quanqr/order/order_handler.go 5")
+    fmt.Printf("golang/quanqr/order/order_handler.go GetOrderProtoListDetail res %v\n", ordersResponse)
     // Convert the response
     res := ToOrderDetailedListResponseFromProto(ordersResponse)
-    // fmt.Printf("golang/quanqr/order/order_handler.go GetOrderProtoListDetail res %v\n", res)
+ 
     // Send response
+
+    h.logger.Info("Fetching detailed order list golang/quanqr/order/order_handler.go 6")
     w.Header().Set("Content-Type", "application/json")
     if err := json.NewEncoder(w).Encode(res); err != nil {
         h.logger.Error("Error encoding response: " + err.Error())
@@ -866,91 +869,7 @@ func ToPBSetOrderItems(items []OrderSet) []*order.SetOrderItem {
     return pbItems
 }
 
-func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
-    if pbRes == nil {
-        return OrderDetailedListResponse{}
-    }
 
-    detailedResponses := make([]OrderDetailedResponse, len(pbRes.Data))
-    for i, pbDetailedRes := range pbRes.Data {
-        // Convert version history
-        versionHistory := make([]OrderVersionSummary, len(pbDetailedRes.VersionHistory))
-        for j, pbVersion := range pbDetailedRes.VersionHistory {
-            changes := make([]OrderItemChange, len(pbVersion.Changes))
-            for k, pbChange := range pbVersion.Changes {
-                changes[k] = OrderItemChange{
-                    ItemType:        pbChange.ItemType,
-                    ItemID:          pbChange.ItemId,
-                    ItemName:        pbChange.ItemName,
-                    QuantityChanged: pbChange.QuantityChanged,
-                    Price:           pbChange.Price,
-                }
-            }
-            
-            versionHistory[j] = OrderVersionSummary{
-                VersionNumber:     pbVersion.VersionNumber,
-                TotalDishesCount: pbVersion.TotalDishesCount,
-                TotalSetsCount:   pbVersion.TotalSetsCount,
-                VersionTotalPrice: pbVersion.VersionTotalPrice,
-                ModificationType: pbVersion.ModificationType,
-                ModifiedAt:      pbVersion.ModifiedAt.AsTime(),
-                Changes:         changes,
-            }
-        }
-
-        // Convert total summary
-        mostOrderedItems := make([]OrderItemCount, len(pbDetailedRes.TotalSummary.MostOrderedItems))
-        for j, pbItem := range pbDetailedRes.TotalSummary.MostOrderedItems {
-            mostOrderedItems[j] = OrderItemCount{
-                ItemType:      pbItem.ItemType,
-                ItemID:        pbItem.ItemId,
-                ItemName:      pbItem.ItemName,
-                TotalQuantity: pbItem.TotalQuantity,
-            }
-        }
-
-        totalSummary := OrderTotalSummary{
-            TotalVersions:        pbDetailedRes.TotalSummary.TotalVersions,
-            TotalDishesOrdered:  pbDetailedRes.TotalSummary.TotalDishesOrdered,
-            TotalSetsOrdered:    pbDetailedRes.TotalSummary.TotalSetsOrdered,
-            CumulativeTotalPrice: pbDetailedRes.TotalSummary.CumulativeTotalPrice,
-            MostOrderedItems:     mostOrderedItems,
-        }
-
-        detailedResponses[i] = OrderDetailedResponse{
-            ID:             pbDetailedRes.Id,
-            GuestID:        pbDetailedRes.GuestId,
-            UserID:         pbDetailedRes.UserId,
-            TableNumber:    pbDetailedRes.TableNumber,
-            OrderHandlerID: pbDetailedRes.OrderHandlerId,
-            Status:         pbDetailedRes.Status,
-            TotalPrice:     pbDetailedRes.TotalPrice,
-            IsGuest:        pbDetailedRes.IsGuest,
-            Topping:        pbDetailedRes.Topping,
-            TrackingOrder:  pbDetailedRes.TrackingOrder,
-            TakeAway:       pbDetailedRes.TakeAway,
-            ChiliNumber:    pbDetailedRes.ChiliNumber,
-            TableToken:     pbDetailedRes.TableToken,
-            OrderName:      pbDetailedRes.OrderName,
-            CurrentVersion: pbDetailedRes.CurrentVersion,
-            ParentOrderID:  pbDetailedRes.ParentOrderId,
-            DataSet:        ToOrderSetsDetailedFromProto(pbDetailedRes.DataSet),
-            DataDish:       ToOrderDetailedDishesFromProto(pbDetailedRes.DataDish),
-            VersionHistory: versionHistory,
-            TotalSummary:   totalSummary,
-        }
-    }
-
-    return OrderDetailedListResponse{
-        Data: detailedResponses,
-        Pagination: PaginationInfo{
-            CurrentPage: pbRes.Pagination.CurrentPage,
-            TotalPages: pbRes.Pagination.TotalPages,
-            TotalItems: pbRes.Pagination.TotalItems,
-            PageSize:   pbRes.Pagination.PageSize,
-        },
-    }
-}
 
 // The rest of the file remains largely unchanged...
 func (h *OrderHandlerController) AddingSetsDishesOrder(w http.ResponseWriter, r *http.Request) {
@@ -1652,4 +1571,137 @@ func ToOrderDetailedListResponseFromDeliveryResponse(pbRes *order.OrderDetailedR
     fmt.Printf("=== End of DeliveryHistory Details golang/quanqr/order/order_handler.go ===\n\n")
 
     return response
+}
+
+// 
+func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
+    if pbRes == nil {
+        return OrderDetailedListResponse{}
+    }
+
+    detailedResponses := make([]OrderDetailedResponse, len(pbRes.Data))
+    for i, pbDetailedRes := range pbRes.Data {
+        if pbDetailedRes == nil {
+            continue
+        }
+
+        // Convert version history with nil checks
+        var versionHistory []OrderVersionSummary
+        if pbDetailedRes.VersionHistory != nil {
+            versionHistory = make([]OrderVersionSummary, len(pbDetailedRes.VersionHistory))
+            for j, pbVersion := range pbDetailedRes.VersionHistory {
+                if pbVersion == nil {
+                    continue
+                }
+
+                var changes []OrderItemChange
+                if pbVersion.Changes != nil {
+                    changes = make([]OrderItemChange, len(pbVersion.Changes))
+                    for k, pbChange := range pbVersion.Changes {
+                        if pbChange == nil {
+                            continue
+                        }
+                        changes[k] = OrderItemChange{
+                            ItemType:        pbChange.ItemType,
+                            ItemID:          pbChange.ItemId,
+                            ItemName:        pbChange.ItemName,
+                            QuantityChanged: pbChange.QuantityChanged,
+                            Price:           pbChange.Price,
+                        }
+                    }
+                }
+
+                var modifiedAt time.Time
+                if pbVersion.ModifiedAt != nil {
+                    modifiedAt = pbVersion.ModifiedAt.AsTime()
+                }
+                
+                versionHistory[j] = OrderVersionSummary{
+                    VersionNumber:     pbVersion.VersionNumber,
+                    TotalDishesCount: pbVersion.TotalDishesCount,
+                    TotalSetsCount:   pbVersion.TotalSetsCount,
+                    VersionTotalPrice: pbVersion.VersionTotalPrice,
+                    ModificationType: pbVersion.ModificationType,
+                    ModifiedAt:      modifiedAt,
+                    Changes:         changes,
+                }
+            }
+        }
+
+        // Convert total summary with nil checks
+        var totalSummary OrderTotalSummary
+        if pbDetailedRes.TotalSummary != nil {
+            var mostOrderedItems []OrderItemCount
+            if pbDetailedRes.TotalSummary.MostOrderedItems != nil {
+                mostOrderedItems = make([]OrderItemCount, len(pbDetailedRes.TotalSummary.MostOrderedItems))
+                for j, pbItem := range pbDetailedRes.TotalSummary.MostOrderedItems {
+                    if pbItem == nil {
+                        continue
+                    }
+                    mostOrderedItems[j] = OrderItemCount{
+                        ItemType:      pbItem.ItemType,
+                        ItemID:        pbItem.ItemId,
+                        ItemName:      pbItem.ItemName,
+                        TotalQuantity: pbItem.TotalQuantity,
+                    }
+                }
+            }
+
+            totalSummary = OrderTotalSummary{
+                TotalVersions:        pbDetailedRes.TotalSummary.TotalVersions,
+                TotalDishesOrdered:  pbDetailedRes.TotalSummary.TotalDishesOrdered,
+                TotalSetsOrdered:    pbDetailedRes.TotalSummary.TotalSetsOrdered,
+                CumulativeTotalPrice: pbDetailedRes.TotalSummary.CumulativeTotalPrice,
+                MostOrderedItems:     mostOrderedItems,
+            }
+        }
+
+        var dataSet []OrderSetDetailed
+        if pbDetailedRes.DataSet != nil {
+            dataSet = ToOrderSetsDetailedFromProto(pbDetailedRes.DataSet)
+        }
+
+        var dataDish []OrderDetailedDish
+        if pbDetailedRes.DataDish != nil {
+            dataDish = ToOrderDetailedDishesFromProto(pbDetailedRes.DataDish)
+        }
+
+        detailedResponses[i] = OrderDetailedResponse{
+            ID:             pbDetailedRes.Id,
+            GuestID:        pbDetailedRes.GuestId,
+            UserID:         pbDetailedRes.UserId,
+            TableNumber:    pbDetailedRes.TableNumber,
+            OrderHandlerID: pbDetailedRes.OrderHandlerId,
+            Status:         pbDetailedRes.Status,
+            TotalPrice:     pbDetailedRes.TotalPrice,
+            IsGuest:        pbDetailedRes.IsGuest,
+            Topping:        pbDetailedRes.Topping,
+            TrackingOrder:  pbDetailedRes.TrackingOrder,
+            TakeAway:       pbDetailedRes.TakeAway,
+            ChiliNumber:    pbDetailedRes.ChiliNumber,
+            TableToken:     pbDetailedRes.TableToken,
+            OrderName:      pbDetailedRes.OrderName,
+            CurrentVersion: pbDetailedRes.CurrentVersion,
+            ParentOrderID:  pbDetailedRes.ParentOrderId,
+            DataSet:        dataSet,
+            DataDish:       dataDish,
+            VersionHistory: versionHistory,
+            TotalSummary:   totalSummary,
+        }
+    }
+
+    var pagination PaginationInfo
+    if pbRes.Pagination != nil {
+        pagination = PaginationInfo{
+            CurrentPage: pbRes.Pagination.CurrentPage,
+            TotalPages: pbRes.Pagination.TotalPages,
+            TotalItems: pbRes.Pagination.TotalItems,
+            PageSize:   pbRes.Pagination.PageSize,
+        }
+    }
+
+    return OrderDetailedListResponse{
+        Data:       detailedResponses,
+        Pagination: pagination,
+    }
 }

@@ -1,4 +1,4 @@
-http://localhost:3000/table/1?token=MTo0OkF2YWlsYWJsZTo0ODg4NTI2NzQ5.zOssQmB-QEM
+http://localhost:3000/table/1?token=MTo0OkF2YWlsYWJsZTo0ODkxODE3ODkz.BCcMjCAX1Es
 fmt.Printf("golang/quanqr/order/order_handler.go ordersResponse %v\n", ordersResponse)
 docker-compose up mypostgres_ai
 
@@ -34,12 +34,12 @@ TRUNCATE TABLE schema\*migrations, users; delete all data
 \d reading_test_models;
 
 \d orders
-SELECT * FROM dish_deliveries;
-SELECT * FROM dish_order_items;
+SELECT _ FROM dish_deliveries;
+SELECT _ FROM dish*order_items;
 SELECT * FROM set_order_items;
 SELECT * FROM order_modifications;
-SELECT _ FROM dish_order_items;
-SELECT _ FROM orders;
+SELECT * FROM dish*order_items;
+SELECT * FROM orders;
 SELECT _ FROM tables;
 SELECT _ FROM users;
 SELECT \_ FROM users;
@@ -436,5 +436,4 @@ grep -r "from.\*login-dialog" . ---> ok
 -------------------------- zustand optimization -----------------------------
 how to optimize Zustand store subscriptions to prevent unnecessary rerenders.
 
-
-// data 
+// data

@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import useOrderStore from "@/zusstand/order/order_zustand";
-import OrderDetails from "../total-dishes-detail";
+import OrderDetails from "../total-dishes-detail/total-dishes-detail";
 import OrderCreationComponent from "./add_order_button";
 import { decodeTableToken } from "@/lib/utils";
 import { logWithLevel } from "@/lib/logger/log";
@@ -58,10 +58,10 @@ export default function OrderSummary({ number, token }: OrderProps) {
       <ChoosingTopping />
       <OrderDetails />
       {/* <OrdersDetails /> */}
-      <div>
+      {/* <div>
         <h1>Orders</h1>
         <OrderListPage />
-      </div>
+      </div> */}
 
       <OrderCreationComponent />
     </div>

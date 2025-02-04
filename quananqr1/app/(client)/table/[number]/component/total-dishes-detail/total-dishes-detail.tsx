@@ -5,6 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Order, SetOrderItem } from "@/schemaValidations/interface/type_order";
 import useCartStore from "@/zusstand/new-order/new-order-zustand";
+import ItemsBreakdown from "./total-items-break-down";
+const deliveryData = {
+  "banh cuon": 30,
+  trung: 10,
+  gio: 12
+};
+
+const remainingData = {
+  "banh cuon": 15,
+  trung: 7,
+  gio: 7
+};
 
 export default function OrderDetails() {
   const [isMounted, setIsMounted] = useState(false);
@@ -185,26 +197,11 @@ export default function OrderDetails() {
         <h3 className="font-semibold mb-2 flex justify-between">
           <span>Total Items Breakdown</span>
         </h3>
-        <div className="border rounded-lg p-4">
-          <div className="space-y-2">
-            {Array.from(dishTotals.entries()).map(([dishKey, details]) => (
-              <div
-                key={`total-${details.dishId}-${dishKey}`}
-                className="flex justify-between items-center text-sm border-b pb-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <span className="text-gray-400 font-medium">
-                    {dishKey.split("-")[0]}
-                  </span>
-                  <span className="text-gray-400">x {details.quantity}</span>
-                </div>
-                <span className="font-medium text-primary">
-                  {details.totalPrice} K
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ItemsBreakdown
+          dishTotals={dishTotals}
+          deliveryData={deliveryData}
+          remainingData={remainingData}
+        />
       </CardContent>
     </Card>
   );
