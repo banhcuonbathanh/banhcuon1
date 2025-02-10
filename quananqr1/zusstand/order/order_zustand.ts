@@ -292,7 +292,7 @@ const useOrderStore = create<OrderState>()(
     (set, get) => ({
       ...INITIAL_STATE,
       // for tracking
-      trackDelivery: async (orderId) => {
+      trackDelivery: async (order_name) => {
 
       },
       updateDeliveryStatus: (order_name, status) =>

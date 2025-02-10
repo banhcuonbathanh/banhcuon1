@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Order, SetOrderItem } from "@/schemaValidations/interface/type_order";
 import useCartStore from "@/zusstand/new-order/new-order-zustand";
 import ItemsBreakdown from "./total-items-break-down";
+import useOrderStore from "@/zusstand/order/order_zustand";
 const deliveryData = {
   "banh cuon": 30,
   trung: 10,
@@ -25,7 +26,18 @@ export default function OrderDetails() {
   const cartStore = useCartStore();
   const current_order = cartStore.current_order;
   const tableNumber = cartStore.tableNumber;
+  const orderStore = useOrderStore();
 
+  const orderSummary = orderStore.getOrderSummary();
+  console.log("Current Order State:", orderStore.currentOrder);
+  console.log("Dish State:", orderStore.dishState);
+  console.log("Set Store:", orderStore.setStore);
+  console.log(
+    "quananqr1/app/(client)/table/[number]/component/total-dishes-detail/total-dishes-detail.tsx orderSummary",
+    orderSummary
+  );
+
+  console.log;
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -39,7 +51,10 @@ export default function OrderDetails() {
 
   const sets = current_order?.set_items || [];
   const dishes = current_order?.dish_items || [];
-
+  console.log(
+    "quananqr1/app/(client)/table/[number]/component/total-dishes-detail/total-dishes-detail.tsx sets",
+    current_order?.set_items
+  );
   const calculateDishTotals = () => {
     const dishTotals = new Map<
       string,
@@ -91,6 +106,11 @@ export default function OrderDetails() {
   };
 
   const dishTotals = calculateDishTotals();
+
+  console.log(
+    "quananqr1/app/(client)/table/[number]/component/total-dishes-detail/total-dishes-detail.tsx dishTotals ",
+    dishTotals
+  );
 
   const setsTotalPrice = sets.reduce(
     (acc, set) => acc + calculateSetPrice(set) * set.quantity,

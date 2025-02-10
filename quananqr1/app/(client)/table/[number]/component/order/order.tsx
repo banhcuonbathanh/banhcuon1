@@ -11,8 +11,6 @@ import { logWithLevel } from "@/lib/logger/log";
 
 import ChoosingTopping from "../topping/canh-banh-cuon";
 import useCartStore from "@/zusstand/new-order/new-order-zustand";
-import OrderListPage from "../order-list/orderlistpage";
-import OrdersDetails from "../order-list/listorderdetail";
 
 interface OrderProps {
   number: string;
