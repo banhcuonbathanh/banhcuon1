@@ -1,4 +1,5 @@
 import React from "react";
+import TitleButton from "./title-button";
 
 interface DishTotalDetails {
   quantity: number;
@@ -41,34 +42,19 @@ const ItemsBreakdown = ({
         </div>
 
         {/* Grid Items */}
-        {Array.from(dishTotals.entries()).map(([dishKey, details]) => {
-          const title = dishKey.split("-")[0];
-          const delivered = deliveryData[title] || 0;
-          const remaining =
-            remainingData[title] || details.quantity - delivered;
-          const pricePerUnit = getPricePerUnit(details);
-
-          return (
-            <React.Fragment key={`grid-${details.dishId}-${dishKey}`}>
-              <div className="p-3 border-t">
-                <span className="font-medium text-gray-500">{title}</span>
-              </div>
-              <div className="p-3 text-right text-gray-300 border-t">
-                {details.quantity}
-              </div>
-              <div className="p-3 text-right text-gray-300 border-t">
-                {delivered}
-              </div>
-              <div className="p-3 text-right text-gray-300 border-t">
-                {remaining}
-              </div>
-            </React.Fragment>
-          );
-        })}
+        {Array.from(dishTotals.entries()).map(([dishKey, details]) => (
+          <TitleButton
+            key={`grid-${details.dishId}-${dishKey}`}
+            dishKey={dishKey}
+            details={details}
+            deliveryData={deliveryData}
+            remainingData={remainingData}
+          />
+        ))}
 
         {/* Footer Totals */}
-        <div className="p-3 font-medium text-gray-900 border-t">Total</div>
-        <div className="p-3 text-right font-medium text-gray-900 border-t">
+        <div className="p-3 font-medium text-gray-500 border-t">Total</div>
+        <div className="p-3 text-right font-medium text-gray-500 border-t">
           {Array.from(dishTotals.values()).reduce(
             (sum, item) => sum + item.quantity,
             0
@@ -79,31 +65,30 @@ const ItemsBreakdown = ({
               (sum, item) => sum + item.totalPrice,
               0
             )}{" "}
-            K
           </span>
         </div>
-        <div className="p-3 text-right font-medium text-gray-900 border-t">
+        <div className="p-3 text-right font-medium text-gray-500 border-t">
           {Object.values(deliveryData).reduce((sum, val) => sum + val, 0)}
           <br />
           <span className="text-primary">
-            {Array.from(dishTotals.entries())
-              .reduce((sum, [dishKey, details]) => {
+            {Array.from(dishTotals.entries()).reduce(
+              (sum, [dishKey, details]) => {
                 const title = dishKey.split("-")[0];
                 const delivered = deliveryData[title] || 0;
                 return (
                   sum + (delivered * details.totalPrice) / details.quantity
                 );
-              }, 0)
-              .toFixed(1)}{" "}
-            K
+              },
+              0
+            )}
           </span>
         </div>
-        <div className="p-3 text-right font-medium text-gray-900 border-t">
+        <div className="p-3 text-right font-medium text-gray-500 border-t">
           {Object.values(remainingData).reduce((sum, val) => sum + val, 0)}
           <br />
-          <span className="text-primary">
-            {Array.from(dishTotals.entries())
-              .reduce((sum, [dishKey, details]) => {
+          <span className="text-gray-500">
+            {Array.from(dishTotals.entries()).reduce(
+              (sum, [dishKey, details]) => {
                 const title = dishKey.split("-")[0];
                 const remaining =
                   remainingData[title] ||
@@ -111,9 +96,9 @@ const ItemsBreakdown = ({
                 return (
                   sum + (remaining * details.totalPrice) / details.quantity
                 );
-              }, 0)
-              .toFixed(1)}{" "}
-            K
+              },
+              0
+            )}
           </span>
         </div>
       </div>

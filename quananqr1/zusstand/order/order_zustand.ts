@@ -12,6 +12,31 @@ import {
   PaginationInfo,
   SetOrderItem
 } from "@/schemaValidations/interface/type_order";
+
+
+interface DishDeliveryStatus {
+  dish_id: number;
+  order_id: number;
+  total_ordered: number;
+  total_delivered: number;
+  remaining: number;
+  delivery_history: {
+    quantity: number;
+    delivered_at: string;
+    delivered_by: string;
+    modification_number: number;
+  }[];
+}
+
+interface OrderDeliveryStatus {
+  order_id: number;
+  dishes: DishDeliveryStatus[];
+  total_items_ordered: number;
+  total_items_delivered: number;
+  total_items_remaining: number;
+}
+
+
 interface DishState {
   [key: number]: {
     name: string;
