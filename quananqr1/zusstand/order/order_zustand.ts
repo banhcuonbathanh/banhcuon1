@@ -13,12 +13,12 @@ import {
   SetOrderItem
 } from "@/schemaValidations/interface/type_order";
 
-
 interface DishDeliveryStatus {
   dish_id: number;
   order_id: number;
   total_ordered: number;
   total_delivered: number;
+  order_name: string;
   remaining: number;
   delivery_history: {
     quantity: number;
@@ -29,13 +29,13 @@ interface DishDeliveryStatus {
 }
 
 interface OrderDeliveryStatus {
+  order_name: string;
   order_id: number;
   dishes: DishDeliveryStatus[];
   total_items_ordered: number;
   total_items_delivered: number;
   total_items_remaining: number;
 }
-
 
 interface DishState {
   [key: number]: {
@@ -91,6 +91,12 @@ interface OrderSummary {
 }
 
 export interface OrderState extends BowlOptions {
+  //
+
+  deliveryStatus: Record<string, OrderDeliveryStatus>; // key is order_id
+
+  updateDeliveryStatus: (orderId: number, status: OrderDeliveryStatus) => void;
+  trackDelivery: (orderId: number) => Promise<void>;
   //
 
   isOrderListVisible: boolean; // Add this new field
@@ -207,10 +213,7 @@ const INITIAL_ORDER: Order = {
 
 const INITIAL_STATE: Omit<
   OrderState,
-  //
-
   | "toggleOrderListVisibility"
-  //
   | "addToListOfOrders"
   | "deleteFromListOfOrders"
   | "clearListOfOrders"
@@ -241,11 +244,10 @@ const INITIAL_STATE: Omit<
   | "updateWantChili"
   | "updateSelectedFilling"
   | "createOrder"
+  | "updateDeliveryStatus"
+  | "trackDelivery"
 > = {
-  //
-  isOrderListVisible: true, // Add default value
-
-  //
+  isOrderListVisible: true,
   setStore: {} as SetState,
   listOfOrders: [],
   dishState: {} as DishState,
@@ -270,6 +272,7 @@ const INITIAL_STATE: Omit<
   },
   tableNumber: null,
   tableToken: null,
+  deliveryStatus: {}, // Add this line
   setDishDetails: function (
     id: number,
     details: Omit<DishState[number], "id">
@@ -288,7 +291,17 @@ const useOrderStore = create<OrderState>()(
   persist(
     (set, get) => ({
       ...INITIAL_STATE,
-      //
+      // for tracking
+      trackDelivery: async (orderId) => {
+
+      },
+      updateDeliveryStatus: (order_name, status) =>
+        set((state) => ({
+          deliveryStatus: {
+            ...state.deliveryStatus,
+            [order_name]: status
+          }
+        })),
       // Add the new toggle method
       toggleOrderListVisibility: () =>
         set((state) => ({
