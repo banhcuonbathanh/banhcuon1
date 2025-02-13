@@ -76,10 +76,7 @@ const TitleButton = ({
   );
 
   return (
-    <div>
-      <h3 className="font-semibold mb-2 flex justify-between">
-        <span>Total Items Breakdown</span>
-      </h3>
+    <>
       <React.Fragment key={`grid-${details.dishId}-${dishKey}`}>
         <div className="p-3 border-t">
           <Dialog>
@@ -129,7 +126,7 @@ const TitleButton = ({
         <div className="p-3 text-right text-gray-300 border-t">{delivered}</div>
         <div className="p-3 text-right text-gray-300 border-t">{remaining}</div>
       </React.Fragment>
-    </div>
+    </>
   );
 };
 
