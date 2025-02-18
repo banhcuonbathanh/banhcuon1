@@ -7,6 +7,10 @@ import {
 import toast from "react-hot-toast";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+// dishTotal: DishOrderItem,
+// deliveryData : DishOrderItem,
+// remainingData : DishOrderItem,
+
 interface OrderSummary {
   totalItems: number;
   totalPrice: number;
@@ -14,6 +18,12 @@ interface OrderSummary {
   sets: SetOrderItem[];
 }
 interface CartState {
+  // new
+  // Added new fields
+  dishTotal: DishOrderItem;
+  deliveryData: DishOrderItem;
+  remainingData: DishOrderItem;
+  //
   new_order: Order[];
   current_order: Order | null;
   isLoading: boolean;
@@ -78,6 +88,19 @@ const defaultOrder: Order = {
   table_token: "",
   order_name: ""
 };
+const defaultDishOrderItem: DishOrderItem = {
+  dish_id: 0,
+  quantity: 0,
+  name: "",
+  price: 0,
+  description: "",
+  image: "",
+  status: "active",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  is_favourite: false,
+  like_by: []
+};
 
 const useCartStore = create<CartState>()(
   persist(
@@ -93,7 +116,10 @@ const useCartStore = create<CartState>()(
       pagination: defaultPagination,
       tableNumber: null,
       tableToken: null,
-
+      // Initialize the new fields with default values
+      dishTotal: { ...defaultDishOrderItem },
+      deliveryData: { ...defaultDishOrderItem },
+      remainingData: { ...defaultDishOrderItem },
       // Table management functions
       addTableNumber: (number: number) => {
         set({ tableNumber: number });
