@@ -20,7 +20,7 @@ interface OrderSummary {
 interface CartState {
   // new
   // Added new fields
-  dishTotal: DishOrderItem;
+  dishTotal: DishOrderItem[];
   deliveryData: DishOrderItem;
   remainingData: DishOrderItem;
   //
@@ -88,6 +88,8 @@ const defaultOrder: Order = {
   table_token: "",
   order_name: ""
 };
+
+// example data start
 const defaultDishOrderItem: DishOrderItem = {
   dish_id: 0,
   quantity: 0,
@@ -101,7 +103,62 @@ const defaultDishOrderItem: DishOrderItem = {
   is_favourite: false,
   like_by: []
 };
+const dishtotlaexample: DishOrderItem = {
+  dish_id: 1,
+  quantity: 10,
+  name: "dishtotlaexample",
+  price: 10,
+  description: "dishtotlaexample",
+  image: "dishtotlaexample",
+  status: "active",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  is_favourite: false,
+  like_by: []
+};
+const dishdeliveryexample: DishOrderItem = {
+  dish_id: 1,
+  quantity: 10,
+  name: "dishdeliveryexample",
+  price: 10,
+  description: "dishdeliveryexample",
+  image: "dishdeliveryexample",
+  status: "active",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  is_favourite: false,
+  like_by: []
+};
 
+const dishPizzaExample: DishOrderItem = {
+  dish_id: 2,
+  quantity: 5,
+  name: "Pizza Margherita",
+  price: 15,
+  description: "Classic Italian pizza",
+  image: "pizza-example",
+  status: "active",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  is_favourite: false,
+  like_by: []
+};
+
+const dishSushiExample: DishOrderItem = {
+  dish_id: 3,
+  quantity: 8,
+  name: "California Roll",
+  price: 12,
+  description: "Fresh sushi roll",
+  image: "sushi-example",
+  status: "active",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  is_favourite: false,
+  like_by: []
+};
+
+// example data end
 const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -117,9 +174,11 @@ const useCartStore = create<CartState>()(
       tableNumber: null,
       tableToken: null,
       // Initialize the new fields with default values
-      dishTotal: { ...defaultDishOrderItem },
-      deliveryData: { ...defaultDishOrderItem },
+      // Initialize dishTotal as an array with example items
+      dishTotal: [dishtotlaexample, dishPizzaExample, dishSushiExample],
+      deliveryData: { ...dishdeliveryexample },
       remainingData: { ...defaultDishOrderItem },
+
       // Table management functions
       addTableNumber: (number: number) => {
         set({ tableNumber: number });

@@ -29,14 +29,13 @@ export default function OrderDetails() {
   const orderStore = useOrderStore();
 
   const orderSummary = orderStore.getOrderSummary();
-  console.log("Current Order State:", orderStore.currentOrder);
-  console.log("Dish State:", orderStore.dishState);
-  console.log("Set Store:", orderStore.setStore);
-  console.log(
-    "quananqr1/app/(client)/table/[number]/component/total-dishes-detail/total-dishes-detail.tsx orderSummary",
-    orderSummary
-  );
-
+  // console.log("Current Order State:", orderStore.currentOrder);
+  // console.log("Dish State:", orderStore.dishState);
+  // console.log("Set Store:", orderStore.setStore);
+  // console.log(
+  //   "quananqr1/app/(client)/table/[number]/component/total-dishes-detail/total-dishes-detail.tsx orderSummary",
+  //   orderSummary
+  // );
   console.log;
   useEffect(() => {
     setIsMounted(true);
@@ -217,11 +216,7 @@ export default function OrderDetails() {
         <h3 className="font-semibold mb-2 flex justify-between">
           <span>Total Items Breakdown</span>
         </h3>
-        <ItemsBreakdown
-          dishTotals={dishTotals}
-          deliveryData={deliveryData}
-          remainingData={remainingData}
-        />
+        <ItemsBreakdown />
       </CardContent>
     </Card>
   );
