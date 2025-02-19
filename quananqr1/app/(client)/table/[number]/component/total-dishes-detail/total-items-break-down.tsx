@@ -22,10 +22,16 @@ const ItemsBreakdown = () => {
   }));
 
   // Convert delivery data to required format
+  // Now we need to extract from the map using dish IDs
   const deliveryMap: Record<string, number> = {};
-  if (deliveryData && deliveryData.name) {
-    deliveryMap[deliveryData.name] = deliveryData.quantity;
-  }
+  dishTotalsArray.forEach((dish) => {
+    const dishDelivery = deliveryData[dish.dishId];
+    if (dishDelivery) {
+      // Use dish name as key for backwards compatibility with TitleButton
+      const dishName = dish.key.split("-")[0];
+      deliveryMap[dishName] = dishDelivery.quantity;
+    }
+  });
 
   // Convert remaining data to required format
   const remainingMap: Record<string, number> = {};

@@ -21,7 +21,7 @@ interface CartState {
   // new
   // Added new fields
   dishTotal: DishOrderItem[];
-  deliveryData: DishOrderItem;
+  deliveryData: Record<number, DishOrderItem>;
   remainingData: DishOrderItem;
   //
   new_order: Order[];
@@ -158,6 +158,49 @@ const dishSushiExample: DishOrderItem = {
   like_by: []
 };
 
+const deliveryExample: Record<number, DishOrderItem> = {
+  1: {
+    dish_id: 1,
+    quantity: 3,
+    name: "Pasta Delivery",
+    price: 10,
+    description: "Fast delivery pasta",
+    image: "pasta-delivery",
+    status: "active",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_favourite: false,
+    like_by: []
+  },
+  // dish_id 2 delivery data
+  2: {
+    dish_id: 2,
+    quantity: 1,
+    name: "Pizza Delivery",
+    price: 5,
+    description: "Express pizza delivery",
+    image: "pizza-delivery",
+    status: "active",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_favourite: false,
+    like_by: []
+  },
+  // dish_id 3 delivery data
+  3: {
+    dish_id: 3,
+    quantity: 2,
+    name: "Sushi Delivery",
+    price: 7,
+    description: "Fresh sushi delivery",
+    image: "sushi-delivery",
+    status: "active",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_favourite: false,
+    like_by: []
+  }
+};
 // example data end
 const useCartStore = create<CartState>()(
   persist(
@@ -176,7 +219,7 @@ const useCartStore = create<CartState>()(
       // Initialize the new fields with default values
       // Initialize dishTotal as an array with example items
       dishTotal: [dishtotlaexample, dishPizzaExample, dishSushiExample],
-      deliveryData: { ...dishdeliveryexample },
+      deliveryData: deliveryExample,
       remainingData: { ...defaultDishOrderItem },
 
       // Table management functions
