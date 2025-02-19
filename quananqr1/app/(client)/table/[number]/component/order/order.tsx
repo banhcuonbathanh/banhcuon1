@@ -53,15 +53,14 @@ export default function OrderSummary({ number, token }: OrderProps) {
 
   return (
     <div className="container mx-auto px-4 py-5 space-y-5">
-      <ChoosingTopping />
-      <OrderDetails />
+      {/* <OrderDetails /> */}
       {/* <OrdersDetails /> */}
       {/* <div>
         <h1>Orders</h1>
         <OrderListPage />
       </div> */}
-
-      <OrderCreationComponent />
+      {/* 
+      <OrderCreationComponent /> */}
     </div>
   );
 }

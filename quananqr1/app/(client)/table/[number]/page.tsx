@@ -6,6 +6,9 @@ import { SetInterface } from "@/schemaValidations/interface/types_set";
 import { get_Sets } from "@/zusstand/server/set-controller";
 import SetCardList from "./component/set/sets_list";
 import OrderSummary from "./component/order/order";
+import ChoosingTopping from "./component/topping/canh-banh-cuon";
+import ItemsBreakdown from "./component/total-dishes-detail/total-items-break-down";
+import OrderDetails from "./component/total-dishes-detail/total-dishes-detail";
 
 interface TableProps {
   params: { number: string };
@@ -29,8 +32,10 @@ export default async function TablePage({ params, searchParams }: TableProps) {
       <SetCardList sets={setsData} />
 
       <DishSelection dishes={dishesData} />
-
-      <OrderSummary number={number} token={token} />
+      <ChoosingTopping />
+      <OrderDetails />
+      <ItemsBreakdown />
+      {/* <OrderSummary number={number} token={token} /> */}
     </div>
   );
 }

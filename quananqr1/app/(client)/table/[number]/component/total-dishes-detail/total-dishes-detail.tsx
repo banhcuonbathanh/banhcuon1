@@ -7,6 +7,7 @@ import { Order, SetOrderItem } from "@/schemaValidations/interface/type_order";
 import useCartStore from "@/zusstand/new-order/new-order-zustand";
 import ItemsBreakdown from "./total-items-break-down";
 import useOrderStore from "@/zusstand/order/order_zustand";
+import OrderCreationComponent from "../order/add_order_button";
 const deliveryData = {
   "banh cuon": 30,
   trung: 10,
@@ -127,97 +128,99 @@ export default function OrderDetails() {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          <span>Order Summary - Table {tableNumber}</span>
-          <span className="text-base font-bold">{totalPrice} K</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {sets.length > 0 && (
-          <div>
-            <h3 className="font-semibold mb-2 flex justify-between">
-              <span>Sets</span>
-              <span className="text-primary">{setsTotalPrice} K</span>
-            </h3>
-            <div className="space-y-2">
-              {sets.map((set) => (
-                <div
-                  key={`set-${set.set_id}`}
-                  className="border rounded-lg p-3"
-                >
+    <div className="container mx-auto px-4 py-5 space-y-5">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            <span>Order Summary - Table {tableNumber}</span>
+            <span className="text-base font-bold">{totalPrice} K</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {sets.length > 0 && (
+            <div>
+              <h3 className="font-semibold mb-2 flex justify-between">
+                <span>Sets</span>
+                <span className="text-primary">{setsTotalPrice} K</span>
+              </h3>
+              <div className="space-y-2">
+                {sets.map((set) => (
                   <div
-                    className="flex justify-between items-center cursor-pointer"
-                    onClick={() => toggleSetExpansion(set.set_id)}
+                    key={`set-${set.set_id}`}
+                    className="border rounded-lg p-3"
                   >
-                    <span className="text-gray-400 font-medium">
-                      {set.name}
-                    </span>
-                    <div className="flex items-center space-x-4">
-                      <span className="text-sm text-primary">
-                        {set.quantity} x {set.price} K =
-                        {set.quantity * set.price} K
+                    <div
+                      className="flex justify-between items-center cursor-pointer"
+                      onClick={() => toggleSetExpansion(set.set_id)}
+                    >
+                      <span className="text-gray-400 font-medium">
+                        {set.name}
                       </span>
-                      {expandedSets[set.set_id] ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
+                      <div className="flex items-center space-x-4">
+                        <span className="text-sm text-primary">
+                          {set.quantity} x {set.price} K =
+                          {set.quantity * set.price} K
+                        </span>
+                        {expandedSets[set.set_id] ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </div>
+                    </div>
+                    {expandedSets[set.set_id] && (
+                      <div className="mt-2 ml-4 text-sm text-gray-400 space-y-1">
+                        {set.dishes.map((dish) => (
+                          <div
+                            key={`set-${set.set_id}-dish-${dish.dish_id}`}
+                            className="flex justify-between text-primary"
+                          >
+                            <span>{dish.name}</span>
+                            <span>
+                              {dish.quantity} x {dish.price} K =
+                              {dish.quantity * dish.price} K
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {dishes.length > 0 && (
+            <div>
+              <h3 className="font-semibold mb-2 flex justify-between">
+                <span>Individual Dishes</span>
+                <span className="text-primary">{dishesTotalPrice} K</span>
+              </h3>
+              <div className="space-y-2">
+                {dishes.map((dish) => (
+                  <div
+                    key={`dish-${dish.dish_id}`}
+                    className="border rounded-lg p-3"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">{dish.name}</span>
+                      <span className="text-sm text-primary">
+                        {dish.quantity} x {dish.price} K =
+                        {dish.quantity * dish.price} K
+                      </span>
                     </div>
                   </div>
-                  {expandedSets[set.set_id] && (
-                    <div className="mt-2 ml-4 text-sm text-gray-400 space-y-1">
-                      {set.dishes.map((dish) => (
-                        <div
-                          key={`set-${set.set_id}-dish-${dish.dish_id}`}
-                          className="flex justify-between text-primary"
-                        >
-                          <span>{dish.name}</span>
-                          <span>
-                            {dish.quantity} x {dish.price} K =
-                            {dish.quantity * dish.price} K
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-
-        {dishes.length > 0 && (
-          <div>
-            <h3 className="font-semibold mb-2 flex justify-between">
-              <span>Individual Dishes</span>
-              <span className="text-primary">{dishesTotalPrice} K</span>
-            </h3>
-            <div className="space-y-2">
-              {dishes.map((dish) => (
-                <div
-                  key={`dish-${dish.dish_id}`}
-                  className="border rounded-lg p-3"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">{dish.name}</span>
-                    <span className="text-sm text-primary">
-                      {dish.quantity} x {dish.price} K =
-                      {dish.quantity * dish.price} K
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <h3 className="font-semibold mb-2 flex justify-between">
+          )}
+          <OrderCreationComponent />
+          {/* <h3 className="font-semibold mb-2 flex justify-between">
           <span>Total Items Breakdown</span>
-        </h3>
-        <ItemsBreakdown />
-      </CardContent>
-    </Card>
+        </h3> */}
+          {/* <ItemsBreakdown /> */}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
