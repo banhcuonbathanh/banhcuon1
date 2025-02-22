@@ -571,3 +571,32 @@ type CreateDishDeliveryRequestType struct {
     IsGuest           bool        `json:"is_guest"`
     DishID      int64  `json:"dish_id"`
 }
+
+// new 
+
+// CreateDishOrderItemWithOrderID matches CreateDishOrderItemWithOrderID from proto
+type CreateDishOrderItemWithOrderID struct {
+    OrderID   int64  `json:"order_id"`
+    DishID    int64  `json:"dish_id"`
+    Quantity  int64  `json:"quantity"`
+    OrderName string `json:"order_name"`
+}
+
+// CreateSetOrderItemWithOrderID matches CreateSetOrderItemWithOrderID from proto
+type CreateSetOrderItemWithOrderID struct {
+    OrderID   int64  `json:"order_id"`
+    SetID     int64  `json:"set_id"`
+    Quantity  int64  `json:"quantity"`
+    OrderName string `json:"order_name"`
+}
+
+// ResponseSetOrderItemWithOrderID matches ResponseSetOrderItemWithOrderID from proto
+type ResponseSetOrderItemWithOrderID struct {
+    Set    OrderSet           `json:"set"`
+    Dishes []OrderDetailedDish `json:"dishes"`
+}
+
+// end 
+
+
+

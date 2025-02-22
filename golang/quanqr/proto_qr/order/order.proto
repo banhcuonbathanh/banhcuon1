@@ -47,6 +47,26 @@ message CreateDishOrderItem {
   int64 quantity = 3;
 
 }
+message CreateDishOrderItemWithOrderID {
+  int64 order_id = 1;
+int64 dish_id = 2;
+int64 quantity = 3;
+string order_name = 4;
+
+}
+
+message CreateSetOrderItemWithOrderID {
+  int64 order_id = 1;
+int64 set_id = 2;
+int64 quantity = 3;
+string order_name = 4;
+
+}
+
+message ResponseSetOrderItemWithOrderID {
+  SetOrderItem set = 1;
+  repeated OrderDetailedDish dishes = 2;
+}
 message SetOrderItem {
   int64 id = 1;                     // Added primary key
   int64 set_id = 2;
@@ -350,6 +370,9 @@ service OrderService {
   rpc MarkDishesDelivered(CreateDishDeliveryRequest) returns (OrderDetailedResponseWithDelivery);
   rpc PayOrders(PayOrdersRequest) returns (OrderListResponse);
   rpc GetOrderProtoListDetail(GetOrdersRequest) returns (OrderDetailedListResponse);
+
+  rpc AddingDishesToOrder(CreateDishOrderItemWithOrderID) returns (DishOrderItem);
+  rpc AddingSetToOrder(CreateSetOrderItemWithOrderID) returns (ResponseSetOrderItemWithOrderID);
 }
 
 

@@ -3213,3 +3213,278 @@ func (or *OrderRepository) fetchDeliveryHistory(ctx context.Context, tx pgx.Tx, 
 }
 
 
+// new for AddingDishesToOrder start
+
+func (or *OrderRepository) AddingDishesToOrder(ctx context.Context, req *order.CreateDishOrderItemWithOrderID) (*order.DishOrderItem, error) {
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go Adding dishes to order ID %d: dish_id=%d, quantity=%d", req.OrderId, req.DishId, req.Quantity))
+
+    tx, err := or.db.Begin(ctx)
+    if err != nil {
+        or.logger.Error("Error starting transaction: " + err.Error())
+        return nil, fmt.Errorf("error starting transaction: %w", err)
+    }
+    defer tx.Rollback(ctx)
+
+    // First, verify the order exists and get its current version
+    var currentVersion int32
+    var isGuest bool
+    var orderHandlerId int64
+    err = tx.QueryRow(ctx, `
+        SELECT version, is_guest, order_handler_id 
+        FROM orders 
+        WHERE id = $1`,
+        req.OrderId,
+    ).Scan(&currentVersion, &isGuest, &orderHandlerId)
+    if err != nil {
+        if errors.Is(err, pgx.ErrNoRows) {
+            return nil, fmt.Errorf("order not found: %d", req.OrderId)
+        }
+        return nil, fmt.Errorf("error fetching order details: %w", err)
+    }
+
+    // Verify the dish exists
+    var exists bool
+    err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM dishes WHERE id = $1)", req.DishId).Scan(&exists)
+    if err != nil {
+        return nil, fmt.Errorf("error verifying dish existence: %w", err)
+    }
+    if !exists {
+        return nil, fmt.Errorf("dish with id %d does not exist", req.DishId)
+    }
+
+    now := time.Now()
+    nextVersion := currentVersion + 1
+
+    // Update the order's version
+    _, err = tx.Exec(ctx, `
+        UPDATE orders 
+        SET version = $1, 
+            updated_at = $2 
+        WHERE id = $3`,
+        nextVersion,
+        now,
+        req.OrderId,
+    )
+    if err != nil {
+        return nil, fmt.Errorf("error updating order version: %w", err)
+    }
+
+    // Create a new order modification record
+    _, err = tx.Exec(ctx, `
+        INSERT INTO order_modifications (
+            order_id, modification_number, modification_type, 
+            modified_by_user_id, order_name, modified_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)`,
+        req.OrderId,
+        nextVersion,
+        "ADD",
+        orderHandlerId,
+        req.OrderName,
+        now,
+    )
+    if err != nil {
+        return nil, fmt.Errorf("error creating modification record: %w", err)
+    }
+
+    // Insert the new dish order item
+    var newItemId int64
+    err = tx.QueryRow(ctx, `
+        INSERT INTO dish_order_items (
+            order_id, dish_id, quantity, created_at, updated_at,
+            order_name, modification_type, modification_number
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING id`,
+        req.OrderId,
+        req.DishId,
+        req.Quantity,
+        now,
+        now,
+        req.OrderName,
+        "ADD",
+        nextVersion,
+    ).Scan(&newItemId)
+    if err != nil {
+        return nil, fmt.Errorf("error inserting dish order item: %w", err)
+    }
+
+    if err := tx.Commit(ctx); err != nil {
+        return nil, fmt.Errorf("error committing transaction: %w", err)
+    }
+
+    // Return the created dish order item
+    return &order.DishOrderItem{
+        Id:                newItemId,
+        DishId:           req.DishId,
+        Quantity:         req.Quantity,
+        CreatedAt:        timestamppb.New(now),
+        UpdatedAt:        timestamppb.New(now),
+        OrderName:        req.OrderName,
+        ModificationType: "ADD",
+        ModificationNumber: nextVersion,
+    }, nil
+}
+
+// new for AddingDishesToOrder end 
+
+// new for AddingSetToOrder start
+
+func (or *OrderRepository) AddingSetToOrder(ctx context.Context, req *order.CreateSetOrderItemWithOrderID) (*order.ResponseSetOrderItemWithOrderID, error) {
+    or.logger.Info(fmt.Sprintf(" golang/quanqr/order/order_repository.go Adding set to order ID %d: set_id=%d, quantity=%d", req.OrderId, req.SetId, req.Quantity))
+
+    tx, err := or.db.Begin(ctx)
+    if err != nil {
+        or.logger.Error("Error starting transaction: " + err.Error())
+        return nil, fmt.Errorf("error starting transaction: %w", err)
+    }
+    defer tx.Rollback(ctx)
+
+    // First, verify the order exists and get its current version
+    var currentVersion int32
+    var isGuest bool
+    var orderHandlerId int64
+    err = tx.QueryRow(ctx, `
+        SELECT version, is_guest, order_handler_id 
+        FROM orders 
+        WHERE id = $1`,
+        req.OrderId,
+    ).Scan(&currentVersion, &isGuest, &orderHandlerId)
+    if err != nil {
+        if errors.Is(err, pgx.ErrNoRows) {
+            return nil, fmt.Errorf("order not found: %d", req.OrderId)
+        }
+        return nil, fmt.Errorf("error fetching order details: %w", err)
+    }
+
+    // Verify the set exists and get its dishes
+    var exists bool
+    err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM sets WHERE id = $1)", req.SetId).Scan(&exists)
+    if err != nil {
+        return nil, fmt.Errorf("error verifying set existence: %w", err)
+    }
+    if !exists {
+        return nil, fmt.Errorf("set with id %d does not exist", req.SetId)
+    }
+
+    now := time.Now()
+    nextVersion := currentVersion + 1
+
+    // Update the order's version
+    _, err = tx.Exec(ctx, `
+        UPDATE orders 
+        SET version = $1, 
+            updated_at = $2 
+        WHERE id = $3`,
+        nextVersion,
+        now,
+        req.OrderId,
+    )
+    if err != nil {
+        return nil, fmt.Errorf("error updating order version: %w", err)
+    }
+
+    // Create a new order modification record
+    _, err = tx.Exec(ctx, `
+        INSERT INTO order_modifications (
+            order_id, modification_number, modification_type, 
+            modified_by_user_id, order_name, modified_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)`,
+        req.OrderId,
+        nextVersion,
+        "ADD",
+        orderHandlerId,
+        req.OrderName,
+        now,
+    )
+    if err != nil {
+        return nil, fmt.Errorf("error creating modification record: %w", err)
+    }
+
+    // Insert the new set order item
+    var newSetItemId int64
+    err = tx.QueryRow(ctx, `
+        INSERT INTO set_order_items (
+            order_id, set_id, quantity, created_at, updated_at,
+            order_name, modification_type, modification_number
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING id`,
+        req.OrderId,
+        req.SetId,
+        req.Quantity,
+        now,
+        now,
+        req.OrderName,
+        "ADD",
+        nextVersion,
+    ).Scan(&newSetItemId)
+    if err != nil {
+        return nil, fmt.Errorf("error inserting set order item: %w", err)
+    }
+
+    // Get the set's dishes
+    rows, err := tx.Query(ctx, `
+        SELECT 
+            d.id,
+            d.name,
+            d.price,
+            d.description,
+            d.image,
+            d.status,
+            sd.quantity
+        FROM set_dishes sd
+        JOIN dishes d ON sd.dish_id = d.id
+        WHERE sd.set_id = $1`,
+        req.SetId,
+    )
+    if err != nil {
+        return nil, fmt.Errorf("error fetching set dishes: %w", err)
+    }
+    defer rows.Close()
+
+    var dishes []*order.OrderDetailedDish
+    for rows.Next() {
+        var dish order.OrderDetailedDish
+        var dishQuantity int64
+        err := rows.Scan(
+            &dish.DishId,
+            &dish.Name,
+            &dish.Price,
+            &dish.Description,
+            &dish.Image,
+            &dish.Status,
+            &dishQuantity,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("error scanning dish row: %w", err)
+        }
+        // Multiply the dish quantity by the set quantity ordered
+        dish.Quantity = dishQuantity * req.Quantity
+        dishes = append(dishes, &dish)
+    }
+
+    if err := tx.Commit(ctx); err != nil {
+        return nil, fmt.Errorf("error committing transaction: %w", err)
+    }
+
+    // Prepare the response
+    setItem := &order.SetOrderItem{
+        Id:                newSetItemId,
+        SetId:            req.SetId,
+        Quantity:         req.Quantity,
+        CreatedAt:        timestamppb.New(now),
+        UpdatedAt:        timestamppb.New(now),
+        OrderName:        req.OrderName,
+        ModificationType: "ADD",
+        ModificationNumber: nextVersion,
+    }
+
+    return &order.ResponseSetOrderItemWithOrderID{
+        Set:    setItem,
+        Dishes: dishes,
+    }, nil
+}
+
+// new for AddingSetToOrder end

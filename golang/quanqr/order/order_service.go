@@ -324,3 +324,65 @@ func (os *OrderServiceStruct) MarkDishesDelivered(ctx context.Context, req *orde
 
     return deliveryResponse, nil
 }
+
+//new 
+
+func (os *OrderServiceStruct) AddingDishesToOrder(ctx context.Context, req *order.CreateDishOrderItemWithOrderID) (*order.DishOrderItem, error) {
+    os.logger.Info(fmt.Sprintf("Service: Adding dishes to order ID %d: dish_id=%d, quantity=%d", 
+        req.OrderId, req.DishId, req.Quantity))
+
+    // Validate input parameters
+    if req.OrderId <= 0 {
+        return nil, status.Errorf(codes.InvalidArgument, "invalid order ID")
+    }
+    if req.DishId <= 0 {
+        return nil, status.Errorf(codes.InvalidArgument, "invalid dish ID")
+    }
+    if req.Quantity <= 0 {
+        return nil, status.Errorf(codes.InvalidArgument, "quantity must be positive")
+    }
+    if req.OrderName == "" {
+        return nil, status.Errorf(codes.InvalidArgument, "order name is required")
+    }
+
+    // Call repository method
+    dishOrderItem, err := os.orderRepo.AddingDishesToOrder(ctx, req)
+    if err != nil {
+        os.logger.Error(fmt.Sprintf("Error adding dishes to order: %v", err))
+        return nil, status.Errorf(codes.Internal, "failed to add dishes to order: %v", err)
+    }
+
+    os.logger.Info(fmt.Sprintf("Successfully added dishes to order ID %d", req.OrderId))
+    return dishOrderItem, nil
+}
+
+func (os *OrderServiceStruct) AddingSetToOrder(ctx context.Context, req *order.CreateSetOrderItemWithOrderID) (*order.ResponseSetOrderItemWithOrderID, error) {
+    os.logger.Info(fmt.Sprintf("Service: Adding set to order ID %d: set_id=%d, quantity=%d", 
+        req.OrderId, req.SetId, req.Quantity))
+
+    // Validate input parameters
+    if req.OrderId <= 0 {
+        return nil, status.Errorf(codes.InvalidArgument, "invalid order ID")
+    }
+    if req.SetId <= 0 {
+        return nil, status.Errorf(codes.InvalidArgument, "invalid set ID")
+    }
+    if req.Quantity <= 0 {
+        return nil, status.Errorf(codes.InvalidArgument, "quantity must be positive")
+    }
+    if req.OrderName == "" {
+        return nil, status.Errorf(codes.InvalidArgument, "order name is required")
+    }
+
+    // Call repository method
+    response, err := os.orderRepo.AddingSetToOrder(ctx, req)
+    if err != nil {
+        os.logger.Error(fmt.Sprintf("Error adding set to order: %v", err))
+        return nil, status.Errorf(codes.Internal, "failed to add set to order: %v", err)
+    }
+
+    os.logger.Info(fmt.Sprintf("Successfully added set to order ID %d", req.OrderId))
+    return response, nil
+}
+
+// new end 

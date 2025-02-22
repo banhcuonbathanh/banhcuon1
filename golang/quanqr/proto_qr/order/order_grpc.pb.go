@@ -29,6 +29,8 @@ const (
 	OrderService_MarkDishesDelivered_FullMethodName     = "/order_proto.OrderService/MarkDishesDelivered"
 	OrderService_PayOrders_FullMethodName               = "/order_proto.OrderService/PayOrders"
 	OrderService_GetOrderProtoListDetail_FullMethodName = "/order_proto.OrderService/GetOrderProtoListDetail"
+	OrderService_AddingDishesToOrder_FullMethodName     = "/order_proto.OrderService/AddingDishesToOrder"
+	OrderService_AddingSetToOrder_FullMethodName        = "/order_proto.OrderService/AddingSetToOrder"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -47,6 +49,8 @@ type OrderServiceClient interface {
 	MarkDishesDelivered(ctx context.Context, in *CreateDishDeliveryRequest, opts ...grpc.CallOption) (*OrderDetailedResponseWithDelivery, error)
 	PayOrders(ctx context.Context, in *PayOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error)
 	GetOrderProtoListDetail(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
+	AddingDishesToOrder(ctx context.Context, in *CreateDishOrderItemWithOrderID, opts ...grpc.CallOption) (*DishOrderItem, error)
+	AddingSetToOrder(ctx context.Context, in *CreateSetOrderItemWithOrderID, opts ...grpc.CallOption) (*ResponseSetOrderItemWithOrderID, error)
 }
 
 type orderServiceClient struct {
@@ -157,6 +161,26 @@ func (c *orderServiceClient) GetOrderProtoListDetail(ctx context.Context, in *Ge
 	return out, nil
 }
 
+func (c *orderServiceClient) AddingDishesToOrder(ctx context.Context, in *CreateDishOrderItemWithOrderID, opts ...grpc.CallOption) (*DishOrderItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DishOrderItem)
+	err := c.cc.Invoke(ctx, OrderService_AddingDishesToOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *orderServiceClient) AddingSetToOrder(ctx context.Context, in *CreateSetOrderItemWithOrderID, opts ...grpc.CallOption) (*ResponseSetOrderItemWithOrderID, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseSetOrderItemWithOrderID)
+	err := c.cc.Invoke(ctx, OrderService_AddingSetToOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -173,6 +197,8 @@ type OrderServiceServer interface {
 	MarkDishesDelivered(context.Context, *CreateDishDeliveryRequest) (*OrderDetailedResponseWithDelivery, error)
 	PayOrders(context.Context, *PayOrdersRequest) (*OrderListResponse, error)
 	GetOrderProtoListDetail(context.Context, *GetOrdersRequest) (*OrderDetailedListResponse, error)
+	AddingDishesToOrder(context.Context, *CreateDishOrderItemWithOrderID) (*DishOrderItem, error)
+	AddingSetToOrder(context.Context, *CreateSetOrderItemWithOrderID) (*ResponseSetOrderItemWithOrderID, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -212,6 +238,12 @@ func (UnimplementedOrderServiceServer) PayOrders(context.Context, *PayOrdersRequ
 }
 func (UnimplementedOrderServiceServer) GetOrderProtoListDetail(context.Context, *GetOrdersRequest) (*OrderDetailedListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrderProtoListDetail not implemented")
+}
+func (UnimplementedOrderServiceServer) AddingDishesToOrder(context.Context, *CreateDishOrderItemWithOrderID) (*DishOrderItem, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddingDishesToOrder not implemented")
+}
+func (UnimplementedOrderServiceServer) AddingSetToOrder(context.Context, *CreateSetOrderItemWithOrderID) (*ResponseSetOrderItemWithOrderID, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddingSetToOrder not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -414,6 +446,42 @@ func _OrderService_GetOrderProtoListDetail_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_AddingDishesToOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateDishOrderItemWithOrderID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).AddingDishesToOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_AddingDishesToOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).AddingDishesToOrder(ctx, req.(*CreateDishOrderItemWithOrderID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OrderService_AddingSetToOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSetOrderItemWithOrderID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).AddingSetToOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_AddingSetToOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).AddingSetToOrder(ctx, req.(*CreateSetOrderItemWithOrderID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -460,6 +528,14 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOrderProtoListDetail",
 			Handler:    _OrderService_GetOrderProtoListDetail_Handler,
+		},
+		{
+			MethodName: "AddingDishesToOrder",
+			Handler:    _OrderService_AddingDishesToOrder_Handler,
+		},
+		{
+			MethodName: "AddingSetToOrder",
+			Handler:    _OrderService_AddingSetToOrder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
