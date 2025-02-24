@@ -1708,160 +1708,46 @@ func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse
 
 // new 
 
-func (h *OrderHandlerController) AddingDishesToOrder(w http.ResponseWriter, r *http.Request) {
+func (h *OrderHandlerController) AddingSetToOrder(w http.ResponseWriter, r *http.Request) {
     // Log the incoming request
-    h.logger.Info("golang/quanqr/order/order_handler.go Received AddingDishesToOrder request")
+    h.logger.Info("golang/quanqr/order/order_handler.go Received AddingSetToOrder request")
 
     // Parse and validate the request body
-    var req CreateDishOrderItemWithOrderID
+    var req CreateSetOrderItemWithOrderID
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        h.logger.Error("golang/quanqr/order/order_handler.go Error decoding request body: " + err.Error(),
-            "raw_body", r.Body)
+        h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Error decoding request body: %s", err.Error()))
         http.Error(w, "error decoding request body", http.StatusBadRequest)
         return
     }
 
     // Log all input fields
-    h.logger.Info("golang/quanqr/order/order_handler.go Request details",
-        "order_id", req.OrderID,
-        "dish_id", req.DishID,
-        "quantity", req.Quantity,
-        "order_name", req.OrderName)
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Request details - Order ID: %d, Set ID: %d, Quantity: %d, Order Name: %s", 
+        req.OrderID, req.SetID, req.Quantity, req.OrderName))
 
     // Basic validation with detailed logging
     if req.OrderID <= 0 {
-        h.logger.Error("golang/quanqr/order/order_handler.go Invalid order ID",
-            "provided_order_id", req.OrderID)
+        h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Invalid order ID: %d", req.OrderID))
         http.Error(w, "invalid order ID", http.StatusBadRequest)
         return
     }
-    if req.DishID <= 0 {
-        h.logger.Error("golang/quanqr/order/order_handler.go Invalid dish ID",
-            "provided_dish_id", req.DishID)
-        http.Error(w, "invalid dish ID", http.StatusBadRequest)
+    if req.SetID <= 0 {
+        h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Invalid set ID: %d", req.SetID))
+        http.Error(w, "invalid set ID", http.StatusBadRequest)
         return
     }
     if req.Quantity <= 0 {
-        h.logger.Error("golang/quanqr/order/order_handler.go Invalid quantity",
-            "provided_quantity", req.Quantity)
+        h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Invalid quantity: %d", req.Quantity))
         http.Error(w, "quantity must be positive", http.StatusBadRequest)
         return
     }
     if req.OrderName == "" {
-        h.logger.Error("golang/quanqr/order/order_handler.go Order name is required",
-            "provided_order_name", req.OrderName)
+        h.logger.Error("golang/quanqr/order/order_handler.go Order name is required")
         http.Error(w, "order name is required", http.StatusBadRequest)
         return
     }
 
     // Log successful validation
     h.logger.Info("golang/quanqr/order/order_handler.go Request validation successful")
-
-    // Convert request to protobuf format
-    pbReq := &order.CreateDishOrderItemWithOrderID{
-        OrderId:   req.OrderID,
-        DishId:    req.DishID,
-        Quantity:  req.Quantity,
-        OrderName: req.OrderName,
-    }
-
-    // Log before service call
-    h.logger.Info("golang/quanqr/order/order_handler.go Calling gRPC service AddingDishesToOrder",
-        "order_id", pbReq.OrderId,
-        "dish_id", pbReq.DishId,
-        "quantity", pbReq.Quantity,
-        "order_name", pbReq.OrderName)
-
-    response, err := h.client.AddingDishesToOrder(h.ctx, pbReq)
-    if err != nil {
-        if s, ok := status.FromError(err); ok {
-            h.logger.Error("golang/quanqr/order/order_handler.go gRPC service returned error",
-                "error_code", s.Code(),
-                "error_message", s.Message(),
-                "request_data", pbReq)
-            switch s.Code() {
-            case codes.InvalidArgument:
-                http.Error(w, s.Message(), http.StatusBadRequest)
-            default:
-                http.Error(w, "internal server error", http.StatusInternalServerError)
-            }
-        } else {
-            h.logger.Error("golang/quanqr/order/order_handler.go Non-gRPC error occurred",
-                "error", err.Error(),
-                "request_data", pbReq)
-            http.Error(w, "internal server error", http.StatusInternalServerError)
-        }
-        return
-    }
-
-    // Log successful response
-    h.logger.Info("golang/quanqr/order/order_handler.go Successfully received response from gRPC service",
-        "response_id", response.Id,
-        "dish_id", response.DishId,
-        "quantity", response.Quantity,
-        "order_name", response.OrderName,
-        "modification_type", response.ModificationType,
-        "modification_number", response.ModificationNumber)
-
-    // Convert response back to JSON format
-    result := OrderDish{
-        ID:                response.Id,
-        DishID:           response.DishId,
-        Quantity:         response.Quantity,
-        CreatedAt:        time.Unix(response.CreatedAt.GetSeconds(), int64(response.CreatedAt.GetNanos())),
-        UpdatedAt:        time.Unix(response.UpdatedAt.GetSeconds(), int64(response.UpdatedAt.GetNanos())),
-        OrderName:        response.OrderName,
-        ModificationType: response.ModificationType,
-        ModificationNumber: response.ModificationNumber,
-    }
-
-    // Send response
-    w.Header().Set("Content-Type", "application/json")
-    if err := json.NewEncoder(w).Encode(result); err != nil {
-        h.logger.Error("golang/quanqr/order/order_handler.go Error encoding response",
-            "error", err.Error(),
-            "result", result)
-        http.Error(w, "error encoding response", http.StatusInternalServerError)
-        return
-    }
-
-    // Log successful completion
-    h.logger.Info("golang/quanqr/order/order_handler.go Successfully completed AddingDishesToOrder request",
-        "order_id", req.OrderID,
-        "dish_id", req.DishID,
-        "response_id", result.ID)
-}
-
-func (h *OrderHandlerController) AddingSetToOrder(w http.ResponseWriter, r *http.Request) {
-    // Parse and validate the request body
-    var req CreateSetOrderItemWithOrderID
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        h.logger.Error("Error decoding request body: " + err.Error())
-        http.Error(w, "error decoding request body", http.StatusBadRequest)
-        return
-    }
-
-    // Basic validation
-    if req.OrderID <= 0 {
-        h.logger.Error("Invalid order ID")
-        http.Error(w, "invalid order ID", http.StatusBadRequest)
-        return
-    }
-    if req.SetID <= 0 {
-        h.logger.Error("Invalid set ID")
-        http.Error(w, "invalid set ID", http.StatusBadRequest)
-        return
-    }
-    if req.Quantity <= 0 {
-        h.logger.Error("Invalid quantity")
-        http.Error(w, "quantity must be positive", http.StatusBadRequest)
-        return
-    }
-    if req.OrderName == "" {
-        h.logger.Error("Order name is required")
-        http.Error(w, "order name is required", http.StatusBadRequest)
-        return
-    }
 
     // Convert request to protobuf format
     pbReq := &order.CreateSetOrderItemWithOrderID{
@@ -1871,13 +1757,15 @@ func (h *OrderHandlerController) AddingSetToOrder(w http.ResponseWriter, r *http
         OrderName: req.OrderName,
     }
 
-    // Call the service
-    h.logger.Info(fmt.Sprintf("Adding set to order ID %d: set_id=%d, quantity=%d", 
-        req.OrderID, req.SetID, req.Quantity))
+    // Log before service call
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Calling gRPC service AddingSetToOrder - Order ID: %d, Set ID: %d, Quantity: %d, Order Name: %s",
+        pbReq.OrderId, pbReq.SetId, pbReq.Quantity, pbReq.OrderName))
+
     response, err := h.client.AddingSetToOrder(h.ctx, pbReq)
     if err != nil {
-        h.logger.Error("Error adding set to order: " + err.Error())
         if s, ok := status.FromError(err); ok {
+            h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go gRPC service returned error - Code: %s, Message: %s",
+                s.Code(), s.Message()))
             switch s.Code() {
             case codes.InvalidArgument:
                 http.Error(w, s.Message(), http.StatusBadRequest)
@@ -1885,10 +1773,15 @@ func (h *OrderHandlerController) AddingSetToOrder(w http.ResponseWriter, r *http
                 http.Error(w, "internal server error", http.StatusInternalServerError)
             }
         } else {
+            h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Non-gRPC error occurred: %s", err.Error()))
             http.Error(w, "internal server error", http.StatusInternalServerError)
         }
         return
     }
+
+    // Log successful response
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Successfully received response from gRPC service - Set ID: %d, Quantity: %d, Order Name: %s, Modification Type: %s, Modification Number: %d, Total Dishes: %d",
+        response.Set.Id, response.Set.Quantity, response.Set.OrderName, response.Set.ModificationType, response.Set.ModificationNumber, len(response.Dishes)))
 
     // Convert response back to JSON format
     result := ResponseSetOrderItemWithOrderID{
@@ -1916,13 +1809,123 @@ func (h *OrderHandlerController) AddingSetToOrder(w http.ResponseWriter, r *http
             Image:       dish.Image,
             Status:      dish.Status,
         }
+        
+        // Log each dish details (optional, might be too verbose)
+        h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Set dish details [%d/%d] - Dish ID: %d, Name: %s, Quantity: %d", 
+            i+1, len(response.Dishes), dish.DishId, dish.Name, dish.Quantity))
     }
 
     // Send response
     w.Header().Set("Content-Type", "application/json")
     if err := json.NewEncoder(w).Encode(result); err != nil {
-        h.logger.Error("Error encoding response: " + err.Error())
+        h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Error encoding response: %s", err.Error()))
         http.Error(w, "error encoding response", http.StatusInternalServerError)
         return
     }
+
+    // Log successful completion
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Successfully completed AddingSetToOrder request - Order ID: %d, Set ID: %d, Response Set ID: %d", 
+        req.OrderID, req.SetID, result.Set.ID))
+}
+
+
+
+func (h *OrderHandlerController) AddingDishesToOrder(w http.ResponseWriter, r *http.Request) {
+    // Log the incoming request
+    h.logger.Info("golang/quanqr/order/order_handler.go Received AddingDishesToOrder request")
+
+    // Parse and validate the request body
+    var req CreateDishOrderItemWithOrderID
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Error decoding request body: %s", err.Error()))
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
+
+    // Log all input fields
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Request details - Order ID: %d, Dish ID: %d, Quantity: %d, Order Name: %s", 
+        req.OrderID, req.DishID, req.Quantity, req.OrderName))
+
+    // Basic validation with detailed logging
+    if req.OrderID <= 0 {
+        h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Invalid order ID: %d", req.OrderID))
+        http.Error(w, "invalid order ID", http.StatusBadRequest)
+        return
+    }
+    if req.DishID <= 0 {
+        h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Invalid dish ID: %d", req.DishID))
+        http.Error(w, "invalid dish ID", http.StatusBadRequest)
+        return
+    }
+    if req.Quantity <= 0 {
+        h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Invalid quantity: %d", req.Quantity))
+        http.Error(w, "quantity must be positive", http.StatusBadRequest)
+        return
+    }
+    if req.OrderName == "" {
+        h.logger.Error("golang/quanqr/order/order_handler.go Order name is required")
+        http.Error(w, "order name is required", http.StatusBadRequest)
+        return
+    }
+
+    // Log successful validation
+    h.logger.Info("golang/quanqr/order/order_handler.go Request validation successful")
+
+    // Convert request to protobuf format
+    pbReq := &order.CreateDishOrderItemWithOrderID{
+        OrderId:   req.OrderID,
+        DishId:    req.DishID,
+        Quantity:  req.Quantity,
+        OrderName: req.OrderName,
+    }
+
+    // Log before service call
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Calling gRPC service AddingDishesToOrder - Order ID: %d, Dish ID: %d, Quantity: %d, Order Name: %s",
+        pbReq.OrderId, pbReq.DishId, pbReq.Quantity, pbReq.OrderName))
+
+    response, err := h.client.AddingDishesToOrder(h.ctx, pbReq)
+    if err != nil {
+        if s, ok := status.FromError(err); ok {
+            h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go gRPC service returned error - Code: %s, Message: %s",
+                s.Code(), s.Message()))
+            switch s.Code() {
+            case codes.InvalidArgument:
+                http.Error(w, s.Message(), http.StatusBadRequest)
+            default:
+                http.Error(w, "internal server error", http.StatusInternalServerError)
+            }
+        } else {
+            h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Non-gRPC error occurred: %s", err.Error()))
+            http.Error(w, "internal server error", http.StatusInternalServerError)
+        }
+        return
+    }
+
+    // Log successful response
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Successfully received response from gRPC service - Response ID: %d, Dish ID: %d, Quantity: %d, Order Name: %s, Modification Type: %s, Modification Number: %d",
+        response.Id, response.DishId, response.Quantity, response.OrderName, response.ModificationType, response.ModificationNumber))
+
+    // Convert response back to JSON format
+    result := OrderDish{
+        ID:                response.Id,
+        DishID:           response.DishId,
+        Quantity:         response.Quantity,
+        CreatedAt:        time.Unix(response.CreatedAt.GetSeconds(), int64(response.CreatedAt.GetNanos())),
+        UpdatedAt:        time.Unix(response.UpdatedAt.GetSeconds(), int64(response.UpdatedAt.GetNanos())),
+        OrderName:        response.OrderName,
+        ModificationType: response.ModificationType,
+        ModificationNumber: response.ModificationNumber,
+    }
+
+    // Send response
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(result); err != nil {
+        h.logger.Error(fmt.Sprintf("golang/quanqr/order/order_handler.go Error encoding response: %s", err.Error()))
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        return
+    }
+
+    // Log successful completion
+    h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Successfully completed AddingDishesToOrder request - Order ID: %d, Dish ID: %d, Response ID: %d",
+        req.OrderID, req.DishID, result.ID))
 }

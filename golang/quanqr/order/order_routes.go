@@ -31,8 +31,8 @@ func RegisterOrderRoutes(r *chi.Mux, handler *OrderHandlerController) *chi.Mux {
                 r.Put("/MarkDishesDelivered", handler.MarkDishesDelivered)
 
 
-                r.Post("/adddishestoorder", handler.AddingSetsDishesOrder)
-                r.Post("/addsettoorder", handler.AddingSetsDishesOrder)
+                r.Post("/adddishestoorder", handler.AddingDishesToOrder)
+                r.Post("/addsettoorder", handler.AddingSetToOrder)
                 r.Put("/removesetsdishestoorder", handler.RemovingSetsDishesOrder)
             })
 
