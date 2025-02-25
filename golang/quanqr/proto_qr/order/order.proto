@@ -277,10 +277,7 @@ message OrderItemCount {
   int32 total_quantity = 4;
 }
 
-message OrderDetailedListResponse {
-  repeated OrderDetailedResponse data = 1;
-  PaginationInfo pagination = 2;
-}
+
 //adding data end
 
 // New message for dish deliveries
@@ -378,3 +375,7 @@ service OrderService {
 }
 
 
+message OrderDetailedListResponse {
+  repeated OrderDetailedResponseWithDelivery data = 1;
+  PaginationInfo pagination = 2;
+}

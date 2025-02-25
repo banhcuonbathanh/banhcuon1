@@ -1652,15 +1652,15 @@ func (h *OrderHandlerController) CreateOrder(w http.ResponseWriter, r *http.Requ
     }
 }
 // ToOrderDetailedResponseWithDeliveryFromPB converts protobuf OrderDetailedResponseWithDelivery to OrderDetailedResponse
-func ToOrderDetailedResponseWithDeliveryFromPB(pbRes *order.OrderDetailedResponseWithDelivery) OrderDetailedResponse {
-    response := OrderDetailedResponse{
+func ToOrderDetailedResponseWithDeliveryFromPB(pbRes *order.OrderDetailedResponseWithDelivery) OrderDetailedResponseWithDelivery {
+    response := OrderDetailedResponseWithDelivery{
         ID:                    pbRes.Id,
         GuestID:               pbRes.GuestId,
         UserID:                pbRes.UserId,
         TableNumber:           pbRes.TableNumber,
         OrderHandlerID:        pbRes.OrderHandlerId,
         Status:                pbRes.Status,
-        TotalPrice:            pbRes.TotalPrice,
+
         CreatedAt:             pbRes.CreatedAt.AsTime(),
         UpdatedAt:             pbRes.UpdatedAt.AsTime(),
         IsGuest:               pbRes.IsGuest,
@@ -1671,8 +1671,7 @@ func ToOrderDetailedResponseWithDeliveryFromPB(pbRes *order.OrderDetailedRespons
         TableToken:            pbRes.TableToken,
         OrderName:             pbRes.OrderName,
         CurrentVersion:        pbRes.CurrentVersion,
-        // ParentOrderID is not in the visible proto definition of OrderDetailedResponseWithDelivery
-        // but should be added if it's present in the real implementation
+        // ParentOrderID field is commented out in the proto and struct
         CurrentDeliveryStatus: DeliveryStatus(pbRes.CurrentDeliveryStatus.String()),
         TotalItemsDelivered:   pbRes.TotalItemsDelivered,
     }

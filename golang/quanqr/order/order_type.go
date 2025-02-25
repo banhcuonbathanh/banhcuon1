@@ -175,9 +175,7 @@ type OrderSetDetailed struct {
 // OrderVersionSummary matches OrderVersionSummary from proto
 type OrderVersionSummary struct {
 	VersionNumber     int32     `json:"version_number"`
-	TotalDishesCount  int32     `json:"total_dishes_count"`
-	TotalSetsCount    int32     `json:"total_sets_count"`
-	VersionTotalPrice int32     `json:"version_total_price"`
+
 	ModificationType  string    `json:"modification_type"`
 	ModifiedAt        time.Time `json:"modified_at"`
 	DishesOrdered     []OrderDetailedDish `json:"dishes_ordered"`
@@ -334,4 +332,39 @@ type CreateSetOrderItemWithOrderID struct {
 type ResponseSetOrderItemWithOrderID struct {
 	Set    OrderSet           `json:"set"`
 	Dishes []OrderDetailedDish `json:"dishes"`
+}
+
+
+type OrderDetailedResponseWithDelivery struct {
+	ID                   int64                 `json:"id"`
+	GuestID              int64                 `json:"guest_id"`
+	UserID               int64                 `json:"user_id"`
+	TableNumber          int64                 `json:"table_number"`
+	OrderHandlerID       int64                 `json:"order_handler_id"`
+	Status               string                `json:"status"`
+
+	CreatedAt            time.Time             `json:"created_at"`
+	UpdatedAt            time.Time             `json:"updated_at"`
+	// DataSet and DataDish are commented out in the proto
+	// DataSet              []OrderSetDetailed    `json:"data_set"`
+	// DataDish             []OrderDetailedDish   `json:"data_dish"`
+	IsGuest              bool                  `json:"is_guest"`
+	Topping              string                `json:"topping"`
+	TrackingOrder        string                `json:"tracking_order"`
+	TakeAway             bool                  `json:"take_away"`
+	ChiliNumber          int64                 `json:"chili_number"`
+	TableToken           string                `json:"table_token"`
+	OrderName            string                `json:"order_name"`
+	CurrentVersion       int32                 `json:"current_version"`
+	// ParentOrderID is commented out in the proto
+	// ParentOrderID        int64                 `json:"parent_order_id"`
+	VersionHistory       []OrderVersionSummary `json:"version_history"`
+	// TotalSummary is commented out in the proto
+	// TotalSummary         OrderTotalSummary     `json:"total_summary"`
+	
+	// New delivery-related fields
+	DeliveryHistory      []DishDelivery        `json:"delivery_history"`
+	CurrentDeliveryStatus DeliveryStatus       `json:"current_delivery_status"`
+	TotalItemsDelivered   int32                `json:"total_items_delivered"`
+	LastDeliveryAt        time.Time            `json:"last_delivery_at"`
 }
