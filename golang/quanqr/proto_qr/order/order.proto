@@ -138,7 +138,7 @@ message CreateOrderRequest {
   string table_token = 17;
   string order_name = 18;
   int32 version = 19;
-  int64 parent_order_id = 20;
+
 }
 
 // Updated UpdateOrderRequest with new fields
@@ -218,22 +218,22 @@ message FetchOrdersByCriteriaRequest {
 // Represents a summary of items in a specific order version
 message OrderVersionSummary {
   int32 version_number = 1;                // The version number of this summary
-  int32 total_dishes_count = 2;            // Total number of dishes in this version
-  int32 total_sets_count = 3;              // Total number of sets in this version
-  int32 version_total_price = 4;           // Total price for this version
+           // Total number of sets in this version
+          // Total price for this version
   string modification_type = 5;            // Type of modification (INITIAL, ADD, REMOVE, etc.)
   google.protobuf.Timestamp modified_at = 6; // When this version was created
-  repeated OrderItemChange changes = 7;     // Details of what changed in this version
+  repeated OrderDetailedDish dishes_ordered = 7;    
+  repeated OrderSetDetailed set_ordered = 8;  // Details of what changed in this version
 }
 
 // Represents changes made in a specific version
-message OrderItemChange {
-  string item_type = 1;        // Whether it's a "DISH" or "SET"
-  int64 item_id = 2;          // ID of the dish or set
-  string item_name = 3;       // Name of the dish or set
-  int32 quantity_changed = 4; // Positive for additions, negative for removals
-  int32 price = 5;           // Price of this item
-}
+// message OrderItemChange {
+//   string item_type = 1;        // Whether it's a "DISH" or "SET"
+//   int64 item_id = 2;          // ID of the dish or set
+//   string item_name = 3;       // Name of the dish or set
+//   int32 quantity_changed = 4; // Positive for additions, negative for removals
+//   int32 price = 5;           // Price of this item
+// }
 
 // Modified OrderDetailedResponse to include version summaries
 message OrderDetailedResponse {
@@ -244,8 +244,7 @@ message OrderDetailedResponse {
   int64 order_handler_id = 5;
   string status = 6;
   int32 total_price = 7;
-  repeated OrderSetDetailed data_set = 8;
-  repeated OrderDetailedDish data_dish = 9;
+
   bool is_guest = 10;
   string topping = 11;
   string tracking_order = 12;
@@ -336,8 +335,11 @@ message OrderDetailedResponseWithDelivery {
   int64 order_handler_id = 5;
   string status = 6;
   int32 total_price = 7;
-  repeated OrderSetDetailed data_set = 8;
-  repeated OrderDetailedDish data_dish = 9;
+
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  // repeated OrderSetDetailed data_set = 8;
+  // repeated OrderDetailedDish data_dish = 9;
   bool is_guest = 10;
   string topping = 11;
   string tracking_order = 12;
@@ -346,21 +348,21 @@ message OrderDetailedResponseWithDelivery {
   string table_token = 17;
   string order_name = 18;
   int32 current_version = 19;
-  int64 parent_order_id = 20;
+  // int64 parent_order_id = 20;
   
   repeated OrderVersionSummary version_history = 21;
-  OrderTotalSummary total_summary = 22;
+  // OrderTotalSummary total_summary = 22;
 
   // New delivery-related fields
   repeated DishDelivery delivery_history = 23;     // Complete delivery log
-  DeliveryStatus current_delivery_status = 24;     // Overall delivery status
-  int32 total_items_delivered = 25;                // Total items delivered
+   DeliveryStatus current_delivery_status = 24;     // Overall delivery status
+   int32 total_items_delivered = 25;                // Total items delivered
   google.protobuf.Timestamp last_delivery_at = 26; // Most recent delivery timestamp
 }
 // Service definition with new methods for modifications and deliveries
 service OrderService {
   rpc FetchOrdersByCriteria(FetchOrdersByCriteriaRequest) returns (OrderDetailedListResponse);
-  rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
+  rpc CreateOrder(CreateOrderRequest) returns (OrderDetailedResponseWithDelivery);
   rpc GetOrders(GetOrdersRequest) returns (OrderListResponse);
   rpc GetOrderDetail(OrderIdParam) returns (OrderResponse);
   rpc UpdateOrder(UpdateOrderRequest) returns (OrderDetailedListResponse);

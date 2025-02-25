@@ -22,7 +22,7 @@ func NewOrderService(orderRepo *OrderRepository) *OrderServiceStruct {
     }
 }
 
-func (os *OrderServiceStruct) CreateOrder(ctx context.Context, req *order.CreateOrderRequest) (*order.OrderResponse, error) {
+func (os *OrderServiceStruct) CreateOrder(ctx context.Context, req *order.CreateOrderRequest) (*order.OrderDetailedResponseWithDelivery, error) {
     os.logger.Info(fmt.Sprintf("Creating new order: %+v", req))
     
     createdOrder, err := os.orderRepo.CreateOrder(ctx, req)
@@ -32,11 +32,8 @@ func (os *OrderServiceStruct) CreateOrder(ctx context.Context, req *order.Create
     }
 
     os.logger.Info("Order created successfully. ID: " + fmt.Sprint(createdOrder.Id))
-    return &order.OrderResponse{
-        Data: createdOrder,
-    }, nil
+    return createdOrder, nil
 }
-
 func (os *OrderServiceStruct) GetOrders(ctx context.Context, req *order.GetOrdersRequest) (*order.OrderListResponse, error) {
     os.logger.Info("Fetching orders list with pagination")
     
@@ -196,9 +193,9 @@ func (os *OrderServiceStruct) AddingSetsDishesOrder(ctx context.Context, req *or
             latestVersion := latestOrder.VersionHistory[len(latestOrder.VersionHistory)-1]
             os.logger.Info(fmt.Sprintf(" [Order Service.AddingSetsDishesOrder] Version update details - Number: %d, Dishes: %d, Sets: %d, Price: %d, Type: %s",
                 latestVersion.VersionNumber,
-                latestVersion.TotalDishesCount,
-                latestVersion.TotalSetsCount,
-                latestVersion.VersionTotalPrice,
+                // latestVersion.TotalDishesCount,
+                // latestVersion.TotalSetsCount,
+                // latestVersion.VersionTotalPrice,
                 latestVersion.ModificationType))
         }
         
@@ -258,7 +255,7 @@ func (os *OrderServiceStruct) RemovingSetsDishesOrder(ctx context.Context, req *
             os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Version update - Number: %d, Type: %s, PriceImpact: %d",
                 latestVersion.VersionNumber,
                 latestVersion.ModificationType,
-                latestVersion.VersionTotalPrice))
+            ))
         }
 
         // Log post-removal summary

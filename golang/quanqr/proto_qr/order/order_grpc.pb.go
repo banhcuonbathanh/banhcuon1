@@ -40,7 +40,7 @@ const (
 // Service definition with new methods for modifications and deliveries
 type OrderServiceClient interface {
 	FetchOrdersByCriteria(ctx context.Context, in *FetchOrdersByCriteriaRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
-	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*OrderResponse, error)
+	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedResponseWithDelivery, error)
 	GetOrders(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*OrderListResponse, error)
 	GetOrderDetail(ctx context.Context, in *OrderIdParam, opts ...grpc.CallOption) (*OrderResponse, error)
 	UpdateOrder(ctx context.Context, in *UpdateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedListResponse, error)
@@ -71,9 +71,9 @@ func (c *orderServiceClient) FetchOrdersByCriteria(ctx context.Context, in *Fetc
 	return out, nil
 }
 
-func (c *orderServiceClient) CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*OrderResponse, error) {
+func (c *orderServiceClient) CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*OrderDetailedResponseWithDelivery, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OrderResponse)
+	out := new(OrderDetailedResponseWithDelivery)
 	err := c.cc.Invoke(ctx, OrderService_CreateOrder_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -188,7 +188,7 @@ func (c *orderServiceClient) AddingSetToOrder(ctx context.Context, in *CreateSet
 // Service definition with new methods for modifications and deliveries
 type OrderServiceServer interface {
 	FetchOrdersByCriteria(context.Context, *FetchOrdersByCriteriaRequest) (*OrderDetailedListResponse, error)
-	CreateOrder(context.Context, *CreateOrderRequest) (*OrderResponse, error)
+	CreateOrder(context.Context, *CreateOrderRequest) (*OrderDetailedResponseWithDelivery, error)
 	GetOrders(context.Context, *GetOrdersRequest) (*OrderListResponse, error)
 	GetOrderDetail(context.Context, *OrderIdParam) (*OrderResponse, error)
 	UpdateOrder(context.Context, *UpdateOrderRequest) (*OrderDetailedListResponse, error)
@@ -212,7 +212,7 @@ type UnimplementedOrderServiceServer struct{}
 func (UnimplementedOrderServiceServer) FetchOrdersByCriteria(context.Context, *FetchOrdersByCriteriaRequest) (*OrderDetailedListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchOrdersByCriteria not implemented")
 }
-func (UnimplementedOrderServiceServer) CreateOrder(context.Context, *CreateOrderRequest) (*OrderResponse, error) {
+func (UnimplementedOrderServiceServer) CreateOrder(context.Context, *CreateOrderRequest) (*OrderDetailedResponseWithDelivery, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOrder not implemented")
 }
 func (UnimplementedOrderServiceServer) GetOrders(context.Context, *GetOrdersRequest) (*OrderListResponse, error) {

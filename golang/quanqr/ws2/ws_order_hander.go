@@ -2,7 +2,7 @@ package ws2
 
 import (
 	"bytes"
-	"context"
+
 	"encoding/json"
 	order "english-ai-full/quanqr/order"
 	"fmt"
@@ -354,8 +354,8 @@ func (h *OrderMessageHandler) createOrder(payload interface{}) error {
     }
 
     // Create context with timeout
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
+    // ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    // defer cancel()
 
     // Serialize the order request to JSON
     orderReqJSON, err := json.Marshal(orderReq)
@@ -380,7 +380,7 @@ func (h *OrderMessageHandler) createOrder(payload interface{}) error {
 
     // Create the order
     w := NewResponseWriter()
-    h.orderHandler.CreateOrder2(w, r.WithContext(ctx))
+    // h.orderHandler.CreateOrder2(w, r.WithContext(ctx))
 
     if w.StatusCode != http.StatusCreated {
         return fmt.Errorf("error creating order: received status code %d", w.StatusCode)
