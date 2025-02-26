@@ -200,13 +200,7 @@ func (os *OrderServiceStruct) AddingSetsDishesOrder(ctx context.Context, req *or
         }
         
         // Log total summary for the order
-        if latestOrder.TotalSummary != nil {
-            os.logger.Info(fmt.Sprintf("[Order Service.AddingSetsDishesOrder] Order total summary - Versions: %d, Total Dishes: %d, Total Sets: %d, Total Price: %d",
-                latestOrder.TotalSummary.TotalVersions,
-                latestOrder.TotalSummary.TotalDishesOrdered,
-                latestOrder.TotalSummary.TotalSetsOrdered,
-                latestOrder.TotalSummary.CumulativeTotalPrice))
-        }
+   
     }
 
     return updatedOrderResponse, nil
@@ -259,12 +253,7 @@ func (os *OrderServiceStruct) RemovingSetsDishesOrder(ctx context.Context, req *
         }
 
         // Log post-removal summary
-        if latestOrder.TotalSummary != nil {
-            os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Post-removal summary - TotalDishes: %d, TotalSets: %d, TotalPrice: %d",
-                latestOrder.TotalSummary.TotalDishesOrdered,
-                latestOrder.TotalSummary.TotalSetsOrdered,
-                latestOrder.TotalSummary.CumulativeTotalPrice))
-        }
+    
     }
 
     return updatedOrderResponse, nil

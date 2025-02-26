@@ -161,8 +161,6 @@ func (or *OrderRepository) GetOrderSetItems(ctx context.Context, orderID int64) 
 // ----------------------------------
 
 func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pageSize int32) (*order.OrderDetailedListResponse, error) {
-    // or.logger.Info("Fetching detailed order list with pagination")
-    
     // Get total count for pagination
     countQuery := `SELECT COUNT(*) FROM orders`
     
@@ -192,8 +190,11 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
             COALESCE(o.tracking_order, '') as tracking_order,
             COALESCE(o.take_away, false) as take_away,
             COALESCE(o.chili_number, 0) as chili_number,
-              o.table_token,
-            COALESCE(o.order_name, '') as order_name
+            o.table_token,
+            COALESCE(o.order_name, '') as order_name,
+            COALESCE(o.current_version, 0) as current_version,
+            o.created_at,
+            o.updated_at
         FROM orders o
         ORDER BY o.created_at DESC
         LIMIT $1 OFFSET $2
@@ -206,22 +207,25 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
     }
     defer rows.Close()
 
-    var detailedOrders []*order.OrderDetailedResponse
+    var detailedOrders []*order.OrderDetailedResponseWithDelivery
     for rows.Next() {
-        var o order.OrderDetailedResponse
+        var o order.OrderDetailedResponseWithDelivery
         
         // Create nullable variables for fields that can be NULL
         var (
-            guestId        sql.NullInt64
-            userId         sql.NullInt64
-            tableNumber    sql.NullInt64
-            orderHandlerId sql.NullInt64
-            totalPrice     sql.NullInt32
-            status         sql.NullString
-            topping       sql.NullString
-            trackingOrder     sql.NullString
-            chiliNumber    sql.NullInt64
-            orderName      sql.NullString
+            guestId         sql.NullInt64
+            userId          sql.NullInt64
+            tableNumber     sql.NullInt64
+            orderHandlerId  sql.NullInt64
+            totalPrice      sql.NullInt32
+            status          sql.NullString
+            topping         sql.NullString
+            trackingOrder   sql.NullString
+            chiliNumber     sql.NullInt64
+            orderName       sql.NullString
+            currentVersion  sql.NullInt32
+            createdAt       sql.NullTime
+            updatedAt       sql.NullTime
         )
 
         err := rows.Scan(
@@ -239,6 +243,9 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
             &chiliNumber,
             &o.TableToken,
             &orderName,
+            &currentVersion,
+            &createdAt,
+            &updatedAt,
         )
         if err != nil {
             or.logger.Error("Error scanning order: " + err.Error())
@@ -276,128 +283,79 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
         if orderName.Valid {
             o.OrderName = orderName.String
         }
-        // Fetch detailed dish items
-        dishQuery := `
-            SELECT 
-                d.id,
-                doi.quantity,
-                d.name,
-                d.price,
-                d.description,
-                d.image,
-                d.status
-            FROM dish_order_items doi
-            JOIN dishes d ON doi.dish_id = d.id
-            WHERE doi.order_id = $1
-        `
-        dishRows, err := or.db.Query(ctx, dishQuery, o.Id)
-        if err != nil {
-            or.logger.Error("Error fetching dish details: " + err.Error())
-            return nil, fmt.Errorf("error fetching dish details: %w", err)
+        if currentVersion.Valid {
+            o.CurrentVersion = currentVersion.Int32
         }
-        defer dishRows.Close()
+        if createdAt.Valid {
+            o.CreatedAt = timestamppb.New(createdAt.Time)
+        }
+        if updatedAt.Valid {
+            o.UpdatedAt = timestamppb.New(updatedAt.Time)
+        }
+        
+        // Initialize delivery-related fields
+        o.DeliveryHistory = []*order.DishDelivery{}
+        o.TotalItemsDelivered = 0
+        
+        // Fetch order version history
+        versionQuery := `
+            SELECT 
+                version_number,
+                modification_type,
+                modified_at
+            FROM order_versions
+            WHERE order_id = $1
+            ORDER BY version_number
+        `
+        versionRows, err := or.db.Query(ctx, versionQuery, o.Id)
+        if err != nil {
+            or.logger.Error("Error fetching version history: " + err.Error())
+            return nil, fmt.Errorf("error fetching version history: %w", err)
+        }
+        defer versionRows.Close()
 
-        var dishItems []*order.OrderDetailedDish
-        for dishRows.Next() {
-            var dish order.OrderDetailedDish
-            err := dishRows.Scan(
-                &dish.DishId,
-                &dish.Quantity,
-                &dish.Name,
-                &dish.Price,
-                &dish.Description,
-                &dish.Image,
-                &dish.Status,
+        o.VersionHistory = []*order.OrderVersionSummary{}
+        for versionRows.Next() {
+            var version order.OrderVersionSummary
+            var modifiedAt time.Time
+            
+            err := versionRows.Scan(
+                &version.VersionNumber,
+                &version.ModificationType,
+                &modifiedAt,
             )
             if err != nil {
-                or.logger.Error("Error scanning dish detail: " + err.Error())
-                return nil, fmt.Errorf("error scanning dish detail: %w", err)
-            }
-            dishItems = append(dishItems, &dish)
-        }
-        // o.DataDish = dishItems
-
-        // Fetch detailed set items
-        setQuery := `
-            SELECT 
-                s.id,
-                s.name,
-                s.description,
-                s.user_id,
-                s.is_favourite,
-                s.is_public,
-                s.image,
-                s.price,
-                soi.quantity,
-                s.created_at,
-                s.updated_at
-            FROM set_order_items soi
-            JOIN sets s ON soi.set_id = s.id
-            WHERE soi.order_id = $1
-        `
-        setRows, err := or.db.Query(ctx, setQuery, o.Id)
-        if err != nil {
-            or.logger.Error("Error fetching set details: " + err.Error())
-            return nil, fmt.Errorf("error fetching set details: %w", err)
-        }
-        defer setRows.Close()
-
-        var setItems []*order.OrderSetDetailed
-        for setRows.Next() {
-            var set order.OrderSetDetailed
-            var createdAt, updatedAt time.Time
-            var userID sql.NullInt32
-            
-            err := setRows.Scan(
-                &set.Id,
-                &set.Name,
-                &set.Description,
-                &userID,
-                &set.IsFavourite,
-                &set.IsPublic,
-                &set.Image,
-                &set.Price,
-                &set.Quantity,
-                &createdAt,
-                &updatedAt,
-            )
-            if err != nil {
-                or.logger.Error("Error scanning set detail: " + err.Error())
-                return nil, fmt.Errorf("error scanning set detail: %w", err)
-            }
-
-            if userID.Valid {
-                set.UserId = userID.Int32
+                or.logger.Error("Error scanning version history: " + err.Error())
+                return nil, fmt.Errorf("error scanning version history: %w", err)
             }
             
-            set.CreatedAt = timestamppb.New(createdAt)
-            set.UpdatedAt = timestamppb.New(updatedAt)
-
-            // Fetch dishes for this set
-            setDishQuery := `
+            version.ModifiedAt = timestamppb.New(modifiedAt)
+            
+            // Fetch dishes for this version
+            versionDishQuery := `
                 SELECT 
                     d.id,
-                    sd.quantity,
+                    vd.quantity,
                     d.name,
                     d.price,
                     d.description,
                     d.image,
                     d.status
-                FROM set_dishes sd
-                JOIN dishes d ON sd.dish_id = d.id
-                WHERE sd.set_id = $1
+                FROM version_dishes vd
+                JOIN dishes d ON vd.dish_id = d.id
+                WHERE vd.order_id = $1 AND vd.version_number = $2
             `
-            setDishRows, err := or.db.Query(ctx, setDishQuery, set.Id)
+            versionDishRows, err := or.db.Query(ctx, versionDishQuery, o.Id, version.VersionNumber)
             if err != nil {
-                or.logger.Error("Error fetching set dish details: " + err.Error())
-                return nil, fmt.Errorf("error fetching set dish details: %w", err)
+                or.logger.Error("Error fetching version dish details: " + err.Error())
+                return nil, fmt.Errorf("error fetching version dish details: %w", err)
             }
-            defer setDishRows.Close()
+            defer versionDishRows.Close()
 
-            var setDishes []*order.OrderDetailedDish
-            for setDishRows.Next() {
+            var versionDishes []*order.OrderDetailedDish
+            for versionDishRows.Next() {
                 var dish order.OrderDetailedDish
-                err := setDishRows.Scan(
+                err := versionDishRows.Scan(
                     &dish.DishId,
                     &dish.Quantity,
                     &dish.Name,
@@ -407,15 +365,249 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
                     &dish.Status,
                 )
                 if err != nil {
-                    or.logger.Error("Error scanning set dish detail: " + err.Error())
-                    return nil, fmt.Errorf("error scanning set dish detail: %w", err)
+                    or.logger.Error("Error scanning version dish detail: " + err.Error())
+                    return nil, fmt.Errorf("error scanning version dish detail: %w", err)
                 }
-                setDishes = append(setDishes, &dish)
+                versionDishes = append(versionDishes, &dish)
             }
-            set.Dishes = setDishes
-            setItems = append(setItems, &set)
+            version.DishesOrdered = versionDishes
+            
+            // Fetch sets for this version
+            versionSetQuery := `
+                SELECT 
+                    s.id,
+                    s.name,
+                    s.description,
+                    s.user_id,
+                    s.is_favourite,
+                    s.is_public,
+                    s.image,
+                    s.price,
+                    vs.quantity,
+                    s.created_at,
+                    s.updated_at
+                FROM version_sets vs
+                JOIN sets s ON vs.set_id = s.id
+                WHERE vs.order_id = $1 AND vs.version_number = $2
+            `
+            versionSetRows, err := or.db.Query(ctx, versionSetQuery, o.Id, version.VersionNumber)
+            if err != nil {
+                or.logger.Error("Error fetching version set details: " + err.Error())
+                return nil, fmt.Errorf("error fetching version set details: %w", err)
+            }
+            defer versionSetRows.Close()
+
+            var versionSets []*order.OrderSetDetailed
+            for versionSetRows.Next() {
+                var set order.OrderSetDetailed
+                var setCreatedAt, setUpdatedAt time.Time
+                var userID sql.NullInt32
+                
+                err := versionSetRows.Scan(
+                    &set.Id,
+                    &set.Name,
+                    &set.Description,
+                    &userID,
+                    &set.IsFavourite,
+                    &set.IsPublic,
+                    &set.Image,
+                    &set.Price,
+                    &set.Quantity,
+                    &setCreatedAt,
+                    &setUpdatedAt,
+                )
+                if err != nil {
+                    or.logger.Error("Error scanning version set detail: " + err.Error())
+                    return nil, fmt.Errorf("error scanning version set detail: %w", err)
+                }
+
+                if userID.Valid {
+                    set.UserId = userID.Int32
+                }
+                
+                set.CreatedAt = timestamppb.New(setCreatedAt)
+                set.UpdatedAt = timestamppb.New(setUpdatedAt)
+                
+                // Fetch dishes for this set
+                setDishQuery := `
+                    SELECT 
+                        d.id,
+                        sd.quantity,
+                        d.name,
+                        d.price,
+                        d.description,
+                        d.image,
+                        d.status
+                    FROM set_dishes sd
+                    JOIN dishes d ON sd.dish_id = d.id
+                    WHERE sd.set_id = $1
+                `
+                setDishRows, err := or.db.Query(ctx, setDishQuery, set.Id)
+                if err != nil {
+                    or.logger.Error("Error fetching set dish details: " + err.Error())
+                    return nil, fmt.Errorf("error fetching set dish details: %w", err)
+                }
+                defer setDishRows.Close()
+
+                var setDishes []*order.OrderDetailedDish
+                for setDishRows.Next() {
+                    var dish order.OrderDetailedDish
+                    err := setDishRows.Scan(
+                        &dish.DishId,
+                        &dish.Quantity,
+                        &dish.Name,
+                        &dish.Price,
+                        &dish.Description,
+                        &dish.Image,
+                        &dish.Status,
+                    )
+                    if err != nil {
+                        or.logger.Error("Error scanning set dish detail: " + err.Error())
+                        return nil, fmt.Errorf("error scanning set dish detail: %w", err)
+                    }
+                    setDishes = append(setDishes, &dish)
+                }
+                set.Dishes = setDishes
+                versionSets = append(versionSets, &set)
+            }
+            version.SetOrdered = versionSets
+            
+            o.VersionHistory = append(o.VersionHistory, &version)
         }
-        // o.DataSet = setItems
+        
+        // Fetch delivery history
+        deliveryQuery := `
+            SELECT 
+                id,
+                order_id,
+                order_name,
+                guest_id,
+                user_id,
+                table_number,
+                quantity_delivered,
+                delivery_status,
+                delivered_at,
+                delivered_by_user_id,
+                created_at,
+                updated_at,
+                dish_id,
+                is_guest,
+                modification_number
+            FROM dish_deliveries
+            WHERE order_id = $1
+            ORDER BY delivered_at DESC
+        `
+        deliveryRows, err := or.db.Query(ctx, deliveryQuery, o.Id)
+        if err != nil {
+            or.logger.Error("Error fetching delivery history: " + err.Error())
+            return nil, fmt.Errorf("error fetching delivery history: %w", err)
+        }
+        defer deliveryRows.Close()
+
+        totalDelivered := int32(0)
+        var lastDeliveryAt time.Time
+        
+        for deliveryRows.Next() {
+            var delivery order.DishDelivery
+            var (
+                deliveredAt, createdAt, updatedAt sql.NullTime
+                guestId, userId, tableNumber, deliveredById, dishId sql.NullInt64
+                orderName sql.NullString
+                quantityDelivered sql.NullInt32
+                deliveryStatus sql.NullString
+                modificationNumber sql.NullInt32
+            )
+            
+            err := deliveryRows.Scan(
+                &delivery.Id,
+                &delivery.OrderId,
+                &orderName,
+                &guestId,
+                &userId,
+                &tableNumber,
+                &quantityDelivered,
+                &deliveryStatus,
+                &deliveredAt,
+                &deliveredById,
+                &createdAt,
+                &updatedAt,
+                &dishId,
+                &delivery.IsGuest,
+                &modificationNumber,
+            )
+            if err != nil {
+                or.logger.Error("Error scanning delivery history: " + err.Error())
+                return nil, fmt.Errorf("error scanning delivery history: %w", err)
+            }
+            
+            if orderName.Valid {
+                delivery.OrderName = orderName.String
+            }
+            if guestId.Valid {
+                delivery.GuestId = guestId.Int64
+            }
+            if userId.Valid {
+                delivery.UserId = userId.Int64
+            }
+            if tableNumber.Valid {
+                delivery.TableNumber = tableNumber.Int64
+            }
+            if quantityDelivered.Valid {
+                delivery.QuantityDelivered = quantityDelivered.Int32
+                totalDelivered += quantityDelivered.Int32
+            }
+            if deliveryStatus.Valid {
+                delivery.DeliveryStatus = deliveryStatus.String
+            }
+            if deliveredAt.Valid {
+                delivery.DeliveredAt = timestamppb.New(deliveredAt.Time)
+                lastDeliveryAt = deliveredAt.Time
+            }
+            if deliveredById.Valid {
+                delivery.DeliveredByUserId = deliveredById.Int64
+            }
+            if createdAt.Valid {
+                delivery.CreatedAt = timestamppb.New(createdAt.Time)
+            }
+            if updatedAt.Valid {
+                delivery.UpdatedAt = timestamppb.New(updatedAt.Time)
+            }
+            if dishId.Valid {
+                delivery.DishId = dishId.Int64
+            }
+            if modificationNumber.Valid {
+                delivery.ModificationNumber = modificationNumber.Int32
+            }
+            
+            o.DeliveryHistory = append(o.DeliveryHistory, &delivery)
+        }
+        
+        // Update delivery summary fields
+        o.TotalItemsDelivered = totalDelivered
+        if !lastDeliveryAt.IsZero() {
+            o.LastDeliveryAt = timestamppb.New(lastDeliveryAt)
+        }
+        
+        // Determine current delivery status based on history
+        if len(o.DeliveryHistory) == 0 {
+            o.CurrentDeliveryStatus = order.DeliveryStatus_PENDING
+        } else {
+            // Logic to determine overall delivery status
+            // This is a simplified example - adjust based on your business rules
+            allComplete := true
+            for _, delivery := range o.DeliveryHistory {
+                if delivery.DeliveryStatus != "DELIVERED" {
+                    allComplete = false
+                    break
+                }
+            }
+            
+            if allComplete {
+                o.CurrentDeliveryStatus = order.DeliveryStatus_FULLY_DELIVERED
+            } else {
+                o.CurrentDeliveryStatus = order.DeliveryStatus_PARTIALLY_DELIVERED
+            }
+        }
 
         detailedOrders = append(detailedOrders, &o)
     }
@@ -432,7 +624,6 @@ func (or *OrderRepository) GetOrderProtoListDetail(ctx context.Context, page, pa
 
     return response, nil
 }
-
 
 
 
@@ -1130,24 +1321,14 @@ func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrd
         }
     }
 
-    // Fetch detailed information
-    // detailedDishes, err := or.fetchDetailedDishes(ctx, tx, req.Id)
-    // if err != nil {
-    //     return nil, fmt.Errorf("error fetching detailed dishes: %w", err)
-    // }
-
-    // detailedSets, err := or.fetchDetailedSets(ctx, tx, req.Id)
-    // if err != nil {
-    //     return nil, fmt.Errorf("error fetching detailed sets: %w", err)
-    // }
-
     if err := tx.Commit(ctx); err != nil {
         or.logger.Error("Error committing transaction: " + err.Error())
         return nil, fmt.Errorf("error committing transaction: %w", err)
     }
 
+    // Create the response with OrderDetailedResponseWithDelivery instead of OrderDetailedResponse
     return &order.OrderDetailedListResponse{
-        Data: []*order.OrderDetailedResponse{
+        Data: []*order.OrderDetailedResponseWithDelivery{
             {
                 Id:             req.Id,
                 GuestId:        req.GuestId,
@@ -1156,8 +1337,6 @@ func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrd
                 OrderHandlerId: req.OrderHandlerId,
                 Status:         req.Status,
                 TotalPrice:     req.TotalPrice,
-                // DataSet:        detailedSets,
-                // DataDish:       detailedDishes,
                 IsGuest:        req.IsGuest,
                 Topping:        req.Topping,
                 TrackingOrder:  req.TrackingOrder,
@@ -1165,8 +1344,17 @@ func (or *OrderRepository) UpdateOrder(ctx context.Context, req *order.UpdateOrd
                 ChiliNumber:    req.ChiliNumber,
                 TableToken:     req.TableToken,
                 OrderName:      req.OrderName,
-                CurrentVersion:        newVersion,
-                ParentOrderId:  req.ParentOrderId,
+                CurrentVersion: newVersion,
+                // Parent order ID is no longer in the struct based on your schema
+                // ParentOrderId:  req.ParentOrderId,
+                CreatedAt:      timestamppb.New(createdAt),
+                UpdatedAt:      timestamppb.New(updatedAt),
+                // Initialize empty slices for the new fields
+                VersionHistory:       []*order.OrderVersionSummary{},
+                DeliveryHistory:      []*order.DishDelivery{},
+                CurrentDeliveryStatus: order.DeliveryStatus_PENDING,
+                TotalItemsDelivered:   0,
+                // LastDeliveryAt is omitted since there's no delivery yet
             },
         },
         Pagination: &order.PaginationInfo{
@@ -1828,19 +2016,14 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
         return nil, fmt.Errorf("error recording modification: %w", err)
     }
 
-
-    //     // Fetch version history
+    // Fetch version history
     versionHistory, err := or.fetchVersionHistory(ctx, tx, req.Id)
     if err != nil {
         or.logger.Error(fmt.Sprintf("[OrderRepository.AddingSetsDishesOrder] Error fetching version history: %s", err.Error()))
         return nil, fmt.Errorf("error fetching version history: %w", err)
     }
-    // Calculate new totals
-    totalSummary, err := or.calculateTotalSummary(ctx, tx, req.Id)
-    if err != nil {
-        or.logger.Error(fmt.Sprintf("[OrderRepository.AddingSetsDishesOrder] Total calculation failed: %s", err.Error()))
-        return nil, fmt.Errorf("error calculating totals: %w", err)
-    }
+    
+
 
     // Fetch updated items
     detailedDishes, err := or.fetchDetailedDishes(ctx, tx, req.Id)
@@ -1855,6 +2038,13 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
         return nil, fmt.Errorf("error fetching sets: %w", err)
     }
 
+    // Fetch delivery history - similar to FetchOrdersByCriteria
+    deliveryHistory, lastDeliveryAt, totalItemsDelivered, deliveryStatus, err := or.getOrderDeliveryHistory(ctx, req.Id)
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("[OrderRepository.AddingSetsDishesOrder] Error fetching delivery history: %s", err.Error()))
+        // Continue even if delivery history fails
+    }
+
     if err := tx.Commit(ctx); err != nil {
         or.logger.Error(fmt.Sprintf("[OrderRepository.AddingSetsDishesOrder] Commit failed: %s", err.Error()))
         return nil, fmt.Errorf("transaction commit failed: %w", err)
@@ -1863,8 +2053,11 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
     or.logger.Info(fmt.Sprintf("[OrderRepository.AddingSetsDishesOrder] Update successful. OrderID: %d, NewVersion: %d", 
         req.Id, newVersion))
 
+    // Create timestamps
+    nowProto := timestamppb.New(now)
+
     return &order.OrderDetailedListResponse{
-        Data: []*order.OrderDetailedResponse{
+        Data: []*order.OrderDetailedResponseWithDelivery{
             {
                 Id:             req.Id,
                 GuestId:        req.GuestId,
@@ -1873,7 +2066,6 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
                 OrderHandlerId: req.OrderHandlerId,
                 Status:         req.Status,
                 TotalPrice:     req.TotalPrice,
-     
                 IsGuest:        isGuest,
                 Topping:        req.Topping,
                 TrackingOrder:  req.TrackingOrder,
@@ -1881,10 +2073,18 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
                 ChiliNumber:    req.ChiliNumber,
                 TableToken:     req.TableToken,
                 OrderName:      req.OrderName,
-                ParentOrderId:  req.ParentOrderId,
+       
                 CurrentVersion: newVersion,
                 VersionHistory: versionHistory,
-                TotalSummary: totalSummary,
+             
+                // Add delivery-related fields
+                DeliveryHistory:       deliveryHistory,
+                LastDeliveryAt:        lastDeliveryAt,
+                TotalItemsDelivered:   totalItemsDelivered,
+                CurrentDeliveryStatus: deliveryStatus,
+                // Add timestamp fields
+                CreatedAt: nowProto,
+                UpdatedAt: nowProto,
             },
         },
         Pagination: &order.PaginationInfo{
@@ -1895,7 +2095,6 @@ func (or *OrderRepository) AddingSetsDishesOrder(ctx context.Context, req *order
         },
     }, nil
 }
-
 // new function remove set or dishes -------------------------- start 
 
 
@@ -2008,11 +2207,8 @@ func (or *OrderRepository) RemovingSetsDishesOrder(ctx context.Context, req *ord
         return nil, fmt.Errorf("error fetching version history: %w", err)
     }
 
-    totalSummary, err := or.calculateTotalSummary(ctx, tx, req.Id)
-    if err != nil {
-        or.logger.Error(fmt.Sprintf("[OrderRepository.RemovingSetsDishesOrder] Total calculation failed: %s", err.Error()))
-        return nil, fmt.Errorf("error calculating totals: %w", err)
-    }
+
+ 
 
     detailedDishes, err := or.fetchDetailedDishes(ctx, tx, req.Id)
     if err != nil {
@@ -2026,6 +2222,13 @@ func (or *OrderRepository) RemovingSetsDishesOrder(ctx context.Context, req *ord
         return nil, fmt.Errorf("error fetching sets: %w", err)
     }
 
+    // Fetch delivery history
+    deliveryHistory, lastDeliveryAt, totalItemsDelivered, deliveryStatus, err := or.getOrderDeliveryHistory(ctx, req.Id)
+    if err != nil {
+        or.logger.Error(fmt.Sprintf("[OrderRepository.RemovingSetsDishesOrder] Error fetching delivery history: %s", err.Error()))
+        // Continue even if delivery history fails
+    }
+
     if err := tx.Commit(ctx); err != nil {
         or.logger.Error(fmt.Sprintf("[OrderRepository.RemovingSetsDishesOrder] Commit failed: %s", err.Error()))
         return nil, fmt.Errorf("transaction commit failed: %w", err)
@@ -2034,8 +2237,11 @@ func (or *OrderRepository) RemovingSetsDishesOrder(ctx context.Context, req *ord
     or.logger.Info(fmt.Sprintf("[OrderRepository.RemovingSetsDishesOrder] Removal successful. OrderID: %d, NewVersion: %d", 
         req.Id, newVersion))
 
+    // Create timestamps
+    nowProto := timestamppb.New(now)
+
     return &order.OrderDetailedListResponse{
-        Data: []*order.OrderDetailedResponse{
+        Data: []*order.OrderDetailedResponseWithDelivery{
             {
                 Id:             req.Id,
                 GuestId:        req.GuestId,
@@ -2044,7 +2250,6 @@ func (or *OrderRepository) RemovingSetsDishesOrder(ctx context.Context, req *ord
                 OrderHandlerId: req.OrderHandlerId,
                 Status:         req.Status,
                 TotalPrice:     req.TotalPrice,
-        
                 IsGuest:        isGuest,
                 Topping:        req.Topping,
                 TrackingOrder:  req.TrackingOrder,
@@ -2052,10 +2257,18 @@ func (or *OrderRepository) RemovingSetsDishesOrder(ctx context.Context, req *ord
                 ChiliNumber:    req.ChiliNumber,
                 TableToken:     req.TableToken,
                 OrderName:      req.OrderName,
-                ParentOrderId:  req.ParentOrderId,
+        
                 CurrentVersion: newVersion,
                 VersionHistory: versionHistory,
-                TotalSummary:   totalSummary,
+             
+                // Add delivery-related fields
+                DeliveryHistory:       deliveryHistory,
+                LastDeliveryAt:        lastDeliveryAt,
+                TotalItemsDelivered:   totalItemsDelivered,
+                CurrentDeliveryStatus: deliveryStatus,
+                // Add timestamp fields
+                CreatedAt: nowProto,
+                UpdatedAt: nowProto,
             },
         },
         Pagination: &order.PaginationInfo{
@@ -2066,8 +2279,6 @@ func (or *OrderRepository) RemovingSetsDishesOrder(ctx context.Context, req *ord
         },
     }, nil
 }
-
-
 
 
 
@@ -2365,109 +2576,6 @@ func getTableNumber(tableNumber sql.NullInt64) interface{} {
     }
     return nil
 }
-// 1. Add these methods to your OrderRepository
-// func (or *OrderRepository) fetchDeliveryHistory(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.DishDelivery, error) {
-//     rows, err := tx.Query(ctx, `
-//         SELECT 
-//             dd.id, 
-//             dd.order_id, 
-//             dd.order_name, 
-//             dd.guest_id, 
-//             dd.user_id, 
-//             dd.table_number,
-//             dd.dish_id, 
-//             dd.quantity_delivered, 
-//             dd.delivery_status, 
-//             dd.delivered_at,
-//             dd.delivered_by_user_id, 
-//             dd.is_guest, 
-//             dd.created_at, 
-//             dd.updated_at,
-//             dd.modification_number
-//         FROM dish_deliveries dd
-//         WHERE dd.order_id = $1
-//         ORDER BY dd.delivered_at`, orderID)
-//     if err != nil {
-//         return nil, fmt.Errorf("error fetching delivery history: %w", err)
-//     }
-//     defer rows.Close()
-
-//     deliveries := make([]*order.DishDelivery, 0) // Initialize as empty slice
-//     for rows.Next() {
-//         var (
-//             dd                  order.DishDelivery
-//             guestID            sql.NullInt64
-//             userID             sql.NullInt64
-//             tableNumber        sql.NullInt64
-//             dishID             int64
-//             quantityDelivered  int32
-//             deliveredAt        time.Time
-//             createdAt         time.Time
-//             updatedAt         time.Time
-//             modNumber         int32
-//         )
-//         err := rows.Scan(
-//             &dd.Id,
-//             &dd.OrderId,
-//             &dd.OrderName,
-//             &guestID,
-//             &userID,
-//             &tableNumber,
-//             &dishID,
-//             &quantityDelivered,
-//             &dd.DeliveryStatus,
-//             &deliveredAt,
-//             &dd.DeliveredByUserId,
-//             &dd.IsGuest,
-//             &createdAt,
-//             &updatedAt,
-//             &modNumber,
-//         )
-//         if err != nil {
-//             return nil, fmt.Errorf("error scanning delivery row: %w", err)
-//         }
-
-//         // Handle nullable fields using nullInt64ToProtoInt64
-//         dd.GuestId = nullInt64ToProtoInt64(guestID)
-//         dd.UserId = nullInt64ToProtoInt64(userID)
-//         dd.TableNumber = nullInt64ToProtoInt64(tableNumber)
-
-//         // Convert timestamps to protobuf format
-//         dd.DeliveredAt = timestamppb.New(deliveredAt)
-//         dd.CreatedAt = timestamppb.New(createdAt)
-//         dd.UpdatedAt = timestamppb.New(updatedAt)
-
-//         // Build DishOrderItem with delivery context
-//         dishItem := &order.DishOrderItem{
-//             Id:                 dd.Id,  // Using delivery ID as proxy
-//             DishId:             dishID,
-//             Quantity:           int64(quantityDelivered),
-//             CreatedAt:          timestamppb.New(createdAt),
-//             UpdatedAt:          timestamppb.New(updatedAt),
-//             OrderName:          dd.OrderName,
-//             ModificationType:   "DELIVER_ITEMS",  // Static type for deliveries
-//             ModificationNumber: modNumber,
-//         }
-//         fmt.Printf("Modification Number: 12121golang/quanqr/order/order_repository.go %d\n", modNumber)
-//         fmt.Printf(" int64(quantityDelivered): 12121golang/quanqr/order/order_repository.go %d\n",  int64(quantityDelivered))
-//         // fmt.Printf("Delivery Details:\n")
-//         // fmt.Printf("  ID: %d\n", dd.Id)
-//         // fmt.Printf("  Order ID: %d\n", dd.OrderId)
-//         // fmt.Printf("  Order Name: %s\n", dd.OrderName)
-//         // fmt.Printf("  Delivery Status: %s\n", dd.DeliveryStatus)
-//         // fmt.Printf("  Delivered At: %s\n", deliveredAt)
-//         // fmt.Printf("---------------------------\n")
-//         // fmt.Printf("Total deliveries found: %d\n", len(deliveries))
-//         dd.DishItems = []*order.DishOrderItem{dishItem}
-//         deliveries = append(deliveries, &dd)
-//     }
-    
-//     if err := rows.Err(); err != nil {
-//         return nil, fmt.Errorf("error after scanning rows: %w", err)
-//     }
-
-//     return deliveries, nil
-// }
 
 
 func (or *OrderRepository) calculateDeliveryStatus(ctx context.Context, tx pgx.Tx, orderID int64) (order.DeliveryStatus, int32, *time.Time, error) {
@@ -2583,149 +2691,6 @@ func nullInt64ToProtoInt64(n sql.NullInt64) int64 {
 
 
 
-// fetch version of delivery ------------ start 
-
-// The issue appears to be in how version history is being fetched and populated.
-// Here's the suggested fix for the fetchVersionHistory method:
-// func (or *OrderRepository) fetchVersionHistoryDelivery(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.OrderVersionSummary, error) {
-//     rows, err := tx.Query(ctx, `
-//         WITH version_items AS (
-//             -- Get dish items for each version
-//             SELECT 
-//                 modification_number,
-//                 COUNT(DISTINCT dish_id) as dish_count,
-//                 SUM(quantity * price) as total_price,
-//                 ARRAY_AGG(
-//                     json_build_object(
-//                         'item_type', 'DISH',
-//                         'item_id', dish_id,
-//                         'item_name', dish_name,
-//                         'quantity_changed', quantity,
-//                         'price', price
-//                     )
-//                 ) as changes
-//             FROM dish_order_items
-//             WHERE order_id = $1
-//             GROUP BY modification_number
-//         ),
-//         version_sets AS (
-//             -- Get set items for each version
-//             SELECT 
-//                 modification_number,
-//                 COUNT(DISTINCT set_id) as set_count,
-//                 SUM(quantity * price) as total_price,
-//                 ARRAY_AGG(
-//                     json_build_object(
-//                         'item_type', 'SET',
-//                         'item_id', set_id,
-//                         'item_name', set_name,
-//                         'quantity_changed', quantity,
-//                         'price', price
-//                     )
-//                 ) as changes
-//             FROM set_order_items
-//             WHERE order_id = $1
-//             GROUP BY modification_number
-//         ),
-//         delivery_items AS (
-//             -- Get delivery information for each version
-//             SELECT 
-//                 modification_number,
-//                 COUNT(DISTINCT dish_id) as delivered_count,
-//                 ARRAY_AGG(
-//                     json_build_object(
-//                         'item_type', 'DISH',
-//                         'item_id', dish_id,
-//                         'item_name', 'Delivered Item', -- You might want to join with dishes table to get actual name
-//                         'quantity_changed', quantity_delivered,
-//                         'price', 0 -- Deliveries don't affect price
-//                     )
-//                 ) as changes
-//             FROM dish_deliveries
-//             WHERE order_id = $1
-//             GROUP BY modification_number
-//         )
-//         SELECT 
-//             om.modification_number,
-//             COALESCE(vi.dish_count, 0) + COALESCE(di.delivered_count, 0) as total_dishes,
-//             COALESCE(vs.set_count, 0) as total_sets,
-//             COALESCE(vi.total_price, 0) + COALESCE(vs.total_price, 0) as version_total_price,
-//             om.modification_type,
-//             om.modified_at,
-//             COALESCE(
-//                 CASE 
-//                     WHEN om.modification_type = 'DELIVER_ITEMS' THEN di.changes
-//                     ELSE vi.changes || COALESCE(vs.changes, ARRAY[]::json[])
-//                 END,
-//                 ARRAY[]::json[]
-//             ) as changes
-//         FROM order_modifications om
-//         LEFT JOIN version_items vi ON om.modification_number = vi.modification_number
-//         LEFT JOIN version_sets vs ON om.modification_number = vs.modification_number
-//         LEFT JOIN delivery_items di ON om.modification_number = di.modification_number
-//         WHERE om.order_id = $1
-//         ORDER BY om.modification_number`)
-//     if err != nil {
-//         return nil, fmt.Errorf("error querying version history: %w", err)
-//     }
-//     defer rows.Close()
-
-//     var history []*order.OrderVersionSummary
-//     for rows.Next() {
-//         vh := &order.OrderVersionSummary{}
-//         var (
-//             modifiedAt time.Time
-//             changesJSON [][]byte // Will store JSON array of changes
-//         )
-        
-//         err := rows.Scan(
-//             &vh.VersionNumber,
-        
-//             &vh.ModificationType,
-//             &modifiedAt,
-//             &changesJSON,
-//         )
-//         if err != nil {
-//             return nil, fmt.Errorf("error scanning version history row: %w", err)
-//         }
-
-//         vh.ModifiedAt = timestamppb.New(modifiedAt)
-        
-//         // Convert JSON changes to OrderItemChange objects
-//         vh.Changes = make([]*order.OrderItemChange, 0, len(changesJSON))
-//         for _, changeJSON := range changesJSON {
-//             var change struct {
-//                 ItemType       string `json:"item_type"`
-//                 ItemID        int64  `json:"item_id"`
-//                 ItemName      string `json:"item_name"`
-//                 QuantityChanged int32  `json:"quantity_changed"`
-//                 Price        int32  `json:"price"`
-//             }
-            
-//             if err := json.Unmarshal(changeJSON, &change); err != nil {
-//                 return nil, fmt.Errorf("error unmarshaling change JSON: %w", err)
-//             }
-            
-//             vh.Changes = append(vh.Changes, &order.OrderItemChange{
-//                 ItemType:       change.ItemType,
-//                 ItemId:        change.ItemID,
-//                 ItemName:      change.ItemName,
-//                 QuantityChanged: change.QuantityChanged,
-//                 Price:         0,
-//             })
-//         }
-
-//         history = append(history, vh)
-//     }
-
-//     if err := rows.Err(); err != nil {
-//         return nil, fmt.Errorf("error after scanning rows: %w", err)
-//     }
-
-//     return history, nil
-// }
-// fetch version of delivery ------------- end 
-
 
 func (or *OrderRepository) fetchDeliveryHistory(ctx context.Context, tx pgx.Tx, orderID int64) ([]*order.DishDelivery, error) {
     rows, err := tx.Query(ctx, `
@@ -2805,18 +2770,8 @@ func (or *OrderRepository) fetchDeliveryHistory(ctx context.Context, tx pgx.Tx, 
         dd.QuantityDelivered = quantityDelivered
 
         // Build DishOrderItem with delivery context
-        dishItem := &order.DishOrderItem{
-            Id:                 dd.Id,
-            DishId:             dishID,
-            Quantity:           int64(quantityDelivered),
-            CreatedAt:          timestamppb.New(createdAt),
-            UpdatedAt:          timestamppb.New(updatedAt),
-            OrderName:          dd.OrderName,
-            ModificationType:   "DELIVER_ITEMS",
-            ModificationNumber: modNumber,
-        }
 
-        dd.DishItems = []*order.DishOrderItem{dishItem}
+
         deliveries = append(deliveries, &dd)
     }
     
@@ -3806,20 +3761,25 @@ func (or *OrderRepository) FetchOrdersByCriteria(ctx context.Context, req *order
 
     return response, nil
 }
-
-// Helper function to get order delivery history
 func (or *OrderRepository) getOrderDeliveryHistory(ctx context.Context, orderId int64) ([]*order.DishDelivery, *timestamppb.Timestamp, int32, order.DeliveryStatus, error) {
     // Query to get delivery history
     query := `
         SELECT 
             id,
             order_id,
-            dish_id,
-            dish_name,
-            quantity,
-            delivered_by_user_id,
+            order_name,
+            guest_id,
+            user_id,
+            table_number,
+            quantity_delivered,
+            delivery_status,
             delivered_at,
-            delivery_status
+            delivered_by_user_id,
+            created_at,
+            updated_at,
+            dish_id,
+            is_guest,
+            modification_number
         FROM 
             dish_deliveries
         WHERE 
@@ -3841,19 +3801,29 @@ func (or *OrderRepository) getOrderDeliveryHistory(ctx context.Context, orderId 
     
     for rows.Next() {
         var delivery order.DishDelivery
-        var deliveredAt time.Time
-        var status string
+        var deliveredAt, createdAt, updatedAt time.Time
         var deliveredByUserId sql.NullInt64
+        var guestId sql.NullInt64
+        var userId sql.NullInt64
+        var tableNumber sql.NullInt64
+        var isGuest sql.NullBool
         
         if err := rows.Scan(
             &delivery.Id,
             &delivery.OrderId,
-            &delivery.DishId,
-            &delivery.DishName,
-            &delivery.Quantity,
-            &deliveredByUserId,
+            &delivery.OrderName,
+            &guestId,
+            &userId,
+            &tableNumber,
+            &delivery.QuantityDelivered,
+            &delivery.DeliveryStatus,
             &deliveredAt,
-            &status,
+            &deliveredByUserId,
+            &createdAt,
+            &updatedAt,
+            &delivery.DishId,
+            &isGuest,
+            &delivery.ModificationNumber,
         ); err != nil {
             return nil, nil, 0, order.DeliveryStatus_PENDING, fmt.Errorf("error scanning delivery row: %w", err)
         }
@@ -3863,27 +3833,33 @@ func (or *OrderRepository) getOrderDeliveryHistory(ctx context.Context, orderId 
             delivery.DeliveredByUserId = deliveredByUserId.Int64
         }
         
-        delivery.DeliveredAt = timestamppb.New(deliveredAt)
-        
-        // Map string status to enum
-        switch strings.ToUpper(status) {
-        case "PENDING":
-            delivery.DeliveryStatus = order.DeliveryStatus_PENDING
-        case "IN_PROGRESS":
-            delivery.DeliveryStatus = order.DeliveryStatus_PARTIALLY_DELIVERED
-        case "DELIVERED":
-            delivery.DeliveryStatus = order.DeliveryStatus_DELIVERED
-            totalDelivered += delivery.Quantity
-        case "CANCELLED":
-            delivery.DeliveryStatus = order.DeliveryStatus_CANCELLED
-        default:
-            delivery.DeliveryStatus = order.DeliveryStatus_PENDING
+        if guestId.Valid {
+            delivery.GuestId = guestId.Int64
         }
+        
+        if userId.Valid {
+            delivery.UserId = userId.Int64
+        }
+        
+        if tableNumber.Valid {
+            delivery.TableNumber = tableNumber.Int64
+        }
+        
+        if isGuest.Valid {
+            delivery.IsGuest = isGuest.Bool
+        }
+        
+        delivery.DeliveredAt = timestamppb.New(deliveredAt)
+        delivery.CreatedAt = timestamppb.New(createdAt)
+        delivery.UpdatedAt = timestamppb.New(updatedAt)
+        
+        // Track total delivered
+        totalDelivered += delivery.QuantityDelivered
         
         // Track the latest delivery time and status
         if deliveredAt.After(lastDeliveryTime) {
             lastDeliveryTime = deliveredAt
-            lastStatus = status
+            lastStatus = delivery.DeliveryStatus
         }
         
         deliveries = append(deliveries, &delivery)
@@ -3916,4 +3892,3 @@ func (or *OrderRepository) getOrderDeliveryHistory(ctx context.Context, orderId 
     
     return deliveries, lastDeliveryTimestamp, totalDelivered, overallStatus, nil
 }
-// end of fetch or with criterial 

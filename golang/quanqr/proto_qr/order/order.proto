@@ -289,7 +289,7 @@ message DishDelivery {
   int64 guest_id = 4;
   int64 user_id = 5;
   int64 table_number = 6;
-  repeated DishOrderItem dish_items = 7;
+
   int32 quantity_delivered = 8;
   string delivery_status = 9;
   google.protobuf.Timestamp delivered_at = 10;
