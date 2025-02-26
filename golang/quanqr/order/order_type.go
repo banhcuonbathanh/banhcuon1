@@ -63,7 +63,7 @@ type DishDelivery struct {
 	GuestID            int64       `json:"guest_id,omitempty"`
 	UserID             int64       `json:"user_id,omitempty"`
 	TableNumber        int64       `json:"table_number,omitempty"`
-	DishItems          []OrderDish `json:"dish_items"`
+
 	QuantityDelivered  int32       `json:"quantity_delivered"`
 	DeliveryStatus     string      `json:"delivery_status"`
 	DeliveredAt        time.Time   `json:"delivered_at,omitempty"`
@@ -302,7 +302,7 @@ type CreateDishDeliveryRequestType struct {
 	GuestID           int64            `json:"guest_id,omitempty"`
 	UserID            int64            `json:"user_id,omitempty"`
 	TableNumber       int64            `json:"table_number,omitempty"`
-	DishItems         []CreateOrderDish `json:"dish_items"`
+DishID             int64       `json:"dish_id"`
 	QuantityDelivered int32            `json:"quantity_delivered"`
 	DeliveryStatus    string           `json:"delivery_status"`
 	DeliveredAt       time.Time        `json:"delivered_at,omitempty"`
@@ -367,4 +367,9 @@ type OrderDetailedResponseWithDelivery struct {
 	CurrentDeliveryStatus DeliveryStatus       `json:"current_delivery_status"`
 	TotalItemsDelivered   int32                `json:"total_items_delivered"`
 	LastDeliveryAt        time.Time            `json:"last_delivery_at"`
+}
+
+type OrderDetailedListResponseWithDelivery struct {
+	Data       []OrderDetailedResponseWithDelivery `json:"data"`
+	Pagination PaginationInfo          `json:"pagination"`
 }

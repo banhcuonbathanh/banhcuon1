@@ -2366,93 +2366,7 @@ func (or *OrderRepository) MarkDishesDelivered(ctx context.Context, req *order.C
     now := time.Now().UTC()
 
     // Process dish deliveries
-    for _, dish := range req.DishItems {
-        // Validate quantity
-        if dish.Quantity <= 0 {
-            or.logger.Error(fmt.Sprintf(
-                "[MarkDishesDelivered] Invalid quantity. DishID: %d, Qty: %d",
-                dish.DishId, dish.Quantity))
-            return nil, fmt.Errorf("invalid quantity for dish %d: must be positive", dish.DishId)
-        }
 
-        // Calculate net ordered quantity
-        var netQuantity int64
-        err = tx.QueryRow(ctx, `
-            SELECT COALESCE(SUM(
-                CASE modification_type
-                    WHEN 'ADDED' THEN quantity
-                    WHEN 'REMOVED' THEN -quantity
-                    ELSE quantity
-                END
-            ), 0)
-            FROM dish_order_items
-            WHERE order_id = $1 AND dish_id = $2`,
-            req.OrderId, dish.DishId).Scan(&netQuantity)
-        if err != nil {
-            or.logger.Error(fmt.Sprintf(
-                "[MarkDishesDelivered] Net quantity error. DishID: %d: %s",
-                dish.DishId, err.Error()))
-            return nil, fmt.Errorf("failed to calculate ordered quantity: %w", err)
-        }
-
-        if netQuantity <= 0 {
-            or.logger.Error(fmt.Sprintf(
-                "[MarkDishesDelivered] Dish not in order. DishID: %d",
-                dish.DishId))
-            return nil, fmt.Errorf("dish %d not found in order", dish.DishId)
-        }
-
-        // Calculate existing deliveries
-        var delivered int64
-        err = tx.QueryRow(ctx, `
-            SELECT COALESCE(SUM(quantity_delivered), 0)
-            FROM dish_deliveries
-            WHERE order_id = $1 AND dish_id = $2`,
-            req.OrderId, dish.DishId).Scan(&delivered)
-        if err != nil {
-            or.logger.Error(fmt.Sprintf(
-                "[MarkDishesDelivered] Delivery check error. DishID: %d: %s",
-                dish.DishId, err.Error()))
-            return nil, fmt.Errorf("failed to check existing deliveries: %w", err)
-        }
-
-        // Validate delivery quantity
-        remaining := netQuantity - delivered
-        if dish.Quantity > remaining {
-            or.logger.Error(fmt.Sprintf(
-                "[MarkDishesDelivered] Over-delivery. DishID: %d, Remaining: %d, Attempt: %d",
-                dish.DishId, remaining, dish.Quantity))
-            return nil, fmt.Errorf("cannot deliver %d of %d remaining for dish %d", 
-                dish.Quantity, remaining, dish.DishId)
-        }
-
-        // Insert delivery record
-        _, err = tx.Exec(ctx, `
-        INSERT INTO dish_deliveries (
-            order_id, order_name, guest_id, user_id, table_number,
-            dish_id, quantity_delivered, delivery_status, delivered_at,
-            delivered_by_user_id, modification_number, is_guest
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-        req.OrderId,
-        req.OrderName,
-        getNullableID(currentOrder.IsGuest, guestID),
-        getNullableID(!currentOrder.IsGuest, userID),
-        getTableNumber(tableNumber),
-        dish.DishId,
-        dish.Quantity,
-        deliveryStatus,
-        now,
-        req.UserId,
-        newVersion,
-        currentOrder.IsGuest, // Added is_guest field which is required by schema
-    )
-        if err != nil {
-            or.logger.Error(fmt.Sprintf(
-                "[MarkDishesDelivered] Delivery insert failed. DishID: %d: %s",
-                dish.DishId, err.Error()))
-            return nil, fmt.Errorf("failed to record delivery: %w", err)
-        }
-    }
 
     // Update order version
     _, err = tx.Exec(ctx, `
@@ -3062,7 +2976,7 @@ func (or *OrderRepository) AddingSetToOrder(ctx context.Context, req *order.Crea
 
 // create order start 
 func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrderRequest) (*order.OrderDetailedResponseWithDelivery, error) {
-    or.logger.Info(fmt.Sprintf("Creating new order: %+v", req))
+    or.logger.Info(fmt.Sprintf("golang/quanqr/order/order_repository.go Creating new order: %+v", req))
     
     tx, err := or.db.Begin(ctx)
     if err != nil {
@@ -3114,7 +3028,7 @@ func (or *OrderRepository) CreateOrder(ctx context.Context, req *order.CreateOrd
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         RETURNING id, created_at, updated_at
     `
-    or.logger.Info("Executing order insertion")
+
     var orderId int64
     var createdAt, updatedAt time.Time
 
@@ -3892,3 +3806,177 @@ func (or *OrderRepository) getOrderDeliveryHistory(ctx context.Context, orderId 
     
     return deliveries, lastDeliveryTimestamp, totalDelivered, overallStatus, nil
 }
+
+// add delivery to order start
+
+func (or *OrderRepository) AddingDishesDeliveryToOrder(ctx context.Context, req *order.CreateDishDeliveryRequest) (*order.DishDelivery, error) {
+    or.logger.Info("Adding dish delivery to order repository golang/quanqr/order/order_repository.go")
+
+    // SQL query to insert a new dish delivery
+    query := `
+        INSERT INTO dish_deliveries (
+            order_id,
+            order_name,
+            guest_id, 
+            user_id,
+            table_number,
+            dish_id,
+            quantity_delivered,
+            delivery_status,
+            delivered_at,
+            delivered_by_user_id,
+            created_at,
+            updated_at,
+            is_guest,
+            modification_number
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+            (SELECT COALESCE(MAX(modification_number), 0) + 1 FROM dish_deliveries WHERE order_id = $1)
+        ) RETURNING 
+            id, 
+            order_id,
+            order_name,
+            guest_id, 
+            user_id,
+            table_number, 
+            dish_id,
+            quantity_delivered,
+            delivery_status,
+            delivered_at,
+            delivered_by_user_id,
+            created_at,
+            updated_at,
+            is_guest,
+            modification_number
+    `
+
+    // Current time for created_at/updated_at if not provided
+    now := time.Now()
+    createdAt := now
+    updatedAt := now
+    deliveredAt := now
+
+    // Use provided timestamps if available
+    if req.CreatedAt != nil {
+        createdAt = req.CreatedAt.AsTime()
+    }
+    if req.UpdatedAt != nil {
+        updatedAt = req.UpdatedAt.AsTime()
+    }
+    if req.DeliveredAt != nil {
+        deliveredAt = req.DeliveredAt.AsTime()
+    }
+
+    // Execute the query
+    row := or.db.QueryRow(
+        ctx,
+        query,
+        req.OrderId,
+        req.OrderName,
+        sql.NullInt64{Int64: req.GuestId, Valid: req.GuestId != 0},
+        sql.NullInt64{Int64: req.UserId, Valid: req.UserId != 0},
+        sql.NullInt64{Int64: req.TableNumber, Valid: req.TableNumber != 0},
+        req.DishId,
+        req.QuantityDelivered,
+        req.DeliveryStatus,
+        deliveredAt,
+        sql.NullInt64{Int64: req.DeliveredByUserId, Valid: req.DeliveredByUserId != 0},
+        createdAt,
+        updatedAt,
+        req.IsGuest,
+    )
+
+    // Prepare response
+    var delivery order.DishDelivery
+    var guestId, userId, tableNumber, deliveredByUserId sql.NullInt64
+
+    // Scan the result into the response
+    err := row.Scan(
+        &delivery.Id,
+        &delivery.OrderId,
+        &delivery.OrderName,
+        &guestId,
+        &userId,
+        &tableNumber,
+        &delivery.DishId,
+        &delivery.QuantityDelivered,
+        &delivery.DeliveryStatus,
+        &deliveredAt,
+        &deliveredByUserId,
+        &createdAt,
+        &updatedAt,
+        &delivery.IsGuest,
+        &delivery.ModificationNumber,
+    )
+    if err != nil {
+        or.logger.Error("Error inserting dish delivery: " + err.Error())
+        return nil, fmt.Errorf("error inserting dish delivery: %w", err)
+    }
+
+    // Handle NULL values
+    if guestId.Valid {
+        delivery.GuestId = guestId.Int64
+    }
+    if userId.Valid {
+        delivery.UserId = userId.Int64
+    }
+    if tableNumber.Valid {
+        delivery.TableNumber = tableNumber.Int64
+    }
+    if deliveredByUserId.Valid {
+        delivery.DeliveredByUserId = deliveredByUserId.Int64
+    }
+
+    // Set timestamps in protobuf format
+    delivery.DeliveredAt = timestamppb.New(deliveredAt)
+    delivery.CreatedAt = timestamppb.New(createdAt)
+    delivery.UpdatedAt = timestamppb.New(updatedAt)
+
+    // Update order status based on delivery (optional, depending on business logic)
+    if err := or.updateOrderDeliveryStatus(ctx, req.OrderId); err != nil {
+        or.logger.Error("Error updating order delivery status: " + err.Error())
+        // Continue despite the error, as the delivery was created successfully
+    }
+
+    return &delivery, nil
+}
+
+// Helper function to update the order's delivery status
+func (or *OrderRepository) updateOrderDeliveryStatus(ctx context.Context, orderId int64) error {
+    // This function would implement business logic to update the order's status
+    // based on the deliveries. For example, checking if all items are delivered,
+    // and updating the order status accordingly.
+    // 
+    // Implementing full logic would require knowledge of additional database
+    // schema details and business rules.
+    
+    // Placeholder implementation that could be expanded
+    query := `
+        WITH order_items AS (
+            SELECT SUM(quantity) as total_items
+            FROM order_items
+            WHERE order_id = $1
+        ),
+        delivered_items AS (
+            SELECT SUM(quantity_delivered) as total_delivered
+            FROM dish_deliveries
+            WHERE order_id = $1
+        )
+        UPDATE orders
+        SET status = CASE
+            WHEN d.total_delivered >= o.total_items THEN 'Delivered'
+            WHEN d.total_delivered > 0 THEN 'Partially Delivered'
+            ELSE status
+        END
+        FROM order_items o, delivered_items d
+        WHERE id = $1
+    `
+    
+    _, err := or.db.Exec(ctx, query, orderId)
+    if err != nil {
+        return fmt.Errorf("error updating order status: %w", err)
+    }
+    
+    return nil
+}
+// add delivery to to order end

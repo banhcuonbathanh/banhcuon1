@@ -5,9 +5,11 @@ import (
 	"english-ai-full/logger"
 	"english-ai-full/quanqr/proto_qr/order"
 	"fmt"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 type OrderServiceStruct struct {
     orderRepo *OrderRepository
@@ -189,15 +191,7 @@ func (os *OrderServiceStruct) AddingSetsDishesOrder(ctx context.Context, req *or
             latestOrder.Id, latestOrder.Status, latestOrder.CurrentVersion, latestOrder.TotalPrice))
         
         // Log version history if available
-        if len(latestOrder.VersionHistory) > 0 {
-            latestVersion := latestOrder.VersionHistory[len(latestOrder.VersionHistory)-1]
-            os.logger.Info(fmt.Sprintf(" [Order Service.AddingSetsDishesOrder] Version update details - Number: %d, Dishes: %d, Sets: %d, Price: %d, Type: %s",
-                latestVersion.VersionNumber,
-                // latestVersion.TotalDishesCount,
-                // latestVersion.TotalSetsCount,
-                // latestVersion.VersionTotalPrice,
-                latestVersion.ModificationType))
-        }
+ 
         
         // Log total summary for the order
    
@@ -243,14 +237,7 @@ func (os *OrderServiceStruct) RemovingSetsDishesOrder(ctx context.Context, req *
         os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Successfully removed items - OrderID: %d, NewVersion: %d, TotalPrice: %d",
             latestOrder.Id, latestOrder.CurrentVersion, latestOrder.TotalPrice))
 
-        // Log version history changes
-        if len(latestOrder.VersionHistory) > 0 {
-            latestVersion := latestOrder.VersionHistory[len(latestOrder.VersionHistory)-1]
-            os.logger.Info(fmt.Sprintf("[Order Service.RemovingSetsDishesOrder] Version update - Number: %d, Type: %s, PriceImpact: %d",
-                latestVersion.VersionNumber,
-                latestVersion.ModificationType,
-            ))
-        }
+    
 
         // Log post-removal summary
     
@@ -262,8 +249,7 @@ func (os *OrderServiceStruct) RemovingSetsDishesOrder(ctx context.Context, req *
 
 func (os *OrderServiceStruct) MarkDishesDelivered(ctx context.Context, req *order.CreateDishDeliveryRequest) (*order.OrderDetailedResponseWithDelivery, error) {
     // Log initiation with delivery context
-    os.logger.Info(fmt.Sprintf("[OrderService.MarkDishesDelivered] Init OrderID: %d, User: %d, Items: %d",
-        req.OrderId, req.DeliveredByUserId, len(req.DishItems)))
+
 
     // Validate required fields
     if req.OrderId == 0 {
@@ -276,21 +262,9 @@ func (os *OrderServiceStruct) MarkDishesDelivered(ctx context.Context, req *orde
         return nil, status.Error(codes.InvalidArgument, "delivery user ID required")
     }
 
-    if len(req.DishItems) == 0 {
-        os.logger.Warning(fmt.Sprintf("[OrderService.MarkDishesDelivered] Empty delivery OrderID: %d", req.OrderId))
-        return nil, status.Error(codes.InvalidArgument, "at least one dish required")
-    }
 
-    // Validate dish quantities
-    var totalItems int32
-    for _, dish := range req.DishItems {
-        if dish.Quantity <= 0 {
-            os.logger.Error(fmt.Sprintf("[OrderService.MarkDishesDelivered] Invalid quantity %d DishID: %d",
-                dish.Quantity, dish.DishId))
-            return nil, status.Errorf(codes.InvalidArgument, "invalid quantity for dish %d", dish.DishId)
-        }
-        totalItems += int32(dish.Quantity)
-    }
+
+
 
     // Execute delivery operation
     deliveryResponse, err := os.orderRepo.MarkDishesDelivered(ctx, req)
@@ -372,3 +346,63 @@ func (os *OrderServiceStruct) AddingSetToOrder(ctx context.Context, req *order.C
 }
 
 // new end 
+
+// start of AddingDishesDeliveryToOrder
+
+func (os *OrderServiceStruct) AddingDishesDeliveryToOrder(ctx context.Context, req *order.CreateDishDeliveryRequest) (*order.DishDelivery, error) {
+    os.logger.Info(fmt.Sprintf("Service: Adding dish delivery to order ID %d: dish_id=%d, quantity_delivered=%d", 
+        req.OrderId, req.DishId, req.QuantityDelivered))
+
+    // Validate input parameters
+    if req.OrderId <= 0 {
+        return nil, status.Errorf(codes.InvalidArgument, "invalid order ID")
+    }
+    if req.DishId <= 0 {
+        return nil, status.Errorf(codes.InvalidArgument, "invalid dish ID")
+    }
+    if req.QuantityDelivered <= 0 {
+        return nil, status.Errorf(codes.InvalidArgument, "quantity delivered must be positive")
+    }
+    if req.OrderName == "" {
+        return nil, status.Errorf(codes.InvalidArgument, "order name is required")
+    }
+    if req.DeliveryStatus == "" {
+        return nil, status.Errorf(codes.InvalidArgument, "delivery status is required")
+    }
+
+    // Validate delivery status value
+    validStatus := map[string]bool{
+        "PENDING":            true,
+        "IN_PROGRESS":        true,
+        "PARTIALLY_DELIVERED": true,
+        "FULLY_DELIVERED":    true,
+        "DELIVERED":          true,
+        "CANCELLED":          true,
+    }
+    if !validStatus[strings.ToUpper(req.DeliveryStatus)] {
+        return nil, status.Errorf(codes.InvalidArgument, "invalid delivery status")
+    }
+
+    // Set timestamps if not provided
+    now := timestamppb.Now()
+    if req.CreatedAt == nil {
+        req.CreatedAt = now
+    }
+    if req.UpdatedAt == nil {
+        req.UpdatedAt = now
+    }
+    if req.DeliveredAt == nil {
+        req.DeliveredAt = now
+    }
+
+    // Call repository method
+    response, err := os.orderRepo.AddingDishesDeliveryToOrder(ctx, req)
+    if err != nil {
+        os.logger.Error(fmt.Sprintf("Error adding dish delivery to order: %v", err))
+        return nil, status.Errorf(codes.Internal, "failed to add dish delivery to order: %v", err)
+    }
+
+    os.logger.Info(fmt.Sprintf("Successfully added dish delivery to order ID %d", req.OrderId))
+    return response, nil
+}
+// end of AddingDishesDeliveryToOrder

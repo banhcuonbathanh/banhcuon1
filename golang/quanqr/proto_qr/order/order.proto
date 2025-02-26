@@ -307,7 +307,7 @@ message CreateDishDeliveryRequest {
   int64 guest_id = 4;
   int64 user_id = 5;
   int64 table_number = 6;
-  repeated CreateDishOrderItem dish_items = 7;
+  int64 dish_id = 7;
   int32 quantity_delivered = 8;
   string delivery_status = 9;
   google.protobuf.Timestamp delivered_at = 10;
@@ -372,6 +372,8 @@ service OrderService {
 
   rpc AddingDishesToOrder(CreateDishOrderItemWithOrderID) returns (DishOrderItem);
   rpc AddingSetToOrder(CreateSetOrderItemWithOrderID) returns (ResponseSetOrderItemWithOrderID);
+
+  rpc AddingDishesDeliveryToOrder(CreateDishDeliveryRequest) returns (DishDelivery);
 }
 
 

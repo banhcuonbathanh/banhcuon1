@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"english-ai-full/logger"
@@ -142,26 +143,7 @@ func (h *OrderHandlerController) UpdateOrder(w http.ResponseWriter, r *http.Requ
     json.NewEncoder(w).Encode(res)
 }
 
-// func (h *OrderHandlerController) AddingSetsDishesOrder(w http.ResponseWriter, r *http.Request) {
-//     var orderReq UpdateOrderRequestType
-//     if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
-//         http.Error(w, "error decoding request body", http.StatusBadRequest)
-//         return
-//     }
 
-//     // Fixed: Remove extra parentheses and pass the correct parameters
-//     updatedOrderResponse, err := h.client.AddingSetsDishesOrder(h.ctx, ToPBUpdateOrderRequest(orderReq))
-//     if err != nil {
-//         h.logger.Error("Error updating order: " + err.Error())
-//         http.Error(w, "error updating order", http.StatusInternalServerError)
-//         return
-//     }
-
-//     res := ToOrderDetailedListResponseFromPbResponse(updatedOrderResponse)
-//     w.Header().Set("Content-Type", "application/json")
-//     w.WriteHeader(http.StatusOK)
-//     json.NewEncoder(w).Encode(res)
-// }
 func (h *OrderHandlerController) PayOrders(w http.ResponseWriter, r *http.Request) {
     var req PayOrdersRequestType
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -508,47 +490,11 @@ func ToOrderFromPbOrder(pbOrder *order.Order) OrderType {
 
 
 
-// func (h *OrderHandlerController) CreateOrder2(w http.ResponseWriter, r *http.Request) {
-//     var orderReq CreateOrderRequestType
-    
-//     // Read the entire body first
-//     body, err := io.ReadAll(r.Body)
-//     if err != nil {
-//         h.logger.Error("Error reading request body: " + err.Error())
-//         http.Error(w, "error reading request body", http.StatusBadRequest)
-//         return
-//     }
-    
-//     // Log the raw body for debugging
-//     h.logger.Info(fmt.Sprintf("Raw request body: %s", string(body)))
-
-//     // Decode the JSON
-//     if err := json.Unmarshal(body, &orderReq); err != nil {
-//         h.logger.Error("Error decoding request body: " + err.Error())
-//         http.Error(w, "error decoding request body", http.StatusBadRequest)
-//         return
-//     }
-
-//     h.logger.Info(fmt.Sprintf("golang/quanqr/order/order_handler.go Decoded order request: %+v", orderReq))
-    
-//     pbReq := ToPBCreateOrderRequest(orderReq)
-//     createdOrderResponse, err := h.client.CreateOrder(h.ctx, pbReq)
-//     if err != nil {
-//         h.logger.Error("Error creating order: " + err.Error())
-//         http.Error(w, "error creating order", http.StatusInternalServerError)
-//         return
-//     }
-
-//     res := ToOrderResFromPbOrderResponse(createdOrderResponse)
-//     w.Header().Set("Content-Type", "application/json")
-//     w.WriteHeader(http.StatusCreated)
-//     json.NewEncoder(w).Encode(res)
-// }
 
 
 
 func (h *OrderHandlerController) FetchOrdersByCriteria(w http.ResponseWriter, r *http.Request) {
-    h.logger.Info("Fetching orders by criteria")
+    h.logger.Info("golang/quanqr/order/order_handler.go Fetching orders by criteria")
 
     // Parse query parameters
     query := r.URL.Query()
@@ -600,6 +546,8 @@ func (h *OrderHandlerController) FetchOrdersByCriteria(w http.ResponseWriter, r 
 
     // Call the service
     response, err := h.client.FetchOrdersByCriteria(h.ctx, pbReq)
+
+
     if err != nil {
         h.logger.Error("Error fetching orders by criteria: " + err.Error())
         http.Error(w, "failed to fetch orders: "+err.Error(), http.StatusInternalServerError)
@@ -689,69 +637,6 @@ func ToOrderDetailedResponsesFromPbResponses(pbResponses []*order.OrderDetailedR
 
 
 
-// func (h *OrderHandlerController) CreateOrder3(w http.ResponseWriter, r *http.Request) {
-//     // Parse and validate the request body
-//     var orderReq CreateOrderRequestType
-//     if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
-//         h.logger.Error("Error decoding request body: " + err.Error())
-//         http.Error(w, "error decoding request body", http.StatusBadRequest)
-//         return
-//     }
-
-//     // Set default values for new fields
-//     if orderReq.Version == 0 {
-//         orderReq.Version = 1 // Initial version for new orders
-//     }
-
-//     // Validate the request
-//     if err := validateCreateOrderRequest(orderReq); err != nil {
-//         h.logger.Error("Validation error: " + err.Error())
-//         http.Error(w, err.Error(), http.StatusBadRequest)
-//         return
-//     }
-
-//     // Add modification tracking information for dish items
-//     for i := range orderReq.DishItems {
-//         orderReq.DishItems[i].ModificationType = "INITIAL"
-//         orderReq.DishItems[i].ModificationNumber = 1
-//         orderReq.DishItems[i].OrderName = orderReq.OrderName
-//         // Set timestamps for modification tracking
-//         orderReq.DishItems[i].CreatedAt = time.Now()
-//         orderReq.DishItems[i].UpdatedAt = time.Now()
-//     }
-
-//     // Add modification tracking information for set items
-//     for i := range orderReq.SetItems {
-//         orderReq.SetItems[i].ModificationType = "INITIAL"
-//         orderReq.SetItems[i].ModificationNumber = 1
-//         orderReq.SetItems[i].OrderName = orderReq.OrderName
-//         // Set timestamps for modification tracking
-//         orderReq.SetItems[i].CreatedAt = time.Now()
-//         orderReq.SetItems[i].UpdatedAt = time.Now()
-//     }
-
-//     // Convert request to protobuf format
-//     pbReq := ToPBCreateOrderRequest(orderReq)
-
-//     // Call the service to create the order
-//     h.logger.Info(fmt.Sprintf("Creating order with name: %s", orderReq.OrderName))
-//     createdOrderResponse, err := h.client.CreateOrder(h.ctx, pbReq)
-//     if err != nil {
-//         h.logger.Error("Error creating order: " + err.Error())
-//         http.Error(w, "error creating order: "+err.Error(), http.StatusInternalServerError)
-//         return
-//     }
-
-//     // Convert the response and send it back
-//     res := ToOrderResFromPbOrderResponse(createdOrderResponse)
-//     w.Header().Set("Content-Type", "application/json")
-//     w.WriteHeader(http.StatusCreated)
-//     if err := json.NewEncoder(w).Encode(res); err != nil {
-//         h.logger.Error("Error encoding response: " + err.Error())
-//         http.Error(w, "error encoding response", http.StatusInternalServerError)
-//         return
-//     }
-// }
 
 // Updated conversion functions to handle new fields and structures
 func ToPBCreateOrderRequest(req CreateOrderRequestType) *order.CreateOrderRequest {
@@ -929,34 +814,7 @@ func ToOrderDetailedListResponseFromPbResponse(pbRes *order.OrderDetailedListRes
             continue
         }
 
-        // Convert version history
-        // versionHistory := make([]OrderVersionSummary, len(pbDetailedRes.VersionHistory))
-        // for j, pbVersion := range pbDetailedRes.VersionHistory {
-        //     changes := make([]OrderItemChange, len(pbVersion.Changes))
-        //     for k, pbChange := range pbVersion.Changes {
-        //         changes[k] = OrderItemChange{
-        //             ItemType:        pbChange.ItemType,
-        //             ItemID:          pbChange.ItemId,
-        //             ItemName:        pbChange.ItemName,
-        //             QuantityChanged: pbChange.QuantityChanged,
-        //             Price:           pbChange.Price,
-        //         }
-        //     }
-            
-        //     versionHistory[j] = OrderVersionSummary{
-        //         VersionNumber:     pbVersion.VersionNumber,
-         
-        //         ModificationType: pbVersion.ModificationType,
-        //         ModifiedAt:      pbVersion.ModifiedAt.AsTime(),
-    
-        //     }
-        // }
 
-        // Convert most ordered items
-   
-  
-
-        // Convert total summary
    
 
         responses[i] = OrderDetailedResponse{
@@ -1036,19 +894,6 @@ func (h *OrderHandlerController) RemovingSetsDishesOrder(w http.ResponseWriter, 
     h.logger.Info(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Proto Response: \nPagination: %+v", 
         updatedOrderResponse.GetPagination()))
 
-    for i, order := range updatedOrderResponse.GetData() {
-        h.logger.Info(fmt.Sprintf("[Order Handler.RemovingSetsDishesOrder] Proto Order %d: \n"+
-            "ID: %d\n"+
-            "Remaining Dish Items: %d\n"+
-            "Remaining Set Items: %d\n"+
-            "Current Version: %d\n"+
-            "Total Price: %d",
-            i+1,
-            order.GetId(),
-         
-            order.GetCurrentVersion(),
-            order.GetTotalPrice()))
-    }
 
     res := ToOrderDetailedListResponseFromPbResponse(updatedOrderResponse)
 
@@ -1085,134 +930,11 @@ func (h *OrderHandlerController) RemovingSetsDishesOrder(w http.ResponseWriter, 
 
 
 
-func ToPBCreateDishDeliveryRequest(req *CreateDishDeliveryRequestType) *order.CreateDishDeliveryRequest {
-    if req == nil {
-        return nil
-    }
-
-    // Calculate total quantity delivered if not provided
-    quantityDelivered := req.QuantityDelivered
-    if quantityDelivered == 0 {
-        for _, item := range req.DishItems {
-            quantityDelivered += int32(item.Quantity)
-        }
-    }
-
-    // Convert DishItems to []*order.DishOrderItem
-    pbDishItems := make([]*order.CreateDishOrderItem, len(req.DishItems))
-    for i, item := range req.DishItems {
-        pbDishItems[i] = &order.CreateDishOrderItem{
-        
-            DishId:           item.DishID,
-            Quantity:         item.Quantity,
-
-        }
-    }
-
-    // Convert to CreateDishDeliveryRequest format
-    return &order.CreateDishDeliveryRequest{
-        OrderId:           req.OrderID,
-        OrderName:         req.OrderName,
-        GuestId:          req.GuestID,
-        UserId:           req.UserID,
-        TableNumber:      req.TableNumber,
-        DishItems:        pbDishItems,
-        QuantityDelivered: quantityDelivered,
-        DeliveryStatus:    req.DeliveryStatus,
-        DeliveredAt:       timestamppb.New(req.DeliveredAt),
-        DeliveredByUserId: req.DeliveredByUserID,
-        CreatedAt:         timestamppb.New(req.CreatedAt),
-        UpdatedAt:         timestamppb.New(req.UpdatedAt),
-        IsGuest:          req.IsGuest,
-    }
-}
-
 
 // new -----------
 
 
 // 
-func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponse {
-    if pbRes == nil {
-        return OrderDetailedListResponse{}
-    }
-
-    detailedResponses := make([]OrderDetailedResponse, len(pbRes.Data))
-    for i, pbDetailedRes := range pbRes.Data {
-        if pbDetailedRes == nil {
-            continue
-        }
-
-        // Convert version history with nil checks
-        var versionHistory []OrderVersionSummary
-        if pbDetailedRes.VersionHistory != nil {
-            versionHistory = make([]OrderVersionSummary, len(pbDetailedRes.VersionHistory))
-            for j, pbVersion := range pbDetailedRes.VersionHistory {
-                if pbVersion == nil {
-                    continue
-                }
-
-
-                var modifiedAt time.Time
-                if pbVersion.ModifiedAt != nil {
-                    modifiedAt = pbVersion.ModifiedAt.AsTime()
-                }
-                
-                versionHistory[j] = OrderVersionSummary{
-                    VersionNumber:     pbVersion.VersionNumber,
-                 
-                    ModificationType: pbVersion.ModificationType,
-                    ModifiedAt:      modifiedAt,
-            
-                }
-            }
-        }
-
-        // Convert total summary with nil checks
-    
-
-        var dataSet []OrderSetDetailed
-    
-
-        detailedResponses[i] = OrderDetailedResponse{
-            ID:             pbDetailedRes.Id,
-            GuestID:        pbDetailedRes.GuestId,
-            UserID:         pbDetailedRes.UserId,
-            TableNumber:    pbDetailedRes.TableNumber,
-            OrderHandlerID: pbDetailedRes.OrderHandlerId,
-            Status:         pbDetailedRes.Status,
-            TotalPrice:     pbDetailedRes.TotalPrice,
-            IsGuest:        pbDetailedRes.IsGuest,
-            Topping:        pbDetailedRes.Topping,
-            TrackingOrder:  pbDetailedRes.TrackingOrder,
-            TakeAway:       pbDetailedRes.TakeAway,
-            ChiliNumber:    pbDetailedRes.ChiliNumber,
-            TableToken:     pbDetailedRes.TableToken,
-            OrderName:      pbDetailedRes.OrderName,
-            CurrentVersion: pbDetailedRes.CurrentVersion,
- 
-            DataSet:        dataSet,
-     
-            VersionHistory: versionHistory,
-        
-        }
-    }
-
-    var pagination PaginationInfo
-    if pbRes.Pagination != nil {
-        pagination = PaginationInfo{
-            CurrentPage: pbRes.Pagination.CurrentPage,
-            TotalPages: pbRes.Pagination.TotalPages,
-            TotalItems: pbRes.Pagination.TotalItems,
-            PageSize:   pbRes.Pagination.PageSize,
-        }
-    }
-
-    return OrderDetailedListResponse{
-        Data:       detailedResponses,
-        Pagination: pagination,
-    }
-}
 
 // new 
 
@@ -1631,3 +1353,322 @@ func ToOrderDetailedResponseWithDeliveryFromPB(pbRes *order.OrderDetailedRespons
 }
 
 // create order end 
+func ToOrderDetailedListResponseFromProto(pbRes *order.OrderDetailedListResponse) OrderDetailedListResponseWithDelivery {
+	res := OrderDetailedListResponseWithDelivery{
+		Data:       make([]OrderDetailedResponseWithDelivery, len(pbRes.Data)),
+		Pagination: PaginationInfo{
+			CurrentPage: pbRes.Pagination.CurrentPage,
+			TotalPages:  pbRes.Pagination.TotalPages,
+			TotalItems:  pbRes.Pagination.TotalItems,
+			PageSize:    pbRes.Pagination.PageSize,
+		},
+	}
+
+	for i, pbOrder := range pbRes.Data {
+		var deliveryHistory []DishDelivery
+		for _, pbDelivery := range pbOrder.DeliveryHistory {
+			deliveredAt := time.Time{}
+			if pbDelivery.DeliveredAt != nil {
+				deliveredAt = pbDelivery.DeliveredAt.AsTime()
+			}
+
+			createdAt := time.Time{}
+			if pbDelivery.CreatedAt != nil {
+				createdAt = pbDelivery.CreatedAt.AsTime()
+			}
+
+			updatedAt := time.Time{}
+			if pbDelivery.UpdatedAt != nil {
+				updatedAt = pbDelivery.UpdatedAt.AsTime()
+			}
+
+			delivery := DishDelivery{
+				ID:                 pbDelivery.Id,
+				OrderID:            pbDelivery.OrderId,
+				OrderName:          pbDelivery.OrderName,
+				GuestID:            pbDelivery.GuestId,
+				UserID:             pbDelivery.UserId,
+				TableNumber:        pbDelivery.TableNumber,
+				QuantityDelivered:  pbDelivery.QuantityDelivered,
+				DeliveryStatus:     pbDelivery.DeliveryStatus,
+				DeliveredAt:        deliveredAt,
+				DeliveredByUserID:  pbDelivery.DeliveredByUserId,
+				CreatedAt:          createdAt,
+				UpdatedAt:          updatedAt,
+				DishID:             pbDelivery.DishId,
+				IsGuest:            pbDelivery.IsGuest,
+				ModificationNumber: pbDelivery.ModificationNumber,
+			}
+			deliveryHistory = append(deliveryHistory, delivery)
+		}
+
+		var versionHistory []OrderVersionSummary
+		for _, pbVersion := range pbOrder.VersionHistory {
+			modifiedAt := time.Time{}
+			if pbVersion.ModifiedAt != nil {
+				modifiedAt = pbVersion.ModifiedAt.AsTime()
+			}
+
+			var dishesOrdered []OrderDetailedDish
+			for _, pbDish := range pbVersion.DishesOrdered {
+				dish := OrderDetailedDish{
+					DishID:      pbDish.DishId,
+					Quantity:    pbDish.Quantity,
+					Name:        pbDish.Name,
+					Price:       pbDish.Price,
+					Description: pbDish.Description,
+					Image:       pbDish.Image,
+					Status:      pbDish.Status,
+				}
+				dishesOrdered = append(dishesOrdered, dish)
+			}
+
+			var setOrdered []OrderSetDetailed
+			for _, pbSet := range pbVersion.SetOrdered {
+				createdAt := time.Time{}
+				if pbSet.CreatedAt != nil {
+					createdAt = pbSet.CreatedAt.AsTime()
+				}
+
+				updatedAt := time.Time{}
+				if pbSet.UpdatedAt != nil {
+					updatedAt = pbSet.UpdatedAt.AsTime()
+				}
+
+				var dishes []OrderDetailedDish
+				for _, pbDish := range pbSet.Dishes {
+					dish := OrderDetailedDish{
+						DishID:      pbDish.DishId,
+						Quantity:    pbDish.Quantity,
+						Name:        pbDish.Name,
+						Price:       pbDish.Price,
+						Description: pbDish.Description,
+						Image:       pbDish.Image,
+						Status:      pbDish.Status,
+					}
+					dishes = append(dishes, dish)
+				}
+
+				set := OrderSetDetailed{
+					ID:          pbSet.Id,
+					Name:        pbSet.Name,
+					Description: pbSet.Description,
+					Dishes:      dishes,
+					UserID:      pbSet.UserId,
+					CreatedAt:   createdAt,
+					UpdatedAt:   updatedAt,
+					IsFavourite: pbSet.IsFavourite,
+					LikeBy:      pbSet.LikeBy,
+					IsPublic:    pbSet.IsPublic,
+					Image:       pbSet.Image,
+					Price:       pbSet.Price,
+					Quantity:    pbSet.Quantity,
+				}
+				setOrdered = append(setOrdered, set)
+			}
+
+			version := OrderVersionSummary{
+				VersionNumber:    pbVersion.VersionNumber,
+				ModificationType: pbVersion.ModificationType,
+				ModifiedAt:       modifiedAt,
+				DishesOrdered:    dishesOrdered,
+				SetOrdered:       setOrdered,
+			}
+			versionHistory = append(versionHistory, version)
+		}
+
+		createdAt := time.Time{}
+		if pbOrder.CreatedAt != nil {
+			createdAt = pbOrder.CreatedAt.AsTime()
+		}
+
+		updatedAt := time.Time{}
+		if pbOrder.UpdatedAt != nil {
+			updatedAt = pbOrder.UpdatedAt.AsTime()
+		}
+
+		lastDeliveryAt := time.Time{}
+		if pbOrder.LastDeliveryAt != nil {
+			lastDeliveryAt = pbOrder.LastDeliveryAt.AsTime()
+		}
+
+		var deliveryStatus DeliveryStatus
+		switch pbOrder.CurrentDeliveryStatus {
+		case order.DeliveryStatus_PENDING:
+			deliveryStatus = DeliveryStatusPending
+		case order.DeliveryStatus_PARTIALLY_DELIVERED:
+			deliveryStatus = DeliveryStatusPartiallyDelivered
+		case order.DeliveryStatus_FULLY_DELIVERED:
+			deliveryStatus = DeliveryStatusFullyDelivered
+		case order.DeliveryStatus_CANCELLED:
+			deliveryStatus = DeliveryStatusCancelled
+		default:
+			deliveryStatus = DeliveryStatusPending
+		}
+
+		res.Data[i] = OrderDetailedResponseWithDelivery{
+			ID:                    pbOrder.Id,
+			GuestID:               pbOrder.GuestId,
+			UserID:                pbOrder.UserId,
+			TableNumber:           pbOrder.TableNumber,
+			OrderHandlerID:        pbOrder.OrderHandlerId,
+			Status:                pbOrder.Status,
+			CreatedAt:             createdAt,
+			UpdatedAt:             updatedAt,
+			IsGuest:               pbOrder.IsGuest,
+			Topping:               pbOrder.Topping,
+			TrackingOrder:         pbOrder.TrackingOrder,
+			TakeAway:              pbOrder.TakeAway,
+			ChiliNumber:           pbOrder.ChiliNumber,
+			TableToken:            pbOrder.TableToken,
+			OrderName:             pbOrder.OrderName,
+			CurrentVersion:        pbOrder.CurrentVersion,
+			VersionHistory:        versionHistory,
+			DeliveryHistory:       deliveryHistory,
+			CurrentDeliveryStatus: deliveryStatus,
+			TotalItemsDelivered:   pbOrder.TotalItemsDelivered,
+			LastDeliveryAt:        lastDeliveryAt,
+		}
+	}
+
+	return res
+}
+
+// start of AddingDishesDeliveryToOrder
+func (h *OrderHandlerController) AddDishDelivery(w http.ResponseWriter, r *http.Request) {
+    // Parse and validate the request body
+    var deliveryReq CreateDishDeliveryRequestType
+    if err := json.NewDecoder(r.Body).Decode(&deliveryReq); err != nil {
+        h.logger.Error("Error decoding request body: " + err.Error())
+        http.Error(w, "error decoding request body", http.StatusBadRequest)
+        return
+    }
+
+    // Validate the request
+    if err := validateAddDishDeliveryRequest(deliveryReq); err != nil {
+        h.logger.Error("Validation error: " + err.Error())
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    // Set current time for timestamps if not provided
+    currentTime := time.Now()
+    if deliveryReq.CreatedAt.IsZero() {
+        deliveryReq.CreatedAt = currentTime
+    }
+    if deliveryReq.UpdatedAt.IsZero() {
+        deliveryReq.UpdatedAt = currentTime
+    }
+    if deliveryReq.DeliveredAt.IsZero() {
+        deliveryReq.DeliveredAt = currentTime
+    }
+
+    // Convert request to protobuf format
+    pbReq := ToPBCreateDishDeliveryRequest(deliveryReq)
+
+    // Call the service to add dish delivery
+    h.logger.Info(fmt.Sprintf("Adding dish delivery to order ID %d for dish ID %d", 
+        deliveryReq.OrderID, deliveryReq.DishID))
+    dishDeliveryResponse, err := h.client.AddingDishesDeliveryToOrder(h.ctx, pbReq)
+    if err != nil {
+        h.logger.Error("Error adding dish delivery: " + err.Error())
+        http.Error(w, "error adding dish delivery: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Convert the response from DishDelivery protobuf to appropriate format
+    res := ToDishDeliveryFromPB(dishDeliveryResponse)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    if err := json.NewEncoder(w).Encode(res); err != nil {
+        h.logger.Error("Error encoding response: " + err.Error())
+        http.Error(w, "error encoding response", http.StatusInternalServerError)
+        return
+    }
+}
+
+// validateAddDishDeliveryRequest validates the dish delivery request
+func validateAddDishDeliveryRequest(req CreateDishDeliveryRequestType) error {
+    if req.OrderID <= 0 {
+        return fmt.Errorf("invalid order ID")
+    }
+    if req.DishID <= 0 {
+        return fmt.Errorf("invalid dish ID")
+    }
+    if req.QuantityDelivered <= 0 {
+        return fmt.Errorf("quantity delivered must be positive")
+    }
+    if req.OrderName == "" {
+        return fmt.Errorf("order name is required")
+    }
+    if req.DeliveryStatus == "" {
+        return fmt.Errorf("delivery status is required")
+    }
+
+    // Validate delivery status value
+    validStatus := map[string]bool{
+        "PENDING":             true,
+        "IN_PROGRESS":         true,
+        "PARTIALLY_DELIVERED": true,
+        "FULLY_DELIVERED":     true,
+        "DELIVERED":           true,
+        "CANCELLED":           true,
+    }
+    if !validStatus[strings.ToUpper(req.DeliveryStatus)] {
+        return fmt.Errorf("invalid delivery status")
+    }
+
+    return nil
+}
+
+// ToPBCreateDishDeliveryRequest converts CreateDishDeliveryRequestType to protobuf CreateDishDeliveryRequest
+func ToPBCreateDishDeliveryRequest(req CreateDishDeliveryRequestType) *order.CreateDishDeliveryRequest {
+    pbReq := &order.CreateDishDeliveryRequest{
+        OrderId:           req.OrderID,
+        OrderName:         req.OrderName,
+        GuestId:           req.GuestID,
+        UserId:            req.UserID,
+        TableNumber:       req.TableNumber,
+        DishId:            req.DishID,
+        QuantityDelivered: req.QuantityDelivered,
+        DeliveryStatus:    req.DeliveryStatus,
+        DeliveredByUserId: req.DeliveredByUserID,
+        IsGuest:           req.IsGuest,
+    }
+
+    // Convert timestamps
+    pbReq.CreatedAt = timestamppb.New(req.CreatedAt)
+    pbReq.UpdatedAt = timestamppb.New(req.UpdatedAt)
+    pbReq.DeliveredAt = timestamppb.New(req.DeliveredAt)
+
+    return pbReq
+}
+
+// ToDishDeliveryFromPB converts protobuf DishDelivery to DishDelivery
+func ToDishDeliveryFromPB(pbRes *order.DishDelivery) DishDelivery {
+    response := DishDelivery{
+        ID:                pbRes.Id,
+        OrderID:           pbRes.OrderId,
+        OrderName:         pbRes.OrderName,
+        GuestID:           pbRes.GuestId,
+        UserID:            pbRes.UserId,
+        TableNumber:       pbRes.TableNumber,
+        QuantityDelivered: pbRes.QuantityDelivered,
+        DeliveryStatus:    pbRes.DeliveryStatus,
+        DeliveredByUserID: pbRes.DeliveredByUserId,
+        CreatedAt:         pbRes.CreatedAt.AsTime(),
+        UpdatedAt:         pbRes.UpdatedAt.AsTime(),
+        DishID:            pbRes.DishId,
+        IsGuest:           pbRes.IsGuest,
+        ModificationNumber: pbRes.ModificationNumber,
+    }
+
+    // Convert delivered_at timestamp if it exists
+    if pbRes.DeliveredAt != nil {
+        deliveredAt := pbRes.DeliveredAt.AsTime()
+        response.DeliveredAt = deliveredAt
+    }
+
+    return response
+}
+// end of AddingDishesDeliveryToOrder
