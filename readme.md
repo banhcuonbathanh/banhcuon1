@@ -12,3 +12,17 @@
    4.2: npm run dev
 5. link to access app :
    http://localhost:3000/table/1?token=MTo0OkF2YWlsYWJsZTo0ODkxODE3ODkz.BCcMjCAX1Es
+
+6. admin example:
+   {
+   "name": "vu1",
+   "email": "vu8.johnson@example.com",
+   "password": "password1231234",
+   "role": "Admin",
+   "phone": "1234567890",
+   "image": "alice.jpg",
+   "address": "123 Main St, Anytown, USA",
+   "created_at": "2024-08-19T16:17:16+07:00",
+   "updated_at": "2024-08-19T16:17:16+07:00"
+
+   }
