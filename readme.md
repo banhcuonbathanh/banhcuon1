@@ -6,7 +6,8 @@
 3. run grcp golang server :
    3.1: cd golang
    3.2: go run cmd/grcp-server/main.go
-
+3.1.
+   golang manin forlder cmd, ecomm-api, ecomm-grpc, quanqr
 4. run nextjs
    4.1: cd quananqr1
    4.2: npm run dev
