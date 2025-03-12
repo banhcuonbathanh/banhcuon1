@@ -1,3 +1,15 @@
+project description:
+   scan qr code restaurant.
+   data base: postgres.
+   be: golang
+      microservice
+      schema: golang/ecomm-grpc/db/migrations/000002_update_users_table.up.sql
+      
+   fe: nextjs
+
+
+
+
 1. run data base :
    1.1 : docker-compose up mypostgres_ai
 2. run golang main server :
@@ -7,7 +19,8 @@
    3.1: cd golang
    3.2: go run cmd/grcp-server/main.go
 3.1.
-   golang manin forlder cmd, ecomm-api, ecomm-grpc, quanqr
+   golang manin forlder cmd, ecomm-api, ecomm-grpc, quanqr.
+   golang microservice. 
 4. run nextjs
    4.1: cd quananqr1
    4.2: npm run dev
